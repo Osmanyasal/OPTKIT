@@ -1,4 +1,5 @@
 ---@diagnostic disable: undefined-global
+---@diagnostic disable: undefined-field
 
 print("Current platform: " .. os.target())
 -- Check if the platform is Linux
@@ -16,13 +17,12 @@ local UTILS_DIR = './src/utils'
 local LIB_X86_ADAPT_PATH = './lib/x86-adapt'
 local WHOAMI = io.popen("whoami"):read("*a"):gsub("\n", "")
 
-local OPTKIT_APP = "OptimizerToolkitApp"
-local OPTKIT_LIB_DYNAMIC = "OptimizerToolkitShared"
-local OPTKIT_LIB_STATIC = "OptimizerToolkitStatic"
+local OPTKIT_APP = "OPTKIT_APP"
+local OPTKIT_LIB_DYNAMIC = "OPTKIT_SO"
+local OPTKIT_LIB_STATIC = "OPTKIT_A"
 
 
 function BaseProjectSetup()
-     
     language "C++"
     cppdialect "C++11"
     targetdir "bin/%{cfg.buildcfg}"
@@ -41,17 +41,17 @@ function BaseProjectSetup()
     linkoptions { "-fopenmp" }
     links { "pthread", "dl", "tensorflow", "spdlog", "pfm" }
 
--- Compiler options
+    -- Compiler options
     filter "configurations:Debug"
-        symbols "On"
-        defines { "OPTKIT_MODE_DEBUG" }
-        buildoptions { "-Wall", "-O0", "-g", "-fopenmp", "-msse", "-march=native" }
+    symbols "On"
+    defines { "OPTKIT_MODE_DEBUG" }
+    buildoptions { "-Wall", "-O0", "-g", "-fopenmp", "-msse", "-march=native" }
 
     filter "configurations:Release"
-        optimize "On"
-        symbols "Off"
-        defines { "OPTKIT_MODE_NDEBUG" }
-        buildoptions { "-Wall", "-O2", "-fopenmp", "-msse", "-march=native" }
+    optimize "On"
+    symbols "Off"
+    defines { "OPTKIT_MODE_NDEBUG" }
+    buildoptions { "-Wall", "-O2", "-fopenmp", "-msse", "-march=native" }
 
     filter {} -- stop filtering, below is globally accessible
 
@@ -87,7 +87,7 @@ function BaseProjectSetup()
         "    python3 pmu_parser.py $(shell find " .. LIB_PFM_PATH .. "/lib/events -type f \\( -name \"intel*.h\" -or -name \"amd*.h\" -or -name \"arm*.h\" -or -name \"power*.h\" \\) -exec echo \"../../{}\" \\;) && \\",
         "    touch ../../" .. CORE_EVENTS_DIR .. "/all_set; \\",
         "fi",
-    } 
+    }
 
     local actions = {
         clean = "clean",          -- clean the optkit build.
@@ -112,14 +112,14 @@ function BaseProjectSetup()
             print("[REMOVE] Makefile")
             os.remove("Makefile")
 
-            print("[REMOVE] "..OPTKIT_APP..".make")
-            os.remove(OPTKIT_APP..".make")
+            print("[REMOVE] " .. OPTKIT_APP .. ".make")
+            os.remove(OPTKIT_APP .. ".make")
 
-            print("[REMOVE] "..OPTKIT_LIB_DYNAMIC..".make")
-            os.remove(OPTKIT_LIB_DYNAMIC..".make")
+            print("[REMOVE] " .. OPTKIT_LIB_DYNAMIC .. ".make")
+            os.remove(OPTKIT_LIB_DYNAMIC .. ".make")
 
-            print("[REMOVE] lib"..OPTKIT_LIB_STATIC..".make")
-            os.remove(OPTKIT_LIB_STATIC..".make")
+            print("[REMOVE] lib" .. OPTKIT_LIB_STATIC .. ".make")
+            os.remove(OPTKIT_LIB_STATIC .. ".make")
 
             print("🧹 Cleaned build directories!")
         end
@@ -168,12 +168,13 @@ function BaseProjectSetup()
             end
 
             print("[Installing]: headers and libraries!")
-            os.execute("sudo rm -rf /usr/local/include/optkit/ && sudo mkdir -p /usr/local/include/optkit")                                                                   -- create optkit directory for headers
-            os.execute("cd ./src; sudo find ./ -type f -name \"*.hh\" -exec cp --parents {} \"/usr/local/include/optkit/\" \\;")    -- copy all header files by keeping the file structure as-is
-            os.execute("sudo cp -R ./bin/Release/lib" ..OPTKIT_LIB_STATIC..".a /usr/local/lib")                                        -- copy static library
-            os.execute("sudo cp -R ./bin/Release/lib"..OPTKIT_LIB_DYNAMIC..".so /usr/local/lib")                                       -- copy dynamic library
+            os.execute("sudo rm -rf /usr/local/include/optkit/ && sudo mkdir -p /usr/local/include/optkit")                      -- create optkit directory for headers
+            os.execute(
+            "cd ./src; sudo find ./ -type f -name \"*.hh\" -exec cp --parents {} \"/usr/local/include/optkit/\" \\;")            -- copy all header files by keeping the file structure as-is
+            os.execute("sudo cp -R ./bin/Release/lib" .. OPTKIT_LIB_STATIC .. ".a /usr/local/lib")                               -- copy static library
+            os.execute("sudo cp -R ./bin/Release/lib" .. OPTKIT_LIB_DYNAMIC .. ".so /usr/local/lib")                             -- copy dynamic library
             print("[Installed ✅]: headers and libraries!")
-            
+
             -- BUILD TOOLS AND ALSO INSTALL THEM, TOOLS WILL BE USING THE STATIC-DYNAMIC LIBRARY THAT'S INSTALLED.
             print("[Installing]: utility tools!")
             os.execute("cd ./tools && ./install.sh")
@@ -210,23 +211,22 @@ function BaseProjectSetup()
             print("📄 Documentation Removed!")
         end
     }
-
 end
 
-workspace "OptimizerToolkit"
-    configurations { "Debug", "Release" }
-    architecture "x64"
+workspace "OPTKIT"
+configurations { "Debug", "Release" }
+architecture "x64"
 
-    project (OPTKIT_APP)
-        kind "ConsoleApp"
-        BaseProjectSetup()
+project(OPTKIT_APP)
+kind "ConsoleApp"
+BaseProjectSetup()
 
-    project (OPTKIT_LIB_DYNAMIC)
-        kind "SharedLib"
-        BaseProjectSetup()
-        removefiles{"./src/main.cc"}
+project(OPTKIT_LIB_DYNAMIC)
+kind "SharedLib"
+BaseProjectSetup()
+removefiles { "./src/main.cc" }
 
-    project (OPTKIT_LIB_STATIC)
-        kind "StaticLib"
-        BaseProjectSetup()
-        removefiles{"./src/main.cc"}
+project(OPTKIT_LIB_STATIC)
+kind "StaticLib"
+BaseProjectSetup()
+removefiles { "./src/main.cc" }

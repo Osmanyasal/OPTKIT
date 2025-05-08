@@ -7,8 +7,8 @@ OPTKIT integrates seamlessly into the development workflow like any other librar
 
 ## Download and Install 🚀 <br>
 ```
-git clone https://github.com/Osmanyasal/Optimizer-Toolkit-Core.git
-cd ./Optimizer-Toolkit-Core
+git clone https://github.com/Osmanyasal/OPTKIT.git
+cd ./OPTKIT
 git submodule update --force --recursive --init --remote
 premake5 gmake2
 make all
