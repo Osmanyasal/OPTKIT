@@ -1,0 +1,118 @@
+#!/usr/bin/env python3
+
+import os
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.models import Sequential, load_model
+import joblib
+import sys
+# Load the data from a single file
+def load_data(file_path):
+    data = []
+    with open(file_path, 'r') as file:
+        for line in file:
+            data.append([float(x) for x in line.strip().split(',')])
+    return np.array(data)
+
+# Load data from all .dump files in the specified directory
+def load_all_data(data_dir):
+    all_data = []
+    for file_name in os.listdir(data_dir):
+        if file_name.endswith('.dump'):
+            file_path = os.path.join(data_dir, file_name)
+            data = load_data(file_path)
+            all_data.append(data)
+    return np.vstack(all_data)
+
+# Model file path
+saved_model_path = './saved_model'
+model_path = saved_model_path + '/custom_governor_model.h5'
+scaler_path = saved_model_path + '/scaler.pkl'
+
+
+# Ensure the saved_model directory exists
+if not os.path.exists(saved_model_path):
+    os.makedirs(saved_model_path)
+
+
+# Check if the model exists
+if os.path.exists(saved_model_path) and os.path.exists(model_path) and os.path.exists(scaler_path):
+    # Load the model
+    nn_model = load_model(model_path)
+    scaler = joblib.load(scaler_path) 
+    print("Model and scaler loaded from disk.")
+else:
+    # Path to the data folder
+    data_dir = './data/'
+
+    # Load all data from the folder
+    data = load_all_data(data_dir)
+
+    # Convert to DataFrame
+    df = pd.DataFrame(data, columns=['compute_intensity', 'cache_intensity','dram_intensity', 'best_core_freq', 'best_uncore_freq'])
+
+    # Features and target variables
+    X = df[['compute_intensity', 'cache_intensity','dram_intensity']]
+    y = df[['best_core_freq', 'best_uncore_freq']]
+
+    # Split the data
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    # Standardize the data
+    scaler = StandardScaler()
+    X_train = scaler.fit_transform(X_train)
+    X_test = scaler.transform(X_test)
+
+    # Save the scaler
+    joblib.dump(scaler, scaler_path)
+    with open(saved_model_path+"/scaler.txt", 'w') as file:
+        file.write(f"{scaler.mean_[0]}\n")
+        file.write(f"{scaler.mean_[1]}\n")
+        file.write(f"{scaler.mean_[2]}\n")
+        file.write(f"{scaler.scale_[0]}\n")
+        file.write(f"{scaler.scale_[1]}\n")
+        file.write(f"{scaler.scale_[2]}\n")
+
+
+
+    # Neural Network Model
+    nn_model = Sequential([
+        Dense(128, input_dim=3, activation='relu'),
+        Dense(64, activation='relu'),
+        Dense(32, activation='relu'),
+        Dense(16, activation='relu'),
+        Dense(2, activation='linear')
+    ])
+
+    nn_model.compile(optimizer='adam', loss='mse')
+
+    # Train the model
+    nn_model.fit(X_train, y_train, epochs=100, batch_size=32, verbose=1)
+
+    # Save the model in both Keras and SavedModel formats
+    nn_model.save(model_path)
+    nn_model.save(saved_model_path, save_format='tf')
+    print("Model trained and saved to disk.")
+
+    # Evaluate the model
+    y_pred_nn = nn_model.predict(X_test)
+    mse = np.mean((y_test - y_pred_nn) ** 2)
+    print('Neural Network MSE:', mse)
+
+# Example prediction
+# new_data = load_data("3D.dump")
+# new_data_scaled = scaler.transform(new_data)
+# prediction = nn_model.predict(new_data_scaled)
+# print('Predicted best core and uncore frequencies:')
+# for i in prediction:
+#     print(i)
+
+if len(sys.argv) < 3:
+     exit(0)
+new_data = np.array([[sys.argv[1],sys.argv[2], sys.argv[3]]])
+new_data_scaled = scaler.transform(new_data)
+prediction = nn_model.predict(new_data_scaled)
+print('Predicted best core and uncore frequencies:', prediction)

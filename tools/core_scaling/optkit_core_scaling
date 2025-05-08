@@ -1,0 +1,84 @@
+#!/bin/bash
+ 
+# Extract CPUs for socket 0
+socket0_cpus=$(numactl --hardware | awk '/node 0 cpus:/ {print substr($0, index($0, ":") + 2)}')
+
+# Extract CPUs for socket 1
+socket1_cpus=$(numactl --hardware | awk '/node 1 cpus:/ {print substr($0, index($0, ":") + 2)}')
+
+print_help() {
+    echo "Usage: $0 [OPTION] [<-s socket_number_1 -s socket_number_2> -c command...]"
+    
+    echo "-------"
+    # Print the extracted CPUs for verification
+    
+    if [[ -n $socket0_cpus ]]; then
+	    echo "Socket 0 CPUs: $socket0_cpus"
+    fi
+    
+    if [[ -n $socket1_cpus ]]; then
+	    echo "Socket 1 CPUs: $socket1_cpus"
+    fi
+	 
+    echo "-------"
+
+    echo "Options:"
+    echo "  --help      Display this help message"
+}
+ 
+
+if [[ "$1" == "--help"  || "$#" == 0 ]]; then
+    print_help
+    exit 0
+fi
+ 
+# Initialize variables
+socket0=""
+socket1=""
+cores=""
+
+# Parse arguments
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        -s)
+            shift
+            if [[ "$1" == "0" ]]; then
+                socket0=1
+                cores="$socket0_cpus"
+            elif [[ "$1" == "1" ]]; then
+                socket1=1
+                cores="$socket1_cpus"
+            fi
+            ;;
+        -c)
+            shift
+            command=$@
+            break
+            ;;
+        *)
+            echo "Invalid option: $1"
+            print_help
+            exit 1
+            ;;
+    esac
+    shift
+done
+
+# If no sockets specified, use all CPUs
+if [[ -z $socket0 && -z $socket1 ]]; then
+    cores="$socket0_cpus $socket1_cpus"
+fi
+
+# Flatten the cores variable (remove extra spaces)
+cores=$(echo $cores | xargs | tr ' ' ',')
+
+# Execute the command with varying thread counts
+max_cores=$(echo $cores | tr ',' ' ' | wc -w)
+
+echo "cores:$cores -- max_cores:$max_cores -- command: $command"
+export OMP_NUM_THREADS=1 && taskset -c "$cores" $command
+for ((i = 2; i <= max_cores; i += 2)); do
+    echo "------------ Current thread count: $i ------------------"
+    export OMP_NUM_THREADS=$i && taskset -c "$cores" $command
+done
+

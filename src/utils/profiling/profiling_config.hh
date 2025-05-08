@@ -1,0 +1,8 @@
+#pragma once
+
+/**
+ * @brief GANTT INSTRUMENTATION
+*/
+
+#define OPTKIT_CORE_GANTT_PROFILE 0
+#define OPTKIT_GANTT_PROFILE 0

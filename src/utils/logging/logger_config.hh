@@ -1,0 +1,16 @@
+#pragma once
+
+/**
+ * @brief LOGGING
+ *
+ */
+
+#define CONF__LOG__PRINT_GUID_LENGTH 5
+#define CONF__LOG__ENABLE_CORE_LOGGING 1
+#define CONF__LOG__ENABLE_SANDBOX_LOGGING 1
+
+#define CONF__LOG__ENABLE_DEBUG 0
+#define CONF__LOG__ENABLE_TRACE 1
+#define CONF__LOG__ENABLE_INFO  1
+#define CONF__LOG__ENABLE_WARN  1
+#define CONF__LOG__ENABLE_ERROR 1

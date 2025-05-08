@@ -1,0 +1,9 @@
+#!/bin/bash
+
+
+optkit_co_schedule -c $cores ./lavaMD -cores 1 -boxes1d 40
+for ((i = 2; i <= max_cores; i += 2)); do
+    echo "------------ Current thread count: $i ------------------"
+    optkit_co_schedule -c $cores ./lavaMD -cores $i -boxes1d 40
+done
+ 

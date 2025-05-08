@@ -1,0 +1,140 @@
+#!/bin/bash
+ 
+# Extract CPUs for socket 0
+socket0_cpus=$(numactl --hardware | awk '/node 0 cpus:/ {print substr($0, index($0, ":") + 2)}')
+
+# Extract CPUs for socket 1
+socket1_cpus=$(numactl --hardware | awk '/node 1 cpus:/ {print substr($0, index($0, ":") + 2)}')
+
+print_help() {
+    echo "Usage: $0 [OPTION] [<-s socket_number_1 -s socket_number_2> -c command...]"
+    
+    echo "-------"
+    # Print the extracted CPUs for verification
+    
+    if [[ -n $socket0_cpus ]]; then
+	    echo "Socket 0 CPUs: $socket0_cpus"
+    fi
+    
+    if [[ -n $socket1_cpus ]]; then
+	    echo "Socket 1 CPUs: $socket1_cpus"
+    fi
+	 
+    echo "-------"
+
+    echo "Options:"
+    echo "  --help      Display this help message"
+}
+
+
+if [[ "$1" == "--help" || "$#" == 0 ]]; then
+    print_help
+    exit 0
+fi
+ 
+
+# Initialize variables
+socket0=""
+socket1=""
+cores=""
+
+CORE_FREQ_RANGE="" # get core frange
+UNCORE_FREQ_RANGE="" # get uncore freq range
+
+probing_dump=$(sudo optkit_probe) 
+
+# Parse arguments
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        -s)
+            shift
+            if [[ "$1" == "0" ]]; then
+                socket0=1
+                cores="$socket0_cpus"
+                # Extract Socket[0] Core Avail Freq(HZ)
+                CORE_FREQ_RANGE=$(echo "$probing_dump" | grep 'Socket\[0\] Core Avail Freq(HZ):' | awk -F ': ' '{print $2}')
+                # Extract Socket[0] Uncore Limits Min-Max(HZ)
+                UNCORE_FREQ_RANGE=$(echo "$probing_dump" | grep 'Socket\[0\] Uncore Limits Min-Max(HZ):' | awk -F ': ' '{print $2}'| tr -d '(),')
+
+                export OPTKIT_SOCKET0__ENABLED=1
+
+            elif [[ "$1" == "1" ]]; then
+                socket1=1
+                cores="$socket1_cpus"
+                # Extract Socket[1] Core Avail Freq(HZ)
+                CORE_FREQ_RANGE=$(echo "$probing_dump" | grep 'Socket\[1\] Core Avail Freq(HZ):' | awk -F ': ' '{print $2}')
+                # Extract Socket[1] Uncore Limits Min-Max(HZ)
+                UNCORE_FREQ_RANGE=$(echo "$probing_dump" | grep 'Socket\[1\] Uncore Limits Min-Max(HZ):' | awk -F ': ' '{print $2}'| tr -d '(),')
+
+                export OPTKIT_SOCKET1__ENABLED=1
+            fi
+            ;;
+        -c)
+            shift
+            command=$@
+            break
+            ;;
+        *)
+            echo "Invalid option: $1"
+            print_help
+            exit 1
+            ;;
+    esac
+    shift
+done
+
+# If no sockets specified, use all CPUs
+if [[ -z $socket0 && -z $socket1 ]]; then
+    cores="$socket0_cpus $socket1_cpus"
+fi
+
+# Flatten the cores variable (remove extra spaces)
+cores=$(echo $cores | xargs | tr ' ' ',')
+
+# Execute the command with varying thread counts
+max_cores=$(echo $cores | tr ',' ' ' | wc -w)
+ 
+## frequency loop
+echo "Core Freq Range: $CORE_FREQ_RANGE"
+echo "Uncore Freq Limits: $UNCORE_FREQ_RANGE"
+uncore_min=$(echo $UNCORE_FREQ_RANGE | awk '{print $1}')
+uncore_max=$(echo $UNCORE_FREQ_RANGE | awk '{print $2}')
+
+# Specify the increment step
+step=200000000
+
+# Generate the uncore frequency range manually
+uncore_range=""
+for (( i=$uncore_min; i<=$uncore_max; i+=$step ))
+do
+  uncore_range+="$i "
+done
+
+# Remove trailing space
+uncore_range=$(echo $uncore_range | sed 's/ $//')
+echo "Uncore Freq Range: $uncore_range"
+
+rm freq_mapping.txt
+
+count=0
+for CORE_FREQ in $CORE_FREQ_RANGE
+do
+    if (( count % 2 == 0 )); then
+        for UNCORE_FREQ in $uncore_range
+            do
+               if (( OPTKIT_SOCKET0__ENABLED == 1 ));then
+                    export OPTKIT_SOCKET0__UNCORE_FREQ=$UNCORE_FREQ
+                    export OPTKIT_SOCKET0__CORE_FREQ=$CORE_FREQ
+                    taskset -c "$cores" sudo $command
+                    echo "core freq: $OPTKIT_SOCKET0__CORE_FREQ  uncore_freq: $OPTKIT_SOCKET0__UNCORE_FREQ" >> freq_mapping.txt
+                fi
+                if (( OPTKIT_SOCKET1__ENABLED == 1 ));then
+                    export OPTKIT_SOCKET1__UNCORE_FREQ=$UNCORE_FREQ
+                    export OPTKIT_SOCKET1__CORE_FREQ=$CORE_FREQ
+                    taskset -c "$cores" sudo $command
+                    echo "core freq: $OPTKIT_SOCKET1__CORE_FREQ  uncore_freq: $OPTKIT_SOCKET1__UNCORE_FREQ" >> freq_mapping.txt
+                fi
+            done
+    fi
+    ((count++))
+done

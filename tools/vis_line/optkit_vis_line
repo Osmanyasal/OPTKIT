@@ -1,0 +1,193 @@
+#!/bin/python3
+import json
+import os
+import sys
+import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle
+import heapq
+
+sys.path.append('/usr/local/include')
+sys.path.append('../')
+from optkit_sandbox_utils import *
+
+#TODO: use opekit_sandbox_utils to fill arrays, 
+ 
+
+suggest = False
+cores = []
+file_name = ""
+
+def draw_line_chart(): 
+    # Subplot for Socket 0 and 1
+    fig, axes = plt.subplots(2, 1, figsize=(10, 8))
+    
+    # Socket 0
+    # if(len(socket0_energy_pkg_values) > 0):
+    #     axes[0].plot(cores, socket0_energy_pkg_values, marker='o', label='Energy Package (Joules)', linestyle='--', color='gold')
+        
+    # if(len(socket0_energy_ram_values) > 0):
+    #     axes[0].plot(cores, socket0_energy_ram_values, marker='o', label='Energy RAM (Joules)', linestyle='--', color='lightgreen')
+        
+    # if(len(socket0_energy_cores_values) > 0):
+    #     axes[0].plot(cores, socket0_energy_cores_values, marker='o', label='Energy CORES (Joules)', linestyle='--', color='orange')
+        
+    # if(len(socket0_energy_gpu_values) > 0):
+    #     axes[0].plot(cores, socket0_energy_gpu_values, marker='o', label='Energy GPU (Joules)', linestyle='--', color='cyan')
+        
+    # if(len(socket0_energy_psys_values) > 0):
+    #     axes[0].plot(cores, socket0_energy_psys_values, marker='o', label='Energy PSYS (Joules)', linestyle='--', color='cadetblue')
+
+    if(len(socket0_energy_total) > 0):
+        axes[0].plot(cores, socket0_energy_total, marker='D', label='Total Energy (Joules)', linestyle='-', color='green')
+
+    if(len(socket0_edp) > 0):
+        axes[0].plot(cores, [edp / 100 for edp in socket0_edp], marker='D', label='K-EDP (10 x KiloJoules x sec)', linestyle='-', color='orange')
+
+    if(len(socket0_power) > 0):
+        axes[0].plot(cores, [power * 100 for power in socket0_power], marker='P', label='Power (100 x Watts)', linestyle='-', color="steelblue")
+        # axes[0].plot(cores, [(p * 1000) / core for core, p in zip(cores, socket0_power)], marker='P', label='Power Efficiency (Power (Miliwatt) / # of cores)', linestyle='-', color="orange")
+
+    axes[0].set_ylabel('Socket 0\nEnergy (Joules)') 
+    axes[0].grid(True)
+     
+    axes0_2 = axes[0].twinx()
+    axes0_2.plot(cores, [duration / 1000 for duration in durations_ms], marker='.', label='Duration', linestyle=':', color='firebrick')
+    axes0_2.set_ylabel('Duration')   
+     
+    # Combine legends
+    lines_1, labels_1 = axes[0].get_legend_handles_labels()
+    lines_2, labels_2 = axes0_2.get_legend_handles_labels()
+    axes[0].legend(lines_1 + lines_2, labels_1 + labels_2)
+     
+    plt.xlabel('Cores')
+    plt.xticks(cores)
+
+    # Socket 1
+    # if(len(socket1_energy_pkg_values) > 0):
+    #     axes[1].plot(cores, socket1_energy_pkg_values, marker='o', label='Energy Package (Joules)', linestyle='--', color='gold')
+        
+    # if(len(socket1_energy_ram_values) > 0):
+    #     axes[1].plot(cores, socket1_energy_ram_values, marker='o', label='Energy RAM (Joules)', linestyle='--', color='lightgreen')
+        
+    # if(len(socket1_energy_cores_values) > 0):
+    #     axes[1].plot(cores, socket1_energy_cores_values, marker='o', label='Energy CORES (Joules)', linestyle='--', color='orange')
+        
+    # if(len(socket1_energy_gpu_values) > 0):
+    #     axes[1].plot(cores, socket1_energy_gpu_values, marker='o', label='Energy GPU (Joules)', linestyle='--', color='cyan')
+        
+    # if(len(socket1_energy_psys_values) > 0):
+    #     axes[1].plot(cores, socket1_energy_psys_values, marker='o', label='Energy PSYS (Joules)', linestyle='--', color='cadetblue')
+    
+    if(len(socket1_energy_total) > 0):
+        axes[1].plot(cores, socket1_energy_total, marker='D', label='Total Energy (Joules)', linestyle='-', color='green')
+
+    if(len(socket1_edp) > 0):
+        axes[1].plot(cores, [edp / 100 for edp in socket1_edp], marker='D', label='K-EDP (10 x KiloJoules x sec)', linestyle='-', color='orange')
+
+    if(len(socket1_power) > 0):
+        axes[1].plot(cores, [power * 100 for power in socket1_power], marker='P', label='Power (100 x Watts)', linestyle='-', color="steelblue")
+        # axes[1].plot(cores, [(p * 1000) / core for core, p in zip(cores, socket1_power)], marker='P', label='Power Efficiency (Power (Miliwatt) / # of cores)', linestyle='-', color="orange")
+        
+    axes[1].set_ylabel('Socket 1\nEnergy (Joules)') 
+    axes[1].grid(True)
+    
+    axes0_2 = axes[1].twinx()
+    axes0_2.plot(cores, [duration / 1000 for duration in durations_ms], marker='.', label='Duration', linestyle=':', color='firebrick')
+    axes0_2.set_ylabel('Duration')  
+ 
+    # Combine legends
+    lines_1, labels_1 = axes[1].get_legend_handles_labels()
+    lines_2, labels_2 = axes0_2.get_legend_handles_labels()
+    axes[1].legend(lines_1 + lines_2, labels_1 + labels_2)
+    
+    plt.xlabel('Cores')
+    plt.xticks(cores)
+    plt.get_current_fig_manager().set_window_title(file_name)
+
+
+    # Draw rectangles around core numbers
+  # Draw rectangles around core numbers (create separate rectangles for each subplot)
+
+    x_offset = 0.1  # Adjust this offset as needed
+    y_offset = -10000
+    width = 1
+    height = 100000  # Adjust this height as needed
+
+    if suggest:
+        
+        # socket0_edp_list = [edp / 100 for edp in socket0_edp]
+        # socket0_core_list = [cores[-1] - core if core < cores[-1] / 2 else core for core in cores]
+        # socket0_co_scheduling_suggestion_cores = [x / y**2 for x, y in zip(socket0_edp_list, socket0_core_list)]
+        # print("socket0_numbers", socket0_co_scheduling_suggestion_cores)
+
+        socket1_edp_list = [edp / 100 for edp in socket1_edp]
+        socket1_core_list = [cores[-1] - core if core < cores[-1] / 2 else core for core in cores]
+        socket1_co_scheduling_suggestion_cores = [x / y**4 for x, y in zip(socket1_edp_list, socket1_core_list)]
+        print("socket1_numbers", socket1_co_scheduling_suggestion_cores)
+
+        # largest = heapq.nlargest(len(cores) // 2, socket1_co_scheduling_suggestion_cores)
+
+        
+        prev_suggestion = socket1_co_scheduling_suggestion_cores[0]
+        suggest_count = 0
+        iter = -1
+        for core in cores:
+            if suggest_count >= 3 or iter >= len(cores)/2: break
+            iter += 1
+
+            # Create separate rectangles for each subplot
+            if prev_suggestion >= socket1_co_scheduling_suggestion_cores[iter]:
+                # prev_suggestion = socket1_co_scheduling_suggestion_cores[iter]
+                continue
+            
+            
+            prev_suggestion = socket1_co_scheduling_suggestion_cores[iter]
+            # if prev_suggestion not in largest: continue
+             
+            rect_1 = Rectangle(xy=(core - width / 2 - x_offset, y_offset), 
+                            width=width, height=height, fill=True, edgecolor='red',facecolor="#f1c23263")
+            rect_0 = Rectangle(xy=(core - width / 2 - x_offset, y_offset), 
+                            width=width, height=height, fill=True, edgecolor='red',facecolor="#f1c23263")
+            axes[0].add_patch(rect_0)
+            axes[1].add_patch(rect_1)
+            suggest_count +=1 
+            
+  
+    fig.suptitle('Energy Consumption of Socket 0 and Socket 1')
+    plt.tight_layout()
+    plt.show()
+ 
+
+def plot_json_files(json_files):
+    for file in json_files:
+        if(len(cores) == 0):
+            cores.append(1)
+        elif (cores[-1] == 1):
+            cores.append(2)
+        else:
+            cores.append(cores[-1] + 2)
+        load_measurements(file)
+        
+    draw_line_chart()
+
+
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("Usage: python script.py --suggest <file_or_directory>")
+        sys.exit(1)
+    
+    if sys.argv[1] == "--suggest":
+        suggest = True
+        path = sys.argv[2] 
+    else: path = sys.argv[1]
+    file_name = path
+    if os.path.isfile(path):
+        if path.endswith("enriched.json"):
+            load_measurements(path)
+        else:
+            print("The specified file is not an ENRICCHED JSON file.")
+    elif os.path.isdir(path):
+        json_files = get_json_files(path,"enriched.json")
+        plot_json_files(json_files)
+    else:
+        print("The specified path is not a valid file or directory.")

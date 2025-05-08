@@ -1,0 +1,14 @@
+#!/bin/bash
+ 
+if [[ $1 == "--help" ]]; then
+    echo "Usage: $0 <refresh_rate>"
+    exit 1
+fi
+
+if [[ -z $1 ]]; then
+    refresh_rate=1
+else
+    refresh_rate=$1
+fi
+
+watch -n $refresh_rate 'cat /sys/devices/system/cpu/cpu*/cpufreq/scaling_cur_freq';

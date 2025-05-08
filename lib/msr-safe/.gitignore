@@ -1,0 +1,15 @@
+a.out
+.*.tmp
+.*.swp
+.*.cmd
+.tmp_versions
+Module.symvers
+*.o
+*.ko
+*.mod.c
+*.unsigned
+modules.order
+msrsave/libspank_msrsafe.so
+msrsave/msrsave
+msrsave/msrsave_test
+*.mod

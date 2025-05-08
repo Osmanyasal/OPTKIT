@@ -1,0 +1,79 @@
+#!/bin/python3
+
+import json
+import os
+import sys 
+import numpy as np
+import matplotlib.pyplot as plt
+
+sys.path.append('/usr/local/include')
+sys.path.append('../')
+import optkit_sandbox_utils as optkit_utils
+   
+ 
+
+def draw_line_chart():
+    # Previous categories (labels) for the bars
+    categories = ['Total Energy (Joules)', 'Total Power (Milliwatt)']
+
+    # Define the x-axis positions for Socket 0 and Socket 1
+    x_pos_socket0 = np.arange(len(categories))
+    x_pos_socket1 = x_pos_socket0 + 0.35  # Offset for Socket 1
+
+    # Create a figure and axis object
+    fig, ax1 = plt.subplots(figsize=(10, 6))
+
+    # Create bars for Socket 0 energy (Joules) in blue
+    bars1 = ax1.bar(x_pos_socket0, [optkit_utils.socket0_energy_total[0], optkit_utils.socket0_power[0]], width=0.35, label='Socket 0', align='center', alpha=0.8)
+    bars2 = ax1.bar(x_pos_socket1, [optkit_utils.socket1_energy_total[0], optkit_utils.socket1_power[0]], width=0.35, label='Socket 1', align='center', alpha=0.8,color="orange")
+    
+    # Add data labels above the bars
+    for bar in bars1:
+        yval = bar.get_height()
+        ax1.text(bar.get_x() + bar.get_width() / 2, yval + 10, round(yval, 2), ha='center', va='bottom', fontsize=8)
+    
+    for bar in bars2:
+        yval = bar.get_height()
+        ax1.text(bar.get_x() + bar.get_width() / 2, yval + 10, round(yval, 2), ha='center', va='bottom', fontsize=8)
+
+    # Set the x-axis labels and tick positions
+    ax1.set_xticks(x_pos_socket0 + 0.175)
+    ax1.set_xticklabels(categories)
+
+    # Set labels for primary (left) and secondary (right) y-axes
+    ax1.set_ylabel('Energy (Joules)') 
+    
+    # Add a legend for both sets of bars
+    ax1.legend(loc='upper left')
+
+    # Set title
+    plt.title('Energy and Power Comparison (' + str(optkit_utils.durations[0]) + ' ms)')
+
+    # Show the plot
+    plt.tight_layout()
+    plt.show()
+
+ 
+if __name__ == "__main__":
+     
+    if len(sys.argv) < 2:
+        print("Usage: python script.py <# of files_or_directory>")
+        sys.exit(1)
+    
+    for path in sys.argv[1:]: 
+        if os.path.isfile(path):
+            if path.endswith("enriched.json"):
+                print(path) 
+                optkit_utils.load_measurements(path) 
+            else:
+                print("The specified file is not a ENRICHED JSON file.")
+                exit(1)
+
+        elif os.path.isdir(path):
+            json_files = optkit_utils.get_json_files(path)
+            for file in json_files: 
+                optkit_utils.load_measurements(file)
+        else:
+            print("The specified path is not a valid file or directory.")
+            
+    draw_line_chart()

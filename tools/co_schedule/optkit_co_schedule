@@ -1,0 +1,104 @@
+#!/bin/bash
+
+print_help() {
+    echo "Usage: $0 [OPTION] [<-c core_nums 'command'>...]"
+    
+    echo "-------"
+    # Print the extracted CPUs for verification
+    
+    if [[ -n $socket0 ]]; then
+	    echo "Socket 0 CPUs: $socket0"
+    fi
+    
+    if [[ -n $socket1 ]]; then
+	    echo "Socket 1 CPUs: $socket1"
+    fi
+	 
+    echo "-------"
+
+    echo "Options:"
+    echo "  --help      Display this help message"
+}
+
+taskset_pids=()
+cleanup() {
+    echo "Cleaning up..."
+
+    # Kill all taskset background processes
+    for pid in "${taskset_pids[@]}"; do
+        echo "Killing PID: $pid"
+        kill "$pid"
+    done
+}
+
+trap cleanup SIGINT
+
+
+# Check if numactl is installed
+if ! command -v numactl &> /dev/null; then
+    echo "numactl is not installed. Installing..."
+    
+    # Check the Linux distribution to determine the package manager
+    if [[ -n $(command -v apt) ]]; then
+        sudo apt update
+        sudo apt install -y numactl
+    elif [[ -n $(command -v yum) ]]; then
+        sudo yum install numactl
+    elif [[ -n $(command -v dnf) ]]; then
+        sudo dnf install numactl
+    elif [[ -n $(command -v zypper) ]]; then
+        sudo zypper install numactl
+    else
+        echo "Error: Unsupported package manager."
+        exit 1
+    fi
+    
+    # Check if installation was successful
+    if ! command -v numactl &> /dev/null; then
+        echo "Error: Failed to install numactl. Please install it manually."
+        exit 1
+    fi
+    
+    echo "numactl has been installed."
+# else
+#     echo "numactl is already installed."
+fi
+
+
+# Extract CPUs for socket 0
+socket0=$(numactl --hardware | awk '/node 0 cpus:/ {print substr($0, index($0, ":") + 2)}')
+
+# Extract CPUs for socket 1
+socket1=$(numactl --hardware | awk '/node 1 cpus:/ {print substr($0, index($0, ":") + 2)}')
+
+
+# Check if --help is passed as an argument
+if [[ "$@" < 3 || "$1" == "--help" ]]; then
+    print_help
+    exit 0
+fi
+
+
+local_command=""
+_c_occurred=0
+
+for param in "$@"; do
+    if [[ $param == "-c" ]]; then
+        if [[ $_c_occurred -eq 1 ]]; then
+            echo "executing: taskset $local_command"
+            taskset $local_command  &
+            taskset_pids+=($!)
+        fi
+        _c_occurred=1
+        local_command="-c"
+    else
+        local_command+=" $param"
+    fi
+done
+
+if [[ $_c_occurred -eq 1 ]]; then
+    echo "executing: taskset $local_command"
+    taskset $local_command &
+    taskset_pids+=($!)
+fi
+wait

@@ -1,0 +1,289 @@
+#!/bin/python3
+import json
+import os
+import sys
+import matplotlib.pyplot as plt
+
+sys.path.append('/usr/local/include')
+sys.path.append('../')
+from optkit_sandbox_utils import *
+   
+
+def generate_json_string(duration, 
+                         socket0_value_energy_pkg, 
+                         socket0_value_energy_ram, 
+                         socket0_value_energy_cores,
+                         socket0_value_energy_gpu,
+                         socket0_value_energy_psys,
+                         socket0_value_energy_total,
+                         socket0_value_energy_power,
+                         socket0_value_edp,
+                         
+                         socket1_value_energy_pkg, 
+                         socket1_value_energy_ram,
+                         socket1_value_energy_cores,
+                         socket1_value_energy_gpu,
+                         socket1_value_energy_psys,
+                         socket1_value_energy_total,
+                         socket1_value_energy_power,
+                         socket1_value_edp
+                         ):
+    json_string = f'''[
+    {{
+        "readings": [
+            {{
+                "duration": {duration},
+                "event_name": "rapl",
+                "metrics_set": [
+                    {{
+                        "description": "Consumed",
+                        "metric_name": "edp",
+                        "units": "Product",
+                        "value": {socket0_value_edp}
+                    }},
+                    {{
+                        "description": "Consumed",
+                        "metric_name": "energy-total",
+                        "units": "Joules",
+                        "value": {socket0_value_energy_total}
+                    }},
+                    {{
+                        "description": "Consumed",
+                        "metric_name": "power",
+                        "units": "Watt",
+                        "value": {socket0_value_energy_power}
+                    }},
+                    {{
+                        "description": "Consumed",
+                        "metric_name": "energy-pkg",
+                        "units": "Joules",
+                        "value": {socket0_value_energy_pkg}
+                    }},
+                    {{
+                        "description": "Consumed",
+                        "metric_name": "energy-ram",
+                        "units": "Joules",
+                        "value": {socket0_value_energy_ram}
+                    }},
+                    {{
+                        "description": "Consumed",
+                        "metric_name": "energy-cores",
+                        "units": "Joules",
+                        "value": {socket0_value_energy_cores}
+                    }},
+                    {{
+                        "description": "Consumed",
+                        "metric_name": "energy-gpu",
+                        "units": "Joules",
+                        "value": {socket0_value_energy_gpu}
+                    }},
+                    {{
+                        "description": "Consumed",
+                        "metric_name": "energy-psys",
+                        "units": "Joules",
+                        "value": {socket0_value_energy_psys}
+                    }}
+                ],
+                "package_number": 0
+            }},
+            {{
+                "duration": {duration},
+                "event_name": "rapl",
+                "metrics_set": [
+                    {{
+                        "description": "Consumed",
+                        "metric_name": "edp",
+                        "units": "Product",
+                        "value": {socket1_value_edp}
+                    }},
+                    {{
+                        "description": "Consumed",
+                        "metric_name": "energy-total",
+                        "units": "Joules",
+                        "value": {socket1_value_energy_total}
+                    }},
+                    {{
+                        "description": "Consumed",
+                        "metric_name": "power",
+                        "units": "Watt",
+                        "value": {socket1_value_energy_power}
+                    }},
+                    {{
+                        "description": "Consumed",
+                        "metric_name": "energy-pkg",
+                        "units": "Joules",
+                        "value": {socket1_value_energy_pkg}
+                    }},
+                    {{
+                        "description": "Consumed",
+                        "metric_name": "energy-ram",
+                        "units": "Joules",
+                        "value": {socket1_value_energy_ram}
+                    }},
+                    {{
+                        "description": "Consumed",
+                        "metric_name": "energy-cores",
+                        "units": "Joules",
+                        "value": {socket1_value_energy_cores}
+                    }},
+                    {{
+                        "description": "Consumed",
+                        "metric_name": "energy-gpu",
+                        "units": "Joules",
+                        "value": {socket1_value_energy_gpu}
+                    }},
+                    {{
+                        "description": "Consumed",
+                        "metric_name": "energy-psys",
+                        "units": "Joules",
+                        "value": {socket1_value_energy_psys}
+                    }}
+                ],
+                "package_number": 1
+            }}
+        ]
+    }}
+]'''
+    return json_string
+ 
+
+enrich_ctr = 0
+def enrich_measurements(json_file):
+    
+    ## read file
+    with open(json_file, "r") as file:
+        data = json.load(file)
+    
+    global enrich_ctr
+    enrich_ctr = enrich_ctr + 1
+    duration = data[0]["readings"][0]["duration"]
+    durations_ms.append(duration)
+    duration_sec = duration / 1000
+    
+    for reading in data[0]["readings"]:
+        socket = reading["package_number"]   
+        total_energy = 0
+        for metric in reading["metrics_set"]:
+            if metric["metric_name"] == "energy-pkg":
+                energy_pkg = metric["value"]
+                total_energy += energy_pkg
+                if socket == 0:
+                    socket0_energy_pkg_values.append(energy_pkg)
+                else:
+                    socket1_energy_pkg_values.append(energy_pkg)
+
+            elif metric["metric_name"] == "energy-ram":
+                energy_ram = metric["value"] 
+                total_energy += energy_ram
+                if socket == 0:
+                    socket0_energy_ram_values.append(energy_ram)
+                else:
+                    socket1_energy_ram_values.append(energy_ram)
+                    
+            elif metric["metric_name"] == "energy-cores":
+                energy_cores = metric["value"]
+                if socket == 0:
+                    socket0_energy_cores_values.append(energy_cores)
+                else:
+                    socket1_energy_cores_values.append(energy_cores)
+                    
+            elif metric["metric_name"] == "energy-gpu":
+                energy_gpu = metric["value"]
+                if socket == 0:
+                    socket0_energy_gpu_values.append(energy_gpu)
+                else:
+                    socket1_energy_gpu_values.append(energy_gpu)
+                    
+            elif metric["metric_name"] == "energy-psys":
+                energy_psys = metric["value"]
+                total_energy += energy_psys
+                if socket == 0:
+                    socket0_energy_psys_values.append(energy_psys)
+                else:
+                    socket1_energy_psys_values.append(energy_psys)
+                      
+        if socket == 0:
+            socket0_energy_total.append(total_energy)
+            socket0_power.append(total_energy / duration_sec) ## joules / time (sec) = power
+            socket0_edp.append(total_energy * duration_sec) ## joules x time (sec) = edp
+
+            if len(socket0_energy_cores_values) != enrich_ctr:
+                socket0_energy_cores_values.append(-1)
+
+            if len(socket0_energy_pkg_values) != enrich_ctr:
+                socket0_energy_pkg_values.append(-1)
+
+            if len(socket0_energy_ram_values) != enrich_ctr:
+                socket0_energy_ram_values.append(-1)
+
+            if len(socket0_energy_gpu_values) != enrich_ctr:
+                socket0_energy_gpu_values.append(-1)
+
+            if len(socket0_energy_psys_values) != enrich_ctr:
+                socket0_energy_psys_values.append(-1)
+        else:
+            socket1_energy_total.append(total_energy)
+            socket1_power.append(total_energy / duration_sec)  ## joules / time (sec) = power
+            socket1_edp.append(total_energy * duration_sec) ## joules x time (sec) = edp
+
+            if len(socket1_energy_cores_values) != enrich_ctr:
+                socket1_energy_cores_values.append(-1)
+
+            if len(socket1_energy_pkg_values) != enrich_ctr:
+                socket1_energy_pkg_values.append(-1)
+
+            if len(socket1_energy_ram_values) != enrich_ctr:
+                socket1_energy_ram_values.append(-1)
+
+            if len(socket1_energy_gpu_values) != enrich_ctr:
+                socket1_energy_gpu_values.append(-1)
+
+            if len(socket1_energy_psys_values) != enrich_ctr:
+                socket1_energy_psys_values.append(-1)
+     
+
+def process(json_files):
+
+    for file in json_files: 
+        file_names.append(file)
+        enrich_measurements(file)
+    print("All files filled in !!!")
+    
+    for ctr in range(len(json_files)):
+        
+        _duration_ms = durations_ms[ctr] ## ms
+        enriched_json = generate_json_string(_duration_ms,
+                                        socket0_energy_pkg_values[ctr],
+                                        socket0_energy_ram_values[ctr],
+                                        socket0_energy_cores_values[ctr],
+                                        socket0_energy_gpu_values[ctr],
+                                        socket0_energy_psys_values[ctr],
+                                        socket0_energy_total[ctr], 
+                                        socket0_power[ctr], 
+                                        socket0_edp[ctr],
+                                        socket1_energy_pkg_values[ctr],
+                                        socket1_energy_ram_values[ctr],
+                                        socket1_energy_cores_values[ctr],
+                                        socket1_energy_gpu_values[ctr],
+                                        socket1_energy_psys_values[ctr],
+                                        socket1_energy_total[ctr], 
+                                        socket1_power[ctr],
+                                        socket1_edp[ctr],
+                                        )
+        write_json_to_file(enriched_json,file_names[ctr]+"__enriched.json")
+        
+if __name__ == "__main__":
+    if len(sys.argv) != 2 and len(sys.argv) != 3:
+        print("Usage: python script.py <files_or_directories>")
+        sys.exit(1)
+    
+    for path in sys.argv[1:]:
+        if os.path.isfile(path):
+            if path.endswith(".json"):
+                process([path])
+            else:
+                print("The specified file is not a JSON file.")
+        elif os.path.isdir(path):
+            process(get_json_files(path))
+        else:
+            print("The specified path is not a valid file or directory.")

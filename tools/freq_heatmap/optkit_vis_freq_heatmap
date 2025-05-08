@@ -1,0 +1,148 @@
+#!/bin/python3
+import sys
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns 
+from print_dict import pd
+sys.path.append('/usr/local/include')
+sys.path.append('../')
+from optkit_sandbox_utils import *
+
+def read_freq_mapping(file_path):
+    core_freqs = []
+    uncore_freqs = []
+    entry_and_values = {}
+    with open(file_path, 'r') as file:
+        for line in file:
+            parts = line.strip().split()
+            core_freq = int(parts[2]) / 10**9
+            uncore_freq = int(parts[4]) / 10**9
+
+            if core_freq not in core_freqs:
+                core_freqs.append(core_freq)
+            if uncore_freq not in uncore_freqs:
+                uncore_freqs.append(uncore_freq)
+
+            entry = str(core_freq) +"-"+str(uncore_freq)
+            entry_and_values[entry] = 0
+    return core_freqs, uncore_freqs, entry_and_values
+
+def fill_entry_values(search_key,socket,entry_and_values):
+    
+    ctor = 0
+    if socket == 0:
+        for key in entry_and_values.keys():
+            if search_key == "edp":
+                entry_and_values[key] = socket0_edp[ctor]
+                ctor+=1
+            elif search_key == "duration":
+                entry_and_values[key] = durations_ms[ctor]
+                ctor+=1
+            elif search_key == "energy-total":
+                entry_and_values[key] = socket0_energy_total[ctor]
+                ctor+=1
+            elif search_key == "power":
+                entry_and_values[key] = socket0_power[ctor]
+                ctor+=1
+            elif search_key == "energy-pkg":
+                entry_and_values[key] = socket0_energy_pkg_values[ctor]
+                ctor+=1
+            elif search_key == "energy-cores":
+                entry_and_values[key] = socket0_energy_cores_values[ctor]
+                ctor+=1
+            elif search_key == "energy-ram":
+                entry_and_values[key] = socket0_energy_ram_values[ctor]
+                ctor+=1
+            elif search_key == "energy-gpu":
+                entry_and_values[key] = socket0_energy_gpu_values[ctor]
+                ctor+=1
+            elif search_key == "energy-psys":
+                entry_and_values[key] = socket0_energy_psys_values[ctor]
+                ctor+=1
+    elif socket == 1:
+        for key in entry_and_values.keys():
+            if search_key == "edp":
+                entry_and_values[key] = socket1_edp[ctor]
+                ctor+=1
+            elif search_key == "duration":
+                entry_and_values[key] = durations_ms[ctor]
+                ctor+=1
+            elif search_key == "energy-total":
+                entry_and_values[key] = socket1_energy_total[ctor]
+                ctor+=1
+            elif search_key == "power":
+                entry_and_values[key] = socket1_power[ctor]
+                ctor+=1
+            elif search_key == "energy-pkg":
+                entry_and_values[key] = socket1_energy_pkg_values[ctor]
+                ctor+=1
+            elif search_key == "energy-cores":
+                entry_and_values[key] = socket1_energy_cores_values[ctor]
+                ctor+=1
+            elif search_key == "energy-ram":
+                entry_and_values[key] = socket1_energy_ram_values[ctor]
+                ctor+=1
+            elif search_key == "energy-gpu":
+                entry_and_values[key] = socket1_energy_gpu_values[ctor]
+                ctor+=1
+            elif search_key == "energy-psys":
+                entry_and_values[key] = socket1_energy_psys_values[ctor]
+                ctor+=1
+    else: print("[ERR]: Unknown socket!")
+
+
+def generate_heatmap(core_freqs, uncore_freqs,entry_and_values,search_key):
+    core_freqs = np.array(core_freqs)
+    uncore_freqs = np.array(uncore_freqs)
+    
+    # heatmap_values = np.random.rand(len(core_freqs), len(uncore_freqs))  # replace with your actual values
+
+    # Initialize an empty 2D array for heatmap values
+    heatmap_values = np.zeros((len(core_freqs), len(uncore_freqs)))
+    
+    # Populate heatmap values from the dictionary
+    for key, value in entry_and_values.items():
+        core, uncore = map(float, key.split('-'))
+        core_index = np.nonzero(core_freqs == core)[0][0]
+        uncore_index = np.nonzero(uncore_freqs == uncore)[0][0]
+        heatmap_values[core_index, uncore_index] = value 
+    
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(heatmap_values, xticklabels=uncore_freqs, yticklabels=core_freqs, cmap="RdYlGn_r")
+    plt.xlabel('Uncore Frequency(GHz)')
+    plt.ylabel('Core Frequency(GHz)')
+    plt.title('Heatmap of Core vs Uncore Frequencies with "'+ search_key+"\"")
+    plt.show()
+
+if __name__ == "__main__":
+    if len(sys.argv) != 4:
+        print("Usage: python script.py <search_key> <socket> <directory>")
+        sys.exit(1)
+    
+    search_key = sys.argv[1]
+    socket = int(sys.argv[2])
+    path = sys.argv[3] 
+    file_name = path
+    if os.path.isdir(path):
+        json_files = get_json_files(path,"enriched.json")
+        if len(json_files) == 0:
+            print("NO enriched files found!")
+            sys.exit(-1)
+        for file in json_files:
+            load_measurements(file)
+    else:
+        print("The specified path is not a valid a directory.")
+ 
+    print("search_key:",search_key)
+    file_path = 'freq_mapping.txt'
+    core_freqs, uncore_freqs, entry_and_values = read_freq_mapping(file_path)
+    fill_entry_values(search_key,socket,entry_and_values)
+    print("core frequencies :", core_freqs)
+    print("uncore frequencies :", uncore_freqs)
+
+    max_key = max(entry_and_values, key=entry_and_values.get)
+    min_key = min(entry_and_values, key=entry_and_values.get)
+    print(f"The key with the maximum value is: {max_key}")
+    print(f"The key with the minimum value is: {min_key}")
+    pd(entry_and_values,search_key)
+    generate_heatmap(core_freqs, uncore_freqs,entry_and_values,search_key)
