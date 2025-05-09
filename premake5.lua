@@ -17,9 +17,9 @@ local UTILS_DIR = './src/utils'
 local LIB_X86_ADAPT_PATH = './lib/x86-adapt'
 local WHOAMI = io.popen("whoami"):read("*a"):gsub("\n", "")
 
-local OPTKIT_APP = "OPTKIT_APP"
-local OPTKIT_LIB_DYNAMIC = "OPTKIT_SO"
-local OPTKIT_LIB_STATIC = "OPTKIT_A"
+local OPTKIT_APP = "OPTKIT.main"
+local OPTKIT_LIB_DYNAMIC = "OPTKIT.so"
+local OPTKIT_LIB_STATIC = "OPTKIT.a"
 
 
 function BaseProjectSetup()
@@ -58,6 +58,7 @@ function BaseProjectSetup()
 
     prebuildcommands {
         -- Use global variables in the prebuildcommands
+        "@./generate_environment_config.sh",  -- execute generate_config to create environment.hh
 
         "@echo [CHECK MSR-SAFE]",
         "if [ ! -f " .. LIB_MSR_SAFE_PATH .. "/all_set ]; then \\",
@@ -91,7 +92,6 @@ function BaseProjectSetup()
 
     local actions = {
         clean = "clean",          -- clean the optkit build.
-        return0 = "return0",      -- clean the build, events, and libs, simply un-build everything
         install = "install",      -- build & install libs
         remove = "remove",        -- remove installed libs from the system
         gen_doc = "gen-doc",      -- generate documentaiton
@@ -103,22 +103,19 @@ function BaseProjectSetup()
         trigger = actions.clean,
         description = "clean bin and build directory",
         execute = function()
-            print("[CLEANING] ./bin")
+            print("[CLEANING]: ./bin")
             os.rmdir("./bin")
 
-            print("[CLEANING] ./build")
+            print("[CLEANING]: ./build")
             os.rmdir("./build")
 
-            print("[REMOVE] Makefile")
-            os.remove("Makefile")
-
-            print("[REMOVE] " .. OPTKIT_APP .. ".make")
+            print("[REMOVE]: " .. OPTKIT_APP .. ".make")
             os.remove(OPTKIT_APP .. ".make")
 
-            print("[REMOVE] " .. OPTKIT_LIB_DYNAMIC .. ".make")
+            print("[REMOVE]: " .. OPTKIT_LIB_DYNAMIC .. ".make")
             os.remove(OPTKIT_LIB_DYNAMIC .. ".make")
 
-            print("[REMOVE] lib" .. OPTKIT_LIB_STATIC .. ".make")
+            print("[REMOVE]: " .. OPTKIT_LIB_STATIC .. ".make")
             os.remove(OPTKIT_LIB_STATIC .. ".make")
 
             print("🧹 Cleaned build directories!")
@@ -126,44 +123,12 @@ function BaseProjectSetup()
     }
 
     newaction {
-        trigger = actions.return0,
-        description = "un-build everything",
-        execute = function()
-            print("[CLEANING]: ./bin")
-            os.rmdir("./bin")
-
-            print("[CLEANING]: ./build")
-            os.rmdir("./build")
-
-            print("[CLEANING]: ./src/core/events")
-            os.rmdir("./src/core/events")
-
-            print("[CLEANING]: " .. LIB_SPD_PATH)
-            os.execute("cd " .. LIB_SPD_PATH .. " && ./install.sh clean")
-
-            print("[CLEANING]: " .. LIB_PFM_PATH)
-            os.execute("cd " .. LIB_PFM_PATH .. " && ./install.sh clean")
-
-            print("[CLEANING]: " .. LIB_MSR_SAFE_PATH)
-            os.execute("cd " .. LIB_MSR_SAFE_PATH .. " && make clean && rm all_set && sudo rmmod msr-safe")
-
-            print("[REMOVE]: Makefile")
-            os.remove("Makefile")
-
-            print("[REMOVE]: OptimizerToolkit.make")
-            os.remove("OptimizerToolkit.make")
-
-            print("[Cleaned 🧹]: build directories!")
-        end
-    }
-
-    newaction {
         trigger = actions.install,
-        description = "Install headers and libraries to system directories",
+        description = "Install OPTKIT headers and libs to system directories",
         execute = function()
             -- Check if the Release directory exists
             if not os.isdir("./bin/Release") then
-                print("❌ Release directory not found!")
+                print("❌ Release directory not found! Only config=release builds can be installed to the system.")
                 return
             end
 
@@ -215,7 +180,7 @@ end
 
 workspace "OPTKIT"
 configurations { "Debug", "Release" }
-architecture "x64"
+-- architecture "x86_64"
 
 project(OPTKIT_APP)
 kind "ConsoleApp"
