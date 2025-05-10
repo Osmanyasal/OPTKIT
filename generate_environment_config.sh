@@ -74,4 +74,4 @@ check_header "nvml.h"
 check_header "rocm_smi/rocm_smi.h"
 check_header "msr_safe.h"
 
-echo "[generate_environment_config.sh executed!]"
+echo "[✅ generate_environment_config.sh executed]"

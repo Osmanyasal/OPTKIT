@@ -17,9 +17,9 @@ local UTILS_DIR = './src/utils'
 local LIB_X86_ADAPT_PATH = './lib/x86-adapt'
 local WHOAMI = io.popen("whoami"):read("*a"):gsub("\n", "")
 
-local OPTKIT_APP = "OPTKIT.main"
-local OPTKIT_LIB_DYNAMIC = "OPTKIT.so"
-local OPTKIT_LIB_STATIC = "OPTKIT.a"
+local OPTKIT_APP = "OPTKIT_APP"
+local OPTKIT_LIB_DYNAMIC = "OPTKIT_LIB_SO"
+local OPTKIT_LIB_STATIC = "OPTKIT_LIB_A"
 
 
 function BaseProjectSetup()
@@ -29,7 +29,9 @@ function BaseProjectSetup()
     objdir "bin/obj"
 
     includedirs {
-        "./src/"
+        "./src/",
+        "./lib/libpfm4/include",
+        "./lib/spdlog/include"
     }
 
     files {
@@ -37,57 +39,75 @@ function BaseProjectSetup()
         "./src/**.hh"
     }
 
+    removefiles
+    {
+        "./src/core/**/*_governor.cc",
+        "./src/core/**/*_governor.hh",
+    }
+
+
     -- Linking dynamic libraries for Intel systems
     linkoptions { "-fopenmp" }
-    links { "pthread", "dl", "tensorflow", "spdlog", "pfm" }
+    libdirs { "./lib/libpfm4/lib", "./lib/spdlog/build" }
+    links { "pthread", "dl", "spdlog", "pfm" } -- "tensorflow"
 
     -- Compiler options
     filter "configurations:Debug"
     symbols "On"
     defines { "OPTKIT_MODE_DEBUG" }
     buildoptions { "-Wall", "-O0", "-g", "-fopenmp", "-msse", "-march=native" }
+    filter {} -- stop filtering, below is globally accessible
 
     filter "configurations:Release"
     optimize "On"
     symbols "Off"
     defines { "OPTKIT_MODE_NDEBUG" }
     buildoptions { "-Wall", "-O2", "-fopenmp", "-msse", "-march=native" }
-
+    postbuildcommands {
+        "echo [COMPILE UTILITY TOOLS]",
+        "cd ./tools && ./compile.sh && echo [✅ COMPILE UTILITY TOOLS]"
+    }
     filter {} -- stop filtering, below is globally accessible
 
 
     prebuildcommands {
         -- Use global variables in the prebuildcommands
-        "@./generate_environment_config.sh",  -- execute generate_config to create environment.hh
+        "@./generate_environment_config.sh", -- execute generate_config to create environment.hh
 
-        "@echo [CHECK MSR-SAFE]",
-        "if [ ! -f " .. LIB_MSR_SAFE_PATH .. "/all_set ]; then \\",
-        "    cd " .. LIB_MSR_SAFE_PATH .. " && make clean && make && make install && (sudo rmmod msr-safe || true) && \\",
-        "    (sudo insmod ./msr-safe.ko || true) && sudo chmod g+rw /dev/cpu/*/msr_safe /dev/cpu/msr_* && \\",
-        "    sudo chgrp " .. WHOAMI .. " /dev/cpu/*/msr_safe /dev/cpu/msr_batch /dev/cpu/msr_safe_version && \\",
-        "    sudo chgrp " .. WHOAMI .. " /dev/cpu/msr_allowlist && \\",
-        "    echo \"0x00000620 0xFFFFFFFFFFFFFFFF\" > /dev/cpu/msr_allowlist && \\",
-        "    touch all_set; \\",
-        "fi",
+        -- "@echo [CHECK MSR-SAFE]",
+        -- "if [ ! -f " .. LIB_MSR_SAFE_PATH .. "/all_set ]; then \\",
+        -- "    cd " .. LIB_MSR_SAFE_PATH .. " && make clean && make && make install && (sudo rmmod msr-safe || true) && \\",
+        -- "    (sudo insmod ./msr-safe.ko || true) && sudo chmod g+rw /dev/cpu/*/msr_safe /dev/cpu/msr_* && \\",
+        -- "    sudo chgrp " .. WHOAMI .. " /dev/cpu/*/msr_safe /dev/cpu/msr_batch /dev/cpu/msr_safe_version && \\",
+        -- "    sudo chgrp " .. WHOAMI .. " /dev/cpu/msr_allowlist && \\",
+        -- "    echo \"0x00000620 0xFFFFFFFFFFFFFFFF\" > /dev/cpu/msr_allowlist && \\",
+        -- "    touch all_set; \\",
+        -- "fi",
 
-        "@echo [CHECK SPDLOG]",
-        "if [ ! -f " .. LIB_SPD_PATH .. "/build/libspdlog.a ]; then \\",
-        "    cd " .. LIB_SPD_PATH .. " && ./install.sh; \\",
-        "fi",
+        -- "@echo [COMPILE SPDLOG]",
+        -- "if [ ! -f " .. LIB_SPD_PATH .. "/build/libspdlog.a ]; then \\",
+        -- "    cd " .. LIB_SPD_PATH .. " && ./compile.sh; \\",
+        -- "fi",
+        -- "@echo [✅ COMPILE SPDLOG]",
 
-        "@echo [CHECK LIBPFM]",
-        "if [ ! -f " .. LIB_PFM_PATH .. "/all_set ]; then \\",
-        "    cd " .. LIB_PFM_PATH .. " && ./install.sh; \\",
-        "fi",
+        -- SPDLOG compilation
+        "@echo [COMPILE SPDLOG]",
+        "@bash -c 'if [ ! -f \"" .. LIB_SPD_PATH .. "/build/libspdlog.a\" ]; then cd " .. LIB_SPD_PATH .. " && ./compile.sh; fi && echo [✅ COMPILE SPDLOG] || echo [❌ COMPILE SPDLOG ERROR]'",
 
+        -- LIBPFM compilation
+        "@echo [COMPILE LIBPFM]",
+        "@bash -c 'if [ ! -f \"" .. LIB_PFM_PATH .. "/lib/libpfm.a\" ]; then cd " .. LIB_PFM_PATH .. " && ./compile.sh; fi && echo [✅ COMPILE LIBPFM] || echo [❌ COMPILE LIBPFM ERROR]'",
+
+        -- Check and export events from libpfm4
         "@echo [CHECK EVENTS]",
         "if [ ! -f " .. CORE_EVENTS_DIR .. "/all_set ]; then \\",
         "    echo \"⛏️ Exporting events from libpfm4\" && \\",
         "    mkdir -p " .. CORE_EVENTS_DIR .. " && \\",
         "    cd " .. UTILS_DIR .. " && \\",
         "    python3 pmu_parser.py $(shell find " .. LIB_PFM_PATH .. "/lib/events -type f \\( -name \"intel*.h\" -or -name \"amd*.h\" -or -name \"arm*.h\" -or -name \"power*.h\" \\) -exec echo \"../../{}\" \\;) && \\",
-        "    touch ../../" .. CORE_EVENTS_DIR .. "/all_set; \\",
-        "fi",
+        "    touch ../../" .. CORE_EVENTS_DIR .. "/all_set;\\",
+        "fi && \\",
+        "echo [✅ CHECK EVENTS] || echo [❌ CHECK EVENTS ERROR]",
     }
 
     local actions = {
@@ -109,6 +129,9 @@ function BaseProjectSetup()
             print("[CLEANING]: ./build")
             os.rmdir("./build")
 
+            print("[REMOVE]: ./Makefile")
+            os.remove("./Makefile")
+
             print("[REMOVE]: " .. OPTKIT_APP .. ".make")
             os.remove(OPTKIT_APP .. ".make")
 
@@ -124,7 +147,7 @@ function BaseProjectSetup()
 
     newaction {
         trigger = actions.install,
-        description = "Install OPTKIT headers and libs to system directories",
+        description = "Install OPTKIT headers and libs + dependencies to system directories",
         execute = function()
             -- Check if the Release directory exists
             if not os.isdir("./bin/Release") then
@@ -132,18 +155,28 @@ function BaseProjectSetup()
                 return
             end
 
-            print("[Installing]: headers and libraries!")
-            os.execute("sudo rm -rf /usr/local/include/optkit/ && sudo mkdir -p /usr/local/include/optkit")                      -- create optkit directory for headers
+            print("[Installing]: SPDLOG headers")
             os.execute(
-            "cd ./src; sudo find ./ -type f -name \"*.hh\" -exec cp --parents {} \"/usr/local/include/optkit/\" \\;")            -- copy all header files by keeping the file structure as-is
-            os.execute("sudo cp -R ./bin/Release/lib" .. OPTKIT_LIB_STATIC .. ".a /usr/local/lib")                               -- copy static library
-            os.execute("sudo cp -R ./bin/Release/lib" .. OPTKIT_LIB_DYNAMIC .. ".so /usr/local/lib")                             -- copy dynamic library
-            print("[Installed ✅]: headers and libraries!")
+                "cd ./lib/spdlog/ && ./compile.sh && sudo cp -R ./include/spdlog /usr/local/include/ && sudo cp ./build/libspdlog.a /usr/local/lib")
+
+            print("[Installing]: PFM4 headers")
+            os.execute("cd ./lib/libpfm4/ && ./compile.sh && sudo make install && sudo make install-all")
+
+            -- print("[Installing]: MSR-SAFE")
+            -- os.execute("cd ./lib/msr-safe/ && ./compile.sh && ./sudo cp -R ./include/spdlog /usr/local/include/")
+
+            print("[Installing]: headers and libraries!")
+            os.execute("sudo rm -rf /usr/local/include/optkit/ && sudo mkdir -p /usr/local/include/optkit")               -- create optkit directory for headers
+            os.execute(
+                "cd ./src; sudo find ./ -type f -name \"*.hh\" -exec cp --parents {} \"/usr/local/include/optkit/\" \\;") -- copy all header files by keeping the file structure as-is
+            os.execute("sudo cp -R ./bin/Release/lib" .. OPTKIT_LIB_STATIC .. ".a /usr/local/lib")                        -- copy static library
+            os.execute("sudo cp -R ./bin/Release/lib" .. OPTKIT_LIB_DYNAMIC .. ".so /usr/local/lib")                      -- copy dynamic library
+            print("[✅ Installed]: headers and libraries!")
 
             -- BUILD TOOLS AND ALSO INSTALL THEM, TOOLS WILL BE USING THE STATIC-DYNAMIC LIBRARY THAT'S INSTALLED.
             print("[Installing]: utility tools!")
             os.execute("cd ./tools && ./install.sh")
-            print("[Installed ✅]: utility tools!")
+            print("[✅ Installed]: utility tools!")
         end
     }
 
@@ -152,9 +185,9 @@ function BaseProjectSetup()
         description = "Remove OPTKIT from the system. (deletes all OPTKIT-cli and libraries from the system)",
         execute = function()
             print("[Removing]: OPTKIT from the system")
-            os.execute("rm -rf /usr/local/include/optkit") -- removes optkit headers
-            os.execute("rm -f /usr/local/bin/optkit*")     -- removes optkit binaries
-            os.execute("rm -f /usr/local/lib/liboptkit.a") -- removes optkit library
+            os.execute("sudo rm -rf /usr/local/include/optkit") -- removes optkit headers
+            os.execute("sudo rm -f /usr/local/bin/optkit*")     -- removes optkit binaries
+            os.execute("sudo rm -f /usr/local/lib/liboptkit.a") -- removes optkit library
             print("[Removed 🧹]: OPTKIT from the system")
         end
     }

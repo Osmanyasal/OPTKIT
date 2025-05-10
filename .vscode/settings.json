@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "*.make": "makefile",
+        "string": "cpp",
+        "memory": "cpp",
+        "functional": "cpp"
+    }
+}

@@ -5,7 +5,8 @@
 #include <fcntl.h>
 #include <sys/ptrace.h>
 #include <sys/mman.h>
-#include <tensorflow/c/c_api.h>
+
+// #include <tensorflow/c/c_api.h>
 
 #include "core/profiling/profiler_config.hh"
 #include "core/profiling/pmu/block_group_profiler.hh"

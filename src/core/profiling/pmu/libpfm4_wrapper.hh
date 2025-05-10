@@ -1,6 +1,6 @@
 #pragma once
 
-#include <perfmon/pfmlib.h>
+#include "perfmon/pfmlib.h"
 
 namespace optkit::core::pmu
 {
