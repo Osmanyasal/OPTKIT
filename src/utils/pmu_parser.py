@@ -84,11 +84,17 @@ def process_event_dic(event_dict,event_pe):
                 event_name = "_"+event_name 
         
         if vendor_name != "ibm":
-            event_code = next((item for item in members if ".code" in item.replace(" ",""))," ").split("=")[-1].replace("\"","").strip()
+            event_code = next((item for item in members if ".code" in item.replace(" ","")),"").split("=")[-1].replace("\"","").strip()
             event_desc = next((item for item in members if ".desc" in item.replace(" ",""))," ").split("=")[-1].replace("\"","").strip()
+            if event_code == "":
+                event_code = "0x000000000"
+                event_desc = "*** NOT FOUND!! Asinging 0x00000000 " + event_desc
         else:
-            event_code = next((item for item in members if "code" in item.replace(" ",""))," ").split("=")[-1].replace("\"","").strip()
+            event_code = next((item for item in members if "code" in item.replace(" ","")),"").split("=")[-1].replace("\"","").strip()
             event_desc = next((item for item in members if "desc" in item.replace(" ",""))," ").split("=")[-1].replace("\"","").strip()
+            if event_code == "":
+                event_code = "0x000000000"
+                event_desc = "*** NOT FOUND!! Asinging 0x00000000 " + event_desc
             
         event_umasks = next((item for item in members if ".umasks" in item.replace(" "," ")),"").split("=")[-1].replace("\"","").strip()
         if len(event_umasks) > 0:

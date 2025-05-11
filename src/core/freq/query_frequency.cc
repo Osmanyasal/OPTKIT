@@ -18,49 +18,120 @@ namespace optkit::core::freq
 
     int64_t QueryFreq::get_bios_limit(int32_t core)
     {
-        static std::string file_content = read_file("/sys/devices/system/cpu/cpu" + std::to_string(core) + "/cpufreq/bios_limit", false);
-        return std::stol(file_content) * 1000;
+        try
+        {
+            static std::string path = "/sys/devices/system/cpu/cpu" + std::to_string(core) + "/cpufreq/bios_limit";
+            std::string file_content = read_file(path, false);
+            return std::stol(file_content) * 1000;
+        }
+        catch (const std::exception &e)
+        {
+            OPTKIT_CORE_ERROR("Failed to get BIOS limit for core {}: {}", core, e.what());
+            return -1; // or another sentinel value or rethrow if preferred
+        }
     }
 
     std::string QueryFreq::get_scaling_driver(int32_t core)
     {
-        static std::string scaling_driver = read_file("/sys/devices/system/cpu/cpu" + std::to_string(core) + "/cpufreq/scaling_driver", false);
-        return scaling_driver;
+        try
+        {
+            static std::string path = "/sys/devices/system/cpu/cpu" + std::to_string(core) + "/cpufreq/scaling_driver";
+            return read_file(path, false);
+        }
+        catch (const std::exception &e)
+        {
+            OPTKIT_CORE_ERROR("Failed to get scaling driver for core {}: {}", core, e.what());
+            return "";
+        }
     }
 
     std::string QueryFreq::get_scaling_governor(int32_t core)
-    { 
-        std::string scaling_governor = read_file("/sys/devices/system/cpu/cpu" + std::to_string(core) + "/cpufreq/scaling_governor", false);
-        return scaling_governor;
+    {
+        try
+        {
+            static std::string path = "/sys/devices/system/cpu/cpu" + std::to_string(core) + "/cpufreq/scaling_governor";
+            return read_file(path, false);
+        }
+        catch (const std::exception &e)
+        {
+            OPTKIT_CORE_ERROR("Failed to get scaling governor for core {}: {}", core, e.what());
+            return "";
+        }
     }
 
     std::vector<std::string> QueryFreq::get_available_governors(int32_t core)
     {
-        static std::string available_governors = read_file("/sys/devices/system/cpu/cpu" + std::to_string(core) + "/cpufreq/scaling_available_governors", false);
-        return str_split(available_governors, " ");
+        try
+        {
+            static std::string path = "/sys/devices/system/cpu/cpu" + std::to_string(core) + "/cpufreq/scaling_available_governors";
+            std::string available_governors = read_file(path, false);
+            return str_split(available_governors, " ");
+        }
+        catch (const std::exception &e)
+        {
+            OPTKIT_CORE_ERROR("Failed to get available governors for core {}: {}", core, e.what());
+            return {};
+        }
     }
 
     int64_t QueryFreq::get_scaling_max_limit(int32_t core)
     {
-        std::string file_content = read_file("/sys/devices/system/cpu/cpu" + std::to_string(core) + "/cpufreq/scaling_max_freq", false);
-        return std::stol(file_content) * 1000;
+        try
+        {
+            static std::string path = "/sys/devices/system/cpu/cpu" + std::to_string(core) + "/cpufreq/scaling_max_freq";
+            std::string content = read_file(path, false);
+            return std::stol(content) * 1000;
+        }
+        catch (const std::exception &e)
+        {
+            OPTKIT_CORE_ERROR("Failed to get scaling max limit for core {}: {}", core, e.what());
+            return -1;
+        }
     }
 
     int64_t QueryFreq::get_scaling_min_limit(int32_t core)
     {
-        std::string file_content = read_file("/sys/devices/system/cpu/cpu" + std::to_string(core) + "/cpufreq/scaling_min_freq", false);
-        return std::stol(file_content) * 1000;
+        try
+        {
+            static std::string path = "/sys/devices/system/cpu/cpu" + std::to_string(core) + "/cpufreq/scaling_min_freq";
+            std::string content = read_file(path, false);
+            return std::stol(content) * 1000;
+        }
+        catch (const std::exception &e)
+        {
+            OPTKIT_CORE_ERROR("Failed to get scaling min limit for core {}: {}", core, e.what());
+            return -1;
+        }
     }
 
     int64_t QueryFreq::get_cpuinfo_max_freq(int32_t core)
     {
-        static std::string file_content = read_file("/sys/devices/system/cpu/cpu" + std::to_string(core) + "/cpufreq/cpuinfo_max_freq", false);
-        return std::stol(file_content) * 1000;
+        try
+        {
+            static std::string path = "/sys/devices/system/cpu/cpu" + std::to_string(core) + "/cpufreq/cpuinfo_max_freq";
+            std::string content = read_file(path, false);
+            return std::stol(content) * 1000;
+        }
+        catch (const std::exception &e)
+        {
+            OPTKIT_CORE_ERROR("Failed to get cpuinfo max freq for core {}: {}", core, e.what());
+            return -1;
+        }
     }
 
     int64_t QueryFreq::get_cpuinfo_min_freq(int32_t core)
     {
-        static std::string file_content = read_file("/sys/devices/system/cpu/cpu" + std::to_string(core) + "/cpufreq/cpuinfo_min_freq", false);
-        return std::stol(file_content) * 1000;
+        try
+        {
+            static std::string path = "/sys/devices/system/cpu/cpu" + std::to_string(core) + "/cpufreq/cpuinfo_min_freq";
+            std::string content = read_file(path, false);
+            return std::stol(content) * 1000;
+        }
+        catch (const std::exception &e)
+        {
+            OPTKIT_CORE_ERROR("Failed to get cpuinfo min freq for core {}: {}", core, e.what());
+            return -1;
+        }
     }
+
 }

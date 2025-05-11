@@ -1,10 +1,12 @@
 #!/bin/bash
 
-for dr in $(ls -d */);
-do
-    cd $dr
-    make clean
-    make
-    sudo cp optkit_* /usr/local/bin
-    cd .. 
-done    
+for dr in */; do
+    cd "$dr"
+    if [ -f Makefile ] || [ -f makefile ]; then
+        make clean
+        make
+    else
+        echo "Skipping '$dr' (no Makefile)"
+    fi
+    cd ..
+done

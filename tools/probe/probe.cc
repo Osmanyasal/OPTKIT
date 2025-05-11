@@ -69,7 +69,6 @@ void print_cpu()
 
         std::cout << std::endl;
     }
-
     for (int i = 0; i < optkit::core::Query::num_cores; i++)
     {
         std::cout << "CPU(" + std::to_string(i) + ") BIOS LIMIT: " << optkit::core::freq::QueryFreq::get_bios_limit(i) << "\n";

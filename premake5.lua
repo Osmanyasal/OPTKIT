@@ -17,9 +17,9 @@ local UTILS_DIR = './src/utils'
 local LIB_X86_ADAPT_PATH = './lib/x86-adapt'
 local WHOAMI = io.popen("whoami"):read("*a"):gsub("\n", "")
 
-local OPTKIT_APP = "OPTKIT_APP"
-local OPTKIT_LIB_DYNAMIC = "OPTKIT_LIB_SO"
-local OPTKIT_LIB_STATIC = "OPTKIT_LIB_A"
+local OPTKIT_APP = "optkit_app"
+local OPTKIT_LIB_DYNAMIC = "optkit_dynamic"
+local OPTKIT_LIB_STATIC = "optkit_static"
 
 
 function BaseProjectSetup()
@@ -63,9 +63,11 @@ function BaseProjectSetup()
     symbols "Off"
     defines { "OPTKIT_MODE_NDEBUG" }
     buildoptions { "-Wall", "-O2", "-fopenmp", "-msse", "-march=native" }
+
+    filter { "configurations:Release", "kind:StaticLib" }
     postbuildcommands {
-        "echo [COMPILE UTILITY TOOLS]",
-        "cd ./tools && ./compile.sh && echo [✅ COMPILE UTILITY TOOLS]"
+        "@echo [COMPILE UTILITY TOOLS]",
+        "@cd ./tools && ./compile.sh && echo [✅ COMPILE UTILITY TOOLS]"
     }
     filter {} -- stop filtering, below is globally accessible
 
@@ -92,15 +94,15 @@ function BaseProjectSetup()
 
         -- SPDLOG compilation
         "@echo [COMPILE SPDLOG]",
-        "@bash -c 'if [ ! -f \"" .. LIB_SPD_PATH .. "/build/libspdlog.a\" ]; then cd " .. LIB_SPD_PATH .. " && ./compile.sh; fi && echo [✅ COMPILE SPDLOG] || echo [❌ COMPILE SPDLOG ERROR]'",
+        "@if [ ! -f \"" .. LIB_SPD_PATH .. "/build/libspdlog.a\" ]; then cd " .. LIB_SPD_PATH .. " && ./compile.sh; fi && echo [✅ COMPILE SPDLOG] || echo [❌ COMPILE SPDLOG ERROR]",
 
         -- LIBPFM compilation
         "@echo [COMPILE LIBPFM]",
-        "@bash -c 'if [ ! -f \"" .. LIB_PFM_PATH .. "/lib/libpfm.a\" ]; then cd " .. LIB_PFM_PATH .. " && ./compile.sh; fi && echo [✅ COMPILE LIBPFM] || echo [❌ COMPILE LIBPFM ERROR]'",
+        "@if [ ! -f \"" .. LIB_PFM_PATH .. "/lib/libpfm.a\" ]; then cd " .. LIB_PFM_PATH .. " && ./compile.sh; fi && echo [✅ COMPILE LIBPFM] || echo [❌ COMPILE LIBPFM ERROR]",
 
         -- Check and export events from libpfm4
         "@echo [CHECK EVENTS]",
-        "if [ ! -f " .. CORE_EVENTS_DIR .. "/all_set ]; then \\",
+        "@if [ ! -f " .. CORE_EVENTS_DIR .. "/all_set ]; then \\",
         "    echo \"⛏️ Exporting events from libpfm4\" && \\",
         "    mkdir -p " .. CORE_EVENTS_DIR .. " && \\",
         "    cd " .. UTILS_DIR .. " && \\",
@@ -131,6 +133,9 @@ function BaseProjectSetup()
 
             print("[REMOVE]: ./Makefile")
             os.remove("./Makefile")
+
+            print("[REMOVE]: " .. CORE_EVENTS_DIR )
+            os.rmdir(CORE_EVENTS_DIR)
 
             print("[REMOVE]: " .. OPTKIT_APP .. ".make")
             os.remove(OPTKIT_APP .. ".make")
