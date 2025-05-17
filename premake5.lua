@@ -8,6 +8,16 @@ if os.target() ~= "linux" then
     os.exit(1) -- Exit with a non-zero status to terminate the script
 end
 
+function ld_has_library(libname)
+    local pipe = io.popen("ldconfig -p 2>/dev/null | grep lib" .. libname .. ".so")
+    if not pipe then return false end
+
+    local result = pipe:read("*a")
+    pipe:close()
+    
+    return result ~= nil and result ~= ""
+end
+
 -- Use global variables in the prebuildcommands
 os.execute("./generate_environment_config.sh") -- execute generate_config to create environment.hh
 
@@ -47,14 +57,25 @@ function BaseProjectSetup()
         "./src/core/**/*_governor.hh",
     }
 
+    -- Always needed
+    links { "pthread", "dl" }
+    linkoptions { "-fopenmp" }
 
-    -- Linking dynamic libraries for Intel systems
-    links { "pthread", "dl" } -- "tensorflow"
-    linkoptions {
-        "./lib/libpfm4/lib/libpfm.a",
-        "./lib/spdlog/build/libspdlog.a",
-        "-fopenmp"
-    }
+    -- Always link static spdlog manually
+    linkoptions { "./lib/spdlog/build/libspdlog.a" }
+
+    -- StaticLib-specific config
+    filter { "kind:StaticLib or kind:ConsoleApp" }
+        linkoptions { "./lib/libpfm4/lib/libpfm.a" }
+    filter {}
+
+    -- SharedLib-specific config
+    filter { "kind:SharedLib" }
+        libdirs { "./lib/libpfm4/lib" } -- so that pfm.so can be found
+        links { "pfm" }
+
+    -- Reset filter
+    filter {}
 
 
     -- Compiler options
@@ -62,21 +83,21 @@ function BaseProjectSetup()
     symbols "On"
     defines { "OPTKIT_MODE_DEBUG" }
     buildoptions { "-Wall", "-O0", "-g", "-fopenmp", "-fPIC", "-msse", "-march=native" }
-    filter {} -- stop filtering, below is globally accessible
+    filter {} -- stop filtering
 
     filter "configurations:Release"
     optimize "On"
     symbols "Off"
     defines { "OPTKIT_MODE_NDEBUG" }
     buildoptions { "-Wall", "-O2", "-fopenmp", "-fPIC", "-msse", "-march=native" }
+    filter {} -- stop filtering
 
     filter { "configurations:Release", "kind:StaticLib" }
     postbuildcommands {
         "@echo [COMPILE UTILITY TOOLS]",
         "@cd ./tools && ./compile.sh && echo [✅ COMPILE UTILITY TOOLS]"
     }
-    filter {} -- stop filtering, below is globally accessible
-
+    filter {} -- stop filtering
 
     prebuildcommands {
 
@@ -97,15 +118,15 @@ function BaseProjectSetup()
         -- "@echo [✅ COMPILE SPDLOG]",
 
         -- SPDLOG compilation
-        "@echo [COMPILE SPDLOG]",
+        -- "@echo [COMPILE SPDLOG]",
         "@if [ ! -f \"" .. LIB_SPD_PATH .. "/build/libspdlog.a\" ]; then cd " .. LIB_SPD_PATH .. " && ./compile.sh; fi && echo [✅ COMPILE SPDLOG] || echo [❌ COMPILE SPDLOG ERROR]",
 
         -- LIBPFM compilation
-        "@echo [COMPILE LIBPFM]",
+        -- "@echo [COMPILE LIBPFM]",
         "@if [ ! -f \"" .. LIB_PFM_PATH .. "/lib/libpfm.a\" ]; then cd " .. LIB_PFM_PATH .. " && ./compile.sh; fi && echo [✅ COMPILE LIBPFM] || echo [❌ COMPILE LIBPFM ERROR]",
 
         -- Check and export events from libpfm4
-        "@echo [CHECK EVENTS]",
+        -- "@echo [CHECK EVENTS]",
         "@if [ ! -f " .. CORE_EVENTS_DIR .. "/all_set ]; then \\",
         "    echo \"⛏️ Exporting events from libpfm4\" && \\",
         "    mkdir -p " .. CORE_EVENTS_DIR .. " && \\",
