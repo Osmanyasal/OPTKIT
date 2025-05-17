@@ -8,6 +8,8 @@ if os.target() ~= "linux" then
     os.exit(1) -- Exit with a non-zero status to terminate the script
 end
 
+-- Use global variables in the prebuildcommands
+os.execute("./generate_environment_config.sh") -- execute generate_config to create environment.hh
 
 local LIB_MSR_SAFE_PATH = './lib/msr-safe'
 local LIB_SPD_PATH = './lib/spdlog'
@@ -47,22 +49,26 @@ function BaseProjectSetup()
 
 
     -- Linking dynamic libraries for Intel systems
-    linkoptions { "-fopenmp" }
-    libdirs { "./lib/libpfm4/lib", "./lib/spdlog/build" }
-    links { "pthread", "dl", "spdlog", "pfm" } -- "tensorflow"
+    links { "pthread", "dl" } -- "tensorflow"
+    linkoptions {
+        "./lib/libpfm4/lib/libpfm.a",
+        "./lib/spdlog/build/libspdlog.a",
+        "-fopenmp"
+    }
+
 
     -- Compiler options
     filter "configurations:Debug"
     symbols "On"
     defines { "OPTKIT_MODE_DEBUG" }
-    buildoptions { "-Wall", "-O0", "-g", "-fopenmp", "-msse", "-march=native" }
+    buildoptions { "-Wall", "-O0", "-g", "-fopenmp", "-fPIC", "-msse", "-march=native" }
     filter {} -- stop filtering, below is globally accessible
 
     filter "configurations:Release"
     optimize "On"
     symbols "Off"
     defines { "OPTKIT_MODE_NDEBUG" }
-    buildoptions { "-Wall", "-O2", "-fopenmp", "-msse", "-march=native" }
+    buildoptions { "-Wall", "-O2", "-fopenmp", "-fPIC", "-msse", "-march=native" }
 
     filter { "configurations:Release", "kind:StaticLib" }
     postbuildcommands {
@@ -73,8 +79,6 @@ function BaseProjectSetup()
 
 
     prebuildcommands {
-        -- Use global variables in the prebuildcommands
-        "@./generate_environment_config.sh", -- execute generate_config to create environment.hh
 
         -- "@echo [CHECK MSR-SAFE]",
         -- "if [ ! -f " .. LIB_MSR_SAFE_PATH .. "/all_set ]; then \\",
@@ -134,7 +138,7 @@ function BaseProjectSetup()
             print("[REMOVE]: ./Makefile")
             os.remove("./Makefile")
 
-            print("[REMOVE]: " .. CORE_EVENTS_DIR )
+            print("[REMOVE]: " .. CORE_EVENTS_DIR)
             os.rmdir(CORE_EVENTS_DIR)
 
             print("[REMOVE]: " .. OPTKIT_APP .. ".make")

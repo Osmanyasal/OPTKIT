@@ -139,7 +139,7 @@ namespace optkit::core
 
     int32_t OptimizerKit::paranoid()
     {
-        static std::string value = read_file("/proc/sys/kernel/perf_event_paranoid");
+        std::string value = read_file("/proc/sys/kernel/perf_event_paranoid");
         return std::stoi(value);
     }
 
