@@ -90,34 +90,37 @@ write_cpu_arch() {
             ;;
     esac
 }
-
 write_cpu_topology() {
     # Number of sockets
-    sockets=$(find /sys/devices/system/cpu/ -name 'cpu[0-9]*' -exec cat {}/topology/physical_package_id \; | sort -u | wc -l)
+    sockets=$(ls -d /sys/devices/system/cpu/cpu[0-9]* | \
+        xargs -n1 -I{} cat {}/topology/physical_package_id 2>/dev/null | sort -u | wc -l)
     echo "#define OPTKIT_ENV_NUM_SOCKET $sockets" >> "$CONFIG_FILE"
     printf "\t%-$(($ALIGN_WIDTH - 8))s %s\n" "OPTKIT_ENV_NUM_SOCKET" "$sockets"
 
-    # Number of unique physical cores (package_id + core_id)
-    cores=$(find /sys/devices/system/cpu/ -name 'cpu[0-9]*' | while read cpu; do
-        pkg=$(cat "$cpu/topology/physical_package_id")
-        core=$(cat "$cpu/topology/core_id")
+    # Unique physical cores (package_id + core_id)
+    cores=$(for cpu in /sys/devices/system/cpu/cpu[0-9]*; do
+        pkg=$(<"$cpu/topology/physical_package_id")
+        core=$(<"$cpu/topology/core_id")
         echo "$pkg-$core"
     done | sort -u | wc -l)
-    echo "#define OPTKIT_ENV_NUM_CORES $cores" >> "$CONFIG_FILE"
-    printf "\t%-$(($ALIGN_WIDTH - 8))s %s\n" "OPTKIT_ENV_NUM_CORES" "$cores"
 
-
+    # Cores per socket
     cores_per_socket=$((cores / sockets))
-    echo "#define OPTKIT_ENV_CORES_PER_SOCKET $cores_per_socket" >> "$CONFIG_FILE"
-    printf "\t%-$(($ALIGN_WIDTH - 8))s %s\n" "OPTKIT_ENV_CORES_PER_SOCKET" "$cores_per_socket"
+    echo "#define OPTKIT_ENV_PHYSICAL_CORES_PER_SOCKET $cores_per_socket" >> "$CONFIG_FILE"
+    printf "\t%-$(($ALIGN_WIDTH - 8))s %s\n" "OPTKIT_ENV_PHYSICAL_CORES_PER_SOCKET" "$cores_per_socket"
 
-    # Total logical CPUs
-    logical=$(find /sys/devices/system/cpu/ -name 'cpu[0-9]*' | wc -l)
+    # Logical CPUs (e.g. hyperthreads)
+    logical=$(ls -d /sys/devices/system/cpu/cpu[0-9]* | wc -l)
 
     # Threads per core
-    threads=$((logical / cores))
-    echo "#define OPTKIT_ENV_THREADS_PER_CORE $threads" >> "$CONFIG_FILE"
-    printf "\t%-$(($ALIGN_WIDTH - 8))s %s\n" "OPTKIT_ENV_THREADS_PER_CORE" "$threads"
+    threads_per_core=$((logical / cores))
+    echo "#define OPTKIT_ENV_THREADS_PER_CORE $threads_per_core" >> "$CONFIG_FILE"
+    printf "\t%-$(($ALIGN_WIDTH - 8))s %s\n" "OPTKIT_ENV_THREADS_PER_CORE" "$threads_per_core"
+
+    # Total logical CPUs (like lscpu's "CPU(s)")
+    total_logical=$((sockets * cores_per_socket * threads_per_core))
+    echo "#define OPTKIT_ENV_TOTAL_LOGICAL_CPUS $total_logical" >> "$CONFIG_FILE"
+    printf "\t%-$(($ALIGN_WIDTH - 8))s %s\n" "OPTKIT_ENV_TOTAL_LOGICAL_CPUS" "$total_logical"
 }
 
 write_cpu_cache_info() {
