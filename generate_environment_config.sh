@@ -90,12 +90,13 @@ write_cpu_arch() {
             ;;
     esac
 }
+
 write_cpu_topology() {
     # Number of sockets
     sockets=$(ls -d /sys/devices/system/cpu/cpu[0-9]* | \
         xargs -n1 -I{} cat {}/topology/physical_package_id 2>/dev/null | sort -u | wc -l)
-    echo "#define OPTKIT_ENV_NUM_SOCKET $sockets" >> "$CONFIG_FILE"
-    printf "\t%-$(($ALIGN_WIDTH - 8))s %s\n" "OPTKIT_ENV_NUM_SOCKET" "$sockets"
+    echo "#define OPTKIT_ENV_CPU_NUM_SOCKET $sockets" >> "$CONFIG_FILE"
+    printf "\t%-$(($ALIGN_WIDTH - 8))s %s\n" "OPTKIT_ENV_CPU_NUM_SOCKET" "$sockets"
 
     # Unique physical cores (package_id + core_id)
     cores=$(for cpu in /sys/devices/system/cpu/cpu[0-9]*; do
@@ -106,21 +107,21 @@ write_cpu_topology() {
 
     # Cores per socket
     cores_per_socket=$((cores / sockets))
-    echo "#define OPTKIT_ENV_PHYSICAL_CORES_PER_SOCKET $cores_per_socket" >> "$CONFIG_FILE"
-    printf "\t%-$(($ALIGN_WIDTH - 8))s %s\n" "OPTKIT_ENV_PHYSICAL_CORES_PER_SOCKET" "$cores_per_socket"
+    echo "#define OPTKIT_ENV_CPU_PHYSICAL_CORES_PER_SOCKET $cores_per_socket" >> "$CONFIG_FILE"
+    printf "\t%-$(($ALIGN_WIDTH - 8))s %s\n" "OPTKIT_ENV_CPU_PHYSICAL_CORES_PER_SOCKET" "$cores_per_socket"
 
     # Logical CPUs (e.g. hyperthreads)
     logical=$(ls -d /sys/devices/system/cpu/cpu[0-9]* | wc -l)
 
     # Threads per core
     threads_per_core=$((logical / cores))
-    echo "#define OPTKIT_ENV_THREADS_PER_CORE $threads_per_core" >> "$CONFIG_FILE"
-    printf "\t%-$(($ALIGN_WIDTH - 8))s %s\n" "OPTKIT_ENV_THREADS_PER_CORE" "$threads_per_core"
+    echo "#define OPTKIT_CPU_ENV_THREADS_PER_CORE $threads_per_core" >> "$CONFIG_FILE"
+    printf "\t%-$(($ALIGN_WIDTH - 8))s %s\n" "OPTKIT_ENV_CPU_THREADS_PER_CORE" "$threads_per_core"
 
     # Total logical CPUs (like lscpu's "CPU(s)")
     total_logical=$((sockets * cores_per_socket * threads_per_core))
-    echo "#define OPTKIT_ENV_TOTAL_LOGICAL_CPUS $total_logical" >> "$CONFIG_FILE"
-    printf "\t%-$(($ALIGN_WIDTH - 8))s %s\n" "OPTKIT_ENV_TOTAL_LOGICAL_CPUS" "$total_logical"
+    echo "#define OPTKIT_CPU_ENV_TOTAL_LOGICAL_CPUS $total_logical" >> "$CONFIG_FILE"
+    printf "\t%-$(($ALIGN_WIDTH - 8))s %s\n" "OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS" "$total_logical"
 }
 
 write_cpu_cache_info() {
@@ -129,7 +130,7 @@ write_cpu_cache_info() {
 
     while read -r name value; do
         if [[ -n "$value" && "$value" != 0 ]]; then
-            macro="OPTKIT_ENV_${name//[^A-Za-z0-9]/_}"
+            macro="OPTKIT_ENV_CPU_${name//[^A-Za-z0-9]/_}"
             printf "\t%-$(($ALIGN_WIDTH - 8))s %s\n" "$macro" "$value"
             echo "#define $macro $value" >> "$CONFIG_FILE"
 
@@ -145,8 +146,8 @@ write_cpu_cache_info() {
     done < <(getconf -a | grep CACHE)
 
     if [[ -n "$llc_name" ]]; then
-        printf "\t%-$(($ALIGN_WIDTH - 8))s %s\n" "OPTKIT_ENV_LLC_CACHE_LINESIZE" "$llc_size"
-        echo "#define OPTKIT_ENV_LLC_CACHE_LINESIZE $llc_name" >> "$CONFIG_FILE"
+        printf "\t%-$(($ALIGN_WIDTH - 8))s %s\n" "OPTKIT_ENV_CPU_LLC_CACHE_LINESIZE" "$llc_size"
+        echo "#define OPTKIT_ENV_CPU_LLC_CACHE_LINESIZE $llc_name" >> "$CONFIG_FILE"
     fi
 }
 
