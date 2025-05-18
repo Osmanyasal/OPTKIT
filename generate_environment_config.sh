@@ -106,6 +106,11 @@ write_cpu_topology() {
     echo "#define OPTKIT_ENV_NUM_CORES $cores" >> "$CONFIG_FILE"
     printf "\t%-$(($ALIGN_WIDTH - 8))s %s\n" "OPTKIT_ENV_NUM_CORES" "$cores"
 
+
+    cores_per_socket=$((cores / sockets))
+    echo "#define OPTKIT_ENV_CORES_PER_SOCKET $cores_per_socket" >> "$CONFIG_FILE"
+    printf "\t%-$(($ALIGN_WIDTH - 8))s %s\n" "OPTKIT_ENV_CORES_PER_SOCKET" "$cores_per_socket"
+
     # Total logical CPUs
     logical=$(find /sys/devices/system/cpu/ -name 'cpu[0-9]*' | wc -l)
 
