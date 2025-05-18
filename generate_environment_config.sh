@@ -92,20 +92,24 @@ write_cpu_arch() {
 }
 
 write_cpu_topology() {
-    # Sockets
-    sockets=$(find /sys/devices/system/cpu/ -name 'cpu[0-9]*' -type d | \
-        while read cpu; do cat "$cpu/topology/physical_package_id"; done | sort -u | wc -l)
+    # Number of sockets
+    sockets=$(find /sys/devices/system/cpu/ -name 'cpu[0-9]*' -exec cat {}/topology/physical_package_id \; | sort -u | wc -l)
     echo "#define OPTKIT_ENV_NUM_SOCKET $sockets" >> "$CONFIG_FILE"
     printf "\t%-$(($ALIGN_WIDTH - 8))s %s\n" "OPTKIT_ENV_NUM_SOCKET" "$sockets"
 
-    # Cores
-    cores=$(find /sys/devices/system/cpu/ -name 'cpu[0-9]*' -type d | \
-        while read cpu; do cat "$cpu/topology/core_id"; done | sort -u | wc -l)
+    # Number of unique physical cores (package_id + core_id)
+    cores=$(find /sys/devices/system/cpu/ -name 'cpu[0-9]*' | while read cpu; do
+        pkg=$(cat "$cpu/topology/physical_package_id")
+        core=$(cat "$cpu/topology/core_id")
+        echo "$pkg-$core"
+    done | sort -u | wc -l)
     echo "#define OPTKIT_ENV_NUM_CORES $cores" >> "$CONFIG_FILE"
     printf "\t%-$(($ALIGN_WIDTH - 8))s %s\n" "OPTKIT_ENV_NUM_CORES" "$cores"
 
-    # Logical cores
-    logical=$(find /sys/devices/system/cpu/ -name 'cpu[0-9]*' -type d | wc -l)
+    # Total logical CPUs
+    logical=$(find /sys/devices/system/cpu/ -name 'cpu[0-9]*' | wc -l)
+
+    # Threads per core
     threads=$((logical / cores))
     echo "#define OPTKIT_ENV_THREADS_PER_CORE $threads" >> "$CONFIG_FILE"
     printf "\t%-$(($ALIGN_WIDTH - 8))s %s\n" "OPTKIT_ENV_THREADS_PER_CORE" "$threads"
@@ -146,8 +150,6 @@ main() {
     write_cpu_arch
     write_cpu_topology
     write_cpu_cache_info
-
-    write_gpu_vendor
 
     echo "[✅ generate_environment_config.sh executed]"
 }
