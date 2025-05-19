@@ -7,3 +7,6 @@
 [submodule "lib/msr-safe"]
 	path = lib/msr-safe
 	url = https://github.com/LLNL/msr-safe.git
+[submodule "lib/googletest"]
+	path = lib/googletest
+	url = https://github.com/google/googletest.git
