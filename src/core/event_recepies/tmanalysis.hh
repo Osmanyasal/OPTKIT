@@ -8,7 +8,6 @@
 #include <iomanip>
 #include <x86intrin.h>
 #include <memory>
-#include "intel_priv.hh"
 #include "utils/utils.hh" 
 #include "core/profiling/pmu/pmu_event_manager.hh"
 #include "core/freq/query_frequency.hh"

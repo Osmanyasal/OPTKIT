@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../environment_config.hh"
+#include "../environment_config.hh"
 // all macros start with OPT_ prefix.
 
 
