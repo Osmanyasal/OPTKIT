@@ -52,8 +52,24 @@ NAMESPACE_ALIASING = "\n\nnamespace {} = optkit::{}::{};"
 
 
 PRIV_DEFINITIONS = {
-    "intel":[
-        "#include \"intel_priv.hh\"\n",
+    "intel_begin":[
+        "#define INTEL_X86_EDGE_BIT	18\n",
+        "#define INTEL_X86_ANY_BIT	21\n",
+        "#define INTEL_X86_INV_BIT	23\n",
+        "#define INTEL_X86_CMASK_BIT 24\n",
+        "#define INTEL_X86_MOD_EDGE	(1 << INTEL_X86_EDGE_BIT)\n",
+        "#define INTEL_X86_MOD_ANY	(1 << INTEL_X86_ANY_BIT)\n",
+        "#define INTEL_X86_MOD_INV	(1 << INTEL_X86_INV_BIT)\n",
+    ],
+
+    "intel_end":[
+        "#undef INTEL_X86_EDGE_BIT\n",
+        "#undef INTEL_X86_ANY_BIT\n",
+        "#undef INTEL_X86_INV_BIT\n",
+        "#undef INTEL_X86_CMASK_BIT\n",
+        "#undef INTEL_X86_MOD_EDGE\n",
+        "#undef INTEL_X86_MOD_ANY\n",
+        "#undef INTEL_X86_MOD_INV\n",
     ]
 }
 
@@ -67,10 +83,9 @@ def process_event_dic(event_dict,event_pe):
     
     result = HEADERS 
     
-    for key in PRIV_DEFINITIONS.keys():
-        if vendor_name in key:
-            for _def in PRIV_DEFINITIONS[key]:
-                result = result + _def
+    if vendor_name == 'intel':
+        for _def in PRIV_DEFINITIONS['intel_begin']:
+            result = result + _def
     
     result = result + NAMESPACE_BEGIN.format(vendor_name,pmu_name) + EVENT_CLASS_BEGIN.format(pmu_name)
     
@@ -124,8 +139,13 @@ def process_event_dic(event_dict,event_pe):
                     event_counter[temp_mask] += 1
                     result += PMU_EVENT.format(temp_mask+"__REPEAT__"+str(encounter),mask_code,mask_desc) + "\n\t\t"
 
+    result = result + EVENT_CLASS_END + NAMESPACE_END + NAMESPACE_ALIASING.format(pmu_name, vendor_name, pmu_name) + "\n\n"
  
-    return result + EVENT_CLASS_END + NAMESPACE_END + NAMESPACE_ALIASING.format(pmu_name, vendor_name, pmu_name)
+    if vendor_name == 'intel':
+        for _def in PRIV_DEFINITIONS['intel_end']:
+            result = result + _def
+
+    return result
 
 if __name__ == "__main__": 
 
