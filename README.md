@@ -10,8 +10,8 @@ OPTKIT integrates seamlessly into the development workflow like any other librar
 git clone https://github.com/Osmanyasal/OPTKIT.git
 cd ./OPTKIT
 git submodule update --force --recursive --init --remote
-premake5 gmake2
-make all
+premake5 gmake
+make configure=release -j$(nproc) all
 ```
 
 ## OPTKIT Utility Tools
@@ -81,5 +81,58 @@ int main(){
 
 The most commonly used building blocks of OPTKIT are shown above. OPTKIT is structured based on the RAII principle, automatically monitoring execution from the point of its definition until the end of the associated scope. Measurement reports are saved once the analysis is completed.
 
+## Development
 
- 
+Project structure and explanations are given below. 
+
+```
+src/
+│
+├── core/
+│   ├── metrics/                  # Unified abstraction layer for performance metrics
+│   │   ├── cpu/
+│   │   │   ├── intel/
+│   │   │   │   ├── icl/          # Icelake-specific formulas
+│   │   │   │   └── ...
+│   │   │   ├── amd/
+│   │   │   │   └── zen/..        # Zen, Zen2, etc.
+│   │   │   └── ...
+│   │   └── gpu/
+│   │       ├── nvidia/
+│   │       ├── rocm/
+│   │       └── ...
+│   │
+│   ├── events/                  # PMU Event Codes
+│   │   ├── intel/               # Can be used directly with perf_event_open. 
+│   │   ├── arm/                 # TODO: GPU events should also be provided
+│   │   └── ...
+│   │
+│   ├── freq/                    # Frequency interface for CPU and GPU
+│   │   ├── cpu/                 # access can be via sysfs, msr-safe, nvml for gpu or rocm interface.
+│   │   │   ├── intel/
+│   │   │   ├── amd/
+│   │   │   └── ...
+│   │   └── gpu/
+│   │       ├── nvidia/
+│   │       ├── rocm/
+│   │       └── ...
+│   │
+│   ├── energy/                  # Energy consumption modules
+│   │   ├── rapl/                # Intel RAPL interface
+│   │   ├── nvml/                # NVIDIA Management Library
+│   │   └── rocm/                # ROCm SMI
+│   │
+│   └── pmu/                     # Low-level access
+│       ├── perf/                # Linux perf interface
+│       ├── msr/                 # Model-specific registers
+│       └── ...
+│
+├── utils/                       # Cross-cutting utilities
+│   ├── logging/                 # Logging infra
+│   ├── optimizations/           # Optional optimization helpers
+│   ├── environment_config.hh    # Default configs for PMU/paths
+│   ├── pmu_parser.py            # (Optional) parses perf/PMU events from spec
+│   ├── utils.hh                 # Inline shared helpers
+│   └── utils.cc
+
+```

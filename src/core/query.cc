@@ -28,7 +28,7 @@ namespace optkit::core
             {
                 try
                 {
-                    int32_t package_id = std::stoi(read_file("/sys/devices/system/cpu/cpu" + std::to_string(core_id) + "/topology/physical_package_id", false));
+                    int32_t package_id = std::stoi(read_file("/sys/devices/system/cpu/cpu" + std::to_string(core_id) + "/topology/physical_package_id"));
                     if (result.find(package_id) == result.end())
                     {
                         result[package_id] = {};

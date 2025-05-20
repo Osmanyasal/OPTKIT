@@ -198,7 +198,10 @@ void loopInterchangeMatrixMultiplication(const std::vector<std::vector<int>> &A,
 
 int32_t main(int32_t argc, char **argv)
 {
-    OPTKIT_INIT();
+    OPTKIT_INIT({false});
+
+    std::cout << read_file("/home/rt7/Desktop/OPTKIT/generate_environment_config.sh") << "\n";
+
     // OPTKIT_RAPL(rapl_var, "main_block");
     {
         // Temp tmp{};
