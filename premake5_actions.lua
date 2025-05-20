@@ -30,8 +30,11 @@ function define_custom_actions()
             print("[REMOVE]: ./Makefile")
             os.remove("./Makefile")
 
-            print("[REMOVE]: ./src/environment_config.hh")
-            os.remove("./src/environment_config.hh")
+            print("[REMOVE]: ./src/utils/environment_config.hh")
+            os.remove("./src/utils/environment_config.hh")
+
+            print("[REMOVE]: ./test/utils/environment_config.hh")
+            os.remove("./test/utils/environment_config.hh")
 
             print("[REMOVE]: " .. CORE_EVENTS_DIR)
             os.rmdir(CORE_EVENTS_DIR)
@@ -44,6 +47,9 @@ function define_custom_actions()
 
             print("[REMOVE]: " .. OPTKIT_LIB_STATIC .. ".make")
             os.remove(OPTKIT_LIB_STATIC .. ".make")
+
+            print("[REMOVE]: " .. OPTKIT_TEST .. ".make")
+            os.remove(OPTKIT_TEST .. ".make")
 
             print("🧹 Cleaned build directories!")
         end

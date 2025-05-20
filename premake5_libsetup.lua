@@ -97,7 +97,6 @@ function test_project_setup()
     
     includedirs {
         "./test/",
-        "./src/",
         LIB_PFM_PATH .. "/include",
         LIB_SPD_PATH .. "/include",
         LIB_GOOGLETEST_PATH .. "/googletest/include",
@@ -117,13 +116,13 @@ function test_project_setup()
     filter "configurations:Debug"
     symbols "On"
     defines { "OPTKIT_MODE_DEBUG", "GTEST_DEBUG" }
-    buildoptions { "-Wall", "-O0", "-g", "-fopenmp", "-fPIC", "-msse", "-march=native" }
+    buildoptions { "-Wall", "-O0", "-g", "-fopenmp"}
 
     filter "configurations:Release"
     optimize "On"
     symbols "Off"
     defines { "OPTKIT_MODE_NDEBUG" }
-    buildoptions { "-Wall", "-O2", "-fopenmp", "-fPIC", "-msse", "-march=native" }
+    buildoptions { "-Wall", "-O2", "-fopenmp", "-fPIC", "-msse", "-march=native -funroll-loops -ftree-vectorize -fopt-info-vec" }
 
     prebuildcommands
     {

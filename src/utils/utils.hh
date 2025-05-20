@@ -8,20 +8,42 @@
 #include <random>
 #include <sys/stat.h>
 #include <dirent.h>
+#include <fstream>
 
+#include <chrono>
+#include <string>
 
 // CUSTOM HEADERS
 #include "utils/logging/logger.hh"
-#include "utils/type.hh"
 
 // OPTIMIZATION HEADERS
 #include "utils/optimizations/cpu_opt.hh"
 
 // PROFILING HEADERS
-#include "utils/profiling/block_timer.hh"
-#include "utils/profiling/gantt_instrumentor.hh"
- 
 #include "core/query.hh"
+
+namespace optkit::utils
+{
+class BlockTimer
+{
+public:
+    BlockTimer(const std::string& block_name) : block_name(block_name)
+    {
+        OPTKIT_CORE_INFO("BLOCK :{} is being measured..", this->block_name);
+        start = std::chrono::high_resolution_clock::now();
+    }
+    ~BlockTimer()
+    {
+        auto end = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000.0f;
+        OPTKIT_CORE_INFO("block :{} execution time : {}ms", this->block_name, duration);
+    }
+
+private:
+    const std::string block_name;
+    std::chrono::high_resolution_clock::time_point start;
+};
+}
 
 // MACRO DEFINITIONS
 #define BIT(x) (1 << x)
@@ -95,3 +117,39 @@ OPT_FORCE_INLINE void create_directory(const std::string &folderName)
         OPTKIT_CORE_ERROR("Directory already exists {}", folderName);
     }
 }
+
+
+
+
+/*  USAGE EXPLANATION
+    Following works like this class structure..
+
+    class Base
+    {
+        public:
+            virtual ~Base() {}
+    };
+
+    class Derived : public Base
+    {
+    };
+
+    # takes references
+
+        Derived dd;
+        Base& bref = dd;
+
+        INSTANCEOF(Base, dd) -> true
+        INSTANCEOF(Derived, dd) -> true
+
+        INSTANCEOF(Base, bref) -> true
+        INSTANCEOF(Derived, bref) -> true
+
+    # takes pointers
+
+        Derived* dd = new Derived;
+        INSTANCEOF_PTR(Base, dd) -> true
+        INSTANCEOF_PTR(Derived, dd) -> true
+*/
+#define INSTANCEOF(CLASS, objREF) (dynamic_cast<CLASS *>(&objREF) != nullptr)
+#define INSTANCEOF_PTR(CLASS, objPTR) (dynamic_cast<CLASS *>(objPTR) != nullptr)

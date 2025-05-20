@@ -32,3 +32,4 @@
 *.app
 
 src/utils/environment_config.hh
+test/utils/environment_config.hh

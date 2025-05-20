@@ -71,7 +71,10 @@
         "cinttypes": "cpp",
         "typeinfo": "cpp",
         "valarray": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "csignal": "cpp",
+        "set": "cpp",
+        "unordered_set": "cpp"
     },
     "Lua.diagnostics.globals": [
         "ld_has_library"

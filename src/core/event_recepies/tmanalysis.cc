@@ -1,5 +1,12 @@
 #include "core/event_recepies/tmanalysis.hh"
 
+#define INTEL_X86_EDGE_BIT	18
+#define INTEL_X86_ANY_BIT	21
+#define INTEL_X86_INV_BIT	23
+#define INTEL_X86_CMASK_BIT 24
+#define INTEL_X86_MOD_EDGE	(1 << INTEL_X86_EDGE_BIT)
+#define INTEL_X86_MOD_ANY	(1 << INTEL_X86_ANY_BIT)
+#define INTEL_X86_MOD_INV	(1 << INTEL_X86_INV_BIT)
 namespace optkit::core::recepies
 {
     TMAnalysis::TMAnalysis(const char *block_name, const char *event_name, bool verbose, const ProfilerConfig &config) : block_name{block_name}, event_name{event_name}, verbose{verbose}, profiler_config{config}

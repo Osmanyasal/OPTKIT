@@ -42,7 +42,6 @@ namespace optkit::core
 
             process_env_variables();
         }
-        OPTKIT_CORE_GANTT_PROFILE_BEGIN_SESSION("Optimizer Toolkit", "optkit_gui_gantt_instr.json");
     }
 
     void OptimizerKit::process_env_variables()
@@ -134,7 +133,6 @@ namespace optkit::core
     OptimizerKit::~OptimizerKit()
     {
         optkit::core::pmu::QueryPMU::destroy();
-        OPTKIT_CORE_GANTT_PROFILE_END_SESSION();
     }
 
     int32_t OptimizerKit::paranoid()

@@ -5,7 +5,6 @@
 
 #include "utils/logging/spdlog.hh"
 #include "utils/logging/stdout_color_sinks.hh"
-#include "utils/deployment/deployment_config.hh"
 #include "utils/logging/logger_config.hh"
 namespace optkit::utils::logger
 {
