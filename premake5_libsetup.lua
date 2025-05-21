@@ -35,14 +35,40 @@ function base_project_setup()
     filter "configurations:Debug"
     symbols "On"
     defines { "OPTKIT_MODE_DEBUG" }
-    buildoptions { "-Wall", "-O0", "-g", "-fopenmp", "-fPIC", "-msse", "-march=native" }
+    buildoptions {
+        "-Wall",
+        "-O0",
+        "-g",
+        "-fopenmp",
+        "-fPIC",
+        "-msse",
+        "-march=native",
+        "-DCONF_LOG_PRINT_GUID_LENGTH=5",
+        "-DCONF_LOG_DISABLE_DEBUG=0",
+        "-DCONF_LOG_DISABLE_TRACE=0",
+        "-DCONF_LOG_DISABLE_INFO=0",
+        "-DCONF_LOG_DISABLE_WARN=0",
+        "-DCONF_LOG_DISABLE_ERROR=0"
+    }
     filter {} -- stop filtering
 
     filter "configurations:Release"
     optimize "On"
     symbols "Off"
     defines { "OPTKIT_MODE_NDEBUG" }
-    buildoptions { "-Wall", "-O2", "-fopenmp", "-fPIC", "-msse", "-march=native" }
+    buildoptions { 
+        "-Wall", 
+        "-O2", 
+        "-fopenmp", 
+        "-fPIC", 
+        "-msse", 
+        "-march=native",
+        "-DCONF_LOG_PRINT_GUID_LENGTH=5",
+        "-DCONF_LOG_DISABLE_DEBUG=1",
+        "-DCONF_LOG_DISABLE_TRACE=1",
+        "-DCONF_LOG_DISABLE_INFO=0",
+        "-DCONF_LOG_DISABLE_WARN=0",
+        "-DCONF_LOG_DISABLE_ERROR=0" }
     filter {} -- stop filtering
 
     prebuildcommands {
@@ -94,7 +120,7 @@ function test_project_setup()
         "./test/***test.cc",
         "./test/***test.hh"
     }
-    
+
     includedirs {
         "./test/",
         LIB_PFM_PATH .. "/include",
@@ -116,7 +142,7 @@ function test_project_setup()
     filter "configurations:Debug"
     symbols "On"
     defines { "OPTKIT_MODE_DEBUG", "GTEST_DEBUG" }
-    buildoptions { "-Wall", "-O0", "-g", "-fopenmp"}
+    buildoptions { "-Wall", "-O0", "-g", "-fopenmp" }
 
     filter "configurations:Release"
     optimize "On"
@@ -126,7 +152,7 @@ function test_project_setup()
 
     prebuildcommands
     {
-        "@if [ ! -f \"" .. LIB_GOOGLETEST_PATH .. "/build/lib/libgtest.a\" ]; then cd " .. 
+        "@if [ ! -f \"" .. LIB_GOOGLETEST_PATH .. "/build/lib/libgtest.a\" ]; then cd " ..
         LIB_GOOGLETEST_PATH .. " && mkdir build && cd build && cmake .. && make -j$(nproc);" ..
         "fi && echo [✅ COMPILE SPDLOG] || echo [❌ COMPILE SPDLOG ERROR]",
     }

@@ -35,6 +35,52 @@ namespace optkit::core::rapl
         return optkit::core::rapl::RaplDomain::BEGIN;
     }
 
+    std::string to_string(const optkit::core::rapl::RaplDomain &domain)
+    {
+        switch (domain)
+        {
+        case RaplDomain::PP0:
+            return "energy-cores";
+        case RaplDomain::PP1:
+            return "energy-gpu";
+        case RaplDomain::PACKAGE:
+            return "energy-pkg";
+        case RaplDomain::PSYS:
+            return "energy-psys";
+        case RaplDomain::DRAM:
+            return "energy-ram";
+        default:
+            return "unknown";
+        }
+    }
+    std::string to_string(const optkit::core::rapl::RaplDomainInfo &domain_info)
+    {
+        std::ostringstream stream;
+        stream << std::scientific << domain_info.scale;
+        std::string scale_scf = stream.str();
+
+        std::ostringstream result;
+        result << "Event=" << domain_info.event << ", "
+               << "Config=" << domain_info.config << ", "
+               << "scale=" << scale_scf << ", "
+               << "units=" << domain_info.units;
+        return result.str();
+    }
+    std::string to_string(const optkit::core::rapl::RaplReadMethods &read_method)
+    {
+        switch (read_method)
+        {
+        case RaplReadMethods::PERF:
+            return "Perf";
+        case RaplReadMethods::MSR:
+            return "MSR";
+        case RaplReadMethods::POWERCAP:
+            return "PowerCap";
+        default:
+            return "Unknown";
+        }
+    }
+
     // Overload << operator for RaplDomain
     std::ostream &operator<<(std::ostream &os, const optkit::core::rapl::RaplDomain &domain)
     {
@@ -89,7 +135,6 @@ namespace optkit::core::rapl
         case optkit::core::rapl::RaplReadMethods::POWERCAP:
             os << "PowerCap";
             break;
-
         default:
             break;
         }

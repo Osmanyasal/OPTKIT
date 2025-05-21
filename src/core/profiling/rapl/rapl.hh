@@ -51,6 +51,10 @@ namespace optkit::core::rapl
         double scale;
         std::string units;
     };
+
+    std::string to_string(const optkit::core::rapl::RaplDomain &domain);
+    std::string to_string(const optkit::core::rapl::RaplDomainInfo &domain_info);
+    std::string to_string(const optkit::core::rapl::RaplReadMethods &read_method);
     
     std::ostream &operator<<(std::ostream &os, const optkit::core::rapl::RaplDomain &domain);
     std::ostream &operator<<(std::ostream &os, const optkit::core::rapl::RaplDomainInfo &domain_info);

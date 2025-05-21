@@ -47,6 +47,7 @@ private:
 
 // MACRO DEFINITIONS
 #define BIT(x) (1 << x)
+#define STRINGIFY(...) #__VA_ARGS__
 
 #define BLOCK_TIMER(block_name) \
     optkit::utils::BlockTimer block_timer { block_name }
