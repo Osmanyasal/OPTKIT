@@ -122,7 +122,7 @@ src/
 │   │   ├── nvml/                # NVIDIA Management Library
 │   │   └── rocm/                # ROCm SMI
 │   │
-│   └── pmu/                     # Low-level access
+│   └── pmc/                     # Low-level Performance Counter Access
 │       ├── perf/                # Linux perf interface
 │       ├── msr/                 # Model-specific registers
 │       └── ...
