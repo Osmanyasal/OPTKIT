@@ -107,7 +107,7 @@ src/
 │   │   ├── arm/                 # TODO: GPU events should also be provided
 │   │   └── ...
 │   │
-│   ├── freq/                    # Frequency interface for CPU and GPU
+│   ├── frequency/                    # Frequency interface for CPU and GPU
 │   │   ├── cpu/                 # access can be via sysfs, msr-safe, nvml for gpu or rocm interface.
 │   │   │   ├── intel/
 │   │   │   ├── amd/
