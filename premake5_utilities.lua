@@ -25,7 +25,7 @@ end
 LIB_MSR_SAFE_PATH = './lib/msr-safe'
 LIB_SPD_PATH = './lib/spdlog'
 LIB_PFM_PATH = './lib/libpfm4'
-CORE_EVENTS_DIR = './src/core/events'
+CORE_EVENTS_DIR = './src/core/pmu/cpu/perf/events'
 UTILS_DIR = './src/utils'
 LIB_GOOGLETEST_PATH = "./lib/googletest"
 LIB_X86_ADAPT_PATH = './lib/x86-adapt'

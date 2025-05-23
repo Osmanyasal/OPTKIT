@@ -9,13 +9,8 @@
 #include <map>
 #include <unistd.h>
 
-#include "utils/utils.hh"
-#include "core/profiling/rapl/rapl.hh"
-#include "core/profiling/pmu/libpfm4_wrapper.hh"
-
 namespace optkit::core
-{
-    std::ostream &operator<<(std::ostream &out, const std::map<int32_t, std::vector<int32_t>> &packages);
+{ 
     /**
      * @brief  ASK System & CPU related queries here<br>
      * This Query class uses <b>libpfm4</b> to retrieve information
@@ -42,11 +37,14 @@ namespace optkit::core
          * @brief Gets package - # of cores information
          * @return const ref of static std::unordered_map<int32_t,std::vector<int32_t>> object: package - # of cores
          */
-        static const std::map<int32_t, std::vector<int32_t>> &detect_packages();
+        static const std::map<int32_t, std::vector<int32_t>> &detect_cpu_packages();
 
     private:
         Query() = delete;
         ~Query() = delete;
     };
 
+    std::ostream &operator<<(std::ostream &out, const std::map<int32_t, std::vector<int32_t>> &packages);
 } // namespace optkit::core
+
+using optkit::core::operator<<; // make available to global namespace

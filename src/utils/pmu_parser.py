@@ -38,7 +38,7 @@ import sys
 import os
 
 EVENT_FILE_EXTENSION = ".hh"
-EVENT_FILE_PATH = "../core/events/"
+EVENT_FILE_PATH = "../core/pmu/cpu/perf/events/"
 
 HEADERS = "#pragma once\n#include <cstdint>\n"
 NAMESPACE_BEGIN = "namespace optkit::{}::{}{{\n\t" # added pmu_name to the namespace to define scope for enum

@@ -139,11 +139,6 @@ function test_project_setup()
 
     linkoptions { "-fopenmp" }
 
-    filter "configurations:Debug"
-    symbols "On"
-    defines { "OPTKIT_MODE_DEBUG", "GTEST_DEBUG" }
-    buildoptions { "-Wall", "-O0", "-g", "-fopenmp" }
-
     filter "configurations:Release"
     optimize "On"
     symbols "Off"
@@ -152,6 +147,7 @@ function test_project_setup()
 
     prebuildcommands
     {
+        -- compile googletest and load its static library
         "@if [ ! -f \"" .. LIB_GOOGLETEST_PATH .. "/build/lib/libgtest.a\" ]; then cd " ..
         LIB_GOOGLETEST_PATH .. " && mkdir build && cd build && cmake .. && make -j$(nproc);" ..
         "fi && echo [✅ COMPILE SPDLOG] || echo [❌ COMPILE SPDLOG ERROR]",

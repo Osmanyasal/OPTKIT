@@ -1,6 +1,6 @@
 
 #include "core/query.hh"
-
+#include "utils/utils.hh"
 namespace optkit::core
 {
 
@@ -13,11 +13,11 @@ namespace optkit::core
     int64_t Query::OPTKIT_SOCKET1__UNCORE_FREQ = -1;
 
     const int16_t Query::num_cores = sysconf(_SC_NPROCESSORS_ONLN);
-    const int16_t Query::num_sockets = Query::detect_packages().size();
+    const int16_t Query::num_sockets = Query::detect_cpu_packages().size();
     const bool Query::is_root_priv_enabled = (geteuid() == 0);
 
     // Socket - cpu list
-    const std::map<int32_t, std::vector<int32_t>> &Query::detect_packages()
+    const std::map<int32_t, std::vector<int32_t>> &Query::detect_cpu_packages()
     {
         static std::map<int32_t, std::vector<int32_t>> result;
 
@@ -28,7 +28,7 @@ namespace optkit::core
             {
                 try
                 {
-                    int32_t package_id = std::stoi(read_file("/sys/devices/system/cpu/cpu" + std::to_string(core_id) + "/topology/physical_package_id"));
+                    int32_t package_id = std::stoi(optkit::utils::read_file("/sys/devices/system/cpu/cpu" + std::to_string(core_id) + "/topology/physical_package_id"));
                     if (result.find(package_id) == result.end())
                     {
                         result[package_id] = {};

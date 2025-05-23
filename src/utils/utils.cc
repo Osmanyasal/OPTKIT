@@ -1,8 +1,8 @@
 #include "utils/utils.hh"
 
-std::string EXECUTION_FOLDER_NAME{get_date() + "__" + get_time() + "__" + generateGUID().substr(0, CONF_LOG_PRINT_GUID_LENGTH)};
+std::string optkit::utils::EXECUTION_FOLDER_NAME{optkit::utils::get_date() + "__" + optkit::utils::get_time() + "__" + optkit::utils::generateGUID().substr(0, CONF_LOG_PRINT_GUID_LENGTH)};
 
-std::string generateGUID()
+std::string optkit::utils::generateGUID()
 {
     std::random_device rd;
     std::mt19937_64 gen(rd());
@@ -32,7 +32,7 @@ std::string generateGUID()
     return ss.str();
 }
 
-std::vector<std::string> get_all_files(const std::string &directory_name)
+std::vector<std::string> optkit::utils::get_all_files(const std::string &directory_name)
 {
     std::vector<std::string> files;
     DIR *dir;
@@ -53,7 +53,7 @@ std::vector<std::string> get_all_files(const std::string &directory_name)
     }
     return files;
 }
-std::vector<std::string> str_split(std::string s, std::string delimiter)
+std::vector<std::string> optkit::utils::str_split(std::string s, std::string delimiter)
 {
     size_t pos_start = 0, pos_end, delim_len = delimiter.length();
     std::string token;
@@ -69,7 +69,7 @@ std::vector<std::string> str_split(std::string s, std::string delimiter)
     return res;
 }
 
-std::string get_date(const std::string &format)
+std::string optkit::utils::get_date(const std::string &format)
 {
     // Get the current time point
     auto now = std::chrono::system_clock::now();
@@ -86,7 +86,7 @@ std::string get_date(const std::string &format)
 
     return oss.str();
 }
-std::string get_time(const std::string &format)
+std::string optkit::utils::get_time(const std::string &format)
 {
     // Get the current time point
     auto now = std::chrono::system_clock::now();

@@ -15,14 +15,14 @@ int32_t main(int32_t argc, char **argv)
         while (true)
         {
             // first read's usually 0 because it executes faster than rapl update (each 1ms)
-            std::cout << main_block.read_val() << "\n";
+            std::cout << main_block.read() << "\n";
             sleep(1);
         }
     else
     {
         while (value-- >= 0)
         {
-            std::cout << main_block.read().second << "\n";
+            std::cout << main_block.read_and_store().second << "\n";
             sleep(1);
         }
     }

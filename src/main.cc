@@ -77,6 +77,6 @@ void loopInterchangeMatrixMultiplication(const std::vector<std::vector<int>> &A,
 int32_t main(int32_t argc, char **argv)
 {
     OPTKIT_INIT({false});
-  
+    
     return 0;
 }

@@ -30,10 +30,10 @@ namespace optkit::core
             if (OPT_LIKELY(config.create_folder))
             {
                 if (this->config.execution_file.size() > 0)
-                    EXECUTION_FOLDER_NAME = this->config.execution_file;
+                    optkit::utils::EXECUTION_FOLDER_NAME = this->config.execution_file;
                     
-                ::create_directory(EXECUTION_FOLDER_NAME);
-                OPTKIT_CORE_INFO("Execution file created {}", EXECUTION_FOLDER_NAME);
+                optkit::utils::create_directory(optkit::utils::EXECUTION_FOLDER_NAME);
+                OPTKIT_CORE_INFO("Execution file created {}", optkit::utils::EXECUTION_FOLDER_NAME);
             }
             else
             {
@@ -67,7 +67,7 @@ namespace optkit::core
             if (socket0__core_freq != nullptr)
             {
                 Query::OPTKIT_SOCKET0__CORE_FREQ = std::atol(socket0__core_freq);
-                freq::CPUFrequency::set_core_frequency(Query::OPTKIT_SOCKET0__CORE_FREQ, 0);
+                frequency::CPUFrequency::set_core_frequency(Query::OPTKIT_SOCKET0__CORE_FREQ, 0);
                 OPTKIT_CORE_INFO("---env read--- OPTKIT_SOCKET0__CORE_FREQ:{} ", Query::OPTKIT_SOCKET0__CORE_FREQ);
             }
             else
@@ -78,7 +78,7 @@ namespace optkit::core
             if (socket0__uncore_freq != nullptr)
             {
                 Query::OPTKIT_SOCKET0__UNCORE_FREQ = std::atol(socket0__uncore_freq);
-                freq::CPUFrequency::set_uncore_frequency(Query::OPTKIT_SOCKET0__UNCORE_FREQ, 0);
+                frequency::CPUFrequency::set_uncore_frequency(Query::OPTKIT_SOCKET0__UNCORE_FREQ, 0);
                 OPTKIT_CORE_INFO("---env read--- OPTKIT_SOCKET0__UNCORE_FREQ:{} ", Query::OPTKIT_SOCKET0__UNCORE_FREQ);
             }
             else
@@ -98,7 +98,7 @@ namespace optkit::core
             if (socket1__core_freq != nullptr)
             {
                 Query::OPTKIT_SOCKET1__CORE_FREQ = std::atol(socket1__core_freq);
-                freq::CPUFrequency::set_core_frequency(Query::OPTKIT_SOCKET1__CORE_FREQ, 1);
+                frequency::CPUFrequency::set_core_frequency(Query::OPTKIT_SOCKET1__CORE_FREQ, 1);
                 OPTKIT_CORE_INFO("---env read--- OPTKIT_SOCKET1__CORE_FREQ:{} ", Query::OPTKIT_SOCKET1__CORE_FREQ);
             }
             else
@@ -109,7 +109,7 @@ namespace optkit::core
             if (socket1__uncore_freq != nullptr)
             {
                 Query::OPTKIT_SOCKET1__UNCORE_FREQ = std::atol(socket1__uncore_freq);
-                freq::CPUFrequency::set_uncore_frequency(Query::OPTKIT_SOCKET1__UNCORE_FREQ, 1);
+                frequency::CPUFrequency::set_uncore_frequency(Query::OPTKIT_SOCKET1__UNCORE_FREQ, 1);
                 OPTKIT_CORE_INFO("---env read--- OPTKIT_SOCKET1__UNCORE_FREQ:{} ", Query::OPTKIT_SOCKET1__UNCORE_FREQ);
             }
             else
@@ -132,12 +132,12 @@ namespace optkit::core
      */
     OptimizerKit::~OptimizerKit()
     {
-        optkit::core::pmu::QueryPMU::destroy();
+        optkit::core::pmu::cpu::perf::QueryPMU::destroy();
     }
 
     int32_t OptimizerKit::paranoid()
     {
-        std::string value = read_file("/proc/sys/kernel/perf_event_paranoid");
+        std::string value = optkit::utils::read_file("/proc/sys/kernel/perf_event_paranoid");
         return std::stoi(value);
     }
 
