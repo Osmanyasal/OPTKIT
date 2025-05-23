@@ -89,50 +89,58 @@ Project structure and explanations are given below.
 src/
 │
 ├── core/
-│   ├── metrics/                  # Unified abstraction layer for performance metrics
-│   │   ├── cpu/
+│   ├── metrics/                  # Unified abstraction layer of performance metrics
+│   │   ├── cpu/                  # CPU specific performance metrics
 │   │   │   ├── intel/
-│   │   │   │   ├── icl/          # Icelake-specific formulas
-│   │   │   │   └── ...
+│   │   │   │   ├── icl/          # Intel Icelake-specific metric formulations
+│   │   │   |   └── ...           # Intel Generic Metrics (available for all)
 │   │   │   ├── amd/
-│   │   │   │   └── zen/..        # Zen, Zen2, etc.
-│   │   │   └── ...
+│   │   │   │   └── fam19h_zen4/  # AMD FAM19_Zen4 architecture-specific metrics
+│   │   │   |   └── ...           # AMD Generic Metrics(available for all)
+│   │   │   └── ...               # Other CPU vendors or generic metric implementations
 │   │   └── gpu/
+│   │       ├── nvidia/           # NVIDIA GPU-specific performance metrics
+│   │       ├── rocm/             # AMD ROCm GPU-specific performance metrics
+│   │       └── ...               # Support for additional GPU platforms
+│   │
+│   ├── frequency/               # Interfaces to access real-time frequency data
+│   │   ├── cpu/                 # CPU frequency readers (sysfs, MSR-safe, etc.)
+│   │   │   ├── intel/           # Intel-specific frequency sources
+│   │   │   ├── amd/             # AMD-specific frequency sources
+│   │   │   └── ...              # Generic CPU frequency source (sysfs)
+│   │   └── gpu/                 # GPU frequency readers via NVML, ROCm, etc.
 │   │       ├── nvidia/
 │   │       ├── rocm/
 │   │       └── ...
 │   │
-│   ├── events/                  # PMU Event Codes
-│   │   ├── intel/               # Can be used directly with perf_event_open. 
-│   │   ├── arm/                 # TODO: GPU events should also be provided
-│   │   └── ...
-│   │
-│   ├── frequency/                    # Frequency interface for CPU and GPU
-│   │   ├── cpu/                 # access can be via sysfs, msr-safe, nvml for gpu or rocm interface.
-│   │   │   ├── intel/
-│   │   │   ├── amd/
+│   ├── energy/                  # Modules to monitor energy consumption
+│   │   ├── cpu/                 # CPU energy data sources
+│   │   │   ├── rapl/            # Intel & AMD RAPL (Running Average Power Limit) interface
+│   │   │   ├── msr/             # Direct MSR access for Intel CPUs
 │   │   │   └── ...
-│   │   └── gpu/
-│   │       ├── nvidia/
-│   │       ├── rocm/
-│   │       └── ...
+│   │   ├── gpu/                 # GPU energy data sources
+│   │   │   ├── nvml/            # NVIDIA Management Library interface
+│   │   │   ├── rocm/            # ROCm System Management Interface (SMI)
+│   │   │   └── ...
 │   │
-│   ├── energy/                  # Energy consumption modules
-│   │   ├── rapl/                # Intel RAPL interface
-│   │   ├── nvml/                # NVIDIA Management Library
-│   │   └── rocm/                # ROCm SMI
-│   │
-│   └── pmc/                     # Low-level Performance Counter Access
-│       ├── perf/                # Linux perf interface
-│       ├── msr/                 # Model-specific registers
-│       └── ...
+│   └── pmu/                     # Interfaces for accessing hardware performance counters
+│       ├── cpu/                 # CPU Counters
+│       │   ├── msr/             # MSR-based access to performance counters
+│       │   ├── perf/            # Linux perf_event_open-based access
+│       │   │   ├── events/      # Architecture-specific PMU event codes generated to be used with perf_event_open
+│       │   │   │   ├── intel/   # Intel-specific PMU events
+│       │   │   │   ├── arm/     # ARM-specific PMU events
+│       │   │   │   └── ...
+│       ├── gpu/                 # GPU performance monitoring interfaces
+│       │   ├── nvml/            # NVIDIA PMU event access (via NVML)
+│       │   ├── rocm/            # AMD ROCm-based PMU access
+│       │   └── ...
 │
-├── utils/                       # Cross-cutting utilities
-│   ├── logging/                 # Logging infra
-│   ├── optimizations/           # Optional optimization helpers
-│   ├── environment_config.hh    # Default configs for PMU/paths
-│   ├── pmu_parser.py            # (Optional) parses perf/PMU events from spec
-│   ├── utils.hh                 # Inline shared helpers
-│   └── utils.cc
-
+├── utils/                       # General-purpose utilities and helpers
+│   ├── logging/                 # Logging infrastructure and configuration
+│   ├── optimizations/           # Runtime optimizations utilities
+│   ├── environment_config.hh    # Generated on compile-time for the current system. It is used internally in the project.
+│   ├── pmu_parser.py            # PMU event spec parser (used to auto-generate or verify metrics)
+│   ├── utils.hh                 # Header for shared inline utility functions
+│   └── utils.cc                 # Implementation of utility functions
 ```
