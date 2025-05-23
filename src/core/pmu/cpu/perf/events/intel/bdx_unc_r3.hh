@@ -1,0 +1,191 @@
+#pragma once
+#include <cstdint>
+#define INTEL_X86_EDGE_BIT	18
+#define INTEL_X86_ANY_BIT	21
+#define INTEL_X86_INV_BIT	23
+#define INTEL_X86_CMASK_BIT 24
+#define INTEL_X86_MOD_EDGE	(1 << INTEL_X86_EDGE_BIT)
+#define INTEL_X86_MOD_ANY	(1 << INTEL_X86_ANY_BIT)
+#define INTEL_X86_MOD_INV	(1 << INTEL_X86_INV_BIT)
+namespace optkit::intel::bdx_unc_r3{
+	enum bdx_unc_r3 : uint64_t {
+		UNC_R3_CLOCKTICKS = 0x1, // Counts the number of uclks in the QPI uclk domain.  This could be slightly different than the count in the Ubox because of enable/freeze delays.  However
+		UNC_R3_C_HI_AD_CREDITS_EMPTY = 0x1f, // No credits available to send to Cbox on the AD Ring (covers higher CBoxes)
+		UNC_R3_C_HI_AD_CREDITS_EMPTY__MASK__BDX_UNC_R3_C_HI_AD_CREDITS_EMPTY__CBO10 = 0x400, // CBox AD Credits Empty
+		UNC_R3_C_HI_AD_CREDITS_EMPTY__MASK__BDX_UNC_R3_C_HI_AD_CREDITS_EMPTY__CBO11 = 0x800, // CBox AD Credits Empty
+		UNC_R3_C_HI_AD_CREDITS_EMPTY__MASK__BDX_UNC_R3_C_HI_AD_CREDITS_EMPTY__CBO12 = 0x1000, // CBox AD Credits Empty
+		UNC_R3_C_HI_AD_CREDITS_EMPTY__MASK__BDX_UNC_R3_C_HI_AD_CREDITS_EMPTY__CBO13 = 0x2000, // CBox AD Credits Empty
+		UNC_R3_C_HI_AD_CREDITS_EMPTY__MASK__BDX_UNC_R3_C_HI_AD_CREDITS_EMPTY__CBO14_16 = 0x4000, // CBox AD Credits Empty
+		UNC_R3_C_HI_AD_CREDITS_EMPTY__MASK__BDX_UNC_R3_C_HI_AD_CREDITS_EMPTY__CBO8 = 0x100, // CBox AD Credits Empty
+		UNC_R3_C_HI_AD_CREDITS_EMPTY__MASK__BDX_UNC_R3_C_HI_AD_CREDITS_EMPTY__CBO9 = 0x200, // CBox AD Credits Empty
+		UNC_R3_C_HI_AD_CREDITS_EMPTY__MASK__BDX_UNC_R3_C_HI_AD_CREDITS_EMPTY__CBO_15_17 = 0x8000, // CBox AD Credits Empty
+		UNC_R3_C_LO_AD_CREDITS_EMPTY = 0x22, // No credits available to send to Cbox on the AD Ring (covers lower CBoxes)
+		UNC_R3_C_LO_AD_CREDITS_EMPTY__MASK__BDX_UNC_R3_C_LO_AD_CREDITS_EMPTY__CBO0 = 0x100, // CBox AD Credits Empty
+		UNC_R3_C_LO_AD_CREDITS_EMPTY__MASK__BDX_UNC_R3_C_LO_AD_CREDITS_EMPTY__CBO1 = 0x200, // CBox AD Credits Empty
+		UNC_R3_C_LO_AD_CREDITS_EMPTY__MASK__BDX_UNC_R3_C_LO_AD_CREDITS_EMPTY__CBO2 = 0x400, // CBox AD Credits Empty
+		UNC_R3_C_LO_AD_CREDITS_EMPTY__MASK__BDX_UNC_R3_C_LO_AD_CREDITS_EMPTY__CBO3 = 0x800, // CBox AD Credits Empty
+		UNC_R3_C_LO_AD_CREDITS_EMPTY__MASK__BDX_UNC_R3_C_LO_AD_CREDITS_EMPTY__CBO4 = 0x1000, // CBox AD Credits Empty
+		UNC_R3_C_LO_AD_CREDITS_EMPTY__MASK__BDX_UNC_R3_C_LO_AD_CREDITS_EMPTY__CBO5 = 0x2000, // CBox AD Credits Empty
+		UNC_R3_C_LO_AD_CREDITS_EMPTY__MASK__BDX_UNC_R3_C_LO_AD_CREDITS_EMPTY__CBO6 = 0x4000, // CBox AD Credits Empty
+		UNC_R3_C_LO_AD_CREDITS_EMPTY__MASK__BDX_UNC_R3_C_LO_AD_CREDITS_EMPTY__CBO7 = 0x8000, // CBox AD Credits Empty
+		UNC_R3_HA_R2_BL_CREDITS_EMPTY = 0x2d, // No credits available to send to either HA or R2 on the BL Ring
+		UNC_R3_HA_R2_BL_CREDITS_EMPTY__MASK__BDX_UNC_R3_HA_R2_BL_CREDITS_EMPTY__HA0 = 0x100, // HA/R2 AD Credits Empty
+		UNC_R3_HA_R2_BL_CREDITS_EMPTY__MASK__BDX_UNC_R3_HA_R2_BL_CREDITS_EMPTY__HA1 = 0x200, // HA/R2 AD Credits Empty
+		UNC_R3_HA_R2_BL_CREDITS_EMPTY__MASK__BDX_UNC_R3_HA_R2_BL_CREDITS_EMPTY__R2_NCB = 0x400, // HA/R2 AD Credits Empty
+		UNC_R3_HA_R2_BL_CREDITS_EMPTY__MASK__BDX_UNC_R3_HA_R2_BL_CREDITS_EMPTY__R2_NCS = 0x800, // HA/R2 AD Credits Empty
+		UNC_R3_QPI0_AD_CREDITS_EMPTY = 0x20, // No credits available to send to QPI0 on the AD Ring
+		UNC_R3_QPI0_AD_CREDITS_EMPTY__MASK__BDX_UNC_R3_QPI0_AD_CREDITS_EMPTY__VN0_HOM = 0x200, // VN0 HOM messages
+		UNC_R3_QPI0_AD_CREDITS_EMPTY__MASK__BDX_UNC_R3_QPI0_AD_CREDITS_EMPTY__VN0_NDR = 0x800, // VN0 NDR messages
+		UNC_R3_QPI0_AD_CREDITS_EMPTY__MASK__BDX_UNC_R3_QPI0_AD_CREDITS_EMPTY__VN0_SNP = 0x400, // VN0 SNP messages
+		UNC_R3_QPI0_AD_CREDITS_EMPTY__MASK__BDX_UNC_R3_QPI0_AD_CREDITS_EMPTY__VN1_HOM = 0x1000, // VN1 HOM messages
+		UNC_R3_QPI0_AD_CREDITS_EMPTY__MASK__BDX_UNC_R3_QPI0_AD_CREDITS_EMPTY__VN1_NDR = 0x4000, // VN1 NDR messages
+		UNC_R3_QPI0_AD_CREDITS_EMPTY__MASK__BDX_UNC_R3_QPI0_AD_CREDITS_EMPTY__VN1_SNP = 0x2000, // VN1 SNP messages
+		UNC_R3_QPI0_AD_CREDITS_EMPTY__MASK__BDX_UNC_R3_QPI0_AD_CREDITS_EMPTY__VNA = 0x100, // VNA messages
+		UNC_R3_QPI0_BL_CREDITS_EMPTY = 0x21, // No credits available to send to QPI0 on the BL Ring
+		UNC_R3_QPI0_BL_CREDITS_EMPTY__MASK__BDX_UNC_R3_QPI0_BL_CREDITS_EMPTY__VN1_HOM = 0x1000, // QPIx BL Credits Empty
+		UNC_R3_QPI0_BL_CREDITS_EMPTY__MASK__BDX_UNC_R3_QPI0_BL_CREDITS_EMPTY__VN1_NDR = 0x4000, // QPIx BL Credits Empty
+		UNC_R3_QPI0_BL_CREDITS_EMPTY__MASK__BDX_UNC_R3_QPI0_BL_CREDITS_EMPTY__VN1_SNP = 0x2000, // QPIx BL Credits Empty
+		UNC_R3_QPI0_BL_CREDITS_EMPTY__MASK__BDX_UNC_R3_QPI0_BL_CREDITS_EMPTY__VNA = 0x100, // QPIx BL Credits Empty
+		UNC_R3_QPI1_AD_CREDITS_EMPTY = 0x2e, // No credits available to send to QPI1 on the AD Ring
+		UNC_R3_QPI1_AD_CREDITS_EMPTY__MASK__BDX_UNC_R3_QPI0_AD_CREDITS_EMPTY__VN0_HOM = 0x200, // VN0 HOM messages
+		UNC_R3_QPI1_AD_CREDITS_EMPTY__MASK__BDX_UNC_R3_QPI0_AD_CREDITS_EMPTY__VN0_NDR = 0x800, // VN0 NDR messages
+		UNC_R3_QPI1_AD_CREDITS_EMPTY__MASK__BDX_UNC_R3_QPI0_AD_CREDITS_EMPTY__VN0_SNP = 0x400, // VN0 SNP messages
+		UNC_R3_QPI1_AD_CREDITS_EMPTY__MASK__BDX_UNC_R3_QPI0_AD_CREDITS_EMPTY__VN1_HOM = 0x1000, // VN1 HOM messages
+		UNC_R3_QPI1_AD_CREDITS_EMPTY__MASK__BDX_UNC_R3_QPI0_AD_CREDITS_EMPTY__VN1_NDR = 0x4000, // VN1 NDR messages
+		UNC_R3_QPI1_AD_CREDITS_EMPTY__MASK__BDX_UNC_R3_QPI0_AD_CREDITS_EMPTY__VN1_SNP = 0x2000, // VN1 SNP messages
+		UNC_R3_QPI1_AD_CREDITS_EMPTY__MASK__BDX_UNC_R3_QPI0_AD_CREDITS_EMPTY__VNA = 0x100, // VNA messages
+		UNC_R3_QPI1_BL_CREDITS_EMPTY = 0x2f, // No credits available to send to QPI1 on the BL Ring
+		UNC_R3_QPI1_BL_CREDITS_EMPTY__MASK__BDX_UNC_R3_QPI0_AD_CREDITS_EMPTY__VN0_HOM = 0x200, // VN0 HOM messages
+		UNC_R3_QPI1_BL_CREDITS_EMPTY__MASK__BDX_UNC_R3_QPI0_AD_CREDITS_EMPTY__VN0_NDR = 0x800, // VN0 NDR messages
+		UNC_R3_QPI1_BL_CREDITS_EMPTY__MASK__BDX_UNC_R3_QPI0_AD_CREDITS_EMPTY__VN0_SNP = 0x400, // VN0 SNP messages
+		UNC_R3_QPI1_BL_CREDITS_EMPTY__MASK__BDX_UNC_R3_QPI0_AD_CREDITS_EMPTY__VN1_HOM = 0x1000, // VN1 HOM messages
+		UNC_R3_QPI1_BL_CREDITS_EMPTY__MASK__BDX_UNC_R3_QPI0_AD_CREDITS_EMPTY__VN1_NDR = 0x4000, // VN1 NDR messages
+		UNC_R3_QPI1_BL_CREDITS_EMPTY__MASK__BDX_UNC_R3_QPI0_AD_CREDITS_EMPTY__VN1_SNP = 0x2000, // VN1 SNP messages
+		UNC_R3_QPI1_BL_CREDITS_EMPTY__MASK__BDX_UNC_R3_QPI0_AD_CREDITS_EMPTY__VNA = 0x100, // VNA messages
+		UNC_R3_RING_AD_USED = 0x7, // Counts the number of cycles that the AD ring is being used at this ring stop.  This includes when packets are passing by and when packets are being sunk
+		UNC_R3_RING_AD_USED__MASK__BDX_UNC_R3_RING_AD_USED__CCW = 0xc00, // Counterclockwise
+		UNC_R3_RING_AD_USED__MASK__BDX_UNC_R3_RING_AD_USED__CCW_EVEN = 0x400, // Counterclockwise and Even
+		UNC_R3_RING_AD_USED__MASK__BDX_UNC_R3_RING_AD_USED__CCW_ODD = 0x800, // Counterclockwise and Odd
+		UNC_R3_RING_AD_USED__MASK__BDX_UNC_R3_RING_AD_USED__CW = 0x300, // Clockwise
+		UNC_R3_RING_AD_USED__MASK__BDX_UNC_R3_RING_AD_USED__CW_EVEN = 0x100, // Clockwise and Even
+		UNC_R3_RING_AD_USED__MASK__BDX_UNC_R3_RING_AD_USED__CW_ODD = 0x200, // Clockwise and Odd
+		UNC_R3_RING_AK_USED = 0x8, // Counts the number of cycles that the AK ring is being used at this ring stop.  This includes when packets are passing by and when packets are being sunk
+		UNC_R3_RING_AK_USED__MASK__BDX_UNC_R3_RING_AD_USED__CCW = 0xc00, // Counterclockwise
+		UNC_R3_RING_AK_USED__MASK__BDX_UNC_R3_RING_AD_USED__CCW_EVEN = 0x400, // Counterclockwise and Even
+		UNC_R3_RING_AK_USED__MASK__BDX_UNC_R3_RING_AD_USED__CCW_ODD = 0x800, // Counterclockwise and Odd
+		UNC_R3_RING_AK_USED__MASK__BDX_UNC_R3_RING_AD_USED__CW = 0x300, // Clockwise
+		UNC_R3_RING_AK_USED__MASK__BDX_UNC_R3_RING_AD_USED__CW_EVEN = 0x100, // Clockwise and Even
+		UNC_R3_RING_AK_USED__MASK__BDX_UNC_R3_RING_AD_USED__CW_ODD = 0x200, // Clockwise and Odd
+		UNC_R3_RING_BL_USED = 0x9, // Counts the number of cycles that the BL ring is being used at this ring stop.  This includes when packets are passing by and when packets are being sunk
+		UNC_R3_RING_BL_USED__MASK__BDX_UNC_R3_RING_AD_USED__CCW = 0xc00, // Counterclockwise
+		UNC_R3_RING_BL_USED__MASK__BDX_UNC_R3_RING_AD_USED__CCW_EVEN = 0x400, // Counterclockwise and Even
+		UNC_R3_RING_BL_USED__MASK__BDX_UNC_R3_RING_AD_USED__CCW_ODD = 0x800, // Counterclockwise and Odd
+		UNC_R3_RING_BL_USED__MASK__BDX_UNC_R3_RING_AD_USED__CW = 0x300, // Clockwise
+		UNC_R3_RING_BL_USED__MASK__BDX_UNC_R3_RING_AD_USED__CW_EVEN = 0x100, // Clockwise and Even
+		UNC_R3_RING_BL_USED__MASK__BDX_UNC_R3_RING_AD_USED__CW_ODD = 0x200, // Clockwise and Odd
+		UNC_R3_RING_IV_USED = 0xa, // Counts the number of cycles that the IV ring is being used at this ring stop.  This includes when packets are passing by and when packets are being sent
+		UNC_R3_RING_IV_USED__MASK__BDX_UNC_R3_RING_IV_USED__ANY = 0xf00, // Any
+		UNC_R3_RING_IV_USED__MASK__BDX_UNC_R3_RING_IV_USED__CW = 0x300, // Clockwise
+		UNC_R3_RING_SINK_STARVED = 0xe, // Number of cycles the ringstop is in starvation (per ring)
+		UNC_R3_RING_SINK_STARVED__MASK__BDX_UNC_R3_RING_SINK_STARVED__AK = 0x200, // AK
+		UNC_R3_RXR_CYCLES_NE = 0x10, // Counts the number of cycles when the QPI Ingress is not empty.  This tracks one of the three rings that are used by the QPI agent.  This can be used in conjunction with the QPI Ingress Occupancy Accumulator event in order to calculate average queue occupancy.  Multiple ingress buffers can be tracked at a given time using multiple counters.
+		UNC_R3_RXR_CYCLES_NE__MASK__BDX_UNC_R3_RXR_CYCLES_NE__HOM = 0x100, // Ingress Cycles Not Empty -- HOM
+		UNC_R3_RXR_CYCLES_NE__MASK__BDX_UNC_R3_RXR_CYCLES_NE__NDR = 0x400, // Ingress Cycles Not Empty -- NDR
+		UNC_R3_RXR_CYCLES_NE__MASK__BDX_UNC_R3_RXR_CYCLES_NE__SNP = 0x200, // Ingress Cycles Not Empty -- SNP
+		UNC_R3_RXR_CYCLES_NE_VN1 = 0x14, // Counts the number of cycles when the QPI VN1  Ingress is not empty.  This tracks one of the three rings that are used by the QPI agent.  This can be used in conjunction with the QPI VN1  Ingress Occupancy Accumulator event in order to calculate average queue occupancy.  Multiple ingress buffers can be tracked at a given time using multiple counters.
+		UNC_R3_RXR_CYCLES_NE_VN1__MASK__BDX_UNC_R3_RXR_CYCLES_NE_VN1__DRS = 0x800, // VN1 Ingress Cycles Not Empty -- DRS
+		UNC_R3_RXR_CYCLES_NE_VN1__MASK__BDX_UNC_R3_RXR_CYCLES_NE_VN1__HOM = 0x100, // VN1 Ingress Cycles Not Empty -- HOM
+		UNC_R3_RXR_CYCLES_NE_VN1__MASK__BDX_UNC_R3_RXR_CYCLES_NE_VN1__NCB = 0x1000, // VN1 Ingress Cycles Not Empty -- NCB
+		UNC_R3_RXR_CYCLES_NE_VN1__MASK__BDX_UNC_R3_RXR_CYCLES_NE_VN1__NCS = 0x2000, // VN1 Ingress Cycles Not Empty -- NCS
+		UNC_R3_RXR_CYCLES_NE_VN1__MASK__BDX_UNC_R3_RXR_CYCLES_NE_VN1__NDR = 0x400, // VN1 Ingress Cycles Not Empty -- NDR
+		UNC_R3_RXR_CYCLES_NE_VN1__MASK__BDX_UNC_R3_RXR_CYCLES_NE_VN1__SNP = 0x200, // VN1 Ingress Cycles Not Empty -- SNP
+		UNC_R3_RXR_INSERTS = 0x11, // Counts the number of allocations into the QPI Ingress.  This tracks one of the three rings that are used by the QPI agent.  This can be used in conjunction with the QPI Ingress Occupancy Accumulator event in order to calculate average queue latency.  Multiple ingress buffers can be tracked at a given time using multiple counters.
+		UNC_R3_RXR_INSERTS__MASK__BDX_UNC_R3_RXR_INSERTS__DRS = 0x800, // Ingress Allocations -- DRS
+		UNC_R3_RXR_INSERTS__MASK__BDX_UNC_R3_RXR_INSERTS__HOM = 0x100, // Ingress Allocations -- HOM
+		UNC_R3_RXR_INSERTS__MASK__BDX_UNC_R3_RXR_INSERTS__NCB = 0x1000, // Ingress Allocations -- NCB
+		UNC_R3_RXR_INSERTS__MASK__BDX_UNC_R3_RXR_INSERTS__NCS = 0x2000, // Ingress Allocations -- NCS
+		UNC_R3_RXR_INSERTS__MASK__BDX_UNC_R3_RXR_INSERTS__NDR = 0x400, // Ingress Allocations -- NDR
+		UNC_R3_RXR_INSERTS__MASK__BDX_UNC_R3_RXR_INSERTS__SNP = 0x200, // Ingress Allocations -- SNP
+		UNC_R3_RXR_INSERTS_VN1 = 0x15, // Counts the number of allocations into the QPI VN1  Ingress.  This tracks one of the three rings that are used by the QPI agent.  This can be used in conjunction with the QPI VN1  Ingress Occupancy Accumulator event in order to calculate average queue latency.  Multiple ingress buffers can be tracked at a given time using multiple counters.
+		UNC_R3_RXR_INSERTS_VN1__MASK__BDX_UNC_R3_RXR_INSERTS__DRS = 0x800, // Ingress Allocations -- DRS
+		UNC_R3_RXR_INSERTS_VN1__MASK__BDX_UNC_R3_RXR_INSERTS__HOM = 0x100, // Ingress Allocations -- HOM
+		UNC_R3_RXR_INSERTS_VN1__MASK__BDX_UNC_R3_RXR_INSERTS__NCB = 0x1000, // Ingress Allocations -- NCB
+		UNC_R3_RXR_INSERTS_VN1__MASK__BDX_UNC_R3_RXR_INSERTS__NCS = 0x2000, // Ingress Allocations -- NCS
+		UNC_R3_RXR_INSERTS_VN1__MASK__BDX_UNC_R3_RXR_INSERTS__NDR = 0x400, // Ingress Allocations -- NDR
+		UNC_R3_RXR_INSERTS_VN1__MASK__BDX_UNC_R3_RXR_INSERTS__SNP = 0x200, // Ingress Allocations -- SNP
+		UNC_R3_RXR_OCCUPANCY_VN1 = 0x13, // Accumulates the occupancy of a given QPI VN1  Ingress queue in each cycles.  This tracks one of the three ring Ingress buffers.  This can be used with the QPI VN1  Ingress Not Empty event to calculate average occupancy or the QPI VN1  Ingress Allocations event in order to calculate average queuing latency.
+		UNC_R3_RXR_OCCUPANCY_VN1__MASK__BDX_UNC_R3_RXR_INSERTS__DRS = 0x800, // Ingress Allocations -- DRS
+		UNC_R3_RXR_OCCUPANCY_VN1__MASK__BDX_UNC_R3_RXR_INSERTS__HOM = 0x100, // Ingress Allocations -- HOM
+		UNC_R3_RXR_OCCUPANCY_VN1__MASK__BDX_UNC_R3_RXR_INSERTS__NCB = 0x1000, // Ingress Allocations -- NCB
+		UNC_R3_RXR_OCCUPANCY_VN1__MASK__BDX_UNC_R3_RXR_INSERTS__NCS = 0x2000, // Ingress Allocations -- NCS
+		UNC_R3_RXR_OCCUPANCY_VN1__MASK__BDX_UNC_R3_RXR_INSERTS__NDR = 0x400, // Ingress Allocations -- NDR
+		UNC_R3_RXR_OCCUPANCY_VN1__MASK__BDX_UNC_R3_RXR_INSERTS__SNP = 0x200, // Ingress Allocations -- SNP
+		UNC_R3_SBO0_CREDITS_ACQUIRED = 0x28, // Number of Sbo 0 credits acquired in a given cycle
+		UNC_R3_SBO0_CREDITS_ACQUIRED__MASK__BDX_UNC_R3_SBO0_CREDITS_ACQUIRED__AD = 0x100, // SBo0 Credits Acquired -- For AD Ring
+		UNC_R3_SBO0_CREDITS_ACQUIRED__MASK__BDX_UNC_R3_SBO0_CREDITS_ACQUIRED__BL = 0x200, // SBo0 Credits Acquired -- For BL Ring
+		UNC_R3_SBO1_CREDITS_ACQUIRED = 0x29, // Number of Sbo 1 credits acquired in a given cycle
+		UNC_R3_SBO1_CREDITS_ACQUIRED__MASK__BDX_UNC_R3_SBO1_CREDITS_ACQUIRED__AD = 0x100, // SBo1 Credits Acquired -- For AD Ring
+		UNC_R3_SBO1_CREDITS_ACQUIRED__MASK__BDX_UNC_R3_SBO1_CREDITS_ACQUIRED__BL = 0x200, // SBo1 Credits Acquired -- For BL Ring
+		UNC_R3_STALL_NO_SBO_CREDIT = 0x2c, // Number of cycles Egress is stalled waiting for an Sbo credit to become available.  Per Sbo
+		UNC_R3_STALL_NO_SBO_CREDIT__MASK__BDX_UNC_R3_STALL_NO_SBO_CREDIT__SBO0_AD = 0x100, // Stall on No Sbo Credits -- For SBo0
+		UNC_R3_STALL_NO_SBO_CREDIT__MASK__BDX_UNC_R3_STALL_NO_SBO_CREDIT__SBO0_BL = 0x400, // Stall on No Sbo Credits -- For SBo0
+		UNC_R3_STALL_NO_SBO_CREDIT__MASK__BDX_UNC_R3_STALL_NO_SBO_CREDIT__SBO1_AD = 0x200, // Stall on No Sbo Credits -- For SBo1
+		UNC_R3_STALL_NO_SBO_CREDIT__MASK__BDX_UNC_R3_STALL_NO_SBO_CREDIT__SBO1_BL = 0x800, // Stall on No Sbo Credits -- For SBo1
+		UNC_R3_TXR_NACK = 0x26, // TBD
+		UNC_R3_TXR_NACK__MASK__BDX_UNC_R3_TXR_NACK__DN_AD = 0x100, // Egress CCW NACK -- AD CCW
+		UNC_R3_TXR_NACK__MASK__BDX_UNC_R3_TXR_NACK__DN_AK = 0x400, // Egress CCW NACK -- AK CCW
+		UNC_R3_TXR_NACK__MASK__BDX_UNC_R3_TXR_NACK__DN_BL = 0x200, // Egress CCW NACK -- BL CCW
+		UNC_R3_TXR_NACK__MASK__BDX_UNC_R3_TXR_NACK__UP_AD = 0x800, // Egress CCW NACK -- AK CCW
+		UNC_R3_TXR_NACK__MASK__BDX_UNC_R3_TXR_NACK__UP_AK = 0x2000, // Egress CCW NACK -- BL CW
+		UNC_R3_TXR_NACK__MASK__BDX_UNC_R3_TXR_NACK__UP_BL = 0x1000, // Egress CCW NACK -- BL CCW
+		UNC_R3_VN0_CREDITS_REJECT = 0x37, // Number of times a request failed to acquire a DRS VN0 credit.  In order for a request to be transferred across QPI
+		UNC_R3_VN0_CREDITS_REJECT__MASK__BDX_UNC_R3_VN0_CREDITS_REJECT__DRS = 0x800, // VN0 Credit Acquisition Failed on DRS -- DRS Message Class
+		UNC_R3_VN0_CREDITS_REJECT__MASK__BDX_UNC_R3_VN0_CREDITS_REJECT__HOM = 0x100, // VN0 Credit Acquisition Failed on DRS -- HOM Message Class
+		UNC_R3_VN0_CREDITS_REJECT__MASK__BDX_UNC_R3_VN0_CREDITS_REJECT__NCB = 0x1000, // VN0 Credit Acquisition Failed on DRS -- NCB Message Class
+		UNC_R3_VN0_CREDITS_REJECT__MASK__BDX_UNC_R3_VN0_CREDITS_REJECT__NCS = 0x2000, // VN0 Credit Acquisition Failed on DRS -- NCS Message Class
+		UNC_R3_VN0_CREDITS_REJECT__MASK__BDX_UNC_R3_VN0_CREDITS_REJECT__NDR = 0x400, // VN0 Credit Acquisition Failed on DRS -- NDR Message Class
+		UNC_R3_VN0_CREDITS_REJECT__MASK__BDX_UNC_R3_VN0_CREDITS_REJECT__SNP = 0x200, // VN0 Credit Acquisition Failed on DRS -- SNP Message Class
+		UNC_R3_VN0_CREDITS_USED = 0x36, // Number of times a VN0 credit was used on the DRS message channel.  In order for a request to be transferred across QPI
+		UNC_R3_VN0_CREDITS_USED__MASK__BDX_UNC_R3_VN0_CREDITS_USED__DRS = 0x800, // VN0 Credit Used -- DRS Message Class
+		UNC_R3_VN0_CREDITS_USED__MASK__BDX_UNC_R3_VN0_CREDITS_USED__HOM = 0x100, // VN0 Credit Used -- HOM Message Class
+		UNC_R3_VN0_CREDITS_USED__MASK__BDX_UNC_R3_VN0_CREDITS_USED__NCB = 0x1000, // VN0 Credit Used -- NCB Message Class
+		UNC_R3_VN0_CREDITS_USED__MASK__BDX_UNC_R3_VN0_CREDITS_USED__NCS = 0x2000, // VN0 Credit Used -- NCS Message Class
+		UNC_R3_VN0_CREDITS_USED__MASK__BDX_UNC_R3_VN0_CREDITS_USED__NDR = 0x400, // VN0 Credit Used -- NDR Message Class
+		UNC_R3_VN0_CREDITS_USED__MASK__BDX_UNC_R3_VN0_CREDITS_USED__SNP = 0x200, // VN0 Credit Used -- SNP Message Class
+		UNC_R3_VN1_CREDITS_REJECT = 0x39, // Number of times a request failed to acquire a VN1 credit.  In order for a request to be transferred across QPI
+		UNC_R3_VN1_CREDITS_REJECT__MASK__BDX_UNC_R3_VN1_CREDITS_REJECT__DRS = 0x800, // VN1 Credit Acquisition Failed on DRS -- DRS Message Class
+		UNC_R3_VN1_CREDITS_REJECT__MASK__BDX_UNC_R3_VN1_CREDITS_REJECT__HOM = 0x100, // VN1 Credit Acquisition Failed on DRS -- HOM Message Class
+		UNC_R3_VN1_CREDITS_REJECT__MASK__BDX_UNC_R3_VN1_CREDITS_REJECT__NCB = 0x1000, // VN1 Credit Acquisition Failed on DRS -- NCB Message Class
+		UNC_R3_VN1_CREDITS_REJECT__MASK__BDX_UNC_R3_VN1_CREDITS_REJECT__NCS = 0x2000, // VN1 Credit Acquisition Failed on DRS -- NCS Message Class
+		UNC_R3_VN1_CREDITS_REJECT__MASK__BDX_UNC_R3_VN1_CREDITS_REJECT__NDR = 0x400, // VN1 Credit Acquisition Failed on DRS -- NDR Message Class
+		UNC_R3_VN1_CREDITS_REJECT__MASK__BDX_UNC_R3_VN1_CREDITS_REJECT__SNP = 0x200, // VN1 Credit Acquisition Failed on DRS -- SNP Message Class
+		UNC_R3_VN1_CREDITS_USED = 0x38, // Number of times a VN1 credit was used on the DRS message channel.  In order for a request to be transferred across QPI
+		UNC_R3_VN1_CREDITS_USED__MASK__BDX_UNC_R3_VN1_CREDITS_USED__DRS = 0x800, // VN1 Credit Used -- DRS Message Class
+		UNC_R3_VN1_CREDITS_USED__MASK__BDX_UNC_R3_VN1_CREDITS_USED__HOM = 0x100, // VN1 Credit Used -- HOM Message Class
+		UNC_R3_VN1_CREDITS_USED__MASK__BDX_UNC_R3_VN1_CREDITS_USED__NCB = 0x1000, // VN1 Credit Used -- NCB Message Class
+		UNC_R3_VN1_CREDITS_USED__MASK__BDX_UNC_R3_VN1_CREDITS_USED__NCS = 0x2000, // VN1 Credit Used -- NCS Message Class
+		UNC_R3_VN1_CREDITS_USED__MASK__BDX_UNC_R3_VN1_CREDITS_USED__NDR = 0x400, // VN1 Credit Used -- NDR Message Class
+		UNC_R3_VN1_CREDITS_USED__MASK__BDX_UNC_R3_VN1_CREDITS_USED__SNP = 0x200, // VN1 Credit Used -- SNP Message Class
+		UNC_R3_VNA_CREDITS_ACQUIRED = 0x33, // Number of QPI VNA Credit acquisitions.  This event can be used in conjunction with the VNA In-Use Accumulator to calculate the average lifetime of a credit holder.  VNA credits are used by all message classes in order to communicate across QPI.  If a packet is unable to acquire credits
+		UNC_R3_VNA_CREDITS_ACQUIRED__MASK__BDX_UNC_R3_VNA_CREDITS_ACQUIRED__AD = 0x100, // VNA credit Acquisitions -- HOM Message Class
+		UNC_R3_VNA_CREDITS_ACQUIRED__MASK__BDX_UNC_R3_VNA_CREDITS_ACQUIRED__BL = 0x400, // VNA credit Acquisitions -- HOM Message Class
+		UNC_R3_VNA_CREDITS_REJECT = 0x34, // Number of attempted VNA credit acquisitions that were rejected because the VNA credit pool was full (or almost full).  It is possible to filter this event by message class.  Some packets use more than one flit buffer
+		UNC_R3_VNA_CREDITS_REJECT__MASK__BDX_UNC_R3_VNA_CREDITS_REJECT__DRS = 0x800, // VNA Credit Reject -- DRS Message Class
+		UNC_R3_VNA_CREDITS_REJECT__MASK__BDX_UNC_R3_VNA_CREDITS_REJECT__HOM = 0x100, // VNA Credit Reject -- HOM Message Class
+		UNC_R3_VNA_CREDITS_REJECT__MASK__BDX_UNC_R3_VNA_CREDITS_REJECT__NCB = 0x1000, // VNA Credit Reject -- NCB Message Class
+		UNC_R3_VNA_CREDITS_REJECT__MASK__BDX_UNC_R3_VNA_CREDITS_REJECT__NCS = 0x2000, // VNA Credit Reject -- NCS Message Class
+		UNC_R3_VNA_CREDITS_REJECT__MASK__BDX_UNC_R3_VNA_CREDITS_REJECT__NDR = 0x400, // VNA Credit Reject -- NDR Message Class
+		UNC_R3_VNA_CREDITS_REJECT__MASK__BDX_UNC_R3_VNA_CREDITS_REJECT__SNP = 0x200, // VNA Credit Reject -- SNP Message Class
+		
+	};
+};
+
+namespace bdx_unc_r3 = optkit::intel::bdx_unc_r3;
+
+#undef INTEL_X86_EDGE_BIT
+#undef INTEL_X86_ANY_BIT
+#undef INTEL_X86_INV_BIT
+#undef INTEL_X86_CMASK_BIT
+#undef INTEL_X86_MOD_EDGE
+#undef INTEL_X86_MOD_ANY
+#undef INTEL_X86_MOD_INV

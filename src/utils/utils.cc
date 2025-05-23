@@ -1,5 +1,6 @@
 #include "utils/utils.hh"
 
+// This global variable is needed by save methods of profilers.
 std::string optkit::utils::EXECUTION_FOLDER_NAME{optkit::utils::get_date() + "__" + optkit::utils::get_time() + "__" + optkit::utils::generateGUID().substr(0, CONF_LOG_PRINT_GUID_LENGTH)};
 
 std::string optkit::utils::generateGUID()

@@ -1,0 +1,243 @@
+#pragma once
+#include <cstdint>
+#define INTEL_X86_EDGE_BIT	18
+#define INTEL_X86_ANY_BIT	21
+#define INTEL_X86_INV_BIT	23
+#define INTEL_X86_CMASK_BIT 24
+#define INTEL_X86_MOD_EDGE	(1 << INTEL_X86_EDGE_BIT)
+#define INTEL_X86_MOD_ANY	(1 << INTEL_X86_ANY_BIT)
+#define INTEL_X86_MOD_INV	(1 << INTEL_X86_INV_BIT)
+namespace optkit::intel::bdx_unc_h{
+	enum bdx_unc_h : uint64_t {
+		UNC_H_BT_CYCLES_NE = 0x42, // Cycles the Backup Tracker (BT) is not empty. The BT is the actual HOM tracker in IVT.
+		UNC_H_BT_OCCUPANCY = 0x43, // Accumulates the occupancy of te HA BT pool in every cycle. This can be used with the 'not empty' stat to calculate the average queue occupancy or the 'allocations' stat to calculate average queue latency. HA BTs are allocated as son as a request enters the HA and are released after the snoop response and data return and the response is returned to the ring
+		UNC_H_BYPASS_IMC = 0x14, // Counts the number of times when the HA was able to bypass was attempted.  This is a latency optimization for situations when there is light loadings on the memory subsystem.  This can be filted by when the bypass was taken and when it was not.
+		UNC_H_BYPASS_IMC__MASK__BDX_UNC_H_BYPASS_IMC__NOT_TAKEN = 0x200, // HA to iMC Bypass -- Not Taken
+		UNC_H_BYPASS_IMC__MASK__BDX_UNC_H_BYPASS_IMC__TAKEN = 0x100, // HA to iMC Bypass -- Taken
+		UNC_H_CONFLICT_CYCLES = 0xb, // TBD
+		UNC_H_CLOCKTICKS = 0x0, // Counts the number of uclks in the HA.  This will be slightly different than the count in the Ubox because of enable/freeze delays.  The HA is on the other side of the die from the fixed Ubox uclk counter
+		UNC_H_DIRECT2CORE_COUNT = 0x11, // Number of Direct2Core messages sent
+		UNC_H_DIRECT2CORE_CYCLES_DISABLED = 0x12, // Number of cycles in which Direct2Core was disabled
+		UNC_H_DIRECT2CORE_TXN_OVERRIDE = 0x13, // Number of Reads where Direct2Core overridden
+		UNC_H_DIRECTORY_LAT_OPT = 0x41, // I
+		UNC_H_DIRECTORY_LOOKUP = 0xc, // Counts the number of transactions that looked up the directory.  Can be filtered by requests that had to snoop and those that did not have to.
+		UNC_H_DIRECTORY_LOOKUP__MASK__BDX_UNC_H_DIRECTORY_LOOKUP__NO_SNP = 0x200, // Directory Lookups -- Snoop Not Needed
+		UNC_H_DIRECTORY_LOOKUP__MASK__BDX_UNC_H_DIRECTORY_LOOKUP__SNP = 0x100, // Directory Lookups -- Snoop Needed
+		UNC_H_DIRECTORY_UPDATE = 0xd, // Counts the number of directory updates that were required.  These result in writes to the memory controller.  This can be filtered by directory sets and directory clears.
+		UNC_H_DIRECTORY_UPDATE__MASK__BDX_UNC_H_DIRECTORY_UPDATE__ANY = 0x300, // Directory Updates -- Any Directory Update
+		UNC_H_DIRECTORY_UPDATE__MASK__BDX_UNC_H_DIRECTORY_UPDATE__CLEAR = 0x200, // Directory Updates -- Directory Clear
+		UNC_H_DIRECTORY_UPDATE__MASK__BDX_UNC_H_DIRECTORY_UPDATE__SET = 0x100, // Directory Updates -- Directory Set
+		UNC_H_HITME_HIT = 0x71, // TBD
+		UNC_H_HITME_HIT__MASK__BDX_UNC_H_HITME_HIT__ACKCNFLTWBI = 0x400, // Counts Number of Hits in HitMe Cache -- op is AckCnfltWbI
+		UNC_H_HITME_HIT__MASK__BDX_UNC_H_HITME_HIT__ALL = 0xff00, // Counts Number of Hits in HitMe Cache -- All Requests
+		UNC_H_HITME_HIT__MASK__BDX_UNC_H_HITME_HIT__ALLOCS = 0x7000, // Counts Number of Hits in HitMe Cache -- Allocations
+		UNC_H_HITME_HIT__MASK__BDX_UNC_H_HITME_HIT__EVICTS = 0x4200, // Counts Number of Hits in HitMe Cache -- Allocations
+		UNC_H_HITME_HIT__MASK__BDX_UNC_H_HITME_HIT__HOM = 0xf00, // Counts Number of Hits in HitMe Cache -- HOM Requests
+		UNC_H_HITME_HIT__MASK__BDX_UNC_H_HITME_HIT__INVALS = 0x2600, // Counts Number of Hits in HitMe Cache -- Invalidations
+		UNC_H_HITME_HIT__MASK__BDX_UNC_H_HITME_HIT__READ_OR_INVITOE = 0x100, // Counts Number of Hits in HitMe Cache -- op is RdCode
+		UNC_H_HITME_HIT__MASK__BDX_UNC_H_HITME_HIT__RSP = 0x8000, // Counts Number of Hits in HitMe Cache -- op is RspI
+		UNC_H_HITME_HIT__MASK__BDX_UNC_H_HITME_HIT__RSPFWDI_LOCAL = 0x2000, // Counts Number of Hits in HitMe Cache -- op is RspIFwd or RspIFwdWb for a local request
+		UNC_H_HITME_HIT__MASK__BDX_UNC_H_HITME_HIT__RSPFWDI_REMOTE = 0x1000, // Counts Number of Hits in HitMe Cache -- op is RspIFwd or RspIFwdWb for a remote request
+		UNC_H_HITME_HIT__MASK__BDX_UNC_H_HITME_HIT__RSPFWDS = 0x4000, // Counts Number of Hits in HitMe Cache -- op is RsSFwd or RspSFwdWb
+		UNC_H_HITME_HIT__MASK__BDX_UNC_H_HITME_HIT__WBMTOE_OR_S = 0x800, // Counts Number of Hits in HitMe Cache -- op is WbMtoE or WbMtoS
+		UNC_H_HITME_HIT__MASK__BDX_UNC_H_HITME_HIT__WBMTOI = 0x200, // Counts Number of Hits in HitMe Cache -- op is WbMtoI
+		UNC_H_HITME_HIT_PV_BITS_SET = 0x72, // TBD
+		UNC_H_HITME_HIT_PV_BITS_SET__MASK__BDX_UNC_H_HITME_HIT_PV_BITS_SET__ACKCNFLTWBI = 0x400, // Accumulates Number of PV bits set on HitMe Cache Hits -- op is AckCnfltWbI
+		UNC_H_HITME_HIT_PV_BITS_SET__MASK__BDX_UNC_H_HITME_HIT_PV_BITS_SET__ALL = 0xff00, // Accumulates Number of PV bits set on HitMe Cache Hits -- All Requests
+		UNC_H_HITME_HIT_PV_BITS_SET__MASK__BDX_UNC_H_HITME_HIT_PV_BITS_SET__HOM = 0xf00, // Accumulates Number of PV bits set on HitMe Cache Hits -- HOM Requests
+		UNC_H_HITME_HIT_PV_BITS_SET__MASK__BDX_UNC_H_HITME_HIT_PV_BITS_SET__READ_OR_INVITOE = 0x100, // Accumulates Number of PV bits set on HitMe Cache Hits -- op is RdCode
+		UNC_H_HITME_HIT_PV_BITS_SET__MASK__BDX_UNC_H_HITME_HIT_PV_BITS_SET__RSP = 0x8000, // Accumulates Number of PV bits set on HitMe Cache Hits -- op is RspI
+		UNC_H_HITME_HIT_PV_BITS_SET__MASK__BDX_UNC_H_HITME_HIT_PV_BITS_SET__RSPFWDI_LOCAL = 0x2000, // Accumulates Number of PV bits set on HitMe Cache Hits -- op is RspIFwd or RspIFwdWb for a local request
+		UNC_H_HITME_HIT_PV_BITS_SET__MASK__BDX_UNC_H_HITME_HIT_PV_BITS_SET__RSPFWDI_REMOTE = 0x1000, // Accumulates Number of PV bits set on HitMe Cache Hits -- op is RspIFwd or RspIFwdWb for a remote request
+		UNC_H_HITME_HIT_PV_BITS_SET__MASK__BDX_UNC_H_HITME_HIT_PV_BITS_SET__RSPFWDS = 0x4000, // Accumulates Number of PV bits set on HitMe Cache Hits -- op is RsSFwd or RspSFwdWb
+		UNC_H_HITME_HIT_PV_BITS_SET__MASK__BDX_UNC_H_HITME_HIT_PV_BITS_SET__WBMTOE_OR_S = 0x800, // Accumulates Number of PV bits set on HitMe Cache Hits -- op is WbMtoE or WbMtoS
+		UNC_H_HITME_HIT_PV_BITS_SET__MASK__BDX_UNC_H_HITME_HIT_PV_BITS_SET__WBMTOI = 0x200, // Accumulates Number of PV bits set on HitMe Cache Hits -- op is WbMtoI
+		UNC_H_HITME_LOOKUP = 0x70, // TBD
+		UNC_H_HITME_LOOKUP__MASK__BDX_UNC_H_HITME_LOOKUP__ACKCNFLTWBI = 0x400, // Counts Number of times HitMe Cache is accessed -- op is AckCnfltWbI
+		UNC_H_HITME_LOOKUP__MASK__BDX_UNC_H_HITME_LOOKUP__ALL = 0xff00, // Counts Number of times HitMe Cache is accessed -- All Requests
+		UNC_H_HITME_LOOKUP__MASK__BDX_UNC_H_HITME_LOOKUP__ALLOCS = 0x7000, // Counts Number of times HitMe Cache is accessed -- Allocations
+		UNC_H_HITME_LOOKUP__MASK__BDX_UNC_H_HITME_LOOKUP__HOM = 0xf00, // Counts Number of times HitMe Cache is accessed -- HOM Requests
+		UNC_H_HITME_LOOKUP__MASK__BDX_UNC_H_HITME_LOOKUP__INVALS = 0x2600, // Counts Number of times HitMe Cache is accessed -- Invalidations
+		UNC_H_HITME_LOOKUP__MASK__BDX_UNC_H_HITME_LOOKUP__READ_OR_INVITOE = 0x100, // Counts Number of times HitMe Cache is accessed -- op is RdCode
+		UNC_H_HITME_LOOKUP__MASK__BDX_UNC_H_HITME_LOOKUP__RSP = 0x8000, // Counts Number of times HitMe Cache is accessed -- op is RspI
+		UNC_H_HITME_LOOKUP__MASK__BDX_UNC_H_HITME_LOOKUP__RSPFWDI_LOCAL = 0x2000, // Counts Number of times HitMe Cache is accessed -- op is RspIFwd or RspIFwdWb for a local request
+		UNC_H_HITME_LOOKUP__MASK__BDX_UNC_H_HITME_LOOKUP__RSPFWDI_REMOTE = 0x1000, // Counts Number of times HitMe Cache is accessed -- op is RspIFwd or RspIFwdWb for a remote request
+		UNC_H_HITME_LOOKUP__MASK__BDX_UNC_H_HITME_LOOKUP__RSPFWDS = 0x4000, // Counts Number of times HitMe Cache is accessed -- op is RsSFwd or RspSFwdWb
+		UNC_H_HITME_LOOKUP__MASK__BDX_UNC_H_HITME_LOOKUP__WBMTOE_OR_S = 0x800, // Counts Number of times HitMe Cache is accessed -- op is WbMtoE or WbMtoS
+		UNC_H_HITME_LOOKUP__MASK__BDX_UNC_H_HITME_LOOKUP__WBMTOI = 0x200, // Counts Number of times HitMe Cache is accessed -- op is WbMtoI
+		UNC_H_IGR_NO_CREDIT_CYCLES = 0x22, // Counts the number of cycles when the HA does not have credits to send messages to the QPI Agent.  This can be filtered by the different credit pools and the different links.
+		UNC_H_IGR_NO_CREDIT_CYCLES__MASK__BDX_UNC_H_IGR_NO_CREDIT_CYCLES__AD_QPI0 = 0x100, // Cycles without QPI Ingress Credits -- AD to QPI Link 0
+		UNC_H_IGR_NO_CREDIT_CYCLES__MASK__BDX_UNC_H_IGR_NO_CREDIT_CYCLES__AD_QPI1 = 0x200, // Cycles without QPI Ingress Credits -- AD to QPI Link 1
+		UNC_H_IGR_NO_CREDIT_CYCLES__MASK__BDX_UNC_H_IGR_NO_CREDIT_CYCLES__AD_QPI2 = 0x1000, // Cycles without QPI Ingress Credits -- BL to QPI Link 0
+		UNC_H_IGR_NO_CREDIT_CYCLES__MASK__BDX_UNC_H_IGR_NO_CREDIT_CYCLES__BL_QPI0 = 0x400, // Cycles without QPI Ingress Credits -- BL to QPI Link 0
+		UNC_H_IGR_NO_CREDIT_CYCLES__MASK__BDX_UNC_H_IGR_NO_CREDIT_CYCLES__BL_QPI1 = 0x800, // Cycles without QPI Ingress Credits -- BL to QPI Link 1
+		UNC_H_IGR_NO_CREDIT_CYCLES__MASK__BDX_UNC_H_IGR_NO_CREDIT_CYCLES__BL_QPI2 = 0x2000, // Cycles without QPI Ingress Credits -- BL to QPI Link 1
+		UNC_H_IMC_READS = 0x17, // Count of the number of reads issued to any of the memory controller channels.  This can be filtered by the priority of the reads.
+		UNC_H_IMC_READS__MASK__BDX_UNC_H_IMC_READS__NORMAL = 0x100, // HA to iMC Normal Priority Reads Issued -- Normal Priority
+		UNC_H_IMC_RETRY = 0x1e, // TBD
+		UNC_H_IMC_WRITES = 0x1a, // Counts the total number of full line writes issued from the HA into the memory controller.  This counts for all four channels.  It can be filtered by full/partial and ISOCH/non-ISOCH.
+		UNC_H_IMC_WRITES__MASK__BDX_UNC_H_IMC_WRITES__ALL = 0xf00, // HA to iMC Full Line Writes Issued -- All Writes
+		UNC_H_IMC_WRITES__MASK__BDX_UNC_H_IMC_WRITES__FULL = 0x100, // HA to iMC Full Line Writes Issued -- Full Line Non-ISOCH
+		UNC_H_IMC_WRITES__MASK__BDX_UNC_H_IMC_WRITES__FULL_ISOCH = 0x400, // HA to iMC Full Line Writes Issued -- ISOCH Full Line
+		UNC_H_IMC_WRITES__MASK__BDX_UNC_H_IMC_WRITES__PARTIAL = 0x200, // HA to iMC Full Line Writes Issued -- Partial Non-ISOCH
+		UNC_H_IMC_WRITES__MASK__BDX_UNC_H_IMC_WRITES__PARTIAL_ISOCH = 0x800, // HA to iMC Full Line Writes Issued -- ISOCH Partial
+		UNC_H_OSB = 0x53, // Count of OSB snoop broadcasts. Counts by 1 per request causing OSB snoops to be broadcast. Does not count all the snoops generated by OSB.
+		UNC_H_OSB__MASK__BDX_UNC_H_OSB__CANCELLED = 0x1000, // OSB Snoop Broadcast -- Cancelled
+		UNC_H_OSB__MASK__BDX_UNC_H_OSB__INVITOE_LOCAL = 0x400, // OSB Snoop Broadcast -- Local InvItoE
+		UNC_H_OSB__MASK__BDX_UNC_H_OSB__READS_LOCAL = 0x200, // OSB Snoop Broadcast -- Local Reads
+		UNC_H_OSB__MASK__BDX_UNC_H_OSB__READS_LOCAL_USEFUL = 0x2000, // OSB Snoop Broadcast -- Reads Local -  Useful
+		UNC_H_OSB__MASK__BDX_UNC_H_OSB__REMOTE = 0x800, // OSB Snoop Broadcast -- Remote
+		UNC_H_OSB__MASK__BDX_UNC_H_OSB__REMOTE_USEFUL = 0x4000, // OSB Snoop Broadcast -- Remote - Useful
+		UNC_H_OSB_EDR = 0x54, // Counts the number of transactions that broadcast snoop due to OSB
+		UNC_H_OSB_EDR__MASK__BDX_UNC_H_OSB_EDR__ALL = 0x100, // OSB Early Data Return -- All
+		UNC_H_OSB_EDR__MASK__BDX_UNC_H_OSB_EDR__READS_LOCAL_I = 0x200, // OSB Early Data Return -- Reads to Local  I
+		UNC_H_OSB_EDR__MASK__BDX_UNC_H_OSB_EDR__READS_LOCAL_S = 0x800, // OSB Early Data Return -- Reads to Local S
+		UNC_H_OSB_EDR__MASK__BDX_UNC_H_OSB_EDR__READS_REMOTE_I = 0x400, // OSB Early Data Return -- Reads to Remote I
+		UNC_H_OSB_EDR__MASK__BDX_UNC_H_OSB_EDR__READS_REMOTE_S = 0x1000, // OSB Early Data Return -- Reads to Remote S
+		UNC_H_REQUESTS = 0x1, // Counts the total number of read requests made into the Home Agent. Reads include all read opcodes (including RFO).  Writes include all writes (streaming
+		UNC_H_REQUESTS__MASK__BDX_UNC_H_REQUESTS__INVITOE_LOCAL = 0x1000, // Read and Write Requests -- Local InvItoEs
+		UNC_H_REQUESTS__MASK__BDX_UNC_H_REQUESTS__INVITOE_REMOTE = 0x2000, // Read and Write Requests -- Remote InvItoEs
+		UNC_H_REQUESTS__MASK__BDX_UNC_H_REQUESTS__READS = 0x300, // Read and Write Requests -- Reads
+		UNC_H_REQUESTS__MASK__BDX_UNC_H_REQUESTS__READS_LOCAL = 0x100, // Read and Write Requests -- Local Reads
+		UNC_H_REQUESTS__MASK__BDX_UNC_H_REQUESTS__READS_REMOTE = 0x200, // Read and Write Requests -- Remote Reads
+		UNC_H_REQUESTS__MASK__BDX_UNC_H_REQUESTS__WRITES = 0xc00, // Read and Write Requests -- Writes
+		UNC_H_REQUESTS__MASK__BDX_UNC_H_REQUESTS__WRITES_LOCAL = 0x400, // Read and Write Requests -- Local Writes
+		UNC_H_REQUESTS__MASK__BDX_UNC_H_REQUESTS__WRITES_REMOTE = 0x800, // Read and Write Requests -- Remote Writes
+		UNC_H_RING_AD_USED = 0x3e, // Counts the number of cycles that the AD ring is being used at this ring stop.  This includes when packets are passing by and when packets are being sunk
+		UNC_H_RING_AD_USED__MASK__BDX_UNC_H_RING_AD_USED__CCW = 0xc00, // Counterclockwise
+		UNC_H_RING_AD_USED__MASK__BDX_UNC_H_RING_AD_USED__CCW_EVEN = 0x400, // Counterclockwise and Even
+		UNC_H_RING_AD_USED__MASK__BDX_UNC_H_RING_AD_USED__CCW_ODD = 0x800, // Counterclockwise and Odd
+		UNC_H_RING_AD_USED__MASK__BDX_UNC_H_RING_AD_USED__CW = 0x300, // Clockwise
+		UNC_H_RING_AD_USED__MASK__BDX_UNC_H_RING_AD_USED__CW_EVEN = 0x100, // Clockwise and Even
+		UNC_H_RING_AD_USED__MASK__BDX_UNC_H_RING_AD_USED__CW_ODD = 0x200, // Clockwise and Odd
+		UNC_H_RING_AK_USED = 0x3f, // Counts the number of cycles that the AK ring is being used at this ring stop.  This includes when packets are passing by and when packets are being sunk
+		UNC_H_RING_AK_USED__MASK__BDX_UNC_H_RING_AD_USED__CCW = 0xc00, // Counterclockwise
+		UNC_H_RING_AK_USED__MASK__BDX_UNC_H_RING_AD_USED__CCW_EVEN = 0x400, // Counterclockwise and Even
+		UNC_H_RING_AK_USED__MASK__BDX_UNC_H_RING_AD_USED__CCW_ODD = 0x800, // Counterclockwise and Odd
+		UNC_H_RING_AK_USED__MASK__BDX_UNC_H_RING_AD_USED__CW = 0x300, // Clockwise
+		UNC_H_RING_AK_USED__MASK__BDX_UNC_H_RING_AD_USED__CW_EVEN = 0x100, // Clockwise and Even
+		UNC_H_RING_AK_USED__MASK__BDX_UNC_H_RING_AD_USED__CW_ODD = 0x200, // Clockwise and Odd
+		UNC_H_RING_BL_USED = 0x40, // Counts the number of cycles that the BL ring is being used at this ring stop.  This includes when packets are passing by and when packets are being sunk
+		UNC_H_RING_BL_USED__MASK__BDX_UNC_H_RING_AD_USED__CCW = 0xc00, // Counterclockwise
+		UNC_H_RING_BL_USED__MASK__BDX_UNC_H_RING_AD_USED__CCW_EVEN = 0x400, // Counterclockwise and Even
+		UNC_H_RING_BL_USED__MASK__BDX_UNC_H_RING_AD_USED__CCW_ODD = 0x800, // Counterclockwise and Odd
+		UNC_H_RING_BL_USED__MASK__BDX_UNC_H_RING_AD_USED__CW = 0x300, // Clockwise
+		UNC_H_RING_BL_USED__MASK__BDX_UNC_H_RING_AD_USED__CW_EVEN = 0x100, // Clockwise and Even
+		UNC_H_RING_BL_USED__MASK__BDX_UNC_H_RING_AD_USED__CW_ODD = 0x200, // Clockwise and Odd
+		UNC_H_RPQ_CYCLES_NO_REG_CREDITS = 0x15, // Counts the number of cycles when there are no regular credits available for posting reads from the HA into the iMC.  In order to send reads into the memory controller
+		UNC_H_RPQ_CYCLES_NO_REG_CREDITS__MASK__BDX_UNC_H_RPQ_CYCLES_NO_REG_CREDITS__CHN0 = 0x100, // iMC RPQ Credits Empty - Regular -- Channel 0
+		UNC_H_RPQ_CYCLES_NO_REG_CREDITS__MASK__BDX_UNC_H_RPQ_CYCLES_NO_REG_CREDITS__CHN1 = 0x200, // iMC RPQ Credits Empty - Regular -- Channel 1
+		UNC_H_RPQ_CYCLES_NO_REG_CREDITS__MASK__BDX_UNC_H_RPQ_CYCLES_NO_REG_CREDITS__CHN2 = 0x400, // iMC RPQ Credits Empty - Regular -- Channel 2
+		UNC_H_RPQ_CYCLES_NO_REG_CREDITS__MASK__BDX_UNC_H_RPQ_CYCLES_NO_REG_CREDITS__CHN3 = 0x800, // iMC RPQ Credits Empty - Regular -- Channel 3
+		UNC_H_SBO0_CREDITS_ACQUIRED = 0x68, // Number of Sbo 0 credits acquired in a given cycle
+		UNC_H_SBO0_CREDITS_ACQUIRED__MASK__BDX_UNC_H_SBO0_CREDITS_ACQUIRED__AD = 0x100, // For AD Ring
+		UNC_H_SBO0_CREDITS_ACQUIRED__MASK__BDX_UNC_H_SBO0_CREDITS_ACQUIRED__BL = 0x200, // For BL Ring
+		UNC_H_SBO0_CREDIT_OCCUPANCY = 0x6a, // Number of Sbo 0 credits in use in a given cycle
+		UNC_H_SBO0_CREDIT_OCCUPANCY__MASK__BDX_UNC_H_SBO0_CREDITS_ACQUIRED__AD = 0x100, // For AD Ring
+		UNC_H_SBO0_CREDIT_OCCUPANCY__MASK__BDX_UNC_H_SBO0_CREDITS_ACQUIRED__BL = 0x200, // For BL Ring
+		UNC_H_SBO1_CREDITS_ACQUIRED = 0x69, // Number of Sbo 1 credits acquired in a given cycle
+		UNC_H_SBO1_CREDITS_ACQUIRED__MASK__BDX_UNC_H_SBO0_CREDITS_ACQUIRED__AD = 0x100, // For AD Ring
+		UNC_H_SBO1_CREDITS_ACQUIRED__MASK__BDX_UNC_H_SBO0_CREDITS_ACQUIRED__BL = 0x200, // For BL Ring
+		UNC_H_SBO1_CREDIT_OCCUPANCY = 0x6b, // Number of Sbo 1 credits in use in a given cycle
+		UNC_H_SBO1_CREDIT_OCCUPANCY__MASK__BDX_UNC_H_SBO0_CREDITS_ACQUIRED__AD = 0x100, // For AD Ring
+		UNC_H_SBO1_CREDIT_OCCUPANCY__MASK__BDX_UNC_H_SBO0_CREDITS_ACQUIRED__BL = 0x200, // For BL Ring
+		UNC_H_SNOOPS_RSP_AFTER_DATA = 0xa, // Counts the number of reads when the snoop was on the critical path to the data return.
+		UNC_H_SNOOPS_RSP_AFTER_DATA__MASK__BDX_UNC_H_SNOOPS_RSP_AFTER_DATA__LOCAL = 0x100, // Data beat the Snoop Responses -- Local Requests
+		UNC_H_SNOOPS_RSP_AFTER_DATA__MASK__BDX_UNC_H_SNOOPS_RSP_AFTER_DATA__REMOTE = 0x200, // Data beat the Snoop Responses -- Remote Requests
+		UNC_H_SNOOP_CYCLES_NE = 0x8, // Counts cycles when one or more snoops are outstanding.
+		UNC_H_SNOOP_CYCLES_NE__MASK__BDX_UNC_H_SNOOP_CYCLES_NE__ALL = 0x300, // Cycles with Snoops Outstanding -- All Requests
+		UNC_H_SNOOP_CYCLES_NE__MASK__BDX_UNC_H_SNOOP_CYCLES_NE__LOCAL = 0x100, // Cycles with Snoops Outstanding -- Local Requests
+		UNC_H_SNOOP_CYCLES_NE__MASK__BDX_UNC_H_SNOOP_CYCLES_NE__REMOTE = 0x200, // Cycles with Snoops Outstanding -- Remote Requests
+		UNC_H_SNOOP_OCCUPANCY = 0x9, // Accumulates the occupancy of either the local HA tracker pool that have snoops pending in every cycle.  This can be used in conjection with the not empty stat to calculate average queue occupancy or the allocations stat in order to calculate average queue latency.  HA trackers are allocated as soon as a request enters the HA if an HT (HomeTracker) entry is available and this occupancy is decremented when all the snoop responses have returned.
+		UNC_H_SNOOP_OCCUPANCY__MASK__BDX_UNC_H_SNOOP_OCCUPANCY__LOCAL = 0x100, // Tracker Snoops Outstanding Accumulator -- Local Requests
+		UNC_H_SNOOP_OCCUPANCY__MASK__BDX_UNC_H_SNOOP_OCCUPANCY__REMOTE = 0x200, // Tracker Snoops Outstanding Accumulator -- Remote Requests
+		UNC_H_SNOOP_RESP = 0x21, // Counts the total number of RspI snoop responses received.  Whenever a snoops are issued
+		UNC_H_SNOOP_RESP__MASK__BDX_UNC_H_SNOOP_RESP__RSPCNFLCT = 0x4000, // Snoop Responses Received -- RSPCNFLCT*
+		UNC_H_SNOOP_RESP__MASK__BDX_UNC_H_SNOOP_RESP__RSPI = 0x100, // Snoop Responses Received -- RspI
+		UNC_H_SNOOP_RESP__MASK__BDX_UNC_H_SNOOP_RESP__RSPIFWD = 0x400, // Snoop Responses Received -- RspIFwd
+		UNC_H_SNOOP_RESP__MASK__BDX_UNC_H_SNOOP_RESP__RSPS = 0x200, // Snoop Responses Received -- RspS
+		UNC_H_SNOOP_RESP__MASK__BDX_UNC_H_SNOOP_RESP__RSPSFWD = 0x800, // Snoop Responses Received -- RspSFwd
+		UNC_H_SNOOP_RESP__MASK__BDX_UNC_H_SNOOP_RESP__RSP_FWD_WB = 0x2000, // Snoop Responses Received -- Rsp*Fwd*WB
+		UNC_H_SNOOP_RESP__MASK__BDX_UNC_H_SNOOP_RESP__RSP_WB = 0x1000, // Snoop Responses Received -- Rsp*WB
+		UNC_H_SNP_RESP_RECV_LOCAL = 0x60, // Number of snoop responses received for a Local request
+		UNC_H_SNP_RESP_RECV_LOCAL__MASK__BDX_UNC_H_SNP_RESP_RECV_LOCAL__OTHER = 0x8000, // Snoop Responses Received Local -- Other
+		UNC_H_SNP_RESP_RECV_LOCAL__MASK__BDX_UNC_H_SNP_RESP_RECV_LOCAL__RSPCNFLCT = 0x4000, // Snoop Responses Received Local -- RspCnflct
+		UNC_H_SNP_RESP_RECV_LOCAL__MASK__BDX_UNC_H_SNP_RESP_RECV_LOCAL__RSPI = 0x100, // Snoop Responses Received Local -- RspI
+		UNC_H_SNP_RESP_RECV_LOCAL__MASK__BDX_UNC_H_SNP_RESP_RECV_LOCAL__RSPIFWD = 0x400, // Snoop Responses Received Local -- RspIFwd
+		UNC_H_SNP_RESP_RECV_LOCAL__MASK__BDX_UNC_H_SNP_RESP_RECV_LOCAL__RSPS = 0x200, // Snoop Responses Received Local -- RspS
+		UNC_H_SNP_RESP_RECV_LOCAL__MASK__BDX_UNC_H_SNP_RESP_RECV_LOCAL__RSPSFWD = 0x800, // Snoop Responses Received Local -- RspSFwd
+		UNC_H_SNP_RESP_RECV_LOCAL__MASK__BDX_UNC_H_SNP_RESP_RECV_LOCAL__RSPxFWDxWB = 0x2000, // Snoop Responses Received Local -- Rsp*FWD*WB
+		UNC_H_SNP_RESP_RECV_LOCAL__MASK__BDX_UNC_H_SNP_RESP_RECV_LOCAL__RSPxWB = 0x1000, // Snoop Responses Received Local -- Rsp*WB
+		UNC_H_STALL_NO_SBO_CREDIT = 0x6c, // Number of cycles Egress is stalled waiting for an Sbo credit to become available.  Per Sbo
+		UNC_H_STALL_NO_SBO_CREDIT__MASK__BDX_UNC_H_STALL_NO_SBO_CREDIT__SBO0_AD = 0x100, // Stall on No Sbo Credits -- For SBo0
+		UNC_H_STALL_NO_SBO_CREDIT__MASK__BDX_UNC_H_STALL_NO_SBO_CREDIT__SBO0_BL = 0x400, // Stall on No Sbo Credits -- For SBo0
+		UNC_H_STALL_NO_SBO_CREDIT__MASK__BDX_UNC_H_STALL_NO_SBO_CREDIT__SBO1_AD = 0x200, // Stall on No Sbo Credits -- For SBo1
+		UNC_H_STALL_NO_SBO_CREDIT__MASK__BDX_UNC_H_STALL_NO_SBO_CREDIT__SBO1_BL = 0x800, // Stall on No Sbo Credits -- For SBo1
+		UNC_H_TAD_REQUESTS_G0 = 0x1b, // Counts the number of HA requests to a given TAD region.  There are up to 11 TAD (target address decode) regions in each home agent.  All requests destined for the memory controller must first be decoded to determine which TAD region they are in.  This event is filtered based on the TAD region ID
+		UNC_H_TAD_REQUESTS_G0__MASK__BDX_UNC_H_TAD_REQUESTS_G0__REGION0 = 0x100, // HA Requests to a TAD Region - Group 0 -- TAD Region 0
+		UNC_H_TAD_REQUESTS_G0__MASK__BDX_UNC_H_TAD_REQUESTS_G0__REGION1 = 0x200, // HA Requests to a TAD Region - Group 0 -- TAD Region 1
+		UNC_H_TAD_REQUESTS_G0__MASK__BDX_UNC_H_TAD_REQUESTS_G0__REGION2 = 0x400, // HA Requests to a TAD Region - Group 0 -- TAD Region 2
+		UNC_H_TAD_REQUESTS_G0__MASK__BDX_UNC_H_TAD_REQUESTS_G0__REGION3 = 0x800, // HA Requests to a TAD Region - Group 0 -- TAD Region 3
+		UNC_H_TAD_REQUESTS_G0__MASK__BDX_UNC_H_TAD_REQUESTS_G0__REGION4 = 0x1000, // HA Requests to a TAD Region - Group 0 -- TAD Region 4
+		UNC_H_TAD_REQUESTS_G0__MASK__BDX_UNC_H_TAD_REQUESTS_G0__REGION5 = 0x2000, // HA Requests to a TAD Region - Group 0 -- TAD Region 5
+		UNC_H_TAD_REQUESTS_G0__MASK__BDX_UNC_H_TAD_REQUESTS_G0__REGION6 = 0x4000, // HA Requests to a TAD Region - Group 0 -- TAD Region 6
+		UNC_H_TAD_REQUESTS_G0__MASK__BDX_UNC_H_TAD_REQUESTS_G0__REGION7 = 0x8000, // HA Requests to a TAD Region - Group 0 -- TAD Region 7
+		UNC_H_TAD_REQUESTS_G1 = 0x1c, // Counts the number of HA requests to a given TAD region.  There are up to 11 TAD (target address decode) regions in each home agent.  All requests destined for the memory controller must first be decoded to determine which TAD region they are in.  This event is filtered based on the TAD region ID
+		UNC_H_TAD_REQUESTS_G1__MASK__BDX_UNC_H_TAD_REQUESTS_G1__REGION10 = 0x400, // HA Requests to a TAD Region - Group 1 -- TAD Region 10
+		UNC_H_TAD_REQUESTS_G1__MASK__BDX_UNC_H_TAD_REQUESTS_G1__REGION11 = 0x800, // HA Requests to a TAD Region - Group 1 -- TAD Region 11
+		UNC_H_TAD_REQUESTS_G1__MASK__BDX_UNC_H_TAD_REQUESTS_G1__REGION8 = 0x100, // HA Requests to a TAD Region - Group 1 -- TAD Region 8
+		UNC_H_TAD_REQUESTS_G1__MASK__BDX_UNC_H_TAD_REQUESTS_G1__REGION9 = 0x200, // HA Requests to a TAD Region - Group 1 -- TAD Region 9
+		UNC_H_TRACKER_CYCLES_FULL = 0x2, // Counts the number of cycles when the local HA tracker pool is completely used.  This can be used with edge detect to identify the number of situations when the pool became fully utilized.  This should not be confused with RTID credit usage -- which must be tracked inside each cbo individually -- but represents the actual tracker buffer structure.  In other words
+		UNC_H_TRACKER_CYCLES_FULL__MASK__BDX_UNC_H_TRACKER_CYCLES_FULL__ALL = 0x200, // Tracker Cycles Full -- Cycles Completely Used
+		UNC_H_TRACKER_CYCLES_FULL__MASK__BDX_UNC_H_TRACKER_CYCLES_FULL__GP = 0x100, // Tracker Cycles Full -- Cycles GP Completely Used
+		UNC_H_TRACKER_CYCLES_NE = 0x3, // Counts the number of cycles when the local HA tracker pool is not empty.  This can be used with edge detect to identify the number of situations when the pool became empty.  This should not be confused with RTID credit usage -- which must be tracked inside each cbo individually -- but represents the actual tracker buffer structure.  In other words
+		UNC_H_TRACKER_CYCLES_NE__MASK__BDX_UNC_H_TRACKER_CYCLES_NE__ALL = 0x300, // Tracker Cycles Not Empty -- All Requests
+		UNC_H_TRACKER_CYCLES_NE__MASK__BDX_UNC_H_TRACKER_CYCLES_NE__LOCAL = 0x100, // Tracker Cycles Not Empty -- Local Requests
+		UNC_H_TRACKER_CYCLES_NE__MASK__BDX_UNC_H_TRACKER_CYCLES_NE__REMOTE = 0x200, // Tracker Cycles Not Empty -- Remote Requests
+		UNC_H_TRACKER_OCCUPANCY = 0x4, // Accumulates the occupancy of the local HA tracker pool in every cycle.  This can be used in conjection with the not empty stat to calculate average queue occupancy or the allocations stat in order to calculate average queue latency.  HA trackers are allocated as soon as a request enters the HA if a HT (Home Tracker) entry is available and is released after the snoop response and data return (or post in the case of a write) and the response is returned on the rhe ring.
+		UNC_H_TRACKER_OCCUPANCY__MASK__BDX_UNC_H_TRACKER_OCCUPANCY__INVITOE_LOCAL = 0x4000, // Tracker Occupancy Accumultor -- Local InvItoE Requests
+		UNC_H_TRACKER_OCCUPANCY__MASK__BDX_UNC_H_TRACKER_OCCUPANCY__INVITOE_REMOTE = 0x8000, // Tracker Occupancy Accumultor -- Remote InvItoE Requests
+		UNC_H_TRACKER_OCCUPANCY__MASK__BDX_UNC_H_TRACKER_OCCUPANCY__READS_LOCAL = 0x400, // Tracker Occupancy Accumultor -- Local Read Requests
+		UNC_H_TRACKER_OCCUPANCY__MASK__BDX_UNC_H_TRACKER_OCCUPANCY__READS_REMOTE = 0x800, // Tracker Occupancy Accumultor -- Remote Read Requests
+		UNC_H_TRACKER_OCCUPANCY__MASK__BDX_UNC_H_TRACKER_OCCUPANCY__WRITES_LOCAL = 0x1000, // Tracker Occupancy Accumultor -- Local Write Requests
+		UNC_H_TRACKER_OCCUPANCY__MASK__BDX_UNC_H_TRACKER_OCCUPANCY__WRITES_REMOTE = 0x2000, // Tracker Occupancy Accumultor -- Remote Write Requests
+		UNC_H_TRACKER_PENDING_OCCUPANCY = 0x5, // Accumulates the number of transactions that have data from the memory controller until they get scheduled to the Egress.  This can be used to calculate the queuing latency for two things.  (1) If the system is waiting for snoops
+		UNC_H_TRACKER_PENDING_OCCUPANCY__MASK__BDX_UNC_H_TRACKER_PENDING_OCCUPANCY__LOCAL = 0x100, // Data Pending Occupancy Accumultor -- Local Requests
+		UNC_H_TRACKER_PENDING_OCCUPANCY__MASK__BDX_UNC_H_TRACKER_PENDING_OCCUPANCY__REMOTE = 0x200, // Data Pending Occupancy Accumultor -- Remote Requests
+		UNC_H_TXR_AD_CYCLES_FULL = 0x2a, // AD Egress Full
+		UNC_H_TXR_AD_CYCLES_FULL__MASK__BDX_UNC_H_TXR_AD_CYCLES_FULL__ALL = 0x300, // All
+		UNC_H_TXR_AD_CYCLES_FULL__MASK__BDX_UNC_H_TXR_AD_CYCLES_FULL__SCHED0 = 0x100, // Scheduler 0
+		UNC_H_TXR_AD_CYCLES_FULL__MASK__BDX_UNC_H_TXR_AD_CYCLES_FULL__SCHED1 = 0x200, // Scheduler 1
+		UNC_H_TXR_AK_CYCLES_FULL = 0x32, // AK Egress Full
+		UNC_H_TXR_AK_CYCLES_FULL__MASK__BDX_UNC_H_TXR_AD_CYCLES_FULL__ALL = 0x300, // All
+		UNC_H_TXR_AK_CYCLES_FULL__MASK__BDX_UNC_H_TXR_AD_CYCLES_FULL__SCHED0 = 0x100, // Scheduler 0
+		UNC_H_TXR_AK_CYCLES_FULL__MASK__BDX_UNC_H_TXR_AD_CYCLES_FULL__SCHED1 = 0x200, // Scheduler 1
+		UNC_H_TXR_BL = 0x10, // Counts the number of DRS messages sent out on the BL ring.  This can be filtered by the destination.
+		UNC_H_TXR_BL__MASK__BDX_UNC_H_TXR_BL__DRS_CACHE = 0x100, // Outbound DRS Ring Transactions to Cache -- Data to Cache
+		UNC_H_TXR_BL__MASK__BDX_UNC_H_TXR_BL__DRS_CORE = 0x200, // Outbound DRS Ring Transactions to Cache -- Data to Core
+		UNC_H_TXR_BL__MASK__BDX_UNC_H_TXR_BL__DRS_QPI = 0x400, // Outbound DRS Ring Transactions to Cache -- Data to QPI
+		UNC_H_TXR_BL_CYCLES_FULL = 0x36, // BL Egress Full
+		UNC_H_TXR_BL_CYCLES_FULL__MASK__BDX_UNC_H_TXR_AD_CYCLES_FULL__ALL = 0x300, // All
+		UNC_H_TXR_BL_CYCLES_FULL__MASK__BDX_UNC_H_TXR_AD_CYCLES_FULL__SCHED0 = 0x100, // Scheduler 0
+		UNC_H_TXR_BL_CYCLES_FULL__MASK__BDX_UNC_H_TXR_AD_CYCLES_FULL__SCHED1 = 0x200, // Scheduler 1
+		UNC_H_TXR_STARVED = 0x6d, // Counts injection starvation.  This starvation is triggered when the Egress cannot send a transaction onto the ring for a long period of time.
+		UNC_H_TXR_STARVED__MASK__BDX_UNC_H_TXR_STARVED__AK = 0x100, // Injection Starvation -- For AK Ring
+		UNC_H_TXR_STARVED__MASK__BDX_UNC_H_TXR_STARVED__BL = 0x200, // Injection Starvation -- For BL Ring
+		UNC_H_WPQ_CYCLES_NO_REG_CREDITS = 0x18, // Counts the number of cycles when there are no regular credits available for posting writes from the HA into the iMC.  In order to send writes into the memory controller
+		UNC_H_WPQ_CYCLES_NO_REG_CREDITS__MASK__BDX_UNC_H_WPQ_CYCLES_NO_REG_CREDITS__CHN0 = 0x100, // HA iMC CHN0 WPQ Credits Empty - Regular -- Channel 0
+		UNC_H_WPQ_CYCLES_NO_REG_CREDITS__MASK__BDX_UNC_H_WPQ_CYCLES_NO_REG_CREDITS__CHN1 = 0x200, // HA iMC CHN0 WPQ Credits Empty - Regular -- Channel 1
+		UNC_H_WPQ_CYCLES_NO_REG_CREDITS__MASK__BDX_UNC_H_WPQ_CYCLES_NO_REG_CREDITS__CHN2 = 0x400, // HA iMC CHN0 WPQ Credits Empty - Regular -- Channel 2
+		UNC_H_WPQ_CYCLES_NO_REG_CREDITS__MASK__BDX_UNC_H_WPQ_CYCLES_NO_REG_CREDITS__CHN3 = 0x800, // HA iMC CHN0 WPQ Credits Empty - Regular -- Channel 3
+		
+	};
+};
+
+namespace bdx_unc_h = optkit::intel::bdx_unc_h;
+
+#undef INTEL_X86_EDGE_BIT
+#undef INTEL_X86_ANY_BIT
+#undef INTEL_X86_INV_BIT
+#undef INTEL_X86_CMASK_BIT
+#undef INTEL_X86_MOD_EDGE
+#undef INTEL_X86_MOD_ANY
+#undef INTEL_X86_MOD_INV

@@ -1,0 +1,3 @@
+[
+{"readings":[{"duration":0.007000000216066837,"event_name":"test","metrics_set":[{"description":"Counted","metric_name":"Retired Instructions","units":"int","value":965}],"package_number":-1}]}]
+
