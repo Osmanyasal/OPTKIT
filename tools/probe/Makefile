@@ -6,6 +6,7 @@ optkit_probe: probe.cc
     ../../bin/Release/liboptkit_static.a \
     ../../lib/libpfm4/lib/libpfm.a\
     -I../../src/ \
+    -I../../lib/spdlog/include \
     -I../../lib/libpfm4/include \
     -ldl -lpthread
 

@@ -34,7 +34,7 @@ function system_init()
     end
 end
 
-function ld_has_library(libname)
+function dynamic_lib_exists(libname)
     local pipe = io.popen("ldconfig -p 2>/dev/null | grep lib" .. libname .. ".so")
     if not pipe then return false end
 
@@ -43,6 +43,28 @@ function ld_has_library(libname)
 
     return result ~= nil and result ~= ""
 end
+
+function static_lib_exists(libname)
+    local search_paths = {
+        "/usr/lib",
+        "/usr/local/lib",
+        "/lib",
+        "/lib64",
+        "/usr/lib64"
+    }
+
+    for _, path in ipairs(search_paths) do
+        local full_path = path .. "/lib" .. libname .. ".a"
+        local f = io.open(full_path, "r")
+        if f then
+            f:close()
+            return true
+        end
+    end
+
+    return false
+end
+
 
 -- Use global variables in the prebuildcommands
 

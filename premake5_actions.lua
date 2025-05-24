@@ -59,26 +59,46 @@ function define_custom_actions()
             -- Check if the Release build exists
             if not os.isdir("./bin/Release") then
                 print("❌ Release directory not found! Only config=release builds can be installed to the system.")
-                return
+                os.exit(1);
             end
 
-            -- Generating documentation
-            os.execute("rm -rf ./doc") -- removes doxygen file
-            print("📄 Documentation Removed!")
 
-            os.execute("doxygen ./doxyfile") -- create doxygen file
-            print("📄 Documentation generated!")
+            local lib_static = "./bin/Release/lib" .. OPTKIT_LIB_STATIC .. ".a"
+            local lib_dynamic = "./bin/Release/lib" .. OPTKIT_LIB_DYNAMIC .. ".so"
+            local has_dynamic = os.isfile(lib_dynamic)
+            local has_static = os.isfile(lib_static)
 
+            if not has_dynamic and not has_static then
+                print("❌ Neither 'liboptkit_dynamic.so' nor 'liboptkit_static.a' found in ./bin/Release.")
+                print("   Please build the project with `config=release` before installation.")
+                os.exit(1);
+            end
 
+            -- -- Generating and installing documentation
+            -- os.execute("rm -rf ./doc") -- removes doxygen file
+            -- print("📄 Documentation Removed!")
 
-            print("[Installing]: SPDLOG headers")
-            os.execute(
-                "cd " ..
-                LIB_SPD_PATH ..
-                "/ && ./compile.sh && sudo cp -R ./include/spdlog /usr/local/include/ && sudo cp ./build/libspdlog.a /usr/local/lib")
-
-            print("[Installing]: PFM4 headers")
-            os.execute("cd " .. LIB_PFM_PATH .. "/ && ./compile.sh && sudo make install && sudo make install-all")
+            -- os.execute("doxygen ./doxyfile") -- create doxygen file
+            -- print("📄 Documentation generated!")
+            
+            -- Check if spdlog installed globally, if not install it.
+            if dynamic_lib_exists("spdlog") or static_lib_exists("spdlog") then
+                print("✅ spdlog is already installed globally.")
+            else
+                print("[Installing]: SPDLOG headers and static library")
+                os.execute(
+                    "cd " ..
+                    LIB_SPD_PATH ..
+                    "/ && ./compile.sh && sudo cp -R ./include/spdlog /usr/local/include/ && sudo cp ./build/libspdlog.a /usr/local/lib")
+            end
+ 
+            -- Check if libpfm installed globally, if not install it.
+            if dynamic_lib_exists("pfm") or static_lib_exists("pfm") then
+                print("✅ libpfm4 already installed globally.")
+            else
+                print("[Installing]: PFM4 headers")
+                os.execute("cd " .. LIB_PFM_PATH .. "/ && ./compile.sh && sudo make install && sudo make install-all")
+            end
 
             -- print("[Installing]: MSR-SAFE")
             -- os.execute("cd ./lib/msr-safe/ && ./compile.sh && ./sudo cp -R ./include/spdlog /usr/local/include/")
@@ -90,6 +110,8 @@ function define_custom_actions()
             os.execute("sudo cp -R ./bin/Release/lib" .. OPTKIT_LIB_STATIC .. ".a /usr/local/lib")                        -- copy static library
             os.execute("sudo cp -R ./bin/Release/lib" .. OPTKIT_LIB_DYNAMIC .. ".so /usr/local/lib")                      -- copy dynamic library
             print("[✅ Installed]: headers and libraries!")
+
+            os.execute("sudo ldconfig") -- refresh dynamic link cache.
 
             -- BUILD TOOLS AND ALSO INSTALL THEM, TOOLS WILL BE USING THE STATIC-DYNAMIC LIBRARY THAT'S INSTALLED.
             print("[Installing]: utility tools!")
