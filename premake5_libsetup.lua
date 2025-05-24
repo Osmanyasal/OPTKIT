@@ -89,6 +89,17 @@ function base_project_setup()
         -- "fi",
         -- "@echo [✅ COMPILE SPDLOG]",
 
+        -- Check and export events from libpfm4
+        -- "@echo [CHECK EVENTS]",
+        "@if [ ! -f " .. CORE_EVENTS_DIR .. "/all_set ]; then \\",
+            "    echo \"⛏️ Exporting events from libpfm4\" && \\",
+            "    mkdir -p " .. CORE_EVENTS_DIR .. " && \\",
+            "    cd " .. UTILS_DIR .. " && \\",
+            "    python3 pmu_parser.py $(shell find " .. LIB_PFM_PATH .. "/lib/events -type f \\( -name \"intel*.h\" -or -name \"amd*.h\" -or -name \"arm*.h\" -or -name \"power*.h\" \\) -exec echo \"../../{}\" \\;) && \\",
+            "    touch ../../" .. CORE_EVENTS_DIR .. "/all_set;\\",
+            "fi && \\",
+            "echo [✅ CHECK EVENTS] || echo [❌ CHECK EVENTS ERROR]",
+
         -- SPDLOG compilation
         -- "@echo [COMPILE SPDLOG]",
         "@if [ ! -f \"" .. LIB_SPD_PATH .. "/build/libspdlog.a\" ]; then cd " .. LIB_SPD_PATH .. " && ./compile.sh; fi && echo [✅ COMPILE SPDLOG] || echo [❌ COMPILE SPDLOG ERROR]",
@@ -96,17 +107,6 @@ function base_project_setup()
         -- LIBPFM compilation
         -- "@echo [COMPILE LIBPFM]",
         "@if [ ! -f \"" .. LIB_PFM_PATH .. "/lib/libpfm.a\" ]; then cd " .. LIB_PFM_PATH .. " && ./compile.sh; fi && echo [✅ COMPILE LIBPFM] || echo [❌ COMPILE LIBPFM ERROR]",
-
-        -- Check and export events from libpfm4
-        -- "@echo [CHECK EVENTS]",
-        "@if [ ! -f " .. CORE_EVENTS_DIR .. "/all_set ]; then \\",
-        "    echo \"⛏️ Exporting events from libpfm4\" && \\",
-        "    mkdir -p " .. CORE_EVENTS_DIR .. " && \\",
-        "    cd " .. UTILS_DIR .. " && \\",
-        "    python3 pmu_parser.py $(shell find " .. LIB_PFM_PATH .. "/lib/events -type f \\( -name \"intel*.h\" -or -name \"amd*.h\" -or -name \"arm*.h\" -or -name \"power*.h\" \\) -exec echo \"../../{}\" \\;) && \\",
-        "    touch ../../" .. CORE_EVENTS_DIR .. "/all_set;\\",
-        "fi && \\",
-        "echo [✅ CHECK EVENTS] || echo [❌ CHECK EVENTS ERROR]",
     }
 end
 
