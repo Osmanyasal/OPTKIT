@@ -149,7 +149,7 @@ function test_project_setup()
     {
         -- compile googletest and load its static library
         "@if [ ! -f \"" .. LIB_GOOGLETEST_PATH .. "/build/lib/libgtest.a\" ]; then cd " ..
-        LIB_GOOGLETEST_PATH .. " && mkdir build && cd build && cmake .. && make -j$(nproc);" ..
+        LIB_GOOGLETEST_PATH .. " && git branch v1.17.0 && mkdir build && cd build && cmake .. && make -j$(nproc);" ..
         "fi && echo [✅ COMPILE SPDLOG] || echo [❌ COMPILE SPDLOG ERROR]",
     }
 end
