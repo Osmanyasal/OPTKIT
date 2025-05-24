@@ -50,40 +50,60 @@ void print_rapl()
 }
 void print_cpu()
 {
-
     std::cout << "============== Detect Packages ==============\n";
-    std::cout << optkit::core::Query::detect_cpu_packages() << std::endl;
+    const auto &packages = optkit::core::Query::detect_cpu_packages();
+    std::cout << packages << "\n";
     std::cout << "TOTAL # OF SOCKETS: " << optkit::core::Query::num_sockets << "\n";
-    std::cout << "TOTAL # OF CORES: " << optkit::core::Query::num_cores << "\n";
+    std::cout << "TOTAL # OF CORES: " << optkit::core::Query::num_cores << "\n\n";
 
     for (int socket = 0; socket < optkit::core::Query::num_sockets; socket++)
     {
-        std::cout << "Socket[" << socket << "] Core Avail Freq(HZ): ";
-        const auto &freq_list = optkit::core::frequency::QueryCPUFreq::get_scaling_available_frequencies(optkit::core::Query::detect_cpu_packages().at(socket)[0]);
-        for (auto iter = freq_list.rbegin(); iter != freq_list.rend(); iter++)
-            std::cout << *iter << " ";
-        std::cout << "\n";
-        
-        std::cout << "Socket[" << socket << "] Uncore Limits Min-Max(HZ): " << optkit::core::frequency::CPUFrequency::get_uncore_min_max(socket) << "\n";
-        std::cout << "Socket[" << socket << "] Current Uncore Freq(HZ): " << optkit::core::frequency::CPUFrequency::get_uncore_frequency(socket) << "\n";
+        std::cout << "========== Socket[" << socket << "] ==========\n";
+        try
+        {
+            const auto &core_ids = packages.at(socket);
+            const auto &avail_freqs = optkit::core::frequency::QueryCPUFrequency::get_scaling_available_frequencies(core_ids[0]);
 
-        std::cout << std::endl;
+            std::cout << "  Core[0] Available Freqs (Hz): ";
+            for (auto it = avail_freqs.rbegin(); it != avail_freqs.rend(); ++it)
+                std::cout << *it << " ";
+            std::cout << "\n";
+
+            auto uncore_min_max = optkit::core::frequency::CPUFrequency::get_uncore_min_max(socket);
+            auto uncore_freq = optkit::core::frequency::CPUFrequency::get_uncore_frequency(socket);
+
+            std::cout << "  Uncore Frequency Range (Min-Max Hz): " << uncore_min_max << "\n";
+            std::cout << "  Current Uncore Frequency (Hz): " << uncore_freq << "\n";
+        }
+        catch (const std::exception &e)
+        {
+            std::cerr << "  [Error] Failed to query socket[" << socket << "]: " << e.what() << "\n";
+        }
+        std::cout << "\n";
     }
+
     for (int i = 0; i < optkit::core::Query::num_cores; i++)
     {
-        std::cout << "CPU(" + std::to_string(i) + ") BIOS LIMIT: " << optkit::core::frequency::QueryCPUFreq::get_bios_limit(i) << "\n";
-        std::cout << "CPU(" + std::to_string(i) + ") MIN CORE FREQ(HZ): " << optkit::core::frequency::QueryCPUFreq::get_cpuinfo_min_freq(i) << "\n";
-        std::cout << "CPU(" + std::to_string(i) + ") MAX CORE FREQ(HZ): " << optkit::core::frequency::QueryCPUFreq::get_cpuinfo_max_freq(i) << "\n";
-        std::cout << "CPU(" + std::to_string(i) + ") CURRENT MIN CORE FREQ(HZ): " << optkit::core::frequency::QueryCPUFreq::get_scaling_min_limit(i) << "\n";
-        std::cout << "CPU(" + std::to_string(i) + ") CURRENT MAX CORE FREQ(HZ): " << optkit::core::frequency::QueryCPUFreq::get_scaling_max_limit(i) << "\n";
-        std::cout << "CPU(" + std::to_string(i) + ") SCALING DRIVER: " << optkit::core::frequency::QueryCPUFreq::get_scaling_driver(i);
-        std::cout << "CPU(" + std::to_string(i) + ") AVAIL CORE FREQ(HZ): ";
-        const auto &freq_list = optkit::core::frequency::QueryCPUFreq::get_scaling_available_frequencies(i);
-        for (auto iter = freq_list.rbegin(); iter != freq_list.rend(); iter++)
-            std::cout << *iter << " ";
-        std::cout << std::endl;
-        std::cout << std::endl;
-    }
+        std::cout << "========== CPU Core[" << i << "] ==========\n";
+        try
+        {
+            std::cout << "  BIOS Limit (Hz): " << optkit::core::frequency::QueryCPUFrequency::get_bios_limit(i) << "\n";
+            std::cout << "  Min Core Freq (cpuinfo_min_freq): " << optkit::core::frequency::QueryCPUFrequency::get_cpuinfo_min_freq(i) << "\n";
+            std::cout << "  Max Core Freq (cpuinfo_max_freq): " << optkit::core::frequency::QueryCPUFrequency::get_cpuinfo_max_freq(i) << "\n";
+            std::cout << "  Scaling Min Limit (Hz): " << optkit::core::frequency::QueryCPUFrequency::get_scaling_min_limit(i) << "\n";
+            std::cout << "  Scaling Max Limit (Hz): " << optkit::core::frequency::QueryCPUFrequency::get_scaling_max_limit(i) << "\n";
+            std::cout << "  Scaling Driver: " << optkit::core::frequency::QueryCPUFrequency::get_scaling_driver(i) << "\n";
 
-    std::cout << std::endl;
+            const auto &freq_list = optkit::core::frequency::QueryCPUFrequency::get_scaling_available_frequencies(i);
+            std::cout << "  Available Core Freqs (Hz): ";
+            for (auto it = freq_list.rbegin(); it != freq_list.rend(); ++it)
+                std::cout << *it << " ";
+            std::cout << "\n";
+        }
+        catch (const std::exception &e)
+        {
+            std::cerr << "  [Error] Failed to query core[" << i << "]: " << e.what() << "\n";
+        }
+        std::cout << "\n";
+    }
 }

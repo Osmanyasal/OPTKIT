@@ -3,7 +3,7 @@
 namespace optkit::core::frequency
 {
 
-    std::vector<int64_t> QueryCPUFreq::get_scaling_available_frequencies(int32_t core)
+    std::vector<int64_t> QueryCPUFrequency::get_scaling_available_frequencies(int32_t core)
     {
         std::vector<int64_t> frequencies;
         std::string file_content = optkit::utils::read_file("/sys/devices/system/cpu/cpu" + std::to_string(core) + "/cpufreq/scaling_available_frequencies");
@@ -16,7 +16,7 @@ namespace optkit::core::frequency
         return frequencies;
     }
 
-    int64_t QueryCPUFreq::get_bios_limit(int32_t core)
+    int64_t QueryCPUFrequency::get_bios_limit(int32_t core)
     {
         try
         {
@@ -31,7 +31,7 @@ namespace optkit::core::frequency
         }
     }
 
-    std::string QueryCPUFreq::get_scaling_driver(int32_t core)
+    std::string QueryCPUFrequency::get_scaling_driver(int32_t core)
     {
         try
         {
@@ -45,7 +45,7 @@ namespace optkit::core::frequency
         }
     }
 
-    std::string QueryCPUFreq::get_scaling_governor(int32_t core)
+    std::string QueryCPUFrequency::get_scaling_governor(int32_t core)
     {
         try
         {
@@ -59,7 +59,7 @@ namespace optkit::core::frequency
         }
     }
 
-    std::vector<std::string> QueryCPUFreq::get_available_governors(int32_t core)
+    std::vector<std::string> QueryCPUFrequency::get_available_governors(int32_t core)
     {
         try
         {
@@ -74,7 +74,7 @@ namespace optkit::core::frequency
         }
     }
 
-    int64_t QueryCPUFreq::get_scaling_max_limit(int32_t core)
+    int64_t QueryCPUFrequency::get_scaling_max_limit(int32_t core)
     {
         try
         {
@@ -89,7 +89,7 @@ namespace optkit::core::frequency
         }
     }
 
-    int64_t QueryCPUFreq::get_scaling_min_limit(int32_t core)
+    int64_t QueryCPUFrequency::get_scaling_min_limit(int32_t core)
     {
         try
         {
@@ -104,7 +104,7 @@ namespace optkit::core::frequency
         }
     }
 
-    int64_t QueryCPUFreq::get_cpuinfo_max_freq(int32_t core)
+    int64_t QueryCPUFrequency::get_cpuinfo_max_freq(int32_t core)
     {
         try
         {
@@ -119,7 +119,7 @@ namespace optkit::core::frequency
         }
     }
 
-    int64_t QueryCPUFreq::get_cpuinfo_min_freq(int32_t core)
+    int64_t QueryCPUFrequency::get_cpuinfo_min_freq(int32_t core)
     {
         try
         {

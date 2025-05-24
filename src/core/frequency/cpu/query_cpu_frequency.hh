@@ -7,7 +7,7 @@
 namespace optkit::core::frequency
 {
 
-    class QueryCPUFreq final
+    class QueryCPUFrequency final
     {
     public:
         static std::vector<int64_t> get_scaling_available_frequencies(int32_t core = 0);
@@ -23,8 +23,8 @@ namespace optkit::core::frequency
         static int64_t get_cpuinfo_min_freq(int32_t core = 0);
 
     private:
-        QueryCPUFreq() = delete;
-        ~QueryCPUFreq() = delete;
+        QueryCPUFrequency() = delete;
+        ~QueryCPUFrequency() = delete;
     };
 
 } // namespace optkit::core::frequency

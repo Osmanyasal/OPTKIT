@@ -31,5 +31,6 @@
 *.out
 *.app
 
+# Environment_config is generated per node.
 src/utils/environment_config.hh
 test/utils/environment_config.hh

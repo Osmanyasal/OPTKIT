@@ -6,6 +6,7 @@ dofile("premake5_libsetup.lua")
 dofile("premake5_actions.lua")
 
 system_checks()
+system_init()
 define_custom_actions()
 
 workspace "OPTKIT"

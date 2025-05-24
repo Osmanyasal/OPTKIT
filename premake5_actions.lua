@@ -3,25 +3,18 @@
 
 function define_custom_actions()
 
-    local actions = {
+    local custom_actions = {
         clean = "clean",          -- clean the optkit build.
         install = "install",      -- build & install libs
         remove = "remove",        -- remove installed libs from the system
-        generate_doc = "generate-doc",      -- generate documentaiton
-        remove_doc = "remove-doc" -- delete documentaiton
+        generate_doc = "generate_doc",      -- generate documentaiton
+        remove_doc = "remove_doc", -- delete documentaiton
+        gmake="gmake",
     }
-
-    local action = _ACTION
-
-    if action and actions[action] and action ~= "clean" then
-        print("🛠️ Generating environment config...")
-        os.execute("./generate_environment_config.sh")
-    end
-
 
     -- Tasks for clean, install, and generate docs
     newaction {
-        trigger = actions.clean,
+        trigger = custom_actions.clean,
         description = "clean bin and build directory",
         execute = function()
             print("[REMOVE]: ./bin")
@@ -59,9 +52,15 @@ function define_custom_actions()
     }
 
     newaction {
-        trigger = actions.install,
+        trigger = custom_actions.install,
         description = "Install OPTKIT headers and libs + dependencies to system directories",
         execute = function()
+            
+            -- Check if the Release build exists
+            if not os.isdir("./bin/Release") then
+                print("❌ Release directory not found! Only config=release builds can be installed to the system.")
+                return
+            end
 
             -- Generating documentation
             os.execute("rm -rf ./doc") -- removes doxygen file
@@ -71,12 +70,6 @@ function define_custom_actions()
             print("📄 Documentation generated!")
 
 
-
-            -- Check if the Release directory exists
-            if not os.isdir("./bin/Release") then
-                print("❌ Release directory not found! Only config=release builds can be installed to the system.")
-                return
-            end
 
             print("[Installing]: SPDLOG headers")
             os.execute(
@@ -106,7 +99,7 @@ function define_custom_actions()
     }
 
     newaction {
-        trigger = actions.remove,
+        trigger = custom_actions.remove,
         description = "Remove OPTKIT from the system. (deletes all OPTKIT-cli and libraries from the system)",
         execute = function()
             print("[Removing]: OPTKIT from the system")
@@ -118,7 +111,7 @@ function define_custom_actions()
     }
 
     newaction {
-        trigger = actions.generate_doc,
+        trigger = custom_actions.generate_doc,
         description = "Generate documentation",
         execute = function()
             os.execute("doxygen ./doxyfile") -- create doxygen file
@@ -127,7 +120,7 @@ function define_custom_actions()
     }
 
     newaction {
-        trigger = actions.remove_doc,
+        trigger = custom_actions.remove_doc,
         description = "Remove documentation",
         execute = function()
             os.execute("rm -rf ./doc") -- create doxygen file

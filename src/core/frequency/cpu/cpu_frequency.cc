@@ -4,7 +4,7 @@ namespace optkit::core::frequency
 {
     // Define static member variables
 
-    const std::map<int32_t, std::vector<int32_t>> &CPUFrequency::package_info = Query::detect_cpu_packages();
+    const std::map<int32_t, std::vector<int32_t>> &CPUFrequency::package_info = core::Query::detect_cpu_packages();
 
 #define TRAVERSE_CORES(socket)                           \
     if (package_info.find(socket) == package_info.end()) \
@@ -181,7 +181,7 @@ namespace optkit::core::frequency
 
         EXEC_IF_ROOT_RETURN(-1);
         uint64_t MSR_UNCORE_RATIO_LIMIT_bits = 0;
-        core::frequency::read_msr(package_info.at(socket)[0], MSR_UNCORE_RATIO_LIMIT, &MSR_UNCORE_RATIO_LIMIT_bits);
+        optkit::utils::read_msr(package_info.at(socket)[0], MSR_UNCORE_RATIO_LIMIT, &MSR_UNCORE_RATIO_LIMIT_bits);
 
         int64_t uncore_freq = (MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_CURRENT_RATIO_mask) * 100000000;
         return uncore_freq;
@@ -196,7 +196,7 @@ namespace optkit::core::frequency
             return result;
 
         uint64_t MSR_UNCORE_RATIO_LIMIT_bits = 0;
-        core::frequency::read_msr(package_info.at(socket)[0], MSR_UNCORE_RATIO_LIMIT, &MSR_UNCORE_RATIO_LIMIT_bits);
+        optkit::utils::read_msr(package_info.at(socket)[0], MSR_UNCORE_RATIO_LIMIT, &MSR_UNCORE_RATIO_LIMIT_bits);
 
         // min uncore freq
         result.first = ((MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_RATIO_LIMIT_min_mask) >> MSR_UNCORE_RATIO_LIMIT_min_shift) * 100000000;
@@ -211,14 +211,14 @@ namespace optkit::core::frequency
         EXEC_IF_ROOT;
         std::pair<int64_t, int64_t> default_uncore = get_uncore_min_max(socket);
         uint64_t MSR_UNCORE_RATIO_LIMIT_bits = ((default_uncore.first / 100000000) << MSR_UNCORE_RATIO_LIMIT_min_shift) + default_uncore.second / 100000000;
-        core::utils::write_msr(socket, MSR_UNCORE_RATIO_LIMIT, MSR_UNCORE_RATIO_LIMIT_bits);
+        optkit::utils::write_msr(socket, MSR_UNCORE_RATIO_LIMIT, MSR_UNCORE_RATIO_LIMIT_bits);
     }
 
     void CPUFrequency::set_uncore_frequency(int64_t frequency, int16_t socket)
     {
         EXEC_IF_ROOT;
         uint64_t MSR_UNCORE_RATIO_LIMIT_bits = ((frequency / 100000000) << MSR_UNCORE_RATIO_LIMIT_min_shift) + frequency / 100000000;
-        core::utils::write_msr(socket, MSR_UNCORE_RATIO_LIMIT, MSR_UNCORE_RATIO_LIMIT_bits);
+        optkit::utils::write_msr(socket, MSR_UNCORE_RATIO_LIMIT, MSR_UNCORE_RATIO_LIMIT_bits);
     }
 
     void CPUFrequency::reset_core_frequency(int16_t socket)
@@ -230,8 +230,8 @@ namespace optkit::core::frequency
             TRAVERSE_CORES(socket)
             {
 
-                optkit::utils::write_file("/sys/devices/system/cpu/cpu" + std::to_string(__cpu) + "/cpufreq/scaling_max_freq", std::to_string(QueryCPUFreq::get_cpuinfo_max_freq(socket)));
-                optkit::utils::write_file("/sys/devices/system/cpu/cpu" + std::to_string(__cpu) + "/cpufreq/scaling_min_freq", std::to_string(QueryCPUFreq::get_cpuinfo_min_freq(socket)));
+                optkit::utils::write_file("/sys/devices/system/cpu/cpu" + std::to_string(__cpu) + "/cpufreq/scaling_max_freq", std::to_string(QueryCPUFrequency::get_cpuinfo_max_freq(socket)));
+                optkit::utils::write_file("/sys/devices/system/cpu/cpu" + std::to_string(__cpu) + "/cpufreq/scaling_min_freq", std::to_string(QueryCPUFrequency::get_cpuinfo_min_freq(socket)));
             }
         }
         catch (const std::runtime_error &err)

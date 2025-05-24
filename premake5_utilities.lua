@@ -1,12 +1,36 @@
 ---@diagnostic disable: undefined-global, lowercase-global
 ---@diagnostic disable: undefined-field
 
+-- custom actions also should be registered here.
+local allowed_actions = {
+    clean = true,
+    install = true,
+    remove = true,
+    generate_doc = true,
+    remove_doc = true,
+    gmake= true,
+    gmakelegacy= true,
+    codelite=true,
+}
+
 function system_checks()
+    print("Current premake action: " .. tostring(_ACTION))
     print("Current platform: " .. os.target())
     -- Check if the platform is Linux
     if os.target() ~= "linux" then
         print("❌ This script is only supported on Linux platforms.")
         os.exit(1) -- Exit with a non-zero status to terminate the script
+    end
+    if not _ACTION or not allowed_actions[_ACTION] then
+        print("❌ Invalid or undefined action. Please use a valid premake action.")        
+        os.exit(1)
+    end
+end
+
+function system_init()
+    if _ACTION ~= "clean" then
+        print("🛠️ Generating environment config...")
+        os.execute("./generate_environment_config.sh")
     end
 end
 
