@@ -211,14 +211,14 @@ namespace optkit::core::frequency
         EXEC_IF_ROOT;
         std::pair<int64_t, int64_t> default_uncore = get_uncore_min_max(socket);
         uint64_t MSR_UNCORE_RATIO_LIMIT_bits = ((default_uncore.first / 100000000) << MSR_UNCORE_RATIO_LIMIT_min_shift) + default_uncore.second / 100000000;
-        core::frequency::write_msr(socket, MSR_UNCORE_RATIO_LIMIT, MSR_UNCORE_RATIO_LIMIT_bits);
+        core::utils::write_msr(socket, MSR_UNCORE_RATIO_LIMIT, MSR_UNCORE_RATIO_LIMIT_bits);
     }
 
     void CPUFrequency::set_uncore_frequency(int64_t frequency, int16_t socket)
     {
         EXEC_IF_ROOT;
         uint64_t MSR_UNCORE_RATIO_LIMIT_bits = ((frequency / 100000000) << MSR_UNCORE_RATIO_LIMIT_min_shift) + frequency / 100000000;
-        core::frequency::write_msr(socket, MSR_UNCORE_RATIO_LIMIT, MSR_UNCORE_RATIO_LIMIT_bits);
+        core::utils::write_msr(socket, MSR_UNCORE_RATIO_LIMIT, MSR_UNCORE_RATIO_LIMIT_bits);
     }
 
     void CPUFrequency::reset_core_frequency(int16_t socket)

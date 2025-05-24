@@ -2,19 +2,22 @@
 ---@diagnostic disable: undefined-field
 
 function define_custom_actions()
-    local action = _ACTION
-    if action ~= "clean" then
-        print("🛠️ Generating environment config...")
-        os.execute("./generate_environment_config.sh")
-    end
 
     local actions = {
         clean = "clean",          -- clean the optkit build.
         install = "install",      -- build & install libs
         remove = "remove",        -- remove installed libs from the system
-        gen_doc = "gen-doc",      -- generate documentaiton
+        generate_doc = "generate-doc",      -- generate documentaiton
         remove_doc = "remove-doc" -- delete documentaiton
     }
+
+    local action = _ACTION
+
+    if action and actions[action] and action ~= "clean" then
+        print("🛠️ Generating environment config...")
+        os.execute("./generate_environment_config.sh")
+    end
+
 
     -- Tasks for clean, install, and generate docs
     newaction {
@@ -59,6 +62,16 @@ function define_custom_actions()
         trigger = actions.install,
         description = "Install OPTKIT headers and libs + dependencies to system directories",
         execute = function()
+
+            -- Generating documentation
+            os.execute("rm -rf ./doc") -- removes doxygen file
+            print("📄 Documentation Removed!")
+
+            os.execute("doxygen ./doxyfile") -- create doxygen file
+            print("📄 Documentation generated!")
+
+
+
             -- Check if the Release directory exists
             if not os.isdir("./bin/Release") then
                 print("❌ Release directory not found! Only config=release builds can be installed to the system.")
@@ -105,7 +118,7 @@ function define_custom_actions()
     }
 
     newaction {
-        trigger = actions.gen_doc,
+        trigger = actions.generate_doc,
         description = "Generate documentation",
         execute = function()
             os.execute("doxygen ./doxyfile") -- create doxygen file
