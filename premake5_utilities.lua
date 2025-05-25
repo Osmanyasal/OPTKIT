@@ -28,9 +28,43 @@ function system_checks()
 end
 
 function system_init()
-    if _ACTION ~= "clean" then
+    if _ACTION == "gmake" or _ACTION == "gmakelegacy" or _ACTION == "codelite" then
+
+        -- environment_config.hh generation for the current system
         print("🛠️ Generating environment config...")
         os.execute("./generate_environment_config.sh")
+
+        -- SPDLOG compilation
+        local spdlog_compile = ""
+        spdlog_compile = spdlog_compile .. 'echo "[CHECK SPDLOG]";\n'
+        spdlog_compile = spdlog_compile .. 'if [ ! -f "' .. LIB_SPD_PATH .. '/build/libspdlog.a" ]; then\n'
+        spdlog_compile = spdlog_compile .. '    cd ' .. LIB_SPD_PATH .. ' && ./compile.sh;\n'
+        spdlog_compile = spdlog_compile .. 'fi &&\n'
+        spdlog_compile = spdlog_compile .. 'echo "[✅ COMPILE SPDLOG]" || echo "[❌ COMPILE SPDLOG ERROR]"'
+        os.execute(spdlog_compile)
+
+
+        -- LIBPFM compilation
+        local libpfm_compile = ""
+        libpfm_compile = libpfm_compile .. 'echo "[CHECK LIBPFM]";\n'
+        libpfm_compile = libpfm_compile .. 'if [ ! -f "' .. LIB_PFM_PATH .. '/lib/libpfm.a" ]; then\n'
+        libpfm_compile = libpfm_compile .. '    cd ' .. LIB_PFM_PATH .. ' && ./compile.sh;\n'
+        libpfm_compile = libpfm_compile .. 'fi &&\n'
+        libpfm_compile = libpfm_compile .. 'echo "[✅ COMPILE LIBPFM]" || echo "[❌ COMPILE LIBPFM ERROR]"'
+        os.execute(libpfm_compile)
+
+        -- Exporting events
+        local export_events = ""
+        export_events = export_events .. 'echo "[CHECK EVENTS]"\n'
+        export_events = export_events .. 'if [ ! -f "' .. CORE_EVENTS_DIR .. '/all_set" ]; then\n'
+        export_events = export_events .. '    echo "⛏️ Exporting events from libpfm4" &&\n'
+        export_events = export_events .. '    mkdir -p ' .. CORE_EVENTS_DIR .. ' &&\n'
+        export_events = export_events .. '    cd ' .. UTILS_DIR .. ' &&\n'
+        export_events = export_events .. '    python3 pmu_parser.py $(find ../../' .. LIB_PFM_PATH .. '/lib/events -type f \\( -name "intel*.h" -or -name "amd*.h" -or -name "arm*.h" -or -name "power*.h" \\) -exec echo "{}" \\;) &&\n'
+        export_events = export_events .. '    touch ../../' .. CORE_EVENTS_DIR .. '/all_set\n'
+        export_events = export_events .. 'fi && echo "[✅ CHECK EVENTS]" || echo "[❌ CHECK EVENTS ERROR]"'
+        os.execute(export_events)
+
     end
 end
 
@@ -74,7 +108,6 @@ LIB_PFM_PATH = './lib/libpfm4'
 CORE_EVENTS_DIR = './src/core/pmu/cpu/perf/events'
 UTILS_DIR = './src/utils'
 LIB_GOOGLETEST_PATH = "./lib/googletest"
-LIB_X86_ADAPT_PATH = './lib/x86-adapt'
 WHOAMI = io.popen("whoami"):read("*a"):gsub("\n", "")
 
 OPTKIT_APP = "optkit_app"

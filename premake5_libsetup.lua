@@ -71,43 +71,6 @@ function base_project_setup()
         "-DCONF_LOG_DISABLE_ERROR=0" }
     filter {} -- stop filtering
 
-    prebuildcommands {
-
-        -- "@echo [CHECK MSR-SAFE]",
-        -- "if [ ! -f " .. LIB_MSR_SAFE_PATH .. "/all_set ]; then \\",
-        -- "    cd " .. LIB_MSR_SAFE_PATH .. " && make clean && make && make install && (sudo rmmod msr-safe || true) && \\",
-        -- "    (sudo insmod ./msr-safe.ko || true) && sudo chmod g+rw /dev/cpu/*/msr_safe /dev/cpu/msr_* && \\",
-        -- "    sudo chgrp " .. WHOAMI .. " /dev/cpu/*/msr_safe /dev/cpu/msr_batch /dev/cpu/msr_safe_version && \\",
-        -- "    sudo chgrp " .. WHOAMI .. " /dev/cpu/msr_allowlist && \\",
-        -- "    echo \"0x00000620 0xFFFFFFFFFFFFFFFF\" > /dev/cpu/msr_allowlist && \\",
-        -- "    touch all_set; \\",
-        -- "fi",
-
-        -- "@echo [COMPILE SPDLOG]",
-        -- "if [ ! -f " .. LIB_SPD_PATH .. "/build/libspdlog.a ]; then \\",
-        -- "    cd " .. LIB_SPD_PATH .. " && ./compile.sh; \\",
-        -- "fi",
-        -- "@echo [✅ COMPILE SPDLOG]",
-
-        -- Check and export events from libpfm4
-        -- "@echo [CHECK EVENTS]",
-        "@if [ ! -f " .. CORE_EVENTS_DIR .. "/all_set ]; then \\",
-            "    echo \"⛏️ Exporting events from libpfm4\" && \\",
-            "    mkdir -p " .. CORE_EVENTS_DIR .. " && \\",
-            "    cd " .. UTILS_DIR .. " && \\",
-            "    python3 pmu_parser.py $(shell find " .. LIB_PFM_PATH .. "/lib/events -type f \\( -name \"intel*.h\" -or -name \"amd*.h\" -or -name \"arm*.h\" -or -name \"power*.h\" \\) -exec echo \"../../{}\" \\;) && \\",
-            "    touch ../../" .. CORE_EVENTS_DIR .. "/all_set;\\",
-            "fi && \\",
-            "echo [✅ CHECK EVENTS] || echo [❌ CHECK EVENTS ERROR]",
-
-        -- SPDLOG compilation
-        -- "@echo [COMPILE SPDLOG]",
-        "@if [ ! -f \"" .. LIB_SPD_PATH .. "/build/libspdlog.a\" ]; then cd " .. LIB_SPD_PATH .. " && ./compile.sh; fi && echo [✅ COMPILE SPDLOG] || echo [❌ COMPILE SPDLOG ERROR]",
-
-        -- LIBPFM compilation
-        -- "@echo [COMPILE LIBPFM]",
-        "@if [ ! -f \"" .. LIB_PFM_PATH .. "/lib/libpfm.a\" ]; then cd " .. LIB_PFM_PATH .. " && ./compile.sh; fi && echo [✅ COMPILE LIBPFM] || echo [❌ COMPILE LIBPFM ERROR]",
-    }
 end
 
 function test_project_setup()
