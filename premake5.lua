@@ -31,9 +31,21 @@ project(OPTKIT_LIB_STATIC)
 kind "StaticLib"
 base_project_setup()
 removefiles { "./src/main.cc" }
-linkoptions { LIB_PFM_PATH .. "/lib/libpfm.a" }
+-- linkoptions { LIB_PFM_PATH .. "/lib/libpfm.a" } -- this one doesn't work with StaticLib
 filter { "configurations:Release" }
 postbuildcommands {
+    -- Create obj directory if needed
+    "mkdir -p bin/obj/pfm_extract",
+
+    -- Extract libpfm objects to bin/obj/pfm_extract
+    "cd bin/obj/pfm_extract && ar -x " .. path.getabsolute(LIB_PFM_PATH .. "/lib/libpfm.a"),
+
+    -- Combine with your library
+    "cd bin/obj/pfm_extract && ar -r ../../%{cfg.buildcfg}/liboptkit_static.a *.o",
+
+    -- Clean up (optional)
+    -- "rm -rf bin/obj/pfm_extract",
+
     "@echo [COMPILE UTILITY TOOLS]",
     "@cd ./tools && ./compile.sh && echo [✅ COMPILE UTILITY TOOLS]"
 }

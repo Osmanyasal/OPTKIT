@@ -96,11 +96,11 @@ function test_project_setup()
         LIB_GOOGLETEST_PATH .. "/build/lib"
     }
 
-    linkoptions { "./bin/Release/liboptkit_static.a", LIB_PFM_PATH .. "/lib/libpfm.a" }
     links {
         "gtest", "gtest_main", "pthread", "dl"
     }
     linkoptions { "-fopenmp" }
+    linkoptions { "./bin/Release/liboptkit_static.a"}
 
     filter "configurations:Release"
     optimize "On"
