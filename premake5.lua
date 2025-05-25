@@ -42,4 +42,4 @@ filter {} -- stop filtering
 
 project(OPTKIT_TEST)
 kind "ConsoleApp"
-test_project_setup()
+test_project_setup()  

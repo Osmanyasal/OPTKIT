@@ -28,13 +28,13 @@ ifeq ($(origin AR), default)
   AR = ar
 endif
 RESCOMP = windres
-INCLUDES += -Itest -Ilib/libpfm4/include -Ilib/spdlog/include -Ilib/googletest/googletest/include -Ilib/googletest/googlemock/include
+INCLUDES += -Isrc -Itest -Ilib/libpfm4/include -Ilib/spdlog/include -Ilib/googletest/googletest/include -Ilib/googletest/googlemock/include
 FORCE_INCLUDE +=
 ALL_CPPFLAGS += $(CPPFLAGS) -MD -MP $(DEFINES) $(INCLUDES)
 ALL_RESFLAGS += $(RESFLAGS) $(DEFINES) $(INCLUDES)
-LIBS += -lgtest -lgtest_main -lpthread
+LIBS += -lgtest -lgtest_main -lpthread -ldl
 LDDEPS +=
-ALL_LDFLAGS += $(LDFLAGS) -Llib/googletest/build/lib -s -fopenmp
+ALL_LDFLAGS += $(LDFLAGS) -Llib/googletest/build/lib -s ./bin/Release/liboptkit_static.a ./lib/libpfm4/lib/libpfm.a -fopenmp
 LINKCMD = $(CXX) -o "$@" $(OBJECTS) $(RESOURCES) $(ALL_LDFLAGS) $(LIBS)
 define PREBUILDCMDS
 endef

@@ -56,12 +56,12 @@ function base_project_setup()
     optimize "On"
     symbols "Off"
     defines { "OPTKIT_MODE_NDEBUG" }
-    buildoptions { 
-        "-Wall", 
-        "-O2", 
-        "-fopenmp", 
-        "-fPIC", 
-        "-msse", 
+    buildoptions {
+        "-Wall",
+        "-O2",
+        "-fopenmp",
+        "-fPIC",
+        "-msse",
         "-march=native",
         "-DCONF_LOG_PRINT_GUID_LENGTH=5",
         "-DCONF_LOG_DISABLE_DEBUG=1",
@@ -70,7 +70,6 @@ function base_project_setup()
         "-DCONF_LOG_DISABLE_WARN=0",
         "-DCONF_LOG_DISABLE_ERROR=0" }
     filter {} -- stop filtering
-
 end
 
 function test_project_setup()
@@ -85,6 +84,7 @@ function test_project_setup()
     }
 
     includedirs {
+        "./src",
         "./test/",
         LIB_PFM_PATH .. "/include",
         LIB_SPD_PATH .. "/include",
@@ -96,10 +96,10 @@ function test_project_setup()
         LIB_GOOGLETEST_PATH .. "/build/lib"
     }
 
+    linkoptions { "./bin/Release/liboptkit_static.a", LIB_PFM_PATH .. "/lib/libpfm.a" }
     links {
-        "gtest", "gtest_main", "pthread"
+        "gtest", "gtest_main", "pthread", "dl"
     }
-
     linkoptions { "-fopenmp" }
 
     filter "configurations:Release"
@@ -107,5 +107,4 @@ function test_project_setup()
     symbols "Off"
     defines { "OPTKIT_MODE_NDEBUG" }
     buildoptions { "-Wall", "-O2", "-fopenmp", "-fPIC", "-msse", "-march=native -funroll-loops -ftree-vectorize -fopt-info-vec" }
-
 end
