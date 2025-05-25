@@ -34,3 +34,16 @@
 # Environment_config is generated per node.
 src/utils/environment_config.hh
 test/utils/environment_config.hh
+
+# Binaries
+bin/
+
+# event file
+src/core/pmu/cpu/perf/events
+
+# lib
+lib
+
+# tools builds
+tools/beacon_rapl/optkit_beacon_rapl
+tools/probe/optkit_probe
