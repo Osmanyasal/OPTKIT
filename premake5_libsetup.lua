@@ -108,11 +108,4 @@ function test_project_setup()
     defines { "OPTKIT_MODE_NDEBUG" }
     buildoptions { "-Wall", "-O2", "-fopenmp", "-fPIC", "-msse", "-march=native -funroll-loops -ftree-vectorize -fopt-info-vec" }
 
-    prebuildcommands
-    {
-        -- compile googletest and load its static library
-        "@if [ ! -f \"" .. LIB_GOOGLETEST_PATH .. "/build/lib/libgtest.a\" ]; then cd " ..
-        LIB_GOOGLETEST_PATH .. " && git branch v1.17.0 && mkdir build && cd build && cmake .. && make -j$(nproc);" ..
-        "fi && echo [✅ COMPILE SPDLOG] || echo [❌ COMPILE SPDLOG ERROR]",
-    }
 end

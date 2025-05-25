@@ -53,6 +53,13 @@ function system_init()
         libpfm_compile = libpfm_compile .. 'echo "[✅ COMPILE LIBPFM]" || echo "[❌ COMPILE LIBPFM ERROR]"'
         os.execute(libpfm_compile)
 
+        -- GoogleTest compilation
+        local googletest_compile = ""
+        googletest_compile = googletest_compile .. 'if [ ! -f "' .. LIB_GOOGLETEST_PATH .. '/build/lib/libgtest.a" ]; then\n'
+        googletest_compile = googletest_compile .. 'cd ' .. LIB_GOOGLETEST_PATH .. " && git branch v1.17.0 && mkdir build && cd build && cmake .. && make -j$(nproc);\n"
+        googletest_compile = googletest_compile .. 'fi && echo [✅ COMPILE SPDLOG] || echo [❌ COMPILE SPDLOG ERROR]'
+        os.execute(googletest_compile)
+
         -- Exporting events
         local export_events = ""
         export_events = export_events .. 'echo "[CHECK EVENTS]"\n'
