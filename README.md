@@ -11,7 +11,7 @@ git clone https://github.com/Osmanyasal/OPTKIT.git
 cd ./OPTKIT
 git submodule update --force --recursive --init --remote
 premake5 gmake
-make configure=release -j$(nproc) all
+make config=release -j$(nproc) all
 ```
 
 ## OPTKIT Utility Tools
