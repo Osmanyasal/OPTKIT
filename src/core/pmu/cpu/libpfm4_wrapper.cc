@@ -1,6 +1,7 @@
-#include "core/pmu/cpu/perf/libpfm4_wrapper.hh"
-namespace optkit::core::pmu::cpu::perf
+#include "core/pmu/cpu/libpfm4_wrapper.hh"
+namespace optkit::core::pmu::cpu
 {
+    // THIS IS IDENTICAL TO PFM_PMU_T STRUCTURE, DO NOT CHANGE THE ORDER !!
     const char *pmu_names[] = {
         "NONE",             /* no PMU */
         "GEN_IA64",         /* Intel IA-64 architected PMU */

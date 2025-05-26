@@ -18,18 +18,18 @@ int32_t main(int32_t argc, char **argv)
 void print_pmu()
 {
     std::cout << "============== Default PMU ==============\n\n";
-    std::cout << optkit::core::pmu::cpu::perf::QueryPMU::default_pmu_info();
+    std::cout << optkit::core::pmu::cpu::QueryPMU::default_pmu_info();
 
     std::cout << "\n";
     std::cout << "============== Avail PMUs ==============\n\n";
 
-    optkit::core::pmu::cpu::perf::QueryPMU::list_avail_pmus();
+    optkit::core::pmu::cpu::QueryPMU::list_avail_pmus();
 
     std::cout << "\n";
     std::cout << "============== Avail PMU Events ==============\n\n";
-    for (int i : optkit::core::pmu::cpu::perf::QueryPMU::avail_pmu_ids())
+    for (int i : optkit::core::pmu::cpu::QueryPMU::avail_pmu_ids())
     {
-        optkit::core::pmu::cpu::perf::QueryPMU::list_avail_events(i);
+        optkit::core::pmu::cpu::QueryPMU::list_avail_events(i);
         std::cout << "\n------------------------\n";
     }
     std::cout << std::endl;

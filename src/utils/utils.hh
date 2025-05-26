@@ -13,6 +13,9 @@
 #include <chrono>
 #include <string>
 
+// ENV CONFIG
+#include "utils/environment_config.hh"
+
 // CUSTOM HEADERS
 #include "utils/logging/logger.hh"
 

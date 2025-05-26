@@ -2,7 +2,11 @@
 
 #include <cstring>
 #include <cstdint>
-#include <linux/perf_event.h>          // for pmu monitoring
+#include "utils/utils.hh"
+
+#if OPTKIT_ENV_LIB_PERF_EVENT
+#include <linux/perf_event.h>
+#endif // for pmu monitoring
 
 namespace optkit::core::pmu::cpu::perf
 {
@@ -45,6 +49,8 @@ namespace optkit::core::pmu::cpu::perf
          *         This setting is invalid and will return an error.
          *
          */
+
+#if OPTKIT_ENV_LIB_PERF_EVENT
         PerfProfilerConfig(bool dump_results_to_file = true, bool is_reset_after_read = true, bool is_grouped = false, int32_t pid = 0, int32_t cpu = -1);
         PerfProfilerConfig(perf_event_attr perf_event_config, bool dump_results_to_file = true, bool is_reset_after_read = true, int32_t pid = 0, int32_t cpu = -1);
         void setGrouped(bool is_grouped);
@@ -55,6 +61,10 @@ namespace optkit::core::pmu::cpu::perf
         int32_t pid;
         int32_t cpu;
         perf_event_attr perf_event_config;
+#else
+        PerfProfilerConfig(bool dump_results_to_file = true, bool is_reset_after_read = true, bool is_grouped = false, int32_t pid = 0, int32_t cpu = -1) {}
+        void setGrouped(bool is_grouped) {}
+#endif
     };
 
 } // namespace optkit::core::pmu::cpu::perf

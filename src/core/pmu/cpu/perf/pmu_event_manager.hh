@@ -3,10 +3,14 @@
 #include <vector>
 #include <map>
 #include <sys/ioctl.h>
-#include <linux/perf_event.h>
 
 #include "utils/utils.hh"
-#include "core/pmu/cpu/perf/query_pmu.hh"
+#include "core/pmu/cpu/query_pmu.hh"
+
+#if OPTKIT_ENV_LIB_PERF_EVENT
+#include <linux/perf_event.h>
+#endif
+
 namespace optkit::core::pmu::cpu::perf
 {
     class PMUEventManager

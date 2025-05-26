@@ -132,7 +132,7 @@ namespace optkit::core
      */
     OptimizerKit::~OptimizerKit()
     {
-        optkit::core::pmu::cpu::perf::QueryPMU::destroy();
+        optkit::core::pmu::cpu::QueryPMU::destroy();
     }
 
     int32_t OptimizerKit::paranoid()

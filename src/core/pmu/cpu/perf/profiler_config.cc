@@ -1,6 +1,8 @@
 
 #include "core/pmu/cpu/perf/profiler_config.hh"
 
+
+#if OPTKIT_ENV_LIB_PERF_EVENT
 namespace optkit::core::pmu::cpu::perf
 {
     PerfProfilerConfig::PerfProfilerConfig(bool dump_results_to_file, bool is_reset_after_read, bool is_grouped, int32_t pid, int32_t cpu)
@@ -31,3 +33,5 @@ namespace optkit::core::pmu::cpu::perf
         this->is_grouped = is_grouped;
     }
 } // namespace optkit::core::pmu::cpu::perf
+
+#endif

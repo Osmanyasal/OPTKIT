@@ -128,15 +128,17 @@ write_cpu_topology() {
         model=$(grep -m1 "model" /proc/cpuinfo | awk '{print $3}')
 
         # Convert to hexadecimal
-        family_hex=$(printf "0x%X" "$family")
-        model_hex=$(printf "0x%X" "$model")
+        family_hex=$(printf "%X" "$family")
+        model_hex=$(printf "%X" "$model")
+        combined="${family_hex}_${model_hex}H"
 
-        echo "#define OPTKIT_ENV_CPU_FAMILY $family_hex" >> "$SRC_CONFIG_FILE"
-        echo "#define OPTKIT_ENV_CPU_MODEL $model_hex" >> "$SRC_CONFIG_FILE"
+        echo "#define OPTKIT_ENV_CPU_FAMILY 0x$family_hex" >> "$SRC_CONFIG_FILE"
+        echo "#define OPTKIT_ENV_CPU_MODEL 0x$model_hex" >> "$SRC_CONFIG_FILE"
+        echo "#define OPTKIT_ENV_CPU_FAMILY_MODEL $combined" >> "$SRC_CONFIG_FILE"
 
-        printf "\t%-$(($ALIGN_WIDTH - 8))s %s\n" "OPTKIT_ENV_CPU_FAMILY" "$family_hex"
-        printf "\t%-$(($ALIGN_WIDTH - 8))s %s\n" "OPTKIT_ENV_CPU_MODEL" "$model_hex"
-
+        printf "\t%-$(($ALIGN_WIDTH - 8))s 0x%s\n" "OPTKIT_ENV_CPU_FAMILY" "$family_hex"
+        printf "\t%-$(($ALIGN_WIDTH - 8))s 0x%s\n" "OPTKIT_ENV_CPU_MODEL" "$model_hex"
+        printf "\t%-$(($ALIGN_WIDTH - 8))s %s\n" "OPTKIT_ENV_CPU_FAMILY_MODEL" "$combined"
     else
         echo "// Unable to determine CPU family/model" >> "$SRC_CONFIG_FILE"
     fi

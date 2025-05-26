@@ -7,11 +7,11 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <unistd.h>
 
 #include "utils/utils.hh"
-#include "core/pmu/cpu/perf/libpfm4_wrapper.hh"
-#include <unistd.h>
-namespace optkit::core::pmu::cpu::perf
+#include "core/pmu/cpu/libpfm4_wrapper.hh"
+namespace optkit::core::pmu::cpu
 { 
 
     /**
@@ -106,4 +106,4 @@ namespace optkit::core::pmu::cpu::perf
     std::ostream &operator<<(std::ostream &out, const pfm_event_info_t &event_info);
 } // namespace optkit::core
 
-using optkit::core::pmu::cpu::perf::operator<<; // make available to global namespace
+using optkit::core::pmu::cpu::operator<<; // make available to global namespace

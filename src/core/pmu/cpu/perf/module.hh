@@ -3,9 +3,9 @@
 #include "utils/deployment/deployment_config.hh"
 #include "core/pmu/cpu/perf/block_group_profiler.hh"
 #include "core/pmu/cpu/perf/block_profiler.hh"
-#include "core/pmu/cpu/perf/libpfm4_wrapper.hh"
+#include "core/pmu/cpu/libpfm4_wrapper.hh"
 #include "core/pmu/cpu/perf/pmu_event_manager.hh"
-#include "core/pmu/cpu/perf/query_pmu.hh"
+#include "core/pmu/cpu/query_pmu.hh"
 
 #if defined(CONF__PMU__MACROS__ENABLED) && CONF__PMU__MACROS__ENABLED == 1
     #define OPTKIT_PERFORMANCE_EVENTS(block_name, event_name, variable_name, ...) \
@@ -19,3 +19,5 @@
     #define OPTKIT_PERFORMANCE_BLOCK_EVENTS(block_name, event_name, variable_name, ...)
 
 #endif
+
+using optkit::core::pmu::cpu::operator<<; // make available to global namespace

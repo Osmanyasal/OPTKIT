@@ -25,3 +25,9 @@
 #ifndef CONF__FREQ__MACROS__ENABLED
 #define CONF__FREQ__MACROS__ENABLED (1 & CONF__OPTKIT__ENABLED)
 #endif
+
+
+#include "core/energy/cpu/rapl/module.hh"
+#include "core/pmu/cpu/perf/module.hh"
+#include "core/metrics/module.hh"
+#include "core/frequency/module.hh"

@@ -3,15 +3,16 @@
 namespace optkit::core::pmu::cpu::perf
 {
 
-    BlockProfiler::BlockProfiler(const char *block_name, const char *event_name, const std::vector<std::pair<uint64_t, std::string>> &raw_events, bool verbose, const PerfProfilerConfig &config) : BaseProfiler{block_name, event_name,verbose}, profiler_config{config}, raw_events{raw_events}
+    BlockProfiler::BlockProfiler(const char *block_name, const char *event_name, const std::vector<std::pair<uint64_t, std::string>> &raw_events, bool verbose, const PerfProfilerConfig &config) : BaseProfiler{block_name, event_name, verbose}, profiler_config{config}, raw_events{raw_events}
     {
+#if OPTKIT_ENV_LIB_PERF_EVENT
         PMUEventManager::disable_all_events();
 
         int32_t fd = -1;
         for (auto &raw_event : raw_events)
         {
-            struct perf_event_attr attr = this->profiler_config.perf_event_config;  // copy default config.
-            attr.config = raw_event.first;  // set an event
+            struct perf_event_attr attr = this->profiler_config.perf_event_config; // copy default config.
+            attr.config = raw_event.first;                                         // set an event
 
             fd = syscall(__NR_perf_event_open, &attr, this->profiler_config.pid, this->profiler_config.cpu, -1, 0); // <-- first becomes -1 and later we use the group_leader's fd.
             if (fd < 0)
@@ -30,9 +31,11 @@ namespace optkit::core::pmu::cpu::perf
         start = std::chrono::high_resolution_clock::now();
 
         PMUEventManager::enable_all_events();
+#endif
     }
     BlockProfiler ::~BlockProfiler()
     {
+#if OPTKIT_ENV_LIB_PERF_EVENT
         PMUEventManager::disable_all_events();
 
         this->read_and_store();
@@ -54,42 +57,49 @@ namespace optkit::core::pmu::cpu::perf
                           << " [" << iter->first << "ms] Measured";
                 for (auto &&i : iter->second)
                 {
-                    std::cout << " "<< i << std::endl;
+                    std::cout << " " << i << std::endl;
                 }
             }
         }
 
         PMUEventManager::enable_all_events();
+#endif
     }
 
     void BlockProfiler::disable()
     {
+#if OPTKIT_ENV_LIB_PERF_EVENT
         for (int32_t fd : fd_list)
         {
             ioctl(fd, PERF_EVENT_IOC_DISABLE, 0);
         }
+#endif
     }
     void BlockProfiler::enable()
     {
+#if OPTKIT_ENV_LIB_PERF_EVENT
         for (int32_t fd : fd_list)
         {
             ioctl(fd, PERF_EVENT_IOC_ENABLE, 0);
         }
+#endif
     }
 
     std::string BlockProfiler::convert_buffer_to_json()
     {
         std::stringstream ss;
+#if OPTKIT_ENV_LIB_PERF_EVENT
         ss << "[\n";
         // based on the insertion order.
         ss << core::pmu::cpu::perf::to_json(this->event_name, this->raw_events, this->read_buffer);
         ss << "]\n";
+#endif
         return ss.str();
     }
 
     std::vector<uint64_t> BlockProfiler::read()
     {
-
+#if OPTKIT_ENV_LIB_PERF_EVENT
         PMUEventManager::disable_all_events();
 
         std::vector<uint64_t> result;
@@ -105,5 +115,6 @@ namespace optkit::core::pmu::cpu::perf
         PMUEventManager::enable_all_events();
 
         return result;
+#endif
     }
 } // namespace optkit::core::pmu::cpu::perf

@@ -41,12 +41,17 @@ namespace optkit::core::pmu::cpu::perf
 
     void PMUEventManager::disable_all_events()
     {
+
+#if OPTKIT_ENV_LIB_PERF_EVENT
         // disable all other counters in insertion order
         for (const auto &pair : PMUEventManager::fd__event_count_map)
             ioctl(pair.first, PERF_EVENT_IOC_DISABLE, PERF_IOC_FLAG_GROUP);
+#endif
     }
     void PMUEventManager::enable_all_events()
     {
+
+#if OPTKIT_ENV_LIB_PERF_EVENT
         // enable all other counters in reverse order
         auto rit = PMUEventManager::fd__event_count_map.rbegin();
         while (rit != PMUEventManager::fd__event_count_map.rend())
@@ -54,6 +59,7 @@ namespace optkit::core::pmu::cpu::perf
             ioctl(rit->first, PERF_EVENT_IOC_ENABLE, PERF_IOC_FLAG_GROUP);
             ++rit;
         }
+#endif
     }
 
     std::vector<int32_t> PMUEventManager::all_fds()
