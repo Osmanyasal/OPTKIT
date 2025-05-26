@@ -28,8 +28,9 @@ check_header() {
 
     if [ $? -eq 0 ]; then
         echo " ✅"
-        echo "#define OPTKIT_ENV_LIB_${macro_name}" >> "$SRC_CONFIG_FILE"
+        echo "#define OPTKIT_ENV_LIB_${macro_name} 1" >> "$SRC_CONFIG_FILE"
     else
+        echo "#define OPTKIT_ENV_LIB_${macro_name} 0" >> "$SRC_CONFIG_FILE"
         echo " ❌"
     fi
 }
@@ -48,50 +49,98 @@ write_compiler_macro() {
     local macro=$(echo "$base" | tr '[:lower:]' '[:upper:]' | sed 's/+/P/g')
     echo "#define OPTKIT_ENV_COMPILER_${macro}" >> "$SRC_CONFIG_FILE"
 }
-
-write_cpu_vendor() {
+write_cpu_info() {
     echo -e "\n// CPU Vendor" >> "$SRC_CONFIG_FILE"
+
+    # Default all to 0
+    echo "#define OPTKIT_ENV_CPU_INTEL 0" >> "$SRC_CONFIG_FILE"
+    echo "#define OPTKIT_ENV_CPU_AMD 0" >> "$SRC_CONFIG_FILE"
+    echo "#define OPTKIT_ENV_CPU_ARM 0" >> "$SRC_CONFIG_FILE"
+    echo "#define OPTKIT_ENV_CPU_RISCV 0" >> "$SRC_CONFIG_FILE"
+    echo "#define OPTKIT_ENV_CPU_MIPS 0" >> "$SRC_CONFIG_FILE"
+    echo "#define OPTKIT_ENV_CPU_POWERPC 0" >> "$SRC_CONFIG_FILE"
+
+    echo -e "\n// CPU Architecture" >> "$SRC_CONFIG_FILE"
+
+    echo "#define OPTKIT_ENV_CPU_ARCH_X86_64 0" >> "$SRC_CONFIG_FILE"
+    echo "#define OPTKIT_ENV_CPU_ARCH_ARM 0" >> "$SRC_CONFIG_FILE"
+    echo "#define OPTKIT_ENV_CPU_ARCH_RISCV64  0" >> "$SRC_CONFIG_FILE"
+    echo "#define OPTKIT_ENV_CPU_ARCH_MIPS 0" >> "$SRC_CONFIG_FILE"
+    echo "#define OPTKIT_ENV_CPU_ARCH_POWERPC 0" >> "$SRC_CONFIG_FILE"
+
     if [ -f /proc/cpuinfo ]; then
+        arch=$(uname -m)
         vendor=$(grep -m1 'vendor_id' /proc/cpuinfo | awk '{print $3}')
-        case "$vendor" in
-            GenuineIntel)
-                print_status "Checking CPU Vendor:" "Intel"
-                echo "#define OPTKIT_ENV_CPU_INTEL" >> "$SRC_CONFIG_FILE"
+
+        case "$arch" in
+            x86_64|i386|i686)
+                print_status "Checking CPU Architecture:" "x86_64"
+                sed -i "s/^#define OPTKIT_ENV_CPU_ARCH_X86_64.*/#define OPTKIT_ENV_CPU_ARCH_X86_64 1/" "$SRC_CONFIG_FILE"
+
+                case "$vendor" in
+                    GenuineIntel)
+                        print_status "Checking CPU Vendor:" "Intel"
+                        sed -i "s/^#define OPTKIT_ENV_CPU_INTEL.*/#define OPTKIT_ENV_CPU_INTEL 1/" "$SRC_CONFIG_FILE"
+                        ;;
+                    AuthenticAMD)
+                        print_status "Checking CPU Vendor:" "AMD"
+                        sed -i "s/^#define OPTKIT_ENV_CPU_AMD.*/#define OPTKIT_ENV_CPU_AMD 1/" "$SRC_CONFIG_FILE"
+                        ;;
+                    *)
+                        print_status "Checking CPU Vendor:" "Unknown x86 vendor: $vendor"
+                        ;;
+                esac
                 ;;
-            AuthenticAMD)
-                print_status "Checking CPU Vendor:" "AMD"
-                echo "#define OPTKIT_ENV_CPU_AMD" >> "$SRC_CONFIG_FILE"
+            aarch64|armv7l|armv8l)
+                print_status "Checking CPU Architecture:" "ARM"
+                sed -i "s/^#define OPTKIT_ENV_CPU_ARM.*/#define OPTKIT_ENV_CPU_ARM 1/" "$SRC_CONFIG_FILE"
+                sed -i "s/^#define OPTKIT_ENV_CPU_ARCH_ARM.*/#define OPTKIT_ENV_CPU_ARCH_ARM 1/" "$SRC_CONFIG_FILE"
+                ;;
+            riscv64|riscv32)
+                print_status "Checking CPU Architecture:" "RISC-V"
+                sed -i "s/^#define OPTKIT_ENV_CPU_RISCV.*/#define OPTKIT_ENV_CPU_RISCV 1/" "$SRC_CONFIG_FILE"
+                sed -i "s/^#define OPTKIT_ENV_CPU_ARCH_RISCV64.*/#define OPTKIT_ENV_CPU_ARCH_RISCV64 1/" "$SRC_CONFIG_FILE"
+                ;;
+            mips|mips64)
+                print_status "Checking CPU Architecture:" "MIPS"
+                sed -i "s/^#define OPTKIT_ENV_CPU_MIPS.*/#define OPTKIT_ENV_CPU_MIPS 1/" "$SRC_CONFIG_FILE"
+                sed -i "s/^#define OPTKIT_ENV_CPU_ARCH_MIPS.*/#define OPTKIT_ENV_CPU_ARCH_MIPS 1/" "$SRC_CONFIG_FILE"
+                ;;
+            powerpc|ppc64)
+                print_status "Checking CPU Architecture:" "PowerPC"
+                sed -i "s/^#define OPTKIT_ENV_CPU_POWERPC.*/#define OPTKIT_ENV_CPU_POWERPC 1/" "$SRC_CONFIG_FILE"
+                sed -i "s/^#define OPTKIT_ENV_CPU_ARCH_POWERPC.*/#define OPTKIT_ENV_CPU_ARCH_POWERPC 1/" "$SRC_CONFIG_FILE"
                 ;;
             *)
-                print_status "Checking CPU Vendor:" "$vendor (Unknown)"
+                print_status "Checking CPU Architecture:" "Unknown architecture: $arch"
                 ;;
         esac
     fi
 }
 
-write_cpu_arch() {
-    echo -e "\n// CPU Architecture" >> "$SRC_CONFIG_FILE"
-    arch=$(uname -m)
-    case "$arch" in
-        x86_64)
-            print_status "Checking CPU Architecture:" "x86_64"
-            echo "#define OPTKIT_ENV_CPU_ARCH_X86_64" >> "$SRC_CONFIG_FILE"
-            ;;
-        aarch64)
-            print_status "Checking CPU Architecture:" "ARM"
-            echo "#define OPTKIT_ENV_CPU_ARCH_ARM" >> "$SRC_CONFIG_FILE"
-            ;;
-        riscv64)
-            print_status "Checking CPU Architecture:" "RISC-V"
-            echo "#define OPTKIT_ENV_CPU_ARCH_RISCV64" >> "$SRC_CONFIG_FILE"
-            ;;
-        *)
-            print_status "Checking CPU Architecture:" "$arch (Unknown)"
-            ;;
-    esac
-}
 
 write_cpu_topology() {
+
+    echo -e "\n// CPU U-Architecture" >> "$SRC_CONFIG_FILE"
+
+    if [ -f /proc/cpuinfo ]; then
+        family=$(grep -m1 "cpu family" /proc/cpuinfo | awk '{print $4}')
+        model=$(grep -m1 "model" /proc/cpuinfo | awk '{print $3}')
+
+        # Convert to hexadecimal
+        family_hex=$(printf "0x%X" "$family")
+        model_hex=$(printf "0x%X" "$model")
+
+        echo "#define OPTKIT_ENV_CPU_FAMILY $family_hex" >> "$SRC_CONFIG_FILE"
+        echo "#define OPTKIT_ENV_CPU_MODEL $model_hex" >> "$SRC_CONFIG_FILE"
+
+        printf "\t%-$(($ALIGN_WIDTH - 8))s %s\n" "OPTKIT_ENV_CPU_FAMILY" "$family_hex"
+        printf "\t%-$(($ALIGN_WIDTH - 8))s %s\n" "OPTKIT_ENV_CPU_MODEL" "$model_hex"
+
+    else
+        echo "// Unable to determine CPU family/model" >> "$SRC_CONFIG_FILE"
+    fi
+
     # Number of sockets
     sockets=$(ls -d /sys/devices/system/cpu/cpu[0-9]* | \
         xargs -n1 -I{} cat {}/topology/physical_package_id 2>/dev/null | sort -u | wc -l)
@@ -115,12 +164,12 @@ write_cpu_topology() {
 
     # Threads per core
     threads_per_core=$((logical / cores))
-    echo "#define OPTKIT_CPU_ENV_THREADS_PER_CORE $threads_per_core" >> "$SRC_CONFIG_FILE"
+    echo "#define OPTKIT_ENV_CPU_THREADS_PER_CORE $threads_per_core" >> "$SRC_CONFIG_FILE"
     printf "\t%-$(($ALIGN_WIDTH - 8))s %s\n" "OPTKIT_ENV_CPU_THREADS_PER_CORE" "$threads_per_core"
 
     # Total logical CPUs (like lscpu's "CPU(s)")
     total_logical=$((sockets * cores_per_socket * threads_per_core))
-    echo "#define OPTKIT_CPU_ENV_TOTAL_LOGICAL_CPUS $total_logical" >> "$SRC_CONFIG_FILE"
+    echo "#define OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS $total_logical" >> "$SRC_CONFIG_FILE"
     printf "\t%-$(($ALIGN_WIDTH - 8))s %s\n" "OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS" "$total_logical"
 }
 
@@ -155,8 +204,7 @@ main() {
     write_headers
     write_compiler_macro
     ## CPU
-    write_cpu_vendor
-    write_cpu_arch
+    write_cpu_info
     write_cpu_topology
     write_cpu_cache_info
 

@@ -21,7 +21,7 @@ namespace optkit::core
     class Query final
     {
     public:
-    public:
+        //TODO: there can be many sockets, make this an array using env_config socket count.
         static int64_t OPTKIT_SOCKET0__ENABLED;
         static int64_t OPTKIT_SOCKET1__ENABLED;
         static int64_t OPTKIT_SOCKET0__CORE_FREQ;
