@@ -19,5 +19,3 @@
     #define OPTKIT_PERFORMANCE_BLOCK_EVENTS(block_name, event_name, variable_name, ...)
 
 #endif
-
-using optkit::core::pmu::cpu::perf::operator<<; // make available to global namespace

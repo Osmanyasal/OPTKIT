@@ -42,6 +42,7 @@ namespace optkit::core::frequency
         ~CPUFrequency() = delete;
     };
 
+    std::string to_string(const std::pair<int64_t, int64_t> &pair);
     std::ostream &operator<<(std::ostream &os, const std::pair<int64_t, int64_t> &pair);
 }
 

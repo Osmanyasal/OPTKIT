@@ -83,6 +83,18 @@ namespace optkit::core::energy::rapl
 
         return result;
     }
+    std::string to_string(const optkit::core::energy::rapl::RaplPerfReaderConfig &config)
+    {
+        std::ostringstream oss;
+        oss << config;
+        return oss.str();
+    }
+    std::string to_string(const std::map<int32_t, std::map<optkit::core::energy::rapl::RaplDomain, double>> &map)
+    {
+        std::ostringstream oss;
+        oss << map;
+        return oss.str();
+    }
 
     std::ostream &operator<<(std::ostream &os, const std::map<int32_t, std::map<optkit::core::energy::rapl::RaplDomain, double>> &map)
     {

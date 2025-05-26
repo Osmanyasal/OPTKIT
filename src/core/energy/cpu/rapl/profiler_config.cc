@@ -7,6 +7,12 @@ namespace optkit::core::energy::rapl
     {
     }
 
+    std::string to_string(const optkit::core::energy::rapl::RaplConfig &rapl_config)
+    {
+        std::ostringstream oss;
+        oss << rapl_config;
+        return oss.str();
+    }
     std::ostream &operator<<(std::ostream &os, const optkit::core::energy::rapl::RaplConfig &rapl_config)
     {
 

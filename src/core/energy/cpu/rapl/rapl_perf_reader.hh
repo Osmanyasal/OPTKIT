@@ -47,6 +47,11 @@ namespace optkit::core::energy::rapl
         std::vector<std::vector<int32_t>> fd_package_domain;
     };
 
+    std::string to_string(const optkit::core::energy::rapl::RaplPerfReaderConfig &config);
+    std::string to_string(const std::map<int32_t, std::map<optkit::core::energy::rapl::RaplDomain, double>> &map);
+
     std::ostream &operator<<(std::ostream &os, const optkit::core::energy::rapl::RaplPerfReaderConfig &config);
     std::ostream &operator<<(std::ostream &os, const std::map<int32_t, std::map<optkit::core::energy::rapl::RaplDomain, double>> &map);
 } // namespace optkit::core::energy::rapl
+
+using optkit::core::energy::rapl::operator<<; // make available to global namespace

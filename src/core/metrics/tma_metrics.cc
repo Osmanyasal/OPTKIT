@@ -92,6 +92,24 @@ namespace optkit::core::metrics
             return "Unknown L3 Metric";
         }
     }
+    std::string to_string(const std::map<L1Metric, double> &map)
+    {
+        std::ostringstream oss;
+        oss << map;
+        return oss.str();
+    }
+    std::string to_string(const std::map<L2Metric, double> &map)
+    {
+        std::ostringstream oss;
+        oss << map;
+        return oss.str();
+    }
+    std::string to_string(const std::map<L3Metric, double> &map)
+    {
+        std::ostringstream oss;
+        oss << map;
+        return oss.str();
+    }
 
     // Overloading the << operator for L1Metric and L2Metric unordered maps
     std::ostream &operator<<(std::ostream &out, const std::map<L1Metric, double> &map)

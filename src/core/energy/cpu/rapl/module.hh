@@ -30,5 +30,3 @@
     #define OPTKIT_RAPL_REPEAT_READ_AND_STORE(var_name, block_name, count)
 #endif
 
-
-using optkit::core::energy::rapl::operator<<; // make available to global namespace

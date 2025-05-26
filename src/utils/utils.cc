@@ -54,7 +54,7 @@ std::vector<std::string> optkit::utils::get_all_files(const std::string &directo
     }
     return files;
 }
-std::vector<std::string> optkit::utils::str_split(std::string s, std::string delimiter)
+std::vector<std::string> optkit::utils::str_split(const std::string& s, const std::string& delimiter)
 {
     size_t pos_start = 0, pos_end, delim_len = delimiter.length();
     std::string token;
@@ -66,7 +66,7 @@ std::vector<std::string> optkit::utils::str_split(std::string s, std::string del
         pos_start = pos_end + delim_len;
         res.push_back(token);
     }
-    // res.push_back(s.substr(pos_start));
+    res.push_back(s.substr(pos_start));
     return res;
 }
 

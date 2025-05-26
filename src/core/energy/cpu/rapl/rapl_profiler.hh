@@ -47,6 +47,7 @@ namespace optkit::core::energy::rapl
     };
  
     // Overloading << for map with RaplDomain as keys
+    std::string to_string(const std::map<optkit::core::energy::rapl::RaplDomain, double> &map);
     std::ostream &operator<<(std::ostream &os, const std::map<optkit::core::energy::rapl::RaplDomain, double> &map);
 
 } // namespace optkit::core::energy::rapl

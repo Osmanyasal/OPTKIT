@@ -44,29 +44,34 @@ namespace optkit::core
         }
         return result;
     }
- 
 
-std::ostream &operator<<(std::ostream &out, const std::map<int32_t, std::vector<int32_t>> &packages)
-{
-    std::ostringstream oss;
-    int32_t total_cores = 0;
-    int32_t count = 0;
-    for (const auto &entry : packages)
+    std::string to_string(const std::map<int32_t, std::vector<int32_t>> &packages)
     {
-        int32_t package_id = entry.first;
-        const std::vector<int32_t> &core_ids = entry.second;
-        total_cores += core_ids.size();
-
-        for (int32_t core_id : core_ids)
-        {
-            oss << core_id << " (" << package_id << ") ";
-            if (++count % 8 == 0)
-                oss << std::endl;
-        }
+        std::ostringstream oss;
+        oss << packages;
+        return oss.str();
     }
-    out << "\n\tDetected " << total_cores << " cores in " << packages.size() << " packages\n---------------------------------------\n"
-        << oss.str();
-    return out;
-}
+    std::ostream &operator<<(std::ostream &out, const std::map<int32_t, std::vector<int32_t>> &packages)
+    {
+        std::ostringstream oss;
+        int32_t total_cores = 0;
+        int32_t count = 0;
+        for (const auto &entry : packages)
+        {
+            int32_t package_id = entry.first;
+            const std::vector<int32_t> &core_ids = entry.second;
+            total_cores += core_ids.size();
+
+            for (int32_t core_id : core_ids)
+            {
+                oss << core_id << " (" << package_id << ") ";
+                if (++count % 8 == 0)
+                    oss << std::endl;
+            }
+        }
+        out << "\n\tDetected " << total_cores << " cores in " << packages.size() << " packages\n---------------------------------------\n"
+            << oss.str();
+        return out;
+    }
 
 } // namespace optkit::core::pmu

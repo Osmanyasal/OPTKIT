@@ -169,6 +169,17 @@ namespace optkit::core::pmu::cpu::perf
         return avail_pmu_ids;
     }
 
+    std::string to_string(const pfm_pmu_info_t &pmu_info){
+        std::ostringstream oss;
+        oss << pmu_info;
+        return oss.str();
+    }
+    std::string to_string(const pfm_event_info_t &event_info){
+        std::ostringstream oss;
+        oss << event_info;
+        return oss.str();
+    }
+
     std::ostream &operator<<(std::ostream &out, const pfm_event_info_t &event_info)
     {
         if (OPT_UNLIKELY(event_info.idx == 0))

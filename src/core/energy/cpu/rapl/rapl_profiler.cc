@@ -39,7 +39,7 @@ namespace optkit::core::energy::rapl
             read_and_store();
             this->save();
         }
-        else if(OPT_LIKELY(this->verbose))
+        else if (OPT_LIKELY(this->verbose))
         {
             // Disable the clock.
             auto end = std::chrono::high_resolution_clock::now();
@@ -75,18 +75,23 @@ namespace optkit::core::energy::rapl
         ss << "]\n";
         return ss.str();
     }
- 
 
-// Overloading << for map with RaplDomain as keys
-std::ostream &operator<<(std::ostream &os, const std::map<optkit::core::energy::rapl::RaplDomain, double> &map)
-{
-
-    for (const auto &item : map)
+    std::string to_string(const std::map<optkit::core::energy::rapl::RaplDomain, double> &map)
     {
-        os << item.first << ": " << item.second << "\n";
+        std::ostringstream oss;
+        oss << map;
+        return oss.str();
     }
+    // Overloading << for map with RaplDomain as keys
+    std::ostream &operator<<(std::ostream &os, const std::map<optkit::core::energy::rapl::RaplDomain, double> &map)
+    {
 
-    return os;
-}
+        for (const auto &item : map)
+        {
+            os << item.first << ": " << item.second << "\n";
+        }
+
+        return os;
+    }
 
 } // namespace optkit::core

@@ -44,6 +44,7 @@ namespace optkit::core
         ~Query() = delete;
     };
 
+    std::string to_string(const std::map<int32_t, std::vector<int32_t>> &packages);
     std::ostream &operator<<(std::ostream &out, const std::map<int32_t, std::vector<int32_t>> &packages);
 } // namespace optkit::core
 

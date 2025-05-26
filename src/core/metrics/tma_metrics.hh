@@ -2,7 +2,7 @@
 
 #include <iostream>
 #include <map>
-
+#include <sstream>
 #include "utils/json.hh"
 // Enum for L1, L2 and L3 analysis metrics
 
@@ -69,6 +69,10 @@ namespace optkit::core::metrics
     std::string to_string(L1Metric metric);
     std::string to_string(L2Metric metric);
     std::string to_string(L3Metric metric);
+
+    std::string to_string(const std::map<L1Metric, double> &map);
+    std::string to_string(const std::map<L2Metric, double> &map);
+    std::string to_string(const std::map<L3Metric, double> &map);
 
     // Overloading the << operator for L1Metric and L2Metric unordered maps
     std::ostream &operator<<(std::ostream &out, const std::map<L1Metric, double> &map);

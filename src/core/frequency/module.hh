@@ -23,6 +23,3 @@
 #define OPTKIT_RESET_CPU_UNCORE_FREQ(socket) 
 
 #endif
-
-
-using optkit::core::frequency::operator<<; // make available to global namespace

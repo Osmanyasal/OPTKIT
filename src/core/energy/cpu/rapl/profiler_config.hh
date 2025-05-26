@@ -19,6 +19,7 @@ namespace optkit::core::energy::rapl
         const bool dump_results_to_file;
     };
 
+    std::string to_string(const optkit::core::energy::rapl::RaplConfig &rapl_config);
     std::ostream &operator<<(std::ostream &os, const optkit::core::energy::rapl::RaplConfig &rapl_config);
 
 } // optkit::core::energy::rapl

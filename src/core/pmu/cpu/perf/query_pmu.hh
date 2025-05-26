@@ -99,8 +99,11 @@ namespace optkit::core::pmu::cpu::perf
         static pfm_pmu_info_t default_architectural_pmu;
     };
 
+    std::string to_string(const pfm_pmu_info_t &pmu_info);
+    std::string to_string(const pfm_event_info_t &event_info);
 
     std::ostream &operator<<(std::ostream &out, const pfm_pmu_info_t &pmu_info);
     std::ostream &operator<<(std::ostream &out, const pfm_event_info_t &event_info);
 } // namespace optkit::core
- 
+
+using optkit::core::pmu::cpu::perf::operator<<; // make available to global namespace

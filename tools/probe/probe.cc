@@ -7,7 +7,7 @@ void print_cpu();
 
 int32_t main(int32_t argc, char **argv)
 {
-    OPTKIT_INIT(false);
+    OPTKIT_INIT({false});
 
     print_cpu();
     print_rapl();

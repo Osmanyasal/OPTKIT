@@ -239,7 +239,12 @@ namespace optkit::core::frequency
             OPTKIT_CORE_ERROR(err.what());
         }
     }
-    
+    std::string to_string(const std::pair<int64_t, int64_t> &pair)
+    {
+        std::ostringstream oss;
+        oss << pair;
+        return oss.str();
+    }
     std::ostream &operator<<(std::ostream &os, const std::pair<int64_t, int64_t> &pair)
     {
         os << "(" << pair.first << ", " << pair.second << ")";
