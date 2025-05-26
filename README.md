@@ -100,7 +100,7 @@ src/
 │   │   │   └── ...               # Other CPU vendors or generic metric implementations
 │   │   └── gpu/
 │   │       ├── nvidia/           # NVIDIA GPU-specific performance metrics
-│   │       ├── rocm/             # AMD ROCm GPU-specific performance metrics
+│   │       ├── amd/             # AMD ROCm GPU-specific performance metrics
 │   │       └── ...               # Support for additional GPU platforms
 │   │
 │   ├── frequency/               # Interfaces to access real-time frequency data
@@ -110,7 +110,7 @@ src/
 │   │   │   └── ...              # Generic CPU frequency source (sysfs)
 │   │   └── gpu/                 # GPU frequency readers via NVML, ROCm, etc.
 │   │       ├── nvidia/
-│   │       ├── rocm/
+│   │       ├── amd/
 │   │       └── ...
 │   │
 │   ├── energy/                  # Modules to monitor energy consumption
@@ -119,8 +119,8 @@ src/
 │   │   │   ├── msr/             # Direct MSR access for Intel CPUs
 │   │   │   └── ...
 │   │   ├── gpu/                 # GPU energy data sources
-│   │   │   ├── nvml/            # NVIDIA Management Library interface
-│   │   │   ├── rocm/            # ROCm System Management Interface (SMI)
+│   │   │   ├── nvidia/            # NVIDIA Management Library interface
+│   │   │   ├── amd/            # ROCm System Management Interface (SMI)
 │   │   │   └── ...
 │   │
 │   └── pmu/                     # Interfaces for accessing hardware performance counters
@@ -132,8 +132,8 @@ src/
 │       │   │   │   ├── arm/     # ARM-specific PMU events
 │       │   │   │   └── ...
 │       ├── gpu/                 # GPU performance monitoring interfaces
-│       │   ├── nvml/            # NVIDIA PMU event access (via NVML)
-│       │   ├── rocm/            # AMD ROCm-based PMU access
+│       │   ├── nvidia/            # NVIDIA PMU event access (via NVML)
+│       │   ├── amd/            # AMD ROCm-based PMU access
 │       │   └── ...
 │
 ├── utils/                       # General-purpose utilities and helpers
