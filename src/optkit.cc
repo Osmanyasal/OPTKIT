@@ -15,12 +15,12 @@ namespace optkit::core
     OptimizerKit::OptimizerKit(const OPTKIT_CONFIG config) : config{config}
     {
         optkit::utils::logger::BaseLogger::init();
-        int32_t paranoid = this->paranoid();
+        int32_t paranoid = optkit::core::Query::paranoid();
         if (OPT_UNLIKELY(paranoid > 0))
         {
             OPTKIT_CORE_ERROR("perf_event_paranoid {}(current) must be <=0 for ACCURATE data collection by optimizer toolkit!", paranoid);
             OPTKIT_CORE_WARN("FOR ALL EVENTS: set perf_event_paranoid to -1 (SUGGESTED)");
-            OPTKIT_CORE_WARN("FOR EVENTS WITH NO SECURITY IMPLICATIONS: set perf_event_paranoid to 0");
+            OPTKIT_CORE_WARN("FOR EVENTS WITH X SECURITY IMPLICATIONS: set perf_event_paranoid to 0");
             OPTKIT_CORE_WARN("USE: sudo sysctl kernel.perf_event_paranoid=<parameter>");
             exit(EXIT_FAILURE);
         }
@@ -31,7 +31,7 @@ namespace optkit::core
             {
                 if (this->config.execution_file.size() > 0)
                     optkit::utils::EXECUTION_FOLDER_NAME = this->config.execution_file;
-                    
+
                 optkit::utils::create_directory(optkit::utils::EXECUTION_FOLDER_NAME);
                 OPTKIT_CORE_INFO("Execution file created {}", optkit::utils::EXECUTION_FOLDER_NAME);
             }
@@ -57,70 +57,101 @@ namespace optkit::core
         if (socket0__enabled == nullptr && socket1__enabled == nullptr)
         {
             OPTKIT_CORE_INFO("OPTKIT_SOCKET0__ENABLED and OPTKIT_SOCKET1__ENABLED are not specified");
-            return;
-        }
-
-        if (socket0__enabled != nullptr)
-        {
-            Query::OPTKIT_SOCKET0__ENABLED = true;
-
-            if (socket0__core_freq != nullptr)
-            {
-                Query::OPTKIT_SOCKET0__CORE_FREQ = std::atol(socket0__core_freq);
-                frequency::CPUFrequency::set_core_frequency(Query::OPTKIT_SOCKET0__CORE_FREQ, 0);
-                OPTKIT_CORE_INFO("---env read--- OPTKIT_SOCKET0__CORE_FREQ:{} ", Query::OPTKIT_SOCKET0__CORE_FREQ);
-            }
-            else
-            {
-                OPTKIT_CORE_INFO("OPTKIT_SOCKET0__CORE_FREQ is not specified");
-            }
-
-            if (socket0__uncore_freq != nullptr)
-            {
-                Query::OPTKIT_SOCKET0__UNCORE_FREQ = std::atol(socket0__uncore_freq);
-                frequency::CPUFrequency::set_uncore_frequency(Query::OPTKIT_SOCKET0__UNCORE_FREQ, 0);
-                OPTKIT_CORE_INFO("---env read--- OPTKIT_SOCKET0__UNCORE_FREQ:{} ", Query::OPTKIT_SOCKET0__UNCORE_FREQ);
-            }
-            else
-            {
-                OPTKIT_CORE_INFO("OPTKIT_SOCKET0__UNCORE_FREQ is not specified");
-            }
         }
         else
         {
-            OPTKIT_CORE_INFO("OPTKIT_SOCKET0__ENABLED is not specified");
-        }
 
-        if (socket1__enabled != nullptr)
-        {
-            Query::OPTKIT_SOCKET1__ENABLED = true;
-
-            if (socket1__core_freq != nullptr)
+            if (socket0__enabled != nullptr)
             {
-                Query::OPTKIT_SOCKET1__CORE_FREQ = std::atol(socket1__core_freq);
-                frequency::CPUFrequency::set_core_frequency(Query::OPTKIT_SOCKET1__CORE_FREQ, 1);
-                OPTKIT_CORE_INFO("---env read--- OPTKIT_SOCKET1__CORE_FREQ:{} ", Query::OPTKIT_SOCKET1__CORE_FREQ);
+                Query::OPTKIT_SOCKET0__ENABLED = true;
+
+                if (socket0__core_freq != nullptr)
+                {
+                    Query::OPTKIT_SOCKET0__CORE_FREQ = std::atol(socket0__core_freq);
+                    core::frequency::CPUFrequency::set_core_frequency(Query::OPTKIT_SOCKET0__CORE_FREQ, 0);
+                    OPTKIT_CORE_INFO("---env read--- OPTKIT_SOCKET0__CORE_FREQ:{} ", Query::OPTKIT_SOCKET0__CORE_FREQ);
+                }
+                else
+                {
+                    OPTKIT_CORE_INFO("OPTKIT_SOCKET0__CORE_FREQ is not specified");
+                }
+
+                if (socket0__uncore_freq != nullptr)
+                {
+                    Query::OPTKIT_SOCKET0__UNCORE_FREQ = std::atol(socket0__uncore_freq);
+                    core::frequency::CPUFrequency::set_uncore_frequency(Query::OPTKIT_SOCKET0__UNCORE_FREQ, 0);
+                    OPTKIT_CORE_INFO("---env read--- OPTKIT_SOCKET0__UNCORE_FREQ:{} ", Query::OPTKIT_SOCKET0__UNCORE_FREQ);
+                }
+                else
+                {
+                    OPTKIT_CORE_INFO("OPTKIT_SOCKET0__UNCORE_FREQ is not specified");
+                }
             }
             else
             {
-                OPTKIT_CORE_INFO("OPTKIT_SOCKET1__CORE_FREQ is not specified");
+                OPTKIT_CORE_INFO("OPTKIT_SOCKET0__ENABLED is not specified");
             }
 
-            if (socket1__uncore_freq != nullptr)
+            if (socket1__enabled != nullptr)
             {
-                Query::OPTKIT_SOCKET1__UNCORE_FREQ = std::atol(socket1__uncore_freq);
-                frequency::CPUFrequency::set_uncore_frequency(Query::OPTKIT_SOCKET1__UNCORE_FREQ, 1);
-                OPTKIT_CORE_INFO("---env read--- OPTKIT_SOCKET1__UNCORE_FREQ:{} ", Query::OPTKIT_SOCKET1__UNCORE_FREQ);
+                Query::OPTKIT_SOCKET1__ENABLED = true;
+
+                if (socket1__core_freq != nullptr)
+                {
+                    Query::OPTKIT_SOCKET1__CORE_FREQ = std::atol(socket1__core_freq);
+                    core::frequency::CPUFrequency::set_core_frequency(Query::OPTKIT_SOCKET1__CORE_FREQ, 1);
+                    OPTKIT_CORE_INFO("---env read--- OPTKIT_SOCKET1__CORE_FREQ:{} ", Query::OPTKIT_SOCKET1__CORE_FREQ);
+                }
+                else
+                {
+                    OPTKIT_CORE_INFO("OPTKIT_SOCKET1__CORE_FREQ is not specified");
+                }
+
+                if (socket1__uncore_freq != nullptr)
+                {
+                    Query::OPTKIT_SOCKET1__UNCORE_FREQ = std::atol(socket1__uncore_freq);
+                    core::frequency::CPUFrequency::set_uncore_frequency(Query::OPTKIT_SOCKET1__UNCORE_FREQ, 1);
+                    OPTKIT_CORE_INFO("---env read--- OPTKIT_SOCKET1__UNCORE_FREQ:{} ", Query::OPTKIT_SOCKET1__UNCORE_FREQ);
+                }
+                else
+                {
+                    OPTKIT_CORE_INFO("OPTKIT_SOCKET1__UNCORE_FREQ is not specified");
+                }
             }
             else
             {
-                OPTKIT_CORE_INFO("OPTKIT_SOCKET1__UNCORE_FREQ is not specified");
+                OPTKIT_CORE_INFO("OPTKIT_SOCKET1__ENABLED is not specified");
             }
         }
-        else
-        {
-            OPTKIT_CORE_INFO("OPTKIT_SOCKET1__ENABLED is not specified");
-        }
+#if OPTKIT_CONF_RAPL_MACROS_ENABLED
+        OPTKIT_CORE_INFO("OPTKIT_CONF_RAPL_MACROS_ENABLED: OK");
+#else
+        OPTKIT_CORE_WARN("OPTKIT_CONF_RAPL_MACROS_ENABLED: NOT ENABLED");
+#endif
+
+#if OPTKIT_CONF_FREQ_MACROS_ENABLED
+        OPTKIT_CORE_INFO("OPTKIT_CONF_FREQ_MACROS_ENABLED: OK");
+#else
+        OPTKIT_CORE_WARN("OPTKIT_CONF_FREQ_MACROS_ENABLED: NOT ENABLED");
+#endif
+
+#if OPTKIT_CONF_PMU_MACROS_ENABLED
+        OPTKIT_CORE_INFO("OPTKIT_CONF_PMU_MACROS_ENABLED: OK");
+#else
+        OPTKIT_CORE_WARN("OPTKIT_CONF_PMU_MACROS_ENABLED: NOT ENABLED");
+#endif
+
+#if OPTKIT_CONF_PMU_USE_PERF
+        OPTKIT_CORE_INFO("OPTKIT_CONF_PMU_USE_PERF: OK");
+#else
+        OPTKIT_CORE_WARN("OPTKIT_CONF_PMU_USE_PERF: NOT ENABLED");
+#endif
+
+#if OPTKIT_CONF_PMU_USE_MSR
+        OPTKIT_CORE_INFO("OPTKIT_CONF_PMU_USE_MSR: OK");
+#else
+        OPTKIT_CORE_WARN("OPTKIT_CONF_PMU_USE_MSR: NOT ENABLED");
+#endif
     }
 
     /**
@@ -133,12 +164,6 @@ namespace optkit::core
     OptimizerKit::~OptimizerKit()
     {
         optkit::core::pmu::cpu::QueryPMU::destroy();
-    }
-
-    int32_t OptimizerKit::paranoid()
-    {
-        std::string value = optkit::utils::read_file("/proc/sys/kernel/perf_event_paranoid");
-        return std::stoi(value);
     }
 
 } // namespace optkit::core

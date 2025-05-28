@@ -4,7 +4,7 @@
 #include "core/frequency/cpu/cpu_frequency.hh"
 #include "core/frequency/cpu/query_cpu_frequency.hh"
 
-#if defined(CONF__FREQ__MACROS__ENABLED) && CONF__FREQ__MACROS__ENABLED == 1
+#if OPTKIT_CONF_FREQ_MACROS_ENABLED
 
 #define OPTKIT_SET_CPU_CORE_FREQ(frequency, socket) CPUFrequency::set_core_frequency(frequency, socket)
 #define OPTKIT_SET_CPU_UNCORE_FREQ(frequency, socket) CPUFrequency::set_uncore_frequency(frequency, socket)

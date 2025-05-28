@@ -54,7 +54,7 @@ void print_cpu()
     const auto &packages = optkit::core::Query::detect_cpu_packages();
     std::cout << packages << "\n";
     std::cout << "TOTAL # OF SOCKETS: " << optkit::core::Query::num_sockets << "\n";
-    std::cout << "TOTAL # OF CORES: " << optkit::core::Query::num_cores << "\n\n";
+    std::cout << "TOTAL # OF CORES: " << optkit::core::Query::num_logical_cores << "\n\n";
 
     for (int socket = 0; socket < optkit::core::Query::num_sockets; socket++)
     {
@@ -82,7 +82,7 @@ void print_cpu()
         std::cout << "\n";
     }
 
-    for (int i = 0; i < optkit::core::Query::num_cores; i++)
+    for (int i = 0; i < optkit::core::Query::num_logical_cores; i++)
     {
         std::cout << "========== CPU Core[" << i << "] ==========\n";
         try

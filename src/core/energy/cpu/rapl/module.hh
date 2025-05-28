@@ -11,7 +11,7 @@
     Static instance is defined because monitoring recursive methods would cause an issue
 */
 
-#if defined(CONF__RAPL__MACROS__ENABLED) && CONF__RAPL__MACROS__ENABLED == 1
+#if OPTKIT_CONF_RAPL_MACROS_ENABLED == 1
 
 #define OPTKIT_RAPL(var_name, block_name)        \
     optkit::core::energy::rapl::RaplProfiler var_name{block_name};

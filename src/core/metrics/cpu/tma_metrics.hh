@@ -6,7 +6,7 @@
 #include "utils/json.hh"
 // Enum for L1, L2 and L3 analysis metrics
 
-namespace optkit::core::metrics
+namespace optkit::core::metrics::cpu
 {
     enum class L1Metric : char
     {
@@ -84,4 +84,4 @@ namespace optkit::core::metrics
     nlohmann::json to_json(const char *event_name, const std::map<L3Metric, double> &map);
 }
 
-using optkit::core::metrics::operator<<;
+using optkit::core::metrics::cpu::operator<<;

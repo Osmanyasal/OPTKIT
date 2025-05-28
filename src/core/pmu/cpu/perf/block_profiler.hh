@@ -1,12 +1,15 @@
 #pragma once
 
+#include "core/pmu/cpu/perf/profiler_config.hh"
+#if OPTKIT_ENV_LIB_PERF_EVENT
+
 #include <iostream>
 #include <vector>
 #include "utils/utils.hh"
 #include "utils/base_profiler.hh"
 #include "core/pmu/cpu/perf/profiler_config.hh"
-#include "core/pmu/cpu/perf/pmu_event_manager.hh"
-#include "core/pmu/cpu/perf/pmu_utils.hh"
+#include "core/pmu/cpu/pmu_event_manager.hh"
+#include "core/pmu/cpu/pmu_utils.hh"
 
 namespace optkit::core::pmu::cpu::perf
 {
@@ -65,3 +68,5 @@ namespace optkit::core::pmu::cpu::perf
     };
 
 } // namespace optkit::core::pmu::cpu::perf
+
+#endif

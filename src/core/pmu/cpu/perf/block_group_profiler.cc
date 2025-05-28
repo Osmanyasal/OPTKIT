@@ -1,11 +1,12 @@
+
 #include "core/pmu/cpu/perf/block_group_profiler.hh"
 
+#if OPTKIT_ENV_LIB_PERF_EVENT
 namespace optkit::core::pmu::cpu::perf
 {
 
     BlockGroupProfiler::BlockGroupProfiler(const char *block_name, const char *event_name, const std::vector<std::pair<uint64_t, std::string>> &raw_events, bool verbose, const PerfProfilerConfig &config) : BaseProfiler{block_name, event_name, verbose}, profiler_config{config}, group_leader{-1}, is_active{true}, raw_events{raw_events}
     {
-#if OPTKIT_ENV_LIB_PERF_EVENT
         PMUEventManager::disable_all_events();
 
         if ((int32_t)raw_events.size() > PMUEventManager::pmu_event_size())
@@ -42,11 +43,9 @@ namespace optkit::core::pmu::cpu::perf
         start = std::chrono::high_resolution_clock::now();
 
         PMUEventManager::enable_all_events();
-#endif
     }
     BlockGroupProfiler ::~BlockGroupProfiler()
     {
-#if OPTKIT_ENV_LIB_PERF_EVENT
         PMUEventManager::disable_all_events();
 
         if (OPT_UNLIKELY(!is_active))
@@ -77,36 +76,30 @@ namespace optkit::core::pmu::cpu::perf
         }
 
         PMUEventManager::enable_all_events();
-#endif
     }
 
     void BlockGroupProfiler::disable()
     {
-#if OPTKIT_ENV_LIB_PERF_EVENT
         if (OPT_UNLIKELY(!is_active))
         {
             OPTKIT_CORE_WARN("BlockGroupProfiler for block {} is not active!", this->block_name);
         }
 
         ioctl(group_leader, PERF_EVENT_IOC_DISABLE, PERF_IOC_FLAG_GROUP);
-#endif
     }
 
     void BlockGroupProfiler::enable()
     {
-#if OPTKIT_ENV_LIB_PERF_EVENT
         if (OPT_UNLIKELY(!is_active))
         {
             OPTKIT_CORE_WARN("BlockGroupProfiler for block {} is not active!", this->block_name);
         }
 
         ioctl(group_leader, PERF_EVENT_IOC_ENABLE, PERF_IOC_FLAG_GROUP);
-#endif
     }
 
     std::vector<uint64_t> BlockGroupProfiler::read()
     {
-#if OPTKIT_ENV_LIB_PERF_EVENT
         PMUEventManager::disable_all_events();
 
         std::vector<uint64_t> result;
@@ -129,18 +122,17 @@ namespace optkit::core::pmu::cpu::perf
         PMUEventManager::enable_all_events();
 
         return result;
-#endif
     }
 
     std::string BlockGroupProfiler::convert_buffer_to_json()
     {
         std::stringstream ss;
-#if OPTKIT_ENV_LIB_PERF_EVENT
         ss << "[\n";
         // based on the insertion order.
         ss << core::pmu::cpu::perf::to_json(this->event_name, this->raw_events, this->read_buffer);
         ss << "]\n";
-#endif
         return ss.str();
     }
 } // namespace optkit::core::pmu::cpu::perf
+
+#endif

@@ -2,11 +2,11 @@
 
 // #include "core/metrics/intel/icl/icl_governor.hh"
 // #include "core/metrics/intel/skl/skl_governor.hh"
-#include "core/metrics/tma_metrics.hh"
-#include "core/metrics/tmanalysis.hh"
+#include "core/metrics/cpu/tma_metrics.hh"
+#include "core/metrics/cpu/tmanalysis.hh"
 #include "utils/deployment/deployment_config.hh"
 
-#if defined(CONF__PMU__MACROS__ENABLED) && CONF__PMU__MACROS__ENABLED == 1
+#if OPTKIT_CONF_PMU_MACROS_ENABLED
 
 #define OPTKIT_TMA_ANALYSIS(block_name, variable_name, TMA_RECEPIE)                                   \
     std::string variable_name##_event_name = optkit::core::metrics::to_string(TMA_RECEPIE);          \

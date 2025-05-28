@@ -40,7 +40,7 @@ int32_t main(int32_t argc, char **argv)
                                               .count() <= duration_sec))
         {
 
-            auto energy_data = rapl.read(); // map<int32_t (socket), map<RaplDomain, double>>
+            auto energy_data = rapl.read_and_store(); // map<int32_t (socket), map<RaplDomain, double>>
 
             double energy_this_second = 0.0;
 

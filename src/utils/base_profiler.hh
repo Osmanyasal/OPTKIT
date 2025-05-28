@@ -22,7 +22,7 @@ namespace optkit::core
         /**
          * @brief Reads the value and STORES it in a buffer for subsequent saving to a file.
          *        Read also store the duration time between start-end and re-set the start to end value afterwards
-         * @return T
+         * @return  std::pair<double, T> where first is duration and second is the value.
          */
         virtual std::pair<double, T> read_and_store() final
         {

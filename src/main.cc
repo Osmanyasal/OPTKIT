@@ -1,4 +1,7 @@
 #include <omp.h>
+
+
+#define OPTKIT_CONF_PMU_USE_PERF 0
 #include "optkit.hh"
 #include "core/pmu/cpu/perf/events/amd64/fam19h_zen4.hh"
 #include "core/pmu/cpu/perf/events/intel/icl.hh"

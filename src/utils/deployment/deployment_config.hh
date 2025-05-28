@@ -1,33 +1,74 @@
 #pragma once
 
 /**
- * @brief Porting enviroment
- * when is enabled, it removes trace logs.
+ * @brief Should be included by the user to the host program that's using the library.
  *
  */
 
-#ifndef CONF__PORTING__IS_PRODUCTION
-#define CONF__PORTING__IS_PRODUCTION 1
+
+// =============================================
+// User-configurable switches (can be defined before including this header)
+// =============================================
+
+// Allow users to override macro enable flags
+#ifndef OPTKIT_CONF_PMU_MACROS_ENABLED
+#define OPTKIT_CONF_PMU_MACROS_ENABLED 1  // Default: enabled
 #endif
 
-#ifndef CONF__OPTKIT__ENABLED
-#define CONF__OPTKIT__ENABLED 1
+#ifndef OPTKIT_CONF_RAPL_MACROS_ENABLED
+#define OPTKIT_CONF_RAPL_MACROS_ENABLED 1
 #endif
 
-#ifndef CONF__PMU__MACROS__ENABLED
-#define CONF__PMU__MACROS__ENABLED (1 & CONF__OPTKIT__ENABLED)
+#ifndef OPTKIT_CONF_FREQ_MACROS_ENABLED
+#define OPTKIT_CONF_FREQ_MACROS_ENABLED 1
 #endif
 
-#ifndef CONF__RAPL__MACROS__ENABLED
-#define CONF__RAPL__MACROS__ENABLED (1 & CONF__OPTKIT__ENABLED)
+#ifndef OPTKIT_CONF_PMU_USE_PERF
+#define OPTKIT_CONF_PMU_USE_PERF (1 && OPTKIT_ENV_LIB_PERF_EVENT)  // Default: enabled if system has perf_event
 #endif
 
-#ifndef CONF__FREQ__MACROS__ENABLED
-#define CONF__FREQ__MACROS__ENABLED (1 & CONF__OPTKIT__ENABLED)
+#ifndef OPTKIT_CONF_PMU_USE_MSR
+#define OPTKIT_CONF_PMU_USE_MSR (!OPTKIT_CONF_PMU_USE_PERF && (1 && OPTKIT_ENV_LIB_MSR_SAFE))   // if perf is not enabled and system has msr_safe and selected, then go for it.
 #endif
 
+// =============================================
+// Backend selection logic (user-controllable)
+// =============================================
+
+// Case 1: User explicitly requested perf
+#if OPTKIT_CONF_PMU_USE_PERF
+    #undef OPTKIT_CONF_PMU_USE_MSR  // Ensure MSR is not set
+    #undef OPTKIT_CONF_PMU_USE_PERF  // Ensure MSR is not set
+    #define OPTKIT_CONF_PMU_USE_MSR 0
+    #define OPTKIT_CONF_PMU_USE_PERF 1
+// Case 2: User explicitly requested MSR
+#elif OPTKIT_CONF_PMU_USE_MSR
+    #undef OPTKIT_CONF_PMU_USE_PERF
+    #undef OPTKIT_CONF_PMU_USE_MSR
+    #define OPTKIT_CONF_PMU_USE_PERF 0
+    #define OPTKIT_CONF_PMU_USE_MSR 1
+// Case 3: Auto-detect (only if neither is set)
+#else
+    #undef OPTKIT_CONF_PMU_MACROS_ENABLED
+    #define OPTKIT_CONF_PMU_MACROS_ENABLED 0
+    #undef OPTKIT_CONF_PMU_USE_PERF
+    #define OPTKIT_CONF_PMU_USE_PERF 0
+    #undef OPTKIT_CONF_PMU_USE_MSR
+    #define OPTKIT_CONF_PMU_USE_MSR 0
+    #pragma message("PMU disabled: No available backend (neither PERF nor MSR)")
+#endif
+
+// Final validation
+#if OPTKIT_CONF_PMU_USE_PERF && OPTKIT_CONF_PMU_USE_MSR
+    #error "PMU configuration conflict: Both USE_PERF and USE_MSR cannot be enabled"
+#endif
+
+
+// =============================================
+// Include subsystem headers
+// =============================================
 
 #include "core/energy/cpu/rapl/module.hh"
-#include "core/pmu/cpu/perf/module.hh"
+#include "core/pmu/cpu/module.hh"
 #include "core/metrics/module.hh"
 #include "core/frequency/module.hh"

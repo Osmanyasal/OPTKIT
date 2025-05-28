@@ -38,7 +38,7 @@ namespace optkit::core::frequency
     {
         EXEC_IF_ROOT;
         frequency = frequency / 1000;
-        if (cpu >= 0 && cpu < Query::num_cores)
+        if (cpu >= 0 && cpu < Query::num_logical_cores)
         {
             try
             {
@@ -66,7 +66,7 @@ namespace optkit::core::frequency
     {
         EXEC_IF_ROOT;
         frequency = frequency / 1000;
-        if (cpu_start >= 0 && cpu_end < Query::num_cores && cpu_start <= cpu_end)
+        if (cpu_start >= 0 && cpu_end < Query::num_logical_cores && cpu_start <= cpu_end)
         {
             try
             {
@@ -113,7 +113,7 @@ namespace optkit::core::frequency
         EXEC_IF_ROOT_RETURN(-1);
         try
         {
-            if (cpu >= 0 && cpu < Query::num_cores)
+            if (cpu >= 0 && cpu < Query::num_logical_cores)
             {
                 return 1000 * std::atol(optkit::utils::read_file("/sys/devices/system/cpu/cpu" + std::to_string(cpu) + "/cpufreq/scaling_cur_freq").c_str());
             }
@@ -151,7 +151,7 @@ namespace optkit::core::frequency
     std::vector<int64_t> CPUFrequency::get_core_frequency(int16_t cpu_start, int16_t cpu_end, int16_t socket)
     {
         EXEC_IF_ROOT_RETURN({});
-        if (cpu_start < 0 || cpu_end < cpu_start || cpu_end >= Query::num_cores)
+        if (cpu_start < 0 || cpu_end < cpu_start || cpu_end >= Query::num_logical_cores)
         {
             OPTKIT_CORE_WARN("Invalid range cpu_start={} cpu_end={}", cpu_start, cpu_end);
             return {};

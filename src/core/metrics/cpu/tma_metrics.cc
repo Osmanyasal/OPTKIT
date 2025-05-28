@@ -1,7 +1,7 @@
 #include <iostream>
-#include "core/metrics/tma_metrics.hh"
+#include "core/metrics/cpu/tma_metrics.hh"
 
-namespace optkit::core::metrics
+namespace optkit::core::metrics::cpu
 {
     // Function to convert L1Metric to string
     std::string to_string(L1Metric metric)

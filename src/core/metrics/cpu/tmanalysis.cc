@@ -1,4 +1,5 @@
-#include "core/metrics/tmanalysis.hh"
+#include "core/metrics/cpu/tmanalysis.hh"
+#if OPTKIT_ENV_LIB_PERF_EVENT
 
 #define INTEL_X86_EDGE_BIT	18
 #define INTEL_X86_ANY_BIT	21
@@ -8,7 +9,7 @@
 #define INTEL_X86_MOD_ANY	(1 << INTEL_X86_ANY_BIT)
 #define INTEL_X86_MOD_INV	(1 << INTEL_X86_INV_BIT)
 
-namespace optkit::core::metrics
+namespace optkit::core::metrics::cpu
 {
     TMAnalysis::TMAnalysis(const char *block_name, const char *event_name, bool verbose, const core::pmu::cpu::perf::PerfProfilerConfig &config) : block_name{block_name}, event_name{event_name}, verbose{verbose}, profiler_config{config}
     {
@@ -488,4 +489,6 @@ namespace optkit::core::metrics
         return default_mapping;
     }
 
-} // namespace optkit::core::metrics
+} // namespace optkit::core::metrics::cpu
+
+#endif

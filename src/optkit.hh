@@ -23,14 +23,6 @@ namespace optkit::core
         OptimizerKit(const OPTKIT_CONFIG config = {});
         ~OptimizerKit();
 
-        /**
-         * @brief Returns current perf_event_paranoid value from "/proc/sys/kernel/perf_event_paranoid"<br>
-         * Suggested value is -1 but 0 is also okay. cannot gurantee to accuretely measure for values above >0.
-         *
-         * @return int32_t paranoid value.
-         */
-        int32_t paranoid();
-
     private:
         void process_env_variables();
 
@@ -39,8 +31,4 @@ namespace optkit::core
     };
 }
 
-#ifdef CONF__OPTKIT__ENABLED
-    #define OPTKIT_INIT(...) optkit::core::OptimizerKit optkit{__VA_ARGS__}
-#else 
-    #define OPTKIT_INIT(...)
-#endif
+#define OPTKIT_INIT(...) optkit::core::OptimizerKit optkit{__VA_ARGS__}

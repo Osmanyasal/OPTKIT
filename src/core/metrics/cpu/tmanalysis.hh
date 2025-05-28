@@ -1,5 +1,8 @@
 #pragma once
 
+#include "core/pmu/cpu/perf/profiler_config.hh"
+#if OPTKIT_ENV_LIB_PERF_EVENT
+
 #include <iostream>
 #include <map>
 #include <vector>
@@ -9,13 +12,13 @@
 #include <x86intrin.h>
 #include <memory>
 #include "utils/utils.hh" 
-#include "core/pmu/cpu/perf/pmu_event_manager.hh"
+#include "core/pmu/cpu/pmu_event_manager.hh"
 #include "core/frequency/cpu/query_cpu_frequency.hh"
-#include "core/metrics/tma_metrics.hh"
+#include "core/metrics/cpu/tma_metrics.hh"
 #include "core/pmu/cpu/perf/block_group_profiler.hh"
 #include "core/pmu/cpu/perf/block_profiler.hh"
 
-namespace optkit::core::metrics
+namespace optkit::core::metrics::cpu
 {
 
     /**
@@ -101,4 +104,6 @@ namespace optkit::core::metrics
         core::pmu::cpu::perf::PerfProfilerConfig profiler_config;
     };
 
-} // namespace optkit::core::metrics
+} // namespace optkit::core::metrics::cpu
+
+#endif

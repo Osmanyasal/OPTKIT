@@ -12,9 +12,15 @@ namespace optkit::core
     int64_t Query::OPTKIT_SOCKET0__UNCORE_FREQ = -1;
     int64_t Query::OPTKIT_SOCKET1__UNCORE_FREQ = -1;
 
-    const int16_t Query::num_cores = sysconf(_SC_NPROCESSORS_ONLN);
-    const int16_t Query::num_sockets = Query::detect_cpu_packages().size();
+    const int16_t Query::num_sockets = OPTKIT_ENV_CPU_NUM_SOCKETS;
+    const int16_t Query::num_logical_cores = OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS;
     const bool Query::is_root_priv_enabled = (geteuid() == 0);
+
+    int32_t Query::paranoid()
+    {
+        std::string value = optkit::utils::read_file("/proc/sys/kernel/perf_event_paranoid");
+        return std::stoi(value);
+    }
 
     // Socket - cpu list
     const std::map<int32_t, std::vector<int32_t>> &Query::detect_cpu_packages()

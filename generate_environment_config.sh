@@ -38,9 +38,9 @@ check_header() {
 write_headers() {
     echo -e "\n// Headers" >> "$SRC_CONFIG_FILE"
     check_header "linux/perf_event.h"
+    check_header "msr_safe.h"
     check_header "nvml.h"
     check_header "rocm_smi/rocm_smi.h"
-    check_header "msr_safe.h"
 }
 
 write_compiler_macro() {
@@ -146,8 +146,8 @@ write_cpu_topology() {
     # Number of sockets
     sockets=$(ls -d /sys/devices/system/cpu/cpu[0-9]* | \
         xargs -n1 -I{} cat {}/topology/physical_package_id 2>/dev/null | sort -u | wc -l)
-    echo "#define OPTKIT_ENV_CPU_NUM_SOCKET $sockets" >> "$SRC_CONFIG_FILE"
-    printf "\t%-$(($ALIGN_WIDTH - 8))s %s\n" "OPTKIT_ENV_CPU_NUM_SOCKET" "$sockets"
+    echo "#define OPTKIT_ENV_CPU_NUM_SOCKETS $sockets" >> "$SRC_CONFIG_FILE"
+    printf "\t%-$(($ALIGN_WIDTH - 8))s %s\n" "OPTKIT_ENV_CPU_NUM_SOCKETS" "$sockets"
 
     # Unique physical cores (package_id + core_id)
     cores=$(for cpu in /sys/devices/system/cpu/cpu[0-9]*; do

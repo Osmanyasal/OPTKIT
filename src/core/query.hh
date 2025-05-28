@@ -29,8 +29,8 @@ namespace optkit::core
         static int64_t OPTKIT_SOCKET0__UNCORE_FREQ;
         static int64_t OPTKIT_SOCKET1__UNCORE_FREQ;
 
-        static const int16_t num_cores;
         static const int16_t num_sockets;
+        static const int16_t num_logical_cores;
         static const bool is_root_priv_enabled;
 
         /**
@@ -38,6 +38,15 @@ namespace optkit::core
          * @return const ref of static std::unordered_map<int32_t,std::vector<int32_t>> object: package - # of cores
          */
         static const std::map<int32_t, std::vector<int32_t>> &detect_cpu_packages();
+
+
+        /**
+         * @brief Returns current perf_event_paranoid value from "/proc/sys/kernel/perf_event_paranoid"<br>
+         * Suggested value is -1 but 0 is also okay. cannot gurantee to accuretely measure for values above >0.
+         *
+         * @return int32_t paranoid value.
+         */
+        static int32_t paranoid();
 
     private:
         Query() = delete;
