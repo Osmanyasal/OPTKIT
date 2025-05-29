@@ -56,7 +56,7 @@ TEST_F(UtilsTest, GetAllFilesInDirectory) {
     EXPECT_TRUE(found_b);
 }
 
-TEST(UtilsTest, GenerateGUID_Unique) {
+TEST_F(UtilsTest, GenerateGUID_Unique) {
     auto guid1 = generateGUID();
     auto guid2 = generateGUID();
     EXPECT_FALSE(guid1.empty());
@@ -64,7 +64,7 @@ TEST(UtilsTest, GenerateGUID_Unique) {
     EXPECT_NE(guid1, guid2);
 }
 
-TEST(UtilsTest, GetDateAndTimeFormat) {
+TEST_F(UtilsTest, GetDateAndTimeFormat) {
     auto date = get_date();
     auto time = get_time();
 
@@ -72,7 +72,7 @@ TEST(UtilsTest, GetDateAndTimeFormat) {
     EXPECT_FALSE(time.empty());
 }
 
-TEST(UtilsTest, StringSplitBasic) {
+TEST_F(UtilsTest, StringSplitBasic) {
     std::string input = "a,b,c";
     auto result = str_split(input, ",");
 

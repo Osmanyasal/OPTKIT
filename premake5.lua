@@ -44,7 +44,7 @@ postbuildcommands {
     "cd bin/obj/pfm_extract && ar -r ../../%{cfg.buildcfg}/liboptkit_static.a *.o",
 
     -- Clean up (optional)
-    -- "rm -rf bin/obj/pfm_extract",
+    "rm -rf bin/obj/pfm_extract",
 
     "@echo [COMPILE UTILITY TOOLS]",
     "@cd ./tools && ./compile.sh && echo [✅ COMPILE UTILITY TOOLS]"
