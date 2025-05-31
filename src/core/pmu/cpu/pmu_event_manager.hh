@@ -45,6 +45,14 @@ namespace optkit::core::pmu::cpu
         // returns number of counters
         static int32_t pmu_num_cntrs();
 
+#ifdef OPTKIT_TESTING   // adds this for testing build
+        static void reset()
+        {
+            PMUEventManager::fd__event_count_map.clear();
+            PMUEventManager::event_count_being_monitor = 0;
+        }
+#endif
+
     private:
         static std::map<int32_t, int32_t> fd__event_count_map; // insertion order is important for enable/disable ordering
         static int32_t event_count_being_monitor;

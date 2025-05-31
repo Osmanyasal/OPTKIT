@@ -100,11 +100,11 @@ function test_project_setup()
         "gtest", "gtest_main", "pthread", "dl"
     }
     linkoptions { "-fopenmp" }
-    linkoptions { "./bin/Release/liboptkit_static.a"}
+    linkoptions { "./bin/Release/liboptkit_static.a" }
 
     filter "configurations:Release"
     optimize "On"
     symbols "Off"
     defines { "OPTKIT_MODE_NDEBUG" }
-    buildoptions { "-Wall", "-O2", "-fopenmp", "-fPIC", "-msse", "-march=native -funroll-loops -ftree-vectorize -fopt-info-vec" }
+    buildoptions { "-Wall", "-O2", "-fopenmp", "-fPIC", "-msse", "-march=native -funroll-loops -ftree-vectorize -fopt-info-vec", "-DOPTKIT_TESTING" }
 end
