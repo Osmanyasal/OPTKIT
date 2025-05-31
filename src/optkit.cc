@@ -24,7 +24,7 @@ namespace optkit::core
             OPTKIT_CORE_WARN("USE: sudo sysctl kernel.perf_event_paranoid=<parameter>");
             exit(EXIT_FAILURE);
         }
-        else if (paranoid <= 0)
+        else
         {
 
             if (OPT_LIKELY(config.create_folder))

@@ -1,7 +1,7 @@
 
 #include "core/pmu/cpu/pmu_event_manager.hh"
 
-namespace optkit::core::pmu::cpu::perf
+namespace optkit::core::pmu::cpu
 {
     std::map<int32_t, int32_t> PMUEventManager::fd__event_count_map;
     int32_t PMUEventManager::event_count_being_monitor = 0;
@@ -32,26 +32,32 @@ namespace optkit::core::pmu::cpu::perf
 
     int32_t PMUEventManager::unregister_event(int32_t fd)
     {
+        auto it = PMUEventManager::fd__event_count_map.find(fd);
+        if (it == PMUEventManager::fd__event_count_map.end())
+        {
+            return 0; // FD not registered, do nothing
+        }
+
         close(fd);
-        int32_t tmp = PMUEventManager::fd__event_count_map[fd];
+        int32_t tmp = it->second;
         PMUEventManager::event_count_being_monitor -= tmp;
-        PMUEventManager::fd__event_count_map.erase(fd);
+        PMUEventManager::fd__event_count_map.erase(it);
         return tmp;
     }
 
     void PMUEventManager::disable_all_events()
     {
-        #if OPTKIT_CONF_PMU_USE_PERF
+#if OPTKIT_CONF_PMU_USE_PERF
         // disable all other counters in insertion order
         for (const auto &pair : PMUEventManager::fd__event_count_map)
             ioctl(pair.first, PERF_EVENT_IOC_DISABLE, PERF_IOC_FLAG_GROUP);
-        #elif OPTKIT_CONF_PMU_USE_MSR
+#elif OPTKIT_CONF_PMU_USE_MSR
 
-        #endif
+#endif
     }
     void PMUEventManager::enable_all_events()
     {
-        #if OPTKIT_CONF_PMU_USE_PERF
+#if OPTKIT_CONF_PMU_USE_PERF
         // enable all other counters in reverse order
         auto rit = PMUEventManager::fd__event_count_map.rbegin();
         while (rit != PMUEventManager::fd__event_count_map.rend())
@@ -59,9 +65,9 @@ namespace optkit::core::pmu::cpu::perf
             ioctl(rit->first, PERF_EVENT_IOC_ENABLE, PERF_IOC_FLAG_GROUP);
             ++rit;
         }
-        #elif OPTKIT_CONF_PMU_USE_MSR
+#elif OPTKIT_CONF_PMU_USE_MSR
 
-        #endif
+#endif
     }
 
     std::vector<int32_t> PMUEventManager::all_fds()
@@ -78,7 +84,7 @@ namespace optkit::core::pmu::cpu::perf
         return PMUEventManager::event_count_being_monitor;
     }
 
-    int32_t PMUEventManager::pmu_event_size()
+    int32_t PMUEventManager::pmu_num_cntrs()
     {
         return QueryPMU::default_pmu_info().num_cntrs;
     }

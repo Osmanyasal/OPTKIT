@@ -9,10 +9,10 @@ namespace optkit::core::pmu::cpu::msr
     {
         PMUEventManager::disable_all_events();
 
-        if ((int32_t)raw_events.size() > PMUEventManager::pmu_event_size())
+        if ((int32_t)raw_events.size() > PMUEventManager::pmu_num_cntrs())
         {
             this->is_active = false;
-            OPTKIT_CORE_ERROR("Cannot create a blockgroup for block {} by monitoring more than pmu hardware event size {}|{}(max).", this->block_name, raw_events.size(), PMUEventManager::pmu_event_size());
+            OPTKIT_CORE_ERROR("Cannot create a blockgroup for block {} by monitoring more than pmu hardware event size {}|{}(max).", this->block_name, raw_events.size(), PMUEventManager::pmu_num_cntrs());
             OPTKIT_CORE_WARN("Consider dividing the BlockGroupProfiler for block {} into multiple sub-groups!", this->block_name);
             return;
         }

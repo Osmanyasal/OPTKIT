@@ -162,7 +162,7 @@ namespace optkit::core::metrics::cpu
     void TMAnalysis::choose_profiler()
     {
         int32_t num_cntrs = core::pmu::cpu::QueryPMU::default_pmu_info().num_cntrs;
-        if (OPT_UNLIKELY(core::pmu::cpu::perf::PMUEventManager::number_of_events_being_monitored() + (int32_t)this->recipie_to_monitor.size() > num_cntrs))
+        if (OPT_UNLIKELY(core::pmu::cpu::PMUEventManager::number_of_events_being_monitored() + (int32_t)this->recipie_to_monitor.size() > num_cntrs))
         {
             OPTKIT_CORE_DEBUG("TMA chose block profiler");
             this->profiler_config.setGrouped(false);

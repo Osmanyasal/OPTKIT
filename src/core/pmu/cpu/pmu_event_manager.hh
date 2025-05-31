@@ -7,9 +7,11 @@
 #include "utils/utils.hh"
 #include "core/pmu/cpu/query_pmu.hh"
 
+#if OPTKIT_ENV_LIB_PERF_EVENT
 #include <linux/perf_event.h>
+#endif
 
-namespace optkit::core::pmu::cpu::perf
+namespace optkit::core::pmu::cpu
 {
     class PMUEventManager
     {
@@ -40,7 +42,8 @@ namespace optkit::core::pmu::cpu::perf
         static std::vector<int32_t> all_fds();
         static int32_t number_of_events_being_monitored();
 
-        static int32_t pmu_event_size();
+        // returns number of counters
+        static int32_t pmu_num_cntrs();
 
     private:
         static std::map<int32_t, int32_t> fd__event_count_map; // insertion order is important for enable/disable ordering
