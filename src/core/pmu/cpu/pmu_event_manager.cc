@@ -51,10 +51,12 @@ namespace optkit::core::pmu::cpu
         // disable all other counters in insertion order
         for (const auto &pair : PMUEventManager::fd__event_count_map)
             ioctl(pair.first, PERF_EVENT_IOC_DISABLE, PERF_IOC_FLAG_GROUP);
-#elif OPTKIT_CONF_PMU_USE_MSR
 
+#elif OPTKIT_CONF_PMU_USE_MSR
+#else
 #endif
     }
+
     void PMUEventManager::enable_all_events()
     {
 #if OPTKIT_CONF_PMU_USE_PERF
@@ -66,6 +68,8 @@ namespace optkit::core::pmu::cpu
             ++rit;
         }
 #elif OPTKIT_CONF_PMU_USE_MSR
+
+#else
 
 #endif
     }

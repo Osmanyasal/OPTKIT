@@ -1,4 +1,4 @@
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 #include "core/pmu/cpu/query_pmu.hh"
 
 using namespace optkit::core::pmu::cpu;

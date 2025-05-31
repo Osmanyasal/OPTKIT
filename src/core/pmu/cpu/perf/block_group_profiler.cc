@@ -53,7 +53,7 @@ namespace optkit::core::pmu::cpu::perf
             OPTKIT_CORE_WARN("BlockGroupProfiler for block {} is not active!", this->block_name);
             return;
         }
-        this->read_and_store();
+        this->read_and_store(); // read the last one.
 
         PMUEventManager::unregister_event(group_leader);
 

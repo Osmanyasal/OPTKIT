@@ -1,4 +1,4 @@
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 #include <algorithm>
 #include <unistd.h> // for close()
 #include <vector>
@@ -22,6 +22,16 @@ protected:
 int get_fake_fd() {
     static int next_fd = 1000;
     return next_fd++;
+}
+
+TEST_F(PMUEventManagerTest, DisableCountersStopCounting)
+{
+    //TODO: create an event, count for a few, then disable to see the even count didn't change.
+}
+
+TEST_F(PMUEventManagerTest, EnableCountersStartCounting)
+{
+    //TODO: create an event, stop counting then start counting to see the final sum.
 }
 
 TEST_F(PMUEventManagerTest, RegisterAndUnregisterEvent) {
@@ -109,7 +119,7 @@ TEST_F(PMUEventManagerTest, MultipleFdsTrackedAndUnregisteredCorrectly) {
 
 TEST_F(PMUEventManagerTest, RepeatedRegisterUnregisterDoesNotLeak) {
     int fd = get_fake_fd();
-    for (int i = 0; i < 10; ++i) {
+    for (int i = 0; i < 100; ++i) {
         EXPECT_TRUE(PMUEventManager::register_event(fd, 2));
         EXPECT_EQ(PMUEventManager::number_of_events_being_monitored(), 2);
         EXPECT_EQ(PMUEventManager::unregister_event(fd), 2);

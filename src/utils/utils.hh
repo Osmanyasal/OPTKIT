@@ -14,7 +14,7 @@
 #include <string>
 
 // ENV CONFIG
-#include "utils/environment_config.hh"
+#include "utils/deployment/deployment_config.hh"
 
 // CUSTOM HEADERS
 #include "utils/logging/logger.hh"

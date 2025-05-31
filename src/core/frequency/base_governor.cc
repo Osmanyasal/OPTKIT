@@ -34,7 +34,7 @@ namespace optkit::core::frequency
         if (sigaction(SIGUSR2, &sa, NULL) < 0)
         {
             OPTKIT_CORE_ERROR("Error setting up signal handler");
-            exit(1);
+            std::exit(1);
         }
 
         if (!data_collector_mode)

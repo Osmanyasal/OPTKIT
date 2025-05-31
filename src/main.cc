@@ -83,6 +83,7 @@ int32_t main(int32_t argc, char **argv)
     // OPTKIT_PERFORMANCE_EVENTS("main","test",tt, {{ optkit::amd64::fam19h_zen4::RETIRED_INSTRUCTIONS, "Retired Instructions"}});
     OPTKIT_PERFORMANCE_EVENTS("main","test",tt, {{ optkit::intel::icl::INSTRUCTIONS_RETIRED, "Retired Instructions"}});
 
+    optkit::core::pmu::cpu::PMUEventManager::disable_all_events();
     int i = 3;
 
     return 0;

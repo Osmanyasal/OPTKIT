@@ -14,7 +14,8 @@ namespace optkit::core
 
     OptimizerKit::OptimizerKit(const OPTKIT_CONFIG config) : config{config}
     {
-        optkit::utils::logger::BaseLogger::init();
+        optkit::utils::logger::BaseLogger::init();  // logger init
+        optkit::core::pmu::cpu::QueryPMU::init();   // pmf init
         int32_t paranoid = optkit::core::Query::paranoid();
         if (OPT_UNLIKELY(paranoid > 0))
         {
@@ -22,7 +23,7 @@ namespace optkit::core
             OPTKIT_CORE_WARN("FOR ALL EVENTS: set perf_event_paranoid to -1 (SUGGESTED)");
             OPTKIT_CORE_WARN("FOR EVENTS WITH X SECURITY IMPLICATIONS: set perf_event_paranoid to 0");
             OPTKIT_CORE_WARN("USE: sudo sysctl kernel.perf_event_paranoid=<parameter>");
-            exit(EXIT_FAILURE);
+            std::exit(EXIT_FAILURE);
         }
         else
         {

@@ -2,35 +2,29 @@
 
 namespace optkit::core::pmu::cpu
 {
-    bool QueryPMU::is_active = false;
     pfm_pmu_info_t QueryPMU::default_architectural_pmu;
 
     void QueryPMU::init()
     {
         if (pfm_initialize() == PFM_SUCCESS)
         {
-            is_active = true;
             memset(&QueryPMU::default_architectural_pmu, 0, sizeof(pfm_pmu_info_t));
             OPTKIT_CORE_INFO("pfm initialized successfully!");
         }
         else
         {
-            is_active = false;
             OPTKIT_CORE_ERROR("pfm initialize failed!");
+            std::exit(EXIT_FAILURE);
         }
     }
 
     void QueryPMU::destroy()
     {
         pfm_terminate();
-        is_active = false;
     }
 
     pfm_pmu_info_t QueryPMU::pmu_info(int32_t pmu_id)
     {
-        if (OPT_UNLIKELY(QueryPMU::is_active == false))
-            init();
-
         pfm_pmu_info_t pmu_info;
         memset(&pmu_info, 0, sizeof(pfm_pmu_info_t));
         pfm_get_pmu_info((pfm_pmu_t)pmu_id, &pmu_info);
@@ -40,9 +34,6 @@ namespace optkit::core::pmu::cpu
 
     pfm_pmu_info_t QueryPMU::default_pmu_info()
     {
-
-        if (OPT_UNLIKELY(QueryPMU::is_active == false))
-            init();
 
         if (OPT_LIKELY(QueryPMU::default_architectural_pmu.is_dfl))
             return QueryPMU::default_architectural_pmu;
@@ -67,9 +58,6 @@ namespace optkit::core::pmu::cpu
 
     void QueryPMU::list_avail_events(int32_t pmu_id)
     {
-
-        if (OPT_UNLIKELY(QueryPMU::is_active == false))
-            init();
 
         pfm_event_info_t info;
         pfm_pmu_info_t pinfo;
@@ -100,9 +88,6 @@ namespace optkit::core::pmu::cpu
     }
     pfm_event_info_t QueryPMU::event_detail(int32_t pmu_id, uint32_t event_code)
     {
-        if (OPT_UNLIKELY(QueryPMU::is_active == false))
-            init();
-
         pfm_event_info_t info;
         pfm_pmu_info_t pinfo;
         int32_t i, ret;
@@ -138,9 +123,6 @@ namespace optkit::core::pmu::cpu
 
     void QueryPMU::list_avail_pmus()
     {
-        if (OPT_UNLIKELY(QueryPMU::is_active == false))
-            init();
-
         std::cout << "[INFO] Listing Available PMUs...." << std::endl;
         int32_t i = 0;
         pfm_for_all_pmus(i)
@@ -153,9 +135,6 @@ namespace optkit::core::pmu::cpu
 
     std::vector<int32_t> QueryPMU::avail_pmu_ids()
     {
-        if (OPT_UNLIKELY(QueryPMU::is_active == false))
-            init();
-
         std::vector<int32_t> avail_pmu_ids;
 
         int32_t i = 0;
@@ -168,12 +147,14 @@ namespace optkit::core::pmu::cpu
         return avail_pmu_ids;
     }
 
-    std::string to_string(const pfm_pmu_info_t &pmu_info){
+    std::string to_string(const pfm_pmu_info_t &pmu_info)
+    {
         std::ostringstream oss;
         oss << pmu_info;
         return oss.str();
     }
-    std::string to_string(const pfm_event_info_t &event_info){
+    std::string to_string(const pfm_event_info_t &event_info)
+    {
         std::ostringstream oss;
         oss << event_info;
         return oss.str();

@@ -13,6 +13,15 @@
 
 namespace optkit::core::pmu::cpu
 {
+    /**
+     * @class PMUEventManager
+     * @brief Manages PMU (Performance Monitoring Unit) event file descriptors on the CPU.
+     *
+     * Responsible for registering/unregistering file descriptors, tracking the number of events
+     * per descriptor, enabling/disabling all registered events, and monitoring total event count.
+     * Acts as a static utility class and supports reset functionality for testing.
+     */
+
     class PMUEventManager
     {
 
@@ -45,7 +54,7 @@ namespace optkit::core::pmu::cpu
         // returns number of counters
         static int32_t pmu_num_cntrs();
 
-#ifdef OPTKIT_TESTING   // adds this for testing build
+#ifdef OPTKIT_TESTING // adds this for testing build
         static void reset()
         {
             PMUEventManager::fd__event_count_map.clear();
