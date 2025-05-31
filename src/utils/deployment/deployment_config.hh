@@ -1,11 +1,10 @@
 #pragma once
 
+#include "utils/environment_config.hh"
 /**
  * @brief Should be included by the user to the host program that's using the library.
  *
  */
-
-
 // =============================================
 // User-configurable switches (can be defined before including this header)
 // =============================================
@@ -24,11 +23,11 @@
 #endif
 
 #ifndef OPTKIT_CONF_PMU_USE_PERF
-#define OPTKIT_CONF_PMU_USE_PERF (1 && OPTKIT_ENV_LIB_PERF_EVENT)  // Default: enabled if system has perf_event
+#define OPTKIT_CONF_PMU_USE_PERF (OPTKIT_CONF_PMU_MACROS_ENABLED && OPTKIT_ENV_LIB_PERF_EVENT)  // Default: enabled if system has perf_event
 #endif
 
 #ifndef OPTKIT_CONF_PMU_USE_MSR
-#define OPTKIT_CONF_PMU_USE_MSR (!OPTKIT_CONF_PMU_USE_PERF && (1 && OPTKIT_ENV_LIB_MSR_SAFE))   // if perf is not enabled and system has msr_safe and selected, then go for it.
+#define OPTKIT_CONF_PMU_USE_MSR (!OPTKIT_CONF_PMU_USE_PERF && (OPTKIT_CONF_PMU_MACROS_ENABLED && OPTKIT_ENV_LIB_MSR_SAFE))   // if perf is not enabled and system has msr_safe and selected, then go for it.
 #endif
 
 // =============================================
@@ -68,7 +67,8 @@
 // Include subsystem headers
 // =============================================
 
+// based on the configuration, each module is responsible including "ways" for the module.
+#include "core/pmu/cpu/module.hh"   // if use_msr is enabled, include defaults + use_msr module likewise for perf. same macro but different classes is defined for them.
 #include "core/energy/cpu/rapl/module.hh"
-#include "core/pmu/cpu/module.hh"
 #include "core/metrics/module.hh"
 #include "core/frequency/module.hh"

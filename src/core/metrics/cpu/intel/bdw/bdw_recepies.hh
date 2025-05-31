@@ -2,7 +2,7 @@
 
 #include <vector>
 #include <string>
-#include "core/pmu/cpu/perf/events/intel/bdw.hh"
+#include "core/pmu/cpu/events/intel/bdw.hh"
 
 namespace optkit::core::metrics::intel::bdw
 {

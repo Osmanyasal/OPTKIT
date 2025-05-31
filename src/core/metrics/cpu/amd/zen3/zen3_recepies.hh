@@ -2,8 +2,8 @@
 
 #include <vector>
 #include <string>
-#include "core/pmu/cpu/perf/events/amd64/fam19h_zen3.hh"
-#include "core/pmu/cpu/perf/events/amd64/fam19h_zen3_l3.hh"
+#include "core/pmu/cpu/events/amd64/fam19h_zen3.hh"
+#include "core/pmu/cpu/events/amd64/fam19h_zen3_l3.hh"
 
 namespace optkit::core::metrics::amd64::zen3
 {

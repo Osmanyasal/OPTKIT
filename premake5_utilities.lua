@@ -1,6 +1,21 @@
 ---@diagnostic disable: undefined-global, lowercase-global
 ---@diagnostic disable: undefined-field
 
+-- Use global variables in the prebuildcommands
+
+LIB_MSR_SAFE_PATH = './lib/msr-safe'
+LIB_SPD_PATH = './lib/spdlog'
+LIB_PFM_PATH = './lib/libpfm4'
+CPU_PMU_EVENTS_DIR = './src/core/pmu/cpu/events'
+UTILS_DIR = './src/utils'
+LIB_GOOGLETEST_PATH = "./lib/googletest"
+WHOAMI = io.popen("whoami"):read("*a"):gsub("\n", "")
+
+OPTKIT_APP = "optkit_app"
+OPTKIT_LIB_DYNAMIC = "optkit_dynamic"
+OPTKIT_LIB_STATIC = "optkit_static"
+OPTKIT_TEST = "optkit_test"
+
 -- custom actions also should be registered here.
 local allowed_actions = {
     clean = true,
@@ -63,12 +78,12 @@ function system_init()
         -- Exporting events
         local export_events = ""
         export_events = export_events .. 'echo "[CHECK EVENTS]"\n'
-        export_events = export_events .. 'if [ ! -f "' .. CORE_EVENTS_DIR .. '/all_set" ]; then\n'
+        export_events = export_events .. 'if [ ! -f "' .. CPU_PMU_EVENTS_DIR .. '/all_set" ]; then\n'
         export_events = export_events .. '    echo "⛏️ Exporting events from libpfm4" &&\n'
-        export_events = export_events .. '    mkdir -p ' .. CORE_EVENTS_DIR .. ' &&\n'
+        export_events = export_events .. '    mkdir -p ' .. CPU_PMU_EVENTS_DIR .. ' &&\n'
         export_events = export_events .. '    cd ' .. UTILS_DIR .. ' &&\n'
         export_events = export_events .. '    python3 pmu_parser.py $(find ../../' .. LIB_PFM_PATH .. '/lib/events -type f \\( -name "intel*.h" -or -name "amd*.h" -or -name "arm*.h" -or -name "power*.h" \\) -exec echo "{}" \\;) &&\n'
-        export_events = export_events .. '    touch ../../' .. CORE_EVENTS_DIR .. '/all_set\n'
+        export_events = export_events .. '    touch ../../' .. CPU_PMU_EVENTS_DIR .. '/all_set\n'
         export_events = export_events .. 'fi && echo "[✅ CHECK EVENTS]" || echo "[❌ CHECK EVENTS ERROR]"'
         os.execute(export_events)
 
@@ -105,19 +120,3 @@ function static_lib_exists(libname)
 
     return false
 end
-
-
--- Use global variables in the prebuildcommands
-
-LIB_MSR_SAFE_PATH = './lib/msr-safe'
-LIB_SPD_PATH = './lib/spdlog'
-LIB_PFM_PATH = './lib/libpfm4'
-CORE_EVENTS_DIR = './src/core/pmu/cpu/perf/events'
-UTILS_DIR = './src/utils'
-LIB_GOOGLETEST_PATH = "./lib/googletest"
-WHOAMI = io.popen("whoami"):read("*a"):gsub("\n", "")
-
-OPTKIT_APP = "optkit_app"
-OPTKIT_LIB_DYNAMIC = "optkit_dynamic"
-OPTKIT_LIB_STATIC = "optkit_static"
-OPTKIT_TEST = "optkit_test"

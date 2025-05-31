@@ -1,10 +1,8 @@
 #include <omp.h>
 
-
-#define OPTKIT_CONF_PMU_USE_PERF 0
 #include "optkit.hh"
-#include "core/pmu/cpu/perf/events/amd64/fam19h_zen4.hh"
-#include "core/pmu/cpu/perf/events/intel/icl.hh"
+#include "core/pmu/cpu/events/amd64/fam19h_zen4.hh"
+#include "core/pmu/cpu/events/intel/icl.hh"
 
 #define VECTOR_SIZE 100000000  // 100 million elements
 #define NUM_ACCESSES 100000000 // 100 million random accesses

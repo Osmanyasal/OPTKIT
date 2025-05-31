@@ -32,8 +32,8 @@ function define_custom_actions()
             print("[REMOVE]: ./test/utils/environment_config.hh")
             os.remove("./test/utils/environment_config.hh")
 
-            print("[REMOVE]: " .. CORE_EVENTS_DIR)
-            os.rmdir(CORE_EVENTS_DIR)
+            print("[REMOVE]: " .. CPU_PMU_EVENTS_DIR)
+            os.rmdir(CPU_PMU_EVENTS_DIR)
 
             print("[REMOVE]: " .. OPTKIT_APP .. ".make")
             os.remove(OPTKIT_APP .. ".make")

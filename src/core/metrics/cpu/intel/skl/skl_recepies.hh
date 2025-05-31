@@ -2,7 +2,7 @@
 
 #include <vector>
 #include <string>
-#include "core/pmu/cpu/perf/events/intel/skl.hh"
+#include "core/pmu/cpu/events/intel/skl.hh"
 
 namespace optkit::core::metrics::intel::skl
 {
