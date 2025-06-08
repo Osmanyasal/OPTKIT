@@ -22,6 +22,7 @@ protected:
         fs::remove_all(test_folder);
     }
 };
+
 TEST_F(UtilsTest, CreateAndCheckDirectory) {
     std::string folder = test_folder + "/subfolder";
     create_directory(folder);

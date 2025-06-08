@@ -1,25 +1,25 @@
 #include "gtest/gtest.h"
 
-TEST(BlockProfilerTest, MeasuresBlockForFP64Events) // double
+TEST(BlockGroupProfilerTest, MeasuresBlockForFP64Events) // double
 {
 }
 
-TEST(BlockProfilerTest, MeasuresBlockForFP32Events)  // float
+TEST(BlockGroupProfilerTest, MeasuresBlockForFP32Events)  // float
 {
 }
 
-TEST(BlockProfilerTest, EnablesEventCounting)
+TEST(BlockGroupProfilerTest, EnablesEventCounting)
 {
 }
 
-TEST(BlockProfilerTest, DisablesEventCounting)
+TEST(BlockGroupProfilerTest, DisablesEventCounting)
 {
 }
 
-TEST(BlockProfilerTest, ReadsAndAccumulatesEventData)
+TEST(BlockGroupProfilerTest, ReadsAndAccumulatesEventData)
 {
 }
 
-TEST(BlockProfilerTest, ComparesMultiplexingCountWithEventManager)
+TEST(BlockGroupProfilerTest, ComparesMultiplexingCountWithEventManager)
 {
 }

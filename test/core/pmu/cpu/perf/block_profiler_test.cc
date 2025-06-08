@@ -4,12 +4,6 @@ TEST(BlockProfilerTest, OpenForNonExistentEvent)
 {
 
 }
-
-TEST(BlockProfilerTest, OpenForNonExistentEvent)
-{
-
-}
-
 TEST(BlockProfilerTest, MeasuresBlockForFP64Events) // double
 {
 }

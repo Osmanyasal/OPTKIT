@@ -40,12 +40,14 @@
     #undef OPTKIT_CONF_PMU_USE_PERF  // Ensure MSR is not set
     #define OPTKIT_CONF_PMU_USE_MSR 0
     #define OPTKIT_CONF_PMU_USE_PERF 1
+    
 // Case 2: User explicitly requested MSR
 #elif OPTKIT_CONF_PMU_USE_MSR
     #undef OPTKIT_CONF_PMU_USE_PERF
     #undef OPTKIT_CONF_PMU_USE_MSR
     #define OPTKIT_CONF_PMU_USE_PERF 0
     #define OPTKIT_CONF_PMU_USE_MSR 1
+
 // Case 3: Auto-detect (only if neither is set)
 #else
     #undef OPTKIT_CONF_PMU_MACROS_ENABLED
