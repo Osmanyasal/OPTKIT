@@ -36,6 +36,7 @@ For detail you can check /lib/libpfm4/lib/events/* for each pmu events.
 """
 import sys
 import os
+import re
 
 EVENT_FILE_EXTENSION = ".hh"
 EVENT_FILE_PATH = "../core/pmu/cpu/events/"
@@ -72,6 +73,18 @@ PRIV_DEFINITIONS = {
     ]
 }
 
+
+def shift_umask_if_needed(mask_code):
+    mask_code = mask_code.strip().lower().replace("ull", "")
+    
+    if re.fullmatch(r"0x[0-9a-f]+", mask_code):
+        umask_val = int(mask_code, 16)
+        if umask_val & 0xFF != 0:
+            umask_val <<= 8
+        return f"0x{umask_val:x}ull"
+    else:
+        return mask_code  # Return as-is if not a clean hex value
+    
 def process_event_dic(event_dict,event_pe): 
     vendor_name = event_pe.split("_")[0]
     pmu_name = event_pe.replace(vendor_name + "_" ,"").replace("_pe","")
@@ -129,14 +142,14 @@ def process_event_dic(event_dict,event_pe):
                 mask_code = next((mask_val for mask_val in mask_members if ".ucode" in mask_val.replace(" ",""))," ").split("=")[-1].replace("\"","").strip()
                 mask_desc = next((mask_val for mask_val in mask_members if ".udesc" in mask_val.replace(" ",""))," ").split("=")[-1].replace("\"","").strip()
                 temp_mask = event_name + "__MASK__" + event_umasks.upper() + "__" + mask_name 
-
+                  
                 encounter = event_counter.get(temp_mask,0)
                 if encounter == 0:
                     event_counter[temp_mask] = 1
-                    result += PMU_EVENT.format(temp_mask,mask_code,mask_desc) + "\n\t\t"
+                    result += PMU_EVENT.format(temp_mask, shift_umask_if_needed(mask_code),mask_desc) + "\n\t\t"
                 else:
                     event_counter[temp_mask] += 1
-                    result += PMU_EVENT.format(temp_mask+"__REPEAT__"+str(encounter),mask_code,mask_desc) + "\n\t\t"
+                    result += PMU_EVENT.format(temp_mask+"__REPEAT__"+str(encounter),shift_umask_if_needed(mask_code),mask_desc) + "\n\t\t"
 
     result = result + EVENT_CLASS_END + NAMESPACE_END + NAMESPACE_ALIASING.format(pmu_name, vendor_name, pmu_name) + "\n\n"
  

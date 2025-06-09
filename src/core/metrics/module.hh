@@ -2,6 +2,7 @@
 
 // #include "core/metrics/intel/icl/icl_governor.hh"
 // #include "core/metrics/intel/skl/skl_governor.hh"
+#include "core/metrics/cpu/core_metrics.hh"
 #include "core/metrics/cpu/tma_metrics.hh"
 #include "core/metrics/cpu/tmanalysis.hh"
 #include "utils/deployment/deployment_config.hh"
@@ -18,3 +19,6 @@
 #define OPTKIT_TMA_ANALYSIS(...)
 
 #endif
+
+
+using optkit::core::metrics::cpu::operator<<; // make available to global namespace

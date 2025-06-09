@@ -4,6 +4,8 @@
 #include "core/pmu/cpu/events/amd64/fam19h_zen4.hh"
 #include "core/pmu/cpu/events/intel/icl.hh"
 
+#include "core/metrics/cpu/amd/metrics.hh"
+
 #define VECTOR_SIZE 100000000  // 100 million elements
 #define NUM_ACCESSES 100000000 // 100 million random accesses
 
@@ -81,10 +83,12 @@ int32_t main(int32_t argc, char **argv)
 {
     OPTKIT_INIT();
     // OPTKIT_PERFORMANCE_EVENTS("main","test",tt, {{ optkit::amd64::fam19h_zen4::RETIRED_INSTRUCTIONS, "Retired Instructions"}});
-    OPTKIT_PERFORMANCE_EVENTS("main","test",tt, {{ optkit::intel::icl::INSTRUCTIONS_RETIRED, "Retired Instructions"}});
+    OPTKIT_CPU_EVENTS("main","test",tt, {{ optkit::intel::icl::INSTRUCTIONS_RETIRED, "Retired Instructions"}});
 
     optkit::core::pmu::cpu::PMUEventManager::disable_all_events();
     int i = 3;
+
+    optkit::core::metrics::cpu::amd::AMDMetrics::AllMetrics
 
     return 0;
 }

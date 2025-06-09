@@ -13,20 +13,19 @@
 
 #if OPTKIT_CONF_RAPL_MACROS_ENABLED == 1
 
-#define OPTKIT_RAPL(var_name, block_name)        \
-    optkit::core::energy::rapl::RaplProfiler var_name{block_name};
+#define OPTKIT_CPU_ENERGY(var_name, block_name) \
+    optkit::core::energy::rapl::RaplProfiler var_name{block_name, "cpu_energy"};
 
-#define OPTKIT_RAPL_REPEAT(var_name, block_name, count)    \
-    optkit::core::energy::rapl::RaplProfiler var_name{block_name}; \
+#define OPTKIT_CPU_ENERGY_REPEAT(var_name, block_name, count)                    \
+    optkit::core::energy::rapl::RaplProfiler var_name{block_name, "cpu_energy"}; \
     for (int32_t i = 0; i < count; i++)
 
-#define OPTKIT_RAPL_REPEAT_READ_AND_STORE(var_name, block_name, count) \
-    optkit::core::energy::rapl::RaplProfiler var_name{block_name};   \
+#define OPTKIT_CPU_ENERGY_REPEAT_READ_AND_STORE(var_name, block_name, count)     \
+    optkit::core::energy::rapl::RaplProfiler var_name{block_name, "cpu_eneryg"}; \
     for (int32_t i = 0; i < count; i++, var_name.read_and_store())
 
 #else
-    #define OPTKIT_RAPL(var_name, block_name)
-    #define OPTKIT_RAPL_REPEAT(var_name, block_name, count)
-    #define OPTKIT_RAPL_REPEAT_READ_AND_STORE(var_name, block_name, count)
+#define OPTKIT_CPU_ENERGY(var_name, block_name)
+#define OPTKIT_CPU_ENERGY_REPEAT(var_name, block_name, count)
+#define OPTKIT_CPU_ENERGY_REPEAT_READ_AND_STORE(var_name, block_name, count)
 #endif
-

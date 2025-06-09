@@ -12,8 +12,8 @@
 #elif OPTKIT_CONF_PMU_USE_MSR
     #include "core/pmu/cpu/msr/module.hh"
 #else
-    #define OPTKIT_PERFORMANCE_EVENTS(block_name, event_name, variable_name, ...)
-    #define OPTKIT_PERFORMANCE_BLOCK_EVENTS(block_name, event_name, variable_name, ...)
+    #define OPTKIT_CPU_EVENTS(block_name, event_name, variable_name, ...)
+    #define OPTKIT_CPU_BLOCK_EVENTS(block_name, event_name, variable_name, ...)
 #endif
 
 using optkit::core::pmu::cpu::operator<<; // make available to global namespace

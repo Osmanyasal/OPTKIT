@@ -175,6 +175,45 @@ write_cpu_topology() {
     printf "\t%-$(($ALIGN_WIDTH - 8))s %s\n" "OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS" "$total_logical"
 }
 
+write_cpu_microarch() {
+
+    # Reset all known uArch macros to 0
+    for uarch in SKL KBL CFL ICL TGL RKL ADL RPL MTL \
+                 ZEN ZENPLUS ZEN2 ZEN3 ZEN4 ZEN5; do
+        echo "#define OPTKIT_ENV_CPU_MICROARCH_$uarch 0" >> "$SRC_CONFIG_FILE"
+    done
+
+    # Get pre-defined family_model from header file
+    fm_model_hex=$(grep '#define OPTKIT_ENV_CPU_FAMILY_MODEL' "$SRC_CONFIG_FILE" | awk '{ print $3 }')
+
+    # Match known uArch
+    case "$fm_model_hex" in
+        6_5EH)   uarch="SKL" ;;
+        6_9EH)   uarch="KBL" ;;
+        6_8EH)   uarch="CFL" ;;
+        6_7EH)   uarch="ICL" ;;
+        6_8CH)   uarch="TGL" ;;
+        6_A7H)   uarch="RKL" ;;
+        6_97H)   uarch="ADL" ;;
+        6_AFH)   uarch="RPL" ;;
+        6_B7H)   uarch="MTL" ;;
+        17_01H)  uarch="ZEN" ;;
+        17_08H)  uarch="ZENPLUS" ;;
+        17_18H)  uarch="ZEN2" ;;
+        19_21H)  uarch="ZEN3" ;;
+        19_61H)  uarch="ZEN4" ;;
+        1E_00H)  uarch="ZEN5" ;;  # Hypothetical
+    esac
+
+    if [ -n "$uarch" ]; then
+        sed -i "s/^#define OPTKIT_ENV_CPU_MICROARCH_$uarch 0/#define OPTKIT_ENV_CPU_MICROARCH_$uarch 1/" "$SRC_CONFIG_FILE"
+        print_status "Detected microarchitecture:" "$uarch"
+    else
+        print_status "Detected microarchitecture:" "Unknown ($fm_model_hex)"
+    fi
+}
+
+
 write_cpu_cache_info() {
     echo "" >> "$SRC_CONFIG_FILE"
     local llc_level=0 llc_name="" llc_size=0
@@ -208,6 +247,7 @@ main() {
     ## CPU
     write_cpu_info
     write_cpu_topology
+    write_cpu_microarch
     write_cpu_cache_info
 
     echo "[✅ generate_environment_config.sh executed]"
