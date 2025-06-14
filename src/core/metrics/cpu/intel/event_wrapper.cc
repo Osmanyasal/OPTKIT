@@ -9,19 +9,18 @@ namespace optkit::core::metrics::cpu::intel
         {cpu::CoreEvents::UNHALTED_CORE_CYCLES, {0x0}},
         {cpu::CoreEvents::UNHALTED_REFERENCE_CYCLES, {0x0}},
         {cpu::CoreEvents::RESOURCE_STALLS, {0x0}},
-        {cpu::CoreEvents::RECOVERY_CYCLES, {0x0}},
 
         // Instruction Events
         {cpu::CoreEvents::INST_RETIRED, {0x0}},
-        {cpu::CoreEvents::UOPS_ISSUED, {0x0}},
-        {cpu::CoreEvents::UOPS_EXECUTED, {0x0}},
-        {cpu::CoreEvents::UOPS_RETIRED, {0x0}},
-        {cpu::CoreEvents::IDQ_UOPS_NOT_DELIVERED, {0x0}},
+        // {cpu::CoreEvents::UOPS_ISSUED, {0x0}},
+        // {cpu::CoreEvents::UOPS_EXECUTED, {0x0}},
+        // {cpu::CoreEvents::UOPS_RETIRED, {0x0}},
+        // {cpu::CoreEvents::IDQ_UOPS_NOT_DELIVERED, {0x0}},
 
         // Branch Prediction
         {cpu::CoreEvents::BRANCH_INST_RETIRED, {0x0}},
         {cpu::CoreEvents::BRANCH_MISP_RETIRED, {0x0}},
-        {cpu::CoreEvents::MACHINE_CLEARS, {0x0}},
+        // {cpu::CoreEvents::MACHINE_CLEARS, {0x0}},
 
         // Cache Events
         {cpu::CoreEvents::L1_MISSES, {0x0}},

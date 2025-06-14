@@ -11,7 +11,7 @@ define_custom_actions()
 
 workspace "OPTKIT"
 configurations { "Debug", "Release" }
--- architecture "x86_64"
+-- architecture "x86_64" -- this doesn't have to be. It can be risc-v, arm, etc.
 
 project(OPTKIT_APP)
 kind "ConsoleApp"
@@ -22,7 +22,7 @@ linkoptions { LIB_PFM_PATH .. "/lib/libpfm.a" }
 project(OPTKIT_LIB_DYNAMIC)
 kind "SharedLib"
 base_project_setup()
-libdirs { LIB_PFM_PATH .. "/lib" } -- so that pfm.so can be found
+libdirs { LIB_PFM_PATH .. "/lib" } -- so that pfm.so can be found, we link this agains shared pfm
 links { "pfm" }
 removefiles { "./src/main.cc" }
 
@@ -47,11 +47,11 @@ postbuildcommands {
     -- Clean up (optional)
     "rm -rf bin/obj/pfm_extract",
 
+    -- build tools with OPTKIT static
     "@echo [COMPILE UTILITY TOOLS]",
     "@cd ./tools && ./compile.sh && echo [✅ COMPILE UTILITY TOOLS]"
 }
-filter {} -- stop filtering
-
+filter {} -- stop filtering, release is needed for static lib.
 
 project(OPTKIT_TEST)
 kind "ConsoleApp"

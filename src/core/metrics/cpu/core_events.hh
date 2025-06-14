@@ -15,19 +15,19 @@ namespace optkit::core::metrics::cpu
         UNHALTED_CORE_CYCLES,
         UNHALTED_REFERENCE_CYCLES,
         RESOURCE_STALLS,
-        RECOVERY_CYCLES,
+        // RECOVERY_CYCLES,
 
         // Instruction Events
         INST_RETIRED,
-        UOPS_ISSUED,
-        UOPS_EXECUTED,
-        UOPS_RETIRED,
-        IDQ_UOPS_NOT_DELIVERED,
+        // UOPS_ISSUED,
+        // UOPS_EXECUTED,
+        // UOPS_RETIRED,
+        // IDQ_UOPS_NOT_DELIVERED,
 
         // Branch Prediction
         BRANCH_INST_RETIRED,
         BRANCH_MISP_RETIRED,
-        MACHINE_CLEARS,
+        // MACHINE_CLEARS,
 
         // Cache Events
         L1_MISSES,
@@ -40,16 +40,18 @@ namespace optkit::core::metrics::cpu
         L3_HITS,
 
         // Memory Events
-        MEM_INST_RETIRED,
-        MEM_LOAD_RETIRED,
-        MEM_STORE_RETIRED,
+        MEM_INST_RETIRED,  // any kind of memory instructions
+        MEM_LOAD_RETIRED,  // any kind of memory load instructions
+        MEM_STORE_RETIRED, // any kind of memory store instructions
         DTLB_MISSES,
         ITLB_MISSES,
+        DTLB_MISSES_GOES_PAGE_WALK,
+        ITLB_MISSES_GOES_PAGE_WALK,
         SW_LOAD_PREFETCH_ACCESS,
 
         // FP/Vector
-        FP_ARITH_INST_RETIRED,
-        FP_ARITH_INST_VECTOR_RETIRED,
+        FP_ARITH_INST_RETIRED,        // single FP ops (ie. adding of flop variables)
+        FP_ARITH_INST_VECTOR_RETIRED, // total FP operations caused by see_avx vector instruction
 
         END,
     };

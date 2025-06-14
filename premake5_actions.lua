@@ -2,14 +2,13 @@
 ---@diagnostic disable: undefined-field
 
 function define_custom_actions()
-
     local custom_actions = {
-        clean = "clean",          -- clean the optkit build.
-        install = "install",      -- build & install libs
-        remove = "remove",        -- remove installed libs from the system
-        generate_doc = "generate_doc",      -- generate documentaiton
-        remove_doc = "remove_doc", -- delete documentaiton
-        gmake="gmake",
+        clean = "clean",               -- clean the optkit build.
+        install = "install",           -- build & install libs
+        remove = "remove",             -- remove installed libs from the system
+        generate_doc = "generate_doc", -- generate documentaiton
+        remove_doc = "remove_doc",     -- delete documentaiton
+        gmake = "gmake",               -- only gmake is enabled as build tool.
     }
 
     -- Tasks for clean, install, and generate docs
@@ -55,7 +54,6 @@ function define_custom_actions()
         trigger = custom_actions.install,
         description = "Install OPTKIT headers and libs + dependencies to system directories",
         execute = function()
-            
             -- Check if the Release build exists
             if not os.isdir("./bin/Release") then
                 print("❌ Release directory not found! Only config=release builds can be installed to the system.")
@@ -80,18 +78,18 @@ function define_custom_actions()
 
             -- os.execute("doxygen ./doxyfile") -- create doxygen file
             -- print("📄 Documentation generated!")
-            
-            -- Check if spdlog installed globally, if not install it.
-            if dynamic_lib_exists("spdlog") or static_lib_exists("spdlog") then
-                print("✅ spdlog is already installed globally.")
-            else
-                print("[Installing]: SPDLOG headers and static library")
-                os.execute(
-                    "cd " ..
-                    LIB_SPD_PATH ..
-                    "/ && ./compile.sh && sudo cp -R ./include/spdlog /usr/local/include/ && sudo cp ./build/libspdlog.a /usr/local/lib")
-            end
- 
+
+            -- Check if spdlog installed globally, if not install it. (actually, no need to install it since it is statically linked already in both cases.)
+            -- if dynamic_lib_exists("spdlog") or static_lib_exists("spdlog") then
+            --     print("✅ spdlog is already installed globally.")
+            -- else
+            --     print("[Installing]: SPDLOG headers and static library")
+            --     os.execute(
+            --         "cd " ..
+            --         LIB_SPD_PATH ..
+            --         "/ && ./compile.sh && sudo cp -R ./include/spdlog /usr/local/include/ && sudo cp ./build/libspdlog.a /usr/local/lib")
+            -- end
+
             -- Check if libpfm installed globally, if not install it.
             if dynamic_lib_exists("pfm") or static_lib_exists("pfm") then
                 print("✅ libpfm4 already installed globally.")

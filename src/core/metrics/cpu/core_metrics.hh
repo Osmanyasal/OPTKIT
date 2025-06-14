@@ -14,29 +14,55 @@ namespace optkit::core::metrics::cpu
 {
     /**
      * @class MetricsBuilder
-     * @brief A utility class for aggregating unique CPU performance metric events.
+     * @brief Utility class for aggregating unique CPU performance metric events.
      *
-     * MetricsBuilder follows a builder pattern to accumulate metric events (event_code, event_name)
-     * from various metric methods. It ensures each event is added only once based on a unique
-     * combination of event code and name.
+     * MetricsBuilder implements a builder pattern to accumulate CPU performance metric events,
+     * represented as pairs of event names and their associated event codes.
+     *
+     * Key characteristics:
+     * - Each event is uniquely identified by the combination of its event code and event name.
+     * - Duplicate pairs of (event_code, event_name) are ignored, ensuring no repeated entries.
+     * - An event name can be associated with multiple different event codes, allowing flexible grouping.
+     *
+     * The class provides two overloads of the add() method:
+     * - add(name, codes): Adds multiple event codes under a single event name.
+     * - add(events): Adds multiple (code, name) pairs at once from another event collection.
+     *
+     * Use getEvents() to retrieve the accumulated unique event pairs as a vector of (code, name),
+     * compatible with PMU class constructors or similar consumers.
      *
      * Example usage:
      * @code
      * MetricsBuilder builder;
-     * builder.add(<AMD|Intel|ARM>Metrics.L1MPKI())
-     *        .add(<AMD|Intel|ARM>Metrics.IpFLOP());
-     *        ...
+     * builder.add("L1MPKI", {1001, 1002, 1003})
+     *        .add("IpFLOP", {2001});
      * auto all_events = builder.getEvents();
      * @endcode
      *
-     * This is particularly useful when constructing a unified list of events to monitor
-     * across multiple CPU performance metrics, possibly specific to a given CPU vendor.
+     * This class is especially useful for consolidating performance monitoring events
+     * from different CPU vendors or metric sources into a unified list for monitoring.
      */
+
     class MetricsBuilder
     {
     public:
         MetricsBuilder() = default;
 
+        // New method accepting a single name and associated event codes
+        MetricsBuilder &add(const std::string &name, const std::vector<uint64_t> &codes)
+        {
+            for (uint64_t code : codes)
+            {
+                std::string key = std::to_string(code) + "_" + name;
+                if (added_keys_.insert(key).second)
+                {
+                    collected_events_.emplace_back(code, name);
+                }
+            }
+            return *this;
+        }
+
+        // to add from another MetricsBuilder's event vector
         MetricsBuilder &add(const std::vector<std::pair<uint64_t, std::string>> &events)
         {
             for (const auto &[code, name] : events)
@@ -95,6 +121,7 @@ namespace optkit::core::metrics::cpu
         virtual std::vector<std::pair<uint64_t, std::string>> DRAMBandwidthGBs() { return {}; } ///< (64 * (RD + WR)) / (Time * 1GB)
 
         // Instruction per event
+        virtual std::vector<std::pair<uint64_t, std::string>> IpC() { return {}; }          ///< INST_RETIRED / UNHALTED_CLK_CYCLES
         virtual std::vector<std::pair<uint64_t, std::string>> IpCall() { return {}; }       ///< INST_RETIRED / BR_INST_RETIRED.NEAR_CALL
         virtual std::vector<std::pair<uint64_t, std::string>> IpBranch() { return {}; }     ///< INST_RETIRED / BR_INST_RETIRED.ALL_BRANCHES
         virtual std::vector<std::pair<uint64_t, std::string>> IpLoad() { return {}; }       ///< INST_RETIRED / MEM_INST_RETIRED.ALL_LOADS_PS
@@ -113,7 +140,6 @@ namespace optkit::core::metrics::cpu
 
         // Software prefetch
         virtual std::vector<std::pair<uint64_t, std::string>> IpSWPF() { return {}; } ///< INST_RETIRED / SW_PREFETCH_ACCESS.T0:u0xF
-
 
         // Aggregated Metrics
         virtual std::vector<std::pair<uint64_t, std::string>> AllMPKI() { return {}; }

@@ -14,28 +14,28 @@ namespace optkit::core::metrics::cpu
             return "UNHALTED_REFERENCE_CYCLES";
         case CoreEvents::RESOURCE_STALLS:
             return "RESOURCE_STALLS";
-        case CoreEvents::RECOVERY_CYCLES:
-            return "RECOVERY_CYCLES";
+        // case CoreEvents::RECOVERY_CYCLES:
+        //     return "RECOVERY_CYCLES";
 
         // Instruction Events
         case CoreEvents::INST_RETIRED:
             return "INST_RETIRED";
-        case CoreEvents::UOPS_ISSUED:
-            return "UOPS_ISSUED";
-        case CoreEvents::UOPS_EXECUTED:
-            return "UOPS_EXECUTED";
-        case CoreEvents::UOPS_RETIRED:
-            return "UOPS_RETIRED";
-        case CoreEvents::IDQ_UOPS_NOT_DELIVERED:
-            return "IDQ_UOPS_NOT_DELIVERED";
+        // case CoreEvents::UOPS_ISSUED:
+        //     return "UOPS_ISSUED";
+        // case CoreEvents::UOPS_EXECUTED:
+        //     return "UOPS_EXECUTED";
+        // case CoreEvents::UOPS_RETIRED:
+        //     return "UOPS_RETIRED";
+        // case CoreEvents::IDQ_UOPS_NOT_DELIVERED:
+        //     return "IDQ_UOPS_NOT_DELIVERED";
 
         // Branch Prediction
         case CoreEvents::BRANCH_INST_RETIRED:
             return "BRANCH_INST_RETIRED";
         case CoreEvents::BRANCH_MISP_RETIRED:
             return "BRANCH_MISP_RETIRED";
-        case CoreEvents::MACHINE_CLEARS:
-            return "MACHINE_CLEARS";
+        // case CoreEvents::MACHINE_CLEARS:
+        //     return "MACHINE_CLEARS";
 
         // Cache Events
         case CoreEvents::L1_MISSES:

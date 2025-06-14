@@ -8,48 +8,6 @@ namespace optkit::core::metrics::cpu::intel
      */
     enum class CoreEvents
     {
-        // Pipeline and Stalls
-        UNHALTED_CORE_CYCLES,
-        UNHALTED_REFERENCE_CYCLES,
-        RESOURCE_STALLS,
-        RECOVERY_CYCLES,
-
-        // Instruction Events
-        INST_RETIRED,
-        UOPS_ISSUED,
-        UOPS_EXECUTED,
-        UOPS_RETIRED,
-        IDQ_UOPS_NOT_DELIVERED,
-
-        // Branch Prediction
-        BRANCH_INST_RETIRED,
-        BRANCH_MISP_RETIRED,
-        MACHINE_CLEARS,
-
-        // Cache Events
-        L1_MISSES,
-        L1_HITS,
-
-        L2_MISSES,
-        L2_HITS,
-
-        L3_MISSES,
-        L3_HITS,
- 
-        // Memory Events
-        MEM_INST_RETIRED,
-        MEM_LOAD_RETIRED,
-        MEM_STORE_RETIRED,
-        DTLB_MISSES, 
-        ITLB_MISSES, 
-        SW_LOAD_PREFETCH_ACCESS,
-
-        // FP/Vector
-        FP_ARITH_INST_RETIRED,
-        FP_ARITH_INST_VECTOR_RETIRED,
-        FP_ARITH_INST_AVX128,
-        FP_ARITH_INST_AVX256,
-        FP_ARITH_INST_AVX512,
 
     };
 }

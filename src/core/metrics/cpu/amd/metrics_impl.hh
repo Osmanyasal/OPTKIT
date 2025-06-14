@@ -19,19 +19,21 @@ namespace optkit::core::metrics::cpu::amd
         // Cache miss per kilo instruction (MPKI)
         virtual std::vector<std::pair<uint64_t, std::string>> L1MPKI() override
         {
-            return {{AMDEventWrapper::get(cpu::CoreEvents::L1_MISSES), to_string(metrics::cpu::CoreEvents::L1_MISSES)},
-                    {AMDEventWrapper::get(cpu::CoreEvents::INST_RETIRED), metrics::cpu::to_string(metrics::cpu::CoreEvents::INST_RETIRED)}};
+            return metrics::cpu::MetricsBuilder{}
+                .add(to_string(metrics::cpu::CoreEvents::L1_MISSES), AMDEventWrapper::get(cpu::CoreEvents::L1_MISSES))
+                .add(to_string(metrics::cpu::CoreEvents::INST_RETIRED), AMDEventWrapper::get(cpu::CoreEvents::INST_RETIRED))
+                .getEvents();
         } ///< 1000 * L1_MISSES / INST_RETIRED
 
         virtual std::vector<std::pair<uint64_t, std::string>> L2MPKI() override
         {
-            return {{AMDEventWrapper::get(cpu::CoreEvents::L1_MISSES), to_string(metrics::cpu::CoreEvents::L2_MISSES)},
+            return {{AMDEventWrapper::get(cpu::CoreEvents::L2_MISSES), to_string(metrics::cpu::CoreEvents::L2_MISSES)},
                     {AMDEventWrapper::get(cpu::CoreEvents::INST_RETIRED), metrics::cpu::to_string(metrics::cpu::CoreEvents::INST_RETIRED)}};
         } ///< 1000 * L2_MISSES / INST_RETIRED
 
         virtual std::vector<std::pair<uint64_t, std::string>> L3MPKI() override
         {
-            return {{AMDEventWrapper::get(cpu::CoreEvents::L1_MISSES), to_string(metrics::cpu::CoreEvents::L3_MISSES)},
+            return {{AMDEventWrapper::get(cpu::CoreEvents::L3_MISSES), to_string(metrics::cpu::CoreEvents::L3_MISSES)},
                     {AMDEventWrapper::get(cpu::CoreEvents::INST_RETIRED), metrics::cpu::to_string(metrics::cpu::CoreEvents::INST_RETIRED)}};
         } ///< 1000 * L3_MISSES / INST_RETIRED
 
@@ -67,6 +69,12 @@ namespace optkit::core::metrics::cpu::amd
             return {{AMDEventWrapper::get(cpu::CoreEvents::), to_string(cpu::CoreEvents::)},
                     {AMDEventWrapper::get(cpu::CoreEvents::), to_string(cpu::CoreEvents::)}};
         } ///< L1D_PEND_MISS.PENDING / MEM_LD_COMPLETED.L1_MISS_ANY
+
+        virtual std::vector<std::pair<uint64_t, std::string>> IpC() override
+        {
+            return {{cpu::CoreEvents::INST_RETIRED, to_string(cpu::CoreEvents::INST_RETIRED)},
+                    {cpu::CoreEvents::UNHALTED_CORE_CYCLES, to_string(cpu::CoreEvents::UNHALTED_CORE_CYCLES)}};
+        } ///< INST_RETIRED / UNHALTED_CLK_CYCLES
 
         virtual std::vector<std::pair<uint64_t, std::string>> ILP() override
         {
@@ -140,7 +148,16 @@ namespace optkit::core::metrics::cpu::amd
         virtual std::vector<std::pair<uint64_t, std::string>> IpArithScalarDP() override
         {
             std::vector<std::pair<uint64_t, std::string>> events{};
-#if OPTKIT_ENV_CPU_MICROARCH_ZEN4
+
+#if OPTKIT_ENV_CPU_MICROARCH_ZEN
+
+#elif OPTKIT_ENV_CPU_MICROARCH_ZENPLUS
+
+#elif OPTKIT_ENV_CPU_MICROARCH_ZEN2
+
+#elif OPTKIT_ENV_CPU_MICROARCH_ZEN3
+
+#elif OPTKIT_ENV_CPU_MICROARCH_ZEN4
             events = {{AMDEventWrapper::get(cpu::CoreEvents::INST_RETIRED), to_string(cpu::CoreEvents::INST_RETIRED)},
                       {AMDEventWrapper::get(amd::CoreEvents::), to_string(amd::CoreEvents::)}};
 #endif
@@ -187,8 +204,8 @@ namespace optkit::core::metrics::cpu::amd
         // Aggregate all cache miss metrics
         virtual std::vector<std::pair<uint64_t, std::string>> AllMPKI()
         {
-            MetricsBuilder builder;
-            return builder.add(L1MPKI())
+            return metrics::cpu::MetricsBuilder{}
+                .add(L1MPKI())
                 .add(L2MPKI())
                 .add(L3MPKI())
                 .getEvents();
@@ -197,8 +214,8 @@ namespace optkit::core::metrics::cpu::amd
         // Aggregate all STLB MPKI metrics
         virtual std::vector<std::pair<uint64_t, std::string>> AllSTLBMPKI()
         {
-            MetricsBuilder builder;
-            return builder.add(CodeSTLBMPKI())
+            return metrics::cpu::MetricsBuilder{}
+                .add(CodeSTLBMPKI())
                 .add(LoadSTLBMPKI())
                 .add(StoreSTLBMPKI())
                 .getEvents();
@@ -207,8 +224,8 @@ namespace optkit::core::metrics::cpu::amd
         // Aggregate all latency and parallelism metrics
         virtual std::vector<std::pair<uint64_t, std::string>> AllLatencyAndParallelism()
         {
-            MetricsBuilder builder;
-            return builder.add(LoadMissLatency())
+            return metrics::cpu::MetricsBuilder{}
+                .add(LoadMissLatency())
                 .add(ILP())
                 .add(MLP())
                 .getEvents();
@@ -217,16 +234,16 @@ namespace optkit::core::metrics::cpu::amd
         // Aggregate all DRAM bandwidth metrics
         virtual std::vector<std::pair<uint64_t, std::string>> AllDRAMBandwidth()
         {
-            MetricsBuilder builder;
-            return builder.add(DRAMBandwidthGBs())
+            return metrics::cpu::MetricsBuilder{}
+                .add(DRAMBandwidthGBs())
                 .getEvents();
         }
 
         // Aggregate all instruction-per-event metrics
         virtual std::vector<std::pair<uint64_t, std::string>> AllIpMetrics()
         {
-            MetricsBuilder builder;
-            return builder.add(IpCall())
+            return metrics::cpu::MetricsBuilder{}
+                .add(IpCall())
                 .add(IpBranch())
                 .add(IpLoad())
                 .add(IpStore())
@@ -246,16 +263,15 @@ namespace optkit::core::metrics::cpu::amd
         // Aggregate all branch-related metrics
         virtual std::vector<std::pair<uint64_t, std::string>> AllBranchMetrics()
         {
-            MetricsBuilder builder;
-            return builder.add(BranchMisprRatio())
+            return metrics::cpu::MetricsBuilder{}
+                .add(BranchMisprRatio())
                 .getEvents();
         }
 
         // Aggregate everything
         virtual std::vector<std::pair<uint64_t, std::string>> AllMetrics()
         {
-            MetricsBuilder builder;
-            return builder
+            return metrics::cpu::MetricsBuilder{}
                 .add(AllMPKI())
                 .add(AllSTLBMPKI())
                 .add(AllLatencyAndParallelism())
@@ -264,5 +280,9 @@ namespace optkit::core::metrics::cpu::amd
                 .add(AllBranchMetrics())
                 .getEvents();
         }
+
+    private:
+        // TODO: create a method to fill std::vector<std::pair<uint64_t, std::string>> to the unordered_map and process, which will save processing method to another data structure and call it.
+        std::unordered_map<std::string, uint64_t> results; // event_name - event_value
     };
 }
