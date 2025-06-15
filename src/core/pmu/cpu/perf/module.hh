@@ -5,8 +5,8 @@
 #include "core/pmu/cpu/perf/profiler_config.hh"
 
 
-#define OPTKIT_CPU_EVENTS(block_name, event_name, variable_name, ...) \
-    optkit::core::pmu::cpu::perf::BlockProfiler variable_name { block_name, event_name, __VA_ARGS__ }
+#define OPTKIT_CPU_EVENTS(block_name, event_name, ...) \
+    optkit::core::pmu::cpu::perf::BlockProfiler EXPAND_AND_CONCAT(var,__LINE__) { block_name, event_name, __VA_ARGS__ }
 
-#define OPTKIT_CPU_BLOCK_EVENTS(block_name, event_name, variable_name, ...) \
-    optkit::core::pmu::cpu::perf::BlockGroupProfiler variable_name { block_name, event_name, __VA_ARGS__ }
+#define OPTKIT_CPU_BLOCK_EVENTS(block_name, event_name, ...) \
+    optkit::core::pmu::cpu::perf::BlockGroupProfiler EXPAND_AND_CONCAT(var,__LINE__) { block_name, event_name, __VA_ARGS__ }

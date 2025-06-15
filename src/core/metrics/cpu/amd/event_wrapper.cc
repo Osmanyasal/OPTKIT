@@ -3,7 +3,7 @@
 namespace optkit::core::metrics::cpu::amd
 {
 
-    const std::unordered_map<metrics::cpu::CoreEvents, std::vector<uint64_t>> AMDEventWrapper::core_event_map = {
+    const std::unordered_map<metrics::cpu::CoreEvents, std::vector<uint64_t>> EventWrapper::core_event_map = {
 
         // Pipeline and Stalls
         {cpu::CoreEvents::UNHALTED_CORE_CYCLES, {0x76}},
@@ -56,15 +56,15 @@ namespace optkit::core::metrics::cpu::amd
     // FP/Vector
     // {cpu::CoreEvents::FP_ARITH_INST_RETIRED, 0x0},   // amd doesn't distinquish
 #if OPTKIT_ENV_CPU_MICROARCH_ZEN
-        {cpu::CoreEvents::FP_ARITH_INST_VECTOR_RETIRED, {0xff03}}, // sse_avx
+        {cpu::CoreEvents::RETIRED_SSE_AVX_FLOPS_ANY, {0xff03}}, // sse_avx
 #elif OPTKIT_ENV_CPU_MICROARCH_ZEN2 || OPTKIT_ENV_CPU_MICROARCH_ZEN3
-        {cpu::CoreEvents::FP_ARITH_INST_VECTOR_RETIRED, {0xf03}}, // sse_avx
+        {cpu::CoreEvents::RETIRED_SSE_AVX_FLOPS_ANY, {0xf03}}, // sse_avx
 #elif OPTKIT_ENV_CPU_MICROARCH_ZEN4
-        {cpu::CoreEvents::FP_ARITH_INST_VECTOR_RETIRED, {0x1f03}}, // sse_avx
+        {cpu::CoreEvents::RETIRED_SSE_AVX_FLOPS_ANY, {0x1f03}}, // sse_avx
 #endif
     };
 
-    const std::unordered_map<cpu::amd::CoreEvents, std::vector<uint64_t>> AMDEventWrapper::amd_event_map = {
+    const std::unordered_map<cpu::amd::CoreEvents, std::vector<uint64_t>> EventWrapper::amd_event_map = {
 
     };
 }

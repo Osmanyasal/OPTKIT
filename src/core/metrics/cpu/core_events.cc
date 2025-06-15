@@ -66,10 +66,10 @@ namespace optkit::core::metrics::cpu
             return "SW_LOAD_PREFETCH_ACCESS";
 
         // FP/Vector
-        case CoreEvents::FP_ARITH_INST_RETIRED:
-            return "FP_ARITH_INST_RETIRED";
-        case CoreEvents::FP_ARITH_INST_VECTOR_RETIRED:
-            return "FP_ARITH_INST_VECTOR_RETIRED";
+        case CoreEvents::RETIRED_FLOPS_ANY:
+            return "RETIRED_FLOPS_ANY";
+        case CoreEvents::RETIRED_SSE_AVX_FLOPS_ANY:
+            return "RETIRED_SSE_AVX_FLOPS_ANY";
 
         default:
             return "UNKNOWN_CORE_EVENT";

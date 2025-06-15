@@ -66,7 +66,7 @@ namespace optkit::core::energy::rapl
         return rapl_reader->read();
     }
 
-    std::string RaplProfiler::convert_buffer_to_json()
+    std::string RaplProfiler::to_json()
     {
         std::stringstream ss;
         ss << "[\n";

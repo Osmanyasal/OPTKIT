@@ -73,12 +73,11 @@ PRIV_DEFINITIONS = {
     ]
 }
 
-
 def shift_umask_if_needed(mask_code):
-    mask_code = mask_code.strip().lower().replace("ull", "")
+    mask_code_altered = mask_code.strip().replace("ull", "").replace("ULL","")
     
-    if re.fullmatch(r"0x[0-9a-f]+", mask_code):
-        umask_val = int(mask_code, 16)
+    if re.fullmatch(r"0x[0-9a-f]+", mask_code_altered):
+        umask_val = int(mask_code_altered, 16)
         if umask_val & 0xFF != 0:
             umask_val <<= 8
         return f"0x{umask_val:x}ull"

@@ -1,22 +1,19 @@
-/**
- * @file metrics.hpp
- * @brief Defines the extended Metrics interface for CPU performance counters.
- */
-
 #pragma once
 
 #include <vector>
 #include <cstdint>
-#include <unordered_set>
 #include <string>
-
+#include <sstream>
+#include <functional>
+#include <unordered_set>
+#include <unordered_map>
 namespace optkit::core::metrics::cpu
 {
     /**
-     * @class MetricsBuilder
+     * @class MetricBuilder
      * @brief Utility class for aggregating unique CPU performance metric events.
      *
-     * MetricsBuilder implements a builder pattern to accumulate CPU performance metric events,
+     * MetricBuilder implements a builder pattern to accumulate CPU performance metric events,
      * represented as pairs of event names and their associated event codes.
      *
      * Key characteristics:
@@ -33,7 +30,7 @@ namespace optkit::core::metrics::cpu
      *
      * Example usage:
      * @code
-     * MetricsBuilder builder;
+     * MetricBuilder builder;
      * builder.add("L1MPKI", {1001, 1002, 1003})
      *        .add("IpFLOP", {2001});
      * auto all_events = builder.getEvents();
@@ -43,47 +40,66 @@ namespace optkit::core::metrics::cpu
      * from different CPU vendors or metric sources into a unified list for monitoring.
      */
 
-    class MetricsBuilder
+    class MetricBuilder
     {
     public:
-        MetricsBuilder() = default;
+        using CalculationFunc = std::function<double(const std::unordered_map<std::string, uint64_t> &)>;
+        MetricBuilder() = default;
 
         // New method accepting a single name and associated event codes
-        MetricsBuilder &add(const std::string &name, const std::vector<uint64_t> &codes)
+        MetricBuilder &add(const std::string &name, const std::vector<uint64_t> &codes)
         {
             for (uint64_t code : codes)
             {
-                std::string key = std::to_string(code) + "_" + name;
+                std::string key = name + "_" + std::to_string(code);
                 if (added_keys_.insert(key).second)
                 {
-                    collected_events_.emplace_back(code, name);
+                    metric_events.emplace_back(name, code);
                 }
             }
             return *this;
         }
 
-        // to add from another MetricsBuilder's event vector
-        MetricsBuilder &add(const std::vector<std::pair<uint64_t, std::string>> &events)
+        // to add from another MetricBuilder's event vector
+        MetricBuilder &add(const std::vector<std::pair<std::string, uint64_t>> &events)
         {
-            for (const auto &[code, name] : events)
+            for (const auto &pair : events)
             {
-                std::string key = std::to_string(code) + "_" + name;
+                std::string key = pair.first + "_" + std::to_string(pair.second);
                 if (added_keys_.insert(key).second)
                 {
-                    collected_events_.emplace_back(code, name);
+                    metric_events.emplace_back(pair.first, pair.second);
                 }
             }
             return *this;
         }
 
-        const std::vector<std::pair<uint64_t, std::string>> &getEvents() const
+        MetricBuilder &build(const std::string &metric_name, CalculationFunc calculation_func)
         {
-            return collected_events_;
+            this->metric_name = metric_name;
+            this->calculate_func = calculation_func;
+            return *this;
         }
+
+        double calculate(const std::vector<std::pair<std::string, uint64_t>> &results) const
+        {
+            if (!calculate_func)
+                return -1;
+
+            std::unordered_map<std::string, uint64_t> results_map;
+            for (const auto &pair : results)
+                results_map[pair.first] = pair.second;
+
+            return calculate_func(results_map);
+        }
+
+    public:
+        std::vector<std::pair<std::string, uint64_t>> metric_events;
+        std::string metric_name;
 
     private:
-        std::vector<std::pair<uint64_t, std::string>> collected_events_;
         std::unordered_set<std::string> added_keys_;
+        CalculationFunc calculate_func;
     };
 
     /**
@@ -93,62 +109,71 @@ namespace optkit::core::metrics::cpu
      * Implementation should take place in cpu vendors not here. The reason these are not fully abstract is that it is possible metric is generic but not exist in any cpu.
      * So it returns empty list.
      */
+    template <typename T>
     class Metrics
     {
     public:
-        Metrics() {}
-        virtual ~Metrics() {}
-
         // Cache miss per kilo instruction (MPKI)
-        virtual std::vector<std::pair<uint64_t, std::string>> L1MPKI() { return {}; } ///< 1000 * L1_MISSES / INST_RETIRED
-        virtual std::vector<std::pair<uint64_t, std::string>> L2MPKI() { return {}; } ///< 1000 * L2_MISSES / INST_RETIRED
-        virtual std::vector<std::pair<uint64_t, std::string>> L3MPKI() { return {}; } ///< 1000 * L3_MISSES / INST_RETIRED
+        static MetricBuilder L1MPKI() { return {}; } ///< 1000 * L1_MISSES / INST_RETIRED
+        static MetricBuilder L2MPKI() { return {}; } ///< 1000 * L2_MISSES / INST_RETIRED
+        static MetricBuilder L3MPKI() { return {}; } ///< 1000 * L3_MISSES / INST_RETIRED
 
         // Branch
-        virtual std::vector<std::pair<uint64_t, std::string>> BranchMisprRatio() { return {}; } ///< BR_MISP_RETIRED.ALL_BRANCHES / BR_INST_RETIRED.ALL_BRANCHES
+        static MetricBuilder BranchMisprRatio() { return {}; } ///< BR_MISP_RETIRED.ALL_BRANCHES / BR_INST_RETIRED.ALL_BRANCHES
 
-        // STLB MPKI metrics
-        virtual std::vector<std::pair<uint64_t, std::string>> CodeSTLBMPKI() { return {}; }  ///< 1000 * ITLB_MISSES.WALK_COMPLETED / INST_RETIRED
-        virtual std::vector<std::pair<uint64_t, std::string>> LoadSTLBMPKI() { return {}; }  ///< 1000 * DTLB_LD_MISSES.WALK_COMPLETED / INST_RETIRED
-        virtual std::vector<std::pair<uint64_t, std::string>> StoreSTLBMPKI() { return {}; } ///< 1000 * DTLB_ST_MISSES.WALK_COMPLETED / INST_RETIRED
+        // TLB MPKI metrics
+        static MetricBuilder ITLBMPKI() { return {}; } ///< 1000 * ITLB_MISSES.WALK_COMPLETED / INST_RETIRED
+        static MetricBuilder DTLBMPKI() { return {}; } ///< 1000 * DTLB_MISSES.WALK_COMPLETED / INST_RETIRED
+        static MetricBuilder TLBMPKI() { return {}; }  ///< 1000 * TLB_MISSES.WALK_COMPLETED / INST_RETIRED
+        // static MetricBuilder LoadSTLBMPKI() { return {}; }  ///< 1000 * DTLB_LD_MISSES.WALK_COMPLETED / INST_RETIRED
+        // static MetricBuilder StoreSTLBMPKI() { return {}; } ///< 1000 * DTLB_ST_MISSES.WALK_COMPLETED / INST_RETIRED
 
         // Latency and parallelism metrics
-        virtual std::vector<std::pair<uint64_t, std::string>> LoadMissLatency() { return {}; } ///< L1D_PEND_MISS.PENDING / MEM_LD_COMPLETED.L1_MISS_ANY
-        virtual std::vector<std::pair<uint64_t, std::string>> ILP() { return {}; }             ///< UOPS_EXECUTED.THREAD / UOPS_EXECUTED.CORE_CYCLES_GE1
-        virtual std::vector<std::pair<uint64_t, std::string>> MLP() { return {}; }             ///< L1D_PEND_MISS.PENDING / L1D_PEND_MISS.PENDING_CYCLES
+        static MetricBuilder LoadMissLatency() { return {}; } ///< L1D_PEND_MISS.PENDING / MEM_LD_COMPLETED.L1_MISS_ANY
+        static MetricBuilder ILP() { return {}; }             ///< UOPS_EXECUTED.THREAD / UOPS_EXECUTED.CORE_CYCLES_GE1
+        static MetricBuilder MLP() { return {}; }             ///< L1D_PEND_MISS.PENDING / L1D_PEND_MISS.PENDING_CYCLES
 
         // DRAM bandwidth
-        virtual std::vector<std::pair<uint64_t, std::string>> DRAMBandwidthGBs() { return {}; } ///< (64 * (RD + WR)) / (Time * 1GB)
+        static MetricBuilder DRAMBandwidthGBs() { return {}; } ///< (64 * (RD + WR)) / (Time * 1GB)
 
         // Instruction per event
-        virtual std::vector<std::pair<uint64_t, std::string>> IpC() { return {}; }          ///< INST_RETIRED / UNHALTED_CLK_CYCLES
-        virtual std::vector<std::pair<uint64_t, std::string>> IpCall() { return {}; }       ///< INST_RETIRED / BR_INST_RETIRED.NEAR_CALL
-        virtual std::vector<std::pair<uint64_t, std::string>> IpBranch() { return {}; }     ///< INST_RETIRED / BR_INST_RETIRED.ALL_BRANCHES
-        virtual std::vector<std::pair<uint64_t, std::string>> IpLoad() { return {}; }       ///< INST_RETIRED / MEM_INST_RETIRED.ALL_LOADS_PS
-        virtual std::vector<std::pair<uint64_t, std::string>> IpStore() { return {}; }      ///< INST_RETIRED / MEM_INST_RETIRED.ALL_STORES_PS
-        virtual std::vector<std::pair<uint64_t, std::string>> IpMispredict() { return {}; } ///< INST_RETIRED / BR_MISP_RETIRED.ALL_BRANCHES
+        static MetricBuilder IpC() { return {}; }          ///< INST_RETIRED / UNHALTED_CLK_CYCLES
+        static MetricBuilder IpCall() { return {}; }       ///< INST_RETIRED / BR_INST_RETIRED.NEAR_CALL
+        static MetricBuilder IpBranch() { return {}; }     ///< INST_RETIRED / BR_INST_RETIRED.ALL_BRANCHES
+        static MetricBuilder IpLoad() { return {}; }       ///< INST_RETIRED / MEM_INST_RETIRED.ALL_LOADS_PS
+        static MetricBuilder IpStore() { return {}; }      ///< INST_RETIRED / MEM_INST_RETIRED.ALL_STORES_PS
+        static MetricBuilder IpMispredict() { return {}; } ///< INST_RETIRED / BR_MISP_RETIRED.ALL_BRANCHES
 
         // Floating-point operation metrics
-        virtual std::vector<std::pair<uint64_t, std::string>> IpFLOP() { return {}; }          ///< Instructions per FP operation
-        virtual std::vector<std::pair<uint64_t, std::string>> IpArith() { return {}; }         ///< Instructions per FP arithmetic instruction
-        virtual std::vector<std::pair<uint64_t, std::string>> IpArithScalarSP() { return {}; } ///< INST_RETIRED / FP_ARITH_INST.SCALAR_SINGLE
-        virtual std::vector<std::pair<uint64_t, std::string>> IpArithScalarDP() { return {}; } ///< INST_RETIRED / FP_ARITH_INST.SCALAR_DOUBLE
-        virtual std::vector<std::pair<uint64_t, std::string>> IpArithAVX128() { return {}; }   ///< INST_RETIRED / (128B_PACKED_DOUBLE + 128B_PACKED_SINGLE)
-        virtual std::vector<std::pair<uint64_t, std::string>> IpArithAVX256() { return {}; }   ///< INST_RETIRED / (256B_PACKED_DOUBLE + 256B_PACKED_SINGLE)
-        virtual std::vector<std::pair<uint64_t, std::string>> IpArithAVX512() { return {}; }   ///< INST_RETIRED / (512B_PACKED_DOUBLE + 512B_PACKED_SINGLE)
-        virtual std::vector<std::pair<uint64_t, std::string>> IpArithAVXAny() { return {}; }   ///< INST_RETIRED / (RETIRED_SSE_AVX_FLOPS_ANY)
+        static MetricBuilder IpFLOP() { return {}; }          ///< Instructions per FP operation
+        static MetricBuilder IpArith() { return {}; }         ///< Instructions per FP arithmetic instruction
+        static MetricBuilder IpArithScalarSP() { return {}; } ///< INST_RETIRED / FP_ARITH_INST.SCALAR_SINGLE
+        static MetricBuilder IpArithScalarDP() { return {}; } ///< INST_RETIRED / FP_ARITH_INST.SCALAR_DOUBLE
+        static MetricBuilder IpArithAVX128() { return {}; }   ///< INST_RETIRED / (128B_PACKED_DOUBLE + 128B_PACKED_SINGLE)
+        static MetricBuilder IpArithAVX256() { return {}; }   ///< INST_RETIRED / (256B_PACKED_DOUBLE + 256B_PACKED_SINGLE)
+        static MetricBuilder IpArithAVX512() { return {}; }   ///< INST_RETIRED / (512B_PACKED_DOUBLE + 512B_PACKED_SINGLE)
+        static MetricBuilder IpArithAVXAny() { return {}; }   ///< INST_RETIRED / (RETIRED_SSE_AVX_FLOPS_ANY)
 
         // Software prefetch
-        virtual std::vector<std::pair<uint64_t, std::string>> IpSWPF() { return {}; } ///< INST_RETIRED / SW_PREFETCH_ACCESS.T0:u0xF
+        static MetricBuilder IpSWPF() { return {}; } ///< INST_RETIRED / SW_PREFETCH_ACCESS.T0:u0xF
 
         // Aggregated Metrics
-        virtual std::vector<std::pair<uint64_t, std::string>> AllMPKI() { return {}; }
-        virtual std::vector<std::pair<uint64_t, std::string>> AllSTLBMPKI() { return {}; }
-        virtual std::vector<std::pair<uint64_t, std::string>> AllLatencyAndParallelism() { return {}; }
-        virtual std::vector<std::pair<uint64_t, std::string>> AllDRAMBandwidth() { return {}; }
-        virtual std::vector<std::pair<uint64_t, std::string>> AllIpMetrics() { return {}; }
-        virtual std::vector<std::pair<uint64_t, std::string>> AllBranchMetrics() { return {}; }
-        virtual std::vector<std::pair<uint64_t, std::string>> AllMetrics() { return {}; }
+        static std::vector<MetricBuilder> AllMPKI() { return {}; }
+        static std::vector<MetricBuilder> AllSTLBMPKI() { return {}; }
+        static std::vector<MetricBuilder> AllLatencyAndParallelism() { return {}; }
+        static std::vector<MetricBuilder> AllDRAMBandwidth() { return {}; }
+        static std::vector<MetricBuilder> AllIpMetrics() { return {}; }
+        static std::vector<MetricBuilder> AllBranchMetrics() { return {}; }
+        static std::vector<MetricBuilder> AllMetrics() { return {}; }
+
+    private:
+        Metrics() {}
+        ~Metrics() {}
     };
 
+    std::string to_string(const MetricBuilder &mb);
+    std::ostream &operator<<(std::ostream &os, const MetricBuilder &mb);
+
 } // namespace optkit::core::metrics::cpu
+
+using optkit::core::metrics::cpu::operator<<;

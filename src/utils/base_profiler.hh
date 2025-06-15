@@ -56,7 +56,7 @@ namespace optkit::core
          *
          * @return std::string
          */
-        virtual std::string convert_buffer_to_json() = 0;
+        virtual std::string to_json() = 0;
 
         // virtual const std::vector<std::pair<double, T>> &get_read_buffer() final
         // {
@@ -70,7 +70,7 @@ namespace optkit::core
          */
         virtual void save() final
         {
-            const std::string &json_data = convert_buffer_to_json();
+            const std::string &json_data = to_json();
             std::string file_name = block_name;
             file_name = file_name;
             std::replace(file_name.begin(), file_name.end(), ' ', '_');

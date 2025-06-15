@@ -4,7 +4,7 @@
 #include "core/pmu/cpu/events/amd64/fam19h_zen4.hh"
 #include "core/pmu/cpu/events/intel/icl.hh"
 
-#include "core/metrics/cpu/amd/metrics.hh"
+#include "core/metrics/cpu/amd/core_metrics.hh"
 
 #define VECTOR_SIZE 100000000  // 100 million elements
 #define NUM_ACCESSES 100000000 // 100 million random accesses
@@ -52,7 +52,7 @@ void normalMatrixMultiplication(const std::vector<std::vector<int>> &A, const st
     for (int i = 0; i < n; i++)
     { // Iterate over rows of A
         for (int j = 0; j < m; j++)
-        {                // Iterate over columns of B
+        { // Iterate over columns of B
             for (int k = 0; k < p; k++)
             { // Sum over the common dimension
                 C[i][j] += A[i][k] * B[k][j];
@@ -82,13 +82,29 @@ void loopInterchangeMatrixMultiplication(const std::vector<std::vector<int>> &A,
 int32_t main(int32_t argc, char **argv)
 {
     OPTKIT_INIT();
-    // OPTKIT_PERFORMANCE_EVENTS("main","test",tt, {{ optkit::amd64::fam19h_zen4::RETIRED_INSTRUCTIONS, "Retired Instructions"}});
-    OPTKIT_CPU_EVENTS("main","test",tt, {{ optkit::intel::icl::INSTRUCTIONS_RETIRED, "Retired Instructions"}});
 
-    optkit::core::pmu::cpu::PMUEventManager::disable_all_events();
-    int i = 3;
+    { // OPTKIT_PERFORMANCE_EVENTS("main","test",tt, {{ optkit::amd64::fam19h_zen4::RETIRED_INSTRUCTIONS, "Retired Instructions"}});
+        OPTKIT_CPU_EVENTS("main", "test", {{"Retired Instructions", optkit::intel::icl::INSTRUCTIONS_RETIRED}});
+    }
 
-    optkit::core::metrics::cpu::amd::AMDMetrics::AllMetrics
+    {
+        OPTKIT_CPU_EVENTS("main", "test", {{"Retired Instructions", optkit::intel::icl::INSTRUCTIONS_RETIRED}});
 
+        // 10 instructions
+        int i = 3;
+        i++;
+        i++;
+        i++;
+        i++;
+        i++;
+        i++;
+    }
+
+    using namespace optkit::core::metrics::cpu;
+
+    MetricBuilder branch_mispr = Metrics<AMDMetricsImpl>::BranchMisprRatio();
+    std::cout << branch_mispr << "\n";
+
+    std::cout << branch_mispr.metric_name << ": " << branch_mispr.calculate({{"BRANCH_INST_RETIRED", 1000},{"BRANCH_MISP_RETIRED", 200}});
     return 0;
 }

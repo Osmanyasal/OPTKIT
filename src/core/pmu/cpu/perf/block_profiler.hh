@@ -28,7 +28,7 @@ namespace optkit::core::pmu::cpu::perf
     class BlockProfiler : public BaseProfiler<std::vector<uint64_t>>
     {
     public:
-        BlockProfiler(const char *block_name, const char *event_name, const std::vector<std::pair<uint64_t, std::string>> &raw_events, bool verbose = true, const PerfProfilerConfig &config = PerfProfilerConfig{true, true, false, 0, -1});
+        BlockProfiler(const char *block_name, const char *event_name, const std::vector<std::pair<std::string, uint64_t>> &raw_events, bool verbose = true, const PerfProfilerConfig &config = PerfProfilerConfig{true, true, false, 0, -1});
         virtual ~BlockProfiler();
         /**
          * @brief Disables this block profiler and associated events
@@ -46,7 +46,7 @@ namespace optkit::core::pmu::cpu::perf
          * @brief converts buffer to json
          *
          */
-        virtual std::string convert_buffer_to_json() override;
+        virtual std::string to_json() override;
 
         /**
          * @brief Reads the values of all raw_events.
@@ -65,7 +65,7 @@ namespace optkit::core::pmu::cpu::perf
         PerfProfilerConfig profiler_config;
 
     private:
-        std::vector<std::pair<uint64_t, std::string>> raw_events;
+        std::vector<std::pair<std::string, uint64_t>> raw_events;
     };
 
 } // namespace optkit::core::pmu::cpu::perf

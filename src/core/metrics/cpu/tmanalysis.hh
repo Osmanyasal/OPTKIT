@@ -59,34 +59,34 @@ namespace optkit::core::metrics::cpu
         // virtual std::map<L3Metric, double> L2__fetch_latency__analise();
         // virtual std::map<L3Metric, double> L2__fetch_bandwidth__analise();
 
-        virtual std::vector<std::pair<uint64_t, std::string>> L1__default__recipie();
-        virtual std::vector<std::pair<uint64_t, std::string>> L2__default__recipie();
+        virtual std::vector<std::pair<std::string, uint64_t>> L1__default__recipie();
+        virtual std::vector<std::pair<std::string, uint64_t>> L2__default__recipie();
 
         // these 2 returns l1 backend-bound
-        virtual std::vector<std::pair<uint64_t, std::string>> L2__backend__memory();
-        virtual std::vector<std::pair<uint64_t, std::string>> L2__backend__core();
+        virtual std::vector<std::pair<std::string, uint64_t>> L2__backend__memory();
+        virtual std::vector<std::pair<std::string, uint64_t>> L2__backend__core();
 
         // following 2 returns l1 bad-specualtion
-        virtual std::vector<std::pair<uint64_t, std::string>> L2__bad_speculation__branch_mispredict();
-        virtual std::vector<std::pair<uint64_t, std::string>> L2__bad_speculation__machine_clears();
+        virtual std::vector<std::pair<std::string, uint64_t>> L2__bad_speculation__branch_mispredict();
+        virtual std::vector<std::pair<std::string, uint64_t>> L2__bad_speculation__machine_clears();
 
         // following 2 returns l1 retiring
-        virtual std::vector<std::pair<uint64_t, std::string>> L2__retiring__base();
-        virtual std::vector<std::pair<uint64_t, std::string>> L2__retiring__micro_sequencer();
+        virtual std::vector<std::pair<std::string, uint64_t>> L2__retiring__base();
+        virtual std::vector<std::pair<std::string, uint64_t>> L2__retiring__micro_sequencer();
 
         // following 2 returns l1 frontend-bound
-        virtual std::vector<std::pair<uint64_t, std::string>> L2__frontend__fetch_latency();
-        virtual std::vector<std::pair<uint64_t, std::string>> L2__frontend__fetch_bandwidth();
+        virtual std::vector<std::pair<std::string, uint64_t>> L2__frontend__fetch_latency();
+        virtual std::vector<std::pair<std::string, uint64_t>> L2__frontend__fetch_bandwidth();
 
         // followign returns l2 memory bound
-        virtual std::vector<std::pair<uint64_t, std::string>> L3__memory__ext_memory();
-        virtual std::vector<std::pair<uint64_t, std::string>> L3__memory__l1();
-        virtual std::vector<std::pair<uint64_t, std::string>> L3__memory__l2();
-        virtual std::vector<std::pair<uint64_t, std::string>> L3__memory__l3();
+        virtual std::vector<std::pair<std::string, uint64_t>> L3__memory__ext_memory();
+        virtual std::vector<std::pair<std::string, uint64_t>> L3__memory__l1();
+        virtual std::vector<std::pair<std::string, uint64_t>> L3__memory__l2();
+        virtual std::vector<std::pair<std::string, uint64_t>> L3__memory__l3();
 
 
-        virtual std::vector<std::pair<uint64_t, std::string>> L3__core__divider();
-        virtual std::vector<std::pair<uint64_t, std::string>> L3__core__exec_port_utils();
+        virtual std::vector<std::pair<std::string, uint64_t>> L3__core__divider();
+        virtual std::vector<std::pair<std::string, uint64_t>> L3__core__exec_port_utils();
 
         virtual void choose_profiler() final;
 
@@ -95,7 +95,7 @@ namespace optkit::core::metrics::cpu
         uint64_t delta_time;
 
         std::unique_ptr<core::BaseProfiler<std::vector<uint64_t>>> profiler_ref;
-        std::vector<std::pair<uint64_t, std::string>> recipie_to_monitor;
+        std::vector<std::pair<std::string, uint64_t>> recipie_to_monitor;
 
     private:
         const char *block_name;

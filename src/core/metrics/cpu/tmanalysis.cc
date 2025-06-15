@@ -1,13 +1,13 @@
 #include "core/metrics/cpu/tmanalysis.hh"
 #if OPTKIT_ENV_LIB_PERF_EVENT
 
-#define INTEL_X86_EDGE_BIT	18
-#define INTEL_X86_ANY_BIT	21
-#define INTEL_X86_INV_BIT	23
+#define INTEL_X86_EDGE_BIT 18
+#define INTEL_X86_ANY_BIT 21
+#define INTEL_X86_INV_BIT 23
 #define INTEL_X86_CMASK_BIT 24
-#define INTEL_X86_MOD_EDGE	(1 << INTEL_X86_EDGE_BIT)
-#define INTEL_X86_MOD_ANY	(1 << INTEL_X86_ANY_BIT)
-#define INTEL_X86_MOD_INV	(1 << INTEL_X86_INV_BIT)
+#define INTEL_X86_MOD_EDGE (1 << INTEL_X86_EDGE_BIT)
+#define INTEL_X86_MOD_ANY (1 << INTEL_X86_ANY_BIT)
+#define INTEL_X86_MOD_INV (1 << INTEL_X86_INV_BIT)
 
 namespace optkit::core::metrics::cpu
 {
@@ -215,16 +215,16 @@ namespace optkit::core::metrics::cpu
             }
         }
     }
-
-    std::vector<std::pair<uint64_t, std::string>> TMAnalysis::L1__default__recipie()
+    std::vector<std::pair<std::string, uint64_t>> TMAnalysis::L1__default__recipie()
     {
-        static std::vector<std::pair<uint64_t, std::string>> default_mapping{
-            {0x3c, "CPU_CLK_UNHALTED"},                                               // 0
-            {(0x9c | 0x100), "IDQ_UOPS_NOT_DELIVERED"},                               // 1
-            {(0xe | 0x100), "UOPS_ISSUED_ANY"},                                       // 2
-            {(0xc2 | 0x200), "UOPS_RETIRED_RETIRE_SLOTS"},                            // 3
-            {(0xd | 0x300 | (1 << INTEL_X86_CMASK_BIT)), "INT_MISC_RECOVERY_CYCLES"}, // 4
-            {0xc0, "INSTRUCTION_RETIRED"}};                                           // 5
+        static std::vector<std::pair<std::string, uint64_t>> default_mapping{
+            {"CPU_CLK_UNHALTED", 0x3c},                                               // 0
+            {"IDQ_UOPS_NOT_DELIVERED", (0x9c | 0x100)},                               // 1
+            {"UOPS_ISSUED_ANY", (0xe | 0x100)},                                       // 2
+            {"UOPS_RETIRED_RETIRE_SLOTS", (0xc2 | 0x200)},                            // 3
+            {"INT_MISC_RECOVERY_CYCLES", (0xd | 0x300 | (1 << INTEL_X86_CMASK_BIT))}, // 4
+            {"INSTRUCTION_RETIRED", 0xc0}                                             // 5
+        };
 
         // be_bound = 1 - (fe_bound + bad_speculation + retiring)
 
@@ -251,15 +251,16 @@ namespace optkit::core::metrics::cpu
     }
 
     // TODO: Rephrase this for l2
-    std::vector<std::pair<uint64_t, std::string>> TMAnalysis::L2__default__recipie()
+    std::vector<std::pair<std::string, uint64_t>> TMAnalysis::L2__default__recipie()
     {
-        static std::vector<std::pair<uint64_t, std::string>> default_mapping{
-            {0x3c, "CPU_CLK_UNHALTED"},                                               // 0
-            {(0x9c | 0x100), "IDQ_UOPS_NOT_DELIVERED"},                               // 1
-            {(0xe | 0x100), "UOPS_ISSUED_ANY"},                                       // 2
-            {(0xc2 | 0x200), "UOPS_RETIRED_RETIRE_SLOTS"},                            // 3
-            {(0xd | 0x300 | (1 << INTEL_X86_CMASK_BIT)), "INT_MISC_RECOVERY_CYCLES"}, // 4
-            {0xc0, "INSTRUCTION_RETIRED"}};                                           // 5
+        static std::vector<std::pair<std::string, uint64_t>> default_mapping{
+            {"CPU_CLK_UNHALTED", 0x3c},                                               // 0
+            {"IDQ_UOPS_NOT_DELIVERED", (0x9c | 0x100)},                               // 1
+            {"UOPS_ISSUED_ANY", (0xe | 0x100)},                                       // 2
+            {"UOPS_RETIRED_RETIRE_SLOTS", (0xc2 | 0x200)},                            // 3
+            {"INT_MISC_RECOVERY_CYCLES", (0xd | 0x300 | (1 << INTEL_X86_CMASK_BIT))}, // 4
+            {"INSTRUCTION_RETIRED", 0xc0}                                             // 5
+        };
 
         return default_mapping;
     }
@@ -273,20 +274,21 @@ namespace optkit::core::metrics::cpu
     }
 
     // these 2 returns l1 backend-bound
-    std::vector<std::pair<uint64_t, std::string>> TMAnalysis::L2__backend__core()
+    std::vector<std::pair<std::string, uint64_t>> TMAnalysis::L2__backend__core()
     {
-        static std::vector<std::pair<uint64_t, std::string>> default_mapping{}; // 1 - L2__backend__memory
+        static std::vector<std::pair<std::string, uint64_t>> default_mapping{}; // 1 - L2__backend__memory
         return default_mapping;
     };
-    std::vector<std::pair<uint64_t, std::string>> TMAnalysis::L2__backend__memory()
+
+    std::vector<std::pair<std::string, uint64_t>> TMAnalysis::L2__backend__memory()
     {
-        static std::vector<std::pair<uint64_t, std::string>> default_mapping{
+        static std::vector<std::pair<std::string, uint64_t>> default_mapping{
             // here 1 + 2 + 3 = stalls_mem_any
-            {0x3c, "CPU_CLK_UNHALTED"},                                          // 0
-            {(0xa3 | 0x0c00 | (0xc << INTEL_X86_CMASK_BIT)), "STALLS_L1D_MISS"}, // 1
-            {(0xa3 | 0x0500 | (0x5 << INTEL_X86_CMASK_BIT)), "STALLS_L2_MISS"},  // 2
-            {(0xa3 | 0x0600 | (0x6 << INTEL_X86_CMASK_BIT)), "STALLS_L3_MISS"},  // 3
-            {(0xa2 | 0x800), "RESOURCE_STALLS_SB"}                               // 4
+            {"CPU_CLK_UNHALTED", 0x3c},                                          // 0
+            {"STALLS_L1D_MISS", (0xa3 | 0x0c00 | (0xc << INTEL_X86_CMASK_BIT))}, // 1
+            {"STALLS_L2_MISS", (0xa3 | 0x0500 | (0x5 << INTEL_X86_CMASK_BIT))},  // 2
+            {"STALLS_L3_MISS", (0xa3 | 0x0600 | (0x6 << INTEL_X86_CMASK_BIT))},  // 3
+            {"RESOURCE_STALLS_SB", (0xa2 | 0x800)}                               // 4
         };
         return default_mapping;
     }
@@ -303,23 +305,23 @@ namespace optkit::core::metrics::cpu
     }
 
     // following 2 returns l1 bad-specualtion
-    std::vector<std::pair<uint64_t, std::string>> TMAnalysis::L2__bad_speculation__branch_mispredict()
+    std::vector<std::pair<std::string, uint64_t>> TMAnalysis::L2__bad_speculation__branch_mispredict()
     {
-        OPTKIT_CORE_WARN("This setting is vaild for intel {ivb, spr, snb, skl, icl, bdw , hsw} architectures check MACHINE_CLEARS_COUNT event for different u-arch.");
-        static std::vector<std::pair<uint64_t, std::string>> default_mapping{
-            {0x3c, "CPU_CLK_UNHALTED"},                                                                                    // 0
-            {0x00c5, "BR_MISP_RETIRED"},                                                                                   // 1
-            {(0x00c3 | (0x0100ull | (0x1 << INTEL_X86_CMASK_BIT) | (0x1 << INTEL_X86_EDGE_BIT))), "MACHINE_CLEARS_COUNT"}, // 2
-            {(0xe | 0x100), "UOPS_ISSUED_ANY"},                                                                            // 3
-            {(0xc2 | 0x200), "UOPS_RETIRED_RETIRE_SLOTS"},                                                                 // 4
-            {(0xd | 0x300 | (1 << INTEL_X86_CMASK_BIT)), "INT_MISC_RECOVERY_CYCLES"},                                      // 5
-
+        OPTKIT_CORE_WARN("This setting is valid for intel {ivb, spr, snb, skl, icl, bdw , hsw} architectures. Check MACHINE_CLEARS_COUNT event for different u-arch.");
+        static std::vector<std::pair<std::string, uint64_t>> default_mapping{
+            {"CPU_CLK_UNHALTED", 0x3c},                                                                                    // 0
+            {"BR_MISP_RETIRED", 0x00c5},                                                                                   // 1
+            {"MACHINE_CLEARS_COUNT", (0x00c3 | (0x0100ull | (0x1 << INTEL_X86_CMASK_BIT) | (0x1 << INTEL_X86_EDGE_BIT)))}, // 2
+            {"UOPS_ISSUED_ANY", (0xe | 0x100)},                                                                            // 3
+            {"UOPS_RETIRED_RETIRE_SLOTS", (0xc2 | 0x200)},                                                                 // 4
+            {"INT_MISC_RECOVERY_CYCLES", (0xd | 0x300 | (1 << INTEL_X86_CMASK_BIT))}                                       // 5
         };
         return default_mapping;
     };
-    std::vector<std::pair<uint64_t, std::string>> TMAnalysis::L2__bad_speculation__machine_clears()
+
+    std::vector<std::pair<std::string, uint64_t>> TMAnalysis::L2__bad_speculation__machine_clears()
     {
-        static std::vector<std::pair<uint64_t, std::string>> default_mapping;
+        static std::vector<std::pair<std::string, uint64_t>> default_mapping;
         return default_mapping; // BadSpeculation - BranchMispredicts
     };
     std::map<L2Metric, double> TMAnalysis::L1__bad_speculation__analise()
@@ -337,20 +339,21 @@ namespace optkit::core::metrics::cpu
     }
 
     // following 2 returns l1 frontend-bound
-    std::vector<std::pair<uint64_t, std::string>> TMAnalysis::L2__frontend__fetch_latency()
+    std::vector<std::pair<std::string, uint64_t>> TMAnalysis::L2__frontend__fetch_latency()
     {
-        OPTKIT_CORE_WARN("This setting is vaild for intel {ivb, spr, snb, skl, icl, bdw , hsw} architectures check MACHINE_CLEARS_COUNT event for different u-arch.");
-        static std::vector<std::pair<uint64_t, std::string>> default_mapping{
-            {0x3c, "CPU_CLK_UNHALTED"},                                                        // 0
-            {(0x9c | 0x100 | (4 << INTEL_X86_CMASK_BIT)), "IDQ_UOPS_NOT_DELIVERED__CYCLES_0"}, // 1
-            {(0x9c | 0x100), "IDQ_UOPS_NOT_DELIVERED"},                                        // 2
+        OPTKIT_CORE_WARN("This setting is valid for intel {ivb, spr, snb, skl, icl, bdw , hsw} architectures. Check MACHINE_CLEARS_COUNT event for different u-arch.");
+        static std::vector<std::pair<std::string, uint64_t>> default_mapping{
+            {"CPU_CLK_UNHALTED", 0x3c},                                                        // 0
+            {"IDQ_UOPS_NOT_DELIVERED__CYCLES_0", (0x9c | 0x100 | (4 << INTEL_X86_CMASK_BIT))}, // 1
+            {"IDQ_UOPS_NOT_DELIVERED", (0x9c | 0x100)},                                        // 2
         };
 
         return default_mapping;
     };
-    std::vector<std::pair<uint64_t, std::string>> TMAnalysis::L2__frontend__fetch_bandwidth()
+
+    std::vector<std::pair<std::string, uint64_t>> TMAnalysis::L2__frontend__fetch_bandwidth()
     {
-        static std::vector<std::pair<uint64_t, std::string>> default_mapping{};
+        static std::vector<std::pair<std::string, uint64_t>> default_mapping{};
         return default_mapping; // FrontendBound - FrontendFetchLatency.
     };
 
@@ -370,27 +373,28 @@ namespace optkit::core::metrics::cpu
     }
 
     // following 2 returns l1 retiring
-    std::vector<std::pair<uint64_t, std::string>> TMAnalysis::L2__retiring__micro_sequencer()
+    std::vector<std::pair<std::string, uint64_t>> TMAnalysis::L2__retiring__micro_sequencer()
     {
         // MsSlotsRetired / TotlaSlots
-        static std::vector<std::pair<uint64_t, std::string>> default_mapping{};
+        static std::vector<std::pair<std::string, uint64_t>> default_mapping{};
         return default_mapping;
     };
 
-    std::vector<std::pair<uint64_t, std::string>> TMAnalysis::L2__retiring__base()
+    std::vector<std::pair<std::string, uint64_t>> TMAnalysis::L2__retiring__base()
     {
         // Retiring - MicroSequencer
 
-        OPTKIT_CORE_WARN("This setting is vaild for intel {ivb, wsm, snb, skl, nhm, icl, spr, bdw , hsw} architectures check MACHINE_CLEARS_COUNT event for different u-arch.");
-        static std::vector<std::pair<uint64_t, std::string>> default_mapping{
-            {0x3c, "CPU_CLK_UNHALTED"},                      // 0
-            {(0xc2 | 0x200), "UOPS_RETIRED__RETIRED_SLOTS"}, // 1
-            {(0x79 | 0x3000), "IDQ.MS_UOPS"},                // 2
-            {(0xe | 0x100), "UOPS_ISSUED_ANY"},              // 3
+        OPTKIT_CORE_WARN("This setting is valid for intel {ivb, wsm, snb, skl, nhm, icl, spr, bdw , hsw} architectures. Check MACHINE_CLEARS_COUNT event for different u-arch.");
+        static std::vector<std::pair<std::string, uint64_t>> default_mapping{
+            {"CPU_CLK_UNHALTED", 0x3c},                      // 0
+            {"UOPS_RETIRED__RETIRED_SLOTS", (0xc2 | 0x200)}, // 1
+            {"IDQ.MS_UOPS", (0x79 | 0x3000)},                // 2
+            {"UOPS_ISSUED_ANY", (0xe | 0x100)},              // 3
         };
 
         return default_mapping;
     };
+
     std::map<L2Metric, double> TMAnalysis::L1__retiring__analise()
     {
 
@@ -407,37 +411,40 @@ namespace optkit::core::metrics::cpu
     }
 
     // followign returns l2 memory bound
-    std::vector<std::pair<uint64_t, std::string>> TMAnalysis::L3__memory__l1()
+    std::vector<std::pair<std::string, uint64_t>> TMAnalysis::L3__memory__l1()
     {
-        static std::vector<std::pair<uint64_t, std::string>> default_mapping{
-            {0x3c, "CPU_CLK_UNHALTED"},                                          // 0
-            {(0xa3 | 0x0c00 | (0xc << INTEL_X86_CMASK_BIT)), "STALLS_L1D_MISS"}, // 1
-            {(0xa3 | 0x0500 | (0x5 << INTEL_X86_CMASK_BIT)), "STALLS_L2_MISS"},  // 2
-            {(0xa3 | 0x0600 | (0x6 << INTEL_X86_CMASK_BIT)), "STALLS_L3_MISS"},  // 3
+        static std::vector<std::pair<std::string, uint64_t>> default_mapping{
+            {"CPU_CLK_UNHALTED", 0x3c},                                          // 0
+            {"STALLS_L1D_MISS", (0xa3 | 0x0c00 | (0xc << INTEL_X86_CMASK_BIT))}, // 1
+            {"STALLS_L2_MISS", (0xa3 | 0x0500 | (0x5 << INTEL_X86_CMASK_BIT))},  // 2
+            {"STALLS_L3_MISS", (0xa3 | 0x0600 | (0x6 << INTEL_X86_CMASK_BIT))},  // 3
             // STALLSMEM.ANY
         };
 
         return default_mapping;
     };
-    std::vector<std::pair<uint64_t, std::string>> TMAnalysis::L3__memory__l2()
+
+    std::vector<std::pair<std::string, uint64_t>> TMAnalysis::L3__memory__l2()
     {
-        static std::vector<std::pair<uint64_t, std::string>> default_mapping{
-            {(0xa3 | 0x0500 | (0x5 << INTEL_X86_CMASK_BIT)), "STALLS_L2_MISS"}, // 4
+        static std::vector<std::pair<std::string, uint64_t>> default_mapping{
+            {"STALLS_L2_MISS", (0xa3 | 0x0500 | (0x5 << INTEL_X86_CMASK_BIT))}, // 4
         };
 
         return default_mapping;
     };
-    std::vector<std::pair<uint64_t, std::string>> TMAnalysis::L3__memory__l3()
+
+    std::vector<std::pair<std::string, uint64_t>> TMAnalysis::L3__memory__l3()
     {
-        static std::vector<std::pair<uint64_t, std::string>> default_mapping{
-            {0x4f2e, "LLC_REFERENCES"}, // 5
-            {0x412e, "LLC_MISS"},       // 6
+        static std::vector<std::pair<std::string, uint64_t>> default_mapping{
+            {"LLC_REFERENCES", 0x4f2e}, // 5
+            {"LLC_MISS", 0x412e},       // 6
         };
         return default_mapping;
     };
-    std::vector<std::pair<uint64_t, std::string>> TMAnalysis::L3__memory__ext_memory()
+
+    std::vector<std::pair<std::string, uint64_t>> TMAnalysis::L3__memory__ext_memory()
     {
-        static std::vector<std::pair<uint64_t, std::string>> default_mapping{};
+        static std::vector<std::pair<std::string, uint64_t>> default_mapping{};
         return default_mapping;
     };
     std::map<L3Metric, double> TMAnalysis::L2__memory_bound__analise()
@@ -478,14 +485,14 @@ namespace optkit::core::metrics::cpu
         return result;
     }
 
-    std::vector<std::pair<uint64_t, std::string>> TMAnalysis::L3__core__divider()
+    std::vector<std::pair<std::string, uint64_t>> TMAnalysis::L3__core__divider()
     {
-        static std::vector<std::pair<uint64_t, std::string>> default_mapping{};
+        static std::vector<std::pair<std::string, uint64_t>> default_mapping{};
         return default_mapping;
     }
-    std::vector<std::pair<uint64_t, std::string>> TMAnalysis::L3__core__exec_port_utils()
+    std::vector<std::pair<std::string, uint64_t>> TMAnalysis::L3__core__exec_port_utils()
     {
-        static std::vector<std::pair<uint64_t, std::string>> default_mapping{};
+        static std::vector<std::pair<std::string, uint64_t>> default_mapping{};
         return default_mapping;
     }
 

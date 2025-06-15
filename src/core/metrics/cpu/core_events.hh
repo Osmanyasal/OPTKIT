@@ -50,8 +50,8 @@ namespace optkit::core::metrics::cpu
         SW_LOAD_PREFETCH_ACCESS,
 
         // FP/Vector
-        FP_ARITH_INST_RETIRED,        // single FP ops (ie. adding of flop variables)
-        FP_ARITH_INST_VECTOR_RETIRED, // total FP operations caused by see_avx vector instruction
+        RETIRED_FLOPS_ANY,     // single FP ops (ie. adding of flop variables)
+        RETIRED_SSE_AVX_FLOPS_ANY, // total FP operations caused by see_avx vector instruction
 
         END,
     };

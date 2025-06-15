@@ -29,6 +29,10 @@
 #define BIT(x) (1 << x)
 #define STRINGIFY(...) #__VA_ARGS__
 
+#define CONCAT(a, b) a##b
+#define EXPAND_AND_CONCAT(a, b) CONCAT(a, b)
+
+
 #define BLOCK_TIMER(block_name) \
     optkit::utils::BlockTimer block_timer { block_name }
 

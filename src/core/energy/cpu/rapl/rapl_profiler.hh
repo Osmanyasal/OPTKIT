@@ -17,7 +17,7 @@ namespace optkit::core::energy::rapl
     class RaplProfiler : public BaseProfiler<std::map<int32_t, std::map<RaplDomain, double>>>
     {
     public:
-        RaplProfiler(const char *block_name, const char *event_name = "rapl", const RaplConfig &config = RaplConfig{});
+        RaplProfiler(const char *block_name, const char *event_name = "cpu_energy", const RaplConfig &config = RaplConfig{});
         virtual ~RaplProfiler();
 
         /**
@@ -32,7 +32,7 @@ namespace optkit::core::energy::rapl
          */
         virtual void enable() override;
 
-        virtual std::string convert_buffer_to_json() override;
+        virtual std::string to_json() override;
 
         /**
          * @brief Reads the values of all raw_events.

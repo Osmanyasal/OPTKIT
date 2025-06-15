@@ -25,7 +25,7 @@ namespace optkit::core::pmu::cpu::perf
     {
 
     public:
-        BlockGroupProfiler(const char *block_name, const char *event_name, const std::vector<std::pair<uint64_t, std::string>> &raw_events, bool verbose = true, const PerfProfilerConfig &config = PerfProfilerConfig{true, true, true,0,-1});
+        BlockGroupProfiler(const char *block_name, const char *event_name, const std::vector<std::pair<std::string, uint64_t>> &raw_events, bool verbose = true, const PerfProfilerConfig &config = PerfProfilerConfig{true, true, true, 0, -1});
         virtual ~BlockGroupProfiler();
         /**
          * @brief Disables this block profiler and associated events
@@ -43,7 +43,7 @@ namespace optkit::core::pmu::cpu::perf
          * @brief  converts buffer to json
          *
          */
-        virtual std::string convert_buffer_to_json() override;
+        virtual std::string to_json() override;
 
         /**
          * @brief Reads the values of all raw_events.
@@ -52,7 +52,8 @@ namespace optkit::core::pmu::cpu::perf
          */
         virtual std::vector<uint64_t> read() override;
 
-        int32_t get_group_leader(){
+        int32_t get_group_leader()
+        {
             return this->group_leader;
         }
 
@@ -60,7 +61,7 @@ namespace optkit::core::pmu::cpu::perf
         PerfProfilerConfig profiler_config;
         int32_t group_leader;
         bool is_active;
-        std::vector<std::pair<uint64_t, std::string>> raw_events;
+        std::vector<std::pair<std::string, uint64_t>> raw_events;
 
         struct read_format
         {

@@ -2,7 +2,7 @@
 
 namespace optkit::core::pmu::cpu::perf
 {
-    nlohmann::json to_json(const char *event_name, const std::vector<std::pair<uint64_t, std::string>> &raw_events, const std::vector<std::pair<double, std::vector<uint64_t>>> &pmu_pair_list)
+    nlohmann::json to_json(const char *event_name, const std::vector<std::pair<std::string, uint64_t>> &raw_events, const std::vector<std::pair<double, std::vector<uint64_t>>> &pmu_pair_list)
     {
         nlohmann::json result;
         for (const auto &pmu_pair : pmu_pair_list)
@@ -15,7 +15,7 @@ namespace optkit::core::pmu::cpu::perf
             int32_t i = 0;
             for (const auto &values : pmu_pair.second)
             {
-                packageJson["metrics_set"].push_back({{"metric_name", raw_events.at(i++).second},
+                packageJson["metrics_set"].push_back({{"metric_name", raw_events.at(i++).first},
                                                       {"value", values},
                                                       {"units", "int"},
                                                       {"description", "Counted"}});

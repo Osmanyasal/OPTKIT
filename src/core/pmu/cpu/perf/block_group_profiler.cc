@@ -5,7 +5,7 @@
 namespace optkit::core::pmu::cpu::perf
 {
 
-    BlockGroupProfiler::BlockGroupProfiler(const char *block_name, const char *event_name, const std::vector<std::pair<uint64_t, std::string>> &raw_events, bool verbose, const PerfProfilerConfig &config) : BaseProfiler{block_name, event_name, verbose}, profiler_config{config}, group_leader{-1}, is_active{true}, raw_events{raw_events}
+    BlockGroupProfiler::BlockGroupProfiler(const char *block_name, const char *event_name, const std::vector<std::pair<std::string, uint64_t>> &raw_events, bool verbose, const PerfProfilerConfig &config) : BaseProfiler{block_name, event_name, verbose}, profiler_config{config}, group_leader{-1}, is_active{true}, raw_events{raw_events}
     {
         PMUEventManager::disable_all_events();
 
@@ -20,7 +20,7 @@ namespace optkit::core::pmu::cpu::perf
         for (auto &raw_event : raw_events)
         {
             struct perf_event_attr attr = this->profiler_config.perf_event_config; // copy default config
-            attr.config = raw_event.first;                                         // set an event
+            attr.config = raw_event.second;                                         // set an event
 
             int32_t fd = syscall(__NR_perf_event_open, &attr, this->profiler_config.pid, this->profiler_config.cpu, group_leader, 0); // <-- first becomes -1 and later we use the group_leader's fd.
             if (fd < 0)
@@ -124,7 +124,7 @@ namespace optkit::core::pmu::cpu::perf
         return result;
     }
 
-    std::string BlockGroupProfiler::convert_buffer_to_json()
+    std::string BlockGroupProfiler::to_json()
     {
         std::stringstream ss;
         ss << "[\n";
