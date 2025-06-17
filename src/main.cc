@@ -3,8 +3,10 @@
 #include "optkit.hh"
 #include "core/pmu/cpu/events/amd64/fam19h_zen4.hh"
 #include "core/pmu/cpu/events/intel/icl.hh"
+#include "core/pmu/cpu/query_pmu.hh"
 
 #include "core/metrics/cpu/amd/core_metrics.hh"
+#include <unistd.h>
 
 #define VECTOR_SIZE 100000000  // 100 million elements
 #define NUM_ACCESSES 100000000 // 100 million random accesses
@@ -83,28 +85,64 @@ int32_t main(int32_t argc, char **argv)
 {
     OPTKIT_INIT();
 
-    { // OPTKIT_PERFORMANCE_EVENTS("main","test",tt, {{ optkit::amd64::fam19h_zen4::RETIRED_INSTRUCTIONS, "Retired Instructions"}});
-        OPTKIT_CPU_EVENTS("main", "test", {{"Retired Instructions", optkit::intel::icl::INSTRUCTIONS_RETIRED}});
-    }
+    // { // OPTKIT_PERFORMANCE_EVENTS("main","test",tt, {{ optkit::amd64::fam19h_zen4::RETIRED_INSTRUCTIONS, "Retired Instructions"}});
+    //     OPTKIT_CPU_EVENTS("bb", {{"Retired Instructions", optkit::intel::icl::INSTRUCTIONS_RETIRED}});
+    // }
 
-    {
-        OPTKIT_CPU_EVENTS("main", "test", {{"Retired Instructions", optkit::intel::icl::INSTRUCTIONS_RETIRED}});
+    // {
+    //     OPTKIT_CPU_EVENTS("b2", {{"Retired Instructions", optkit::intel::icl::INSTRUCTIONS_RETIRED}});
 
-        // 10 instructions
-        int i = 3;
-        i++;
-        i++;
-        i++;
-        i++;
-        i++;
-        i++;
-    }
+    //     // 10 instructions
+    //     int i = 3;
+    //     i++;
+    //     i++;
+    //     i++;
+    //     i++;
+    //     i++;
+    //     i++;
+    // }
 
     using namespace optkit::core::metrics::cpu;
 
-    MetricBuilder branch_mispr = Metrics<AMDMetricsImpl>::BranchMisprRatio();
-    std::cout << branch_mispr << "\n";
+    // MetricBuilder branch_mispr = Metrics<AMDMetricsImpl>::BranchMisprRatio();
+    // branch_mispr.add(to_string(CoreEvents::INST_RETIRED), amd::EventWrapper::get(CoreEvents::INST_RETIRED));
+    // std::cout << branch_mispr << "\n";
 
-    std::cout << branch_mispr.metric_name << ": " << branch_mispr.calculate({{"BRANCH_INST_RETIRED", 1000},{"BRANCH_MISP_RETIRED", 200}});
+    // {
+    //     OPTKIT_CPU_EVENTS("b3", branch_mispr);
+    //     // var112.read();
+    //     // 9 instructions
+    //     int i = 3;
+    //     if (i >= 3)
+    //     {
+    //         i++;
+    //         i++;
+    //         i++;
+    //         i++;
+    //         i++;
+    //         i++;
+    //     }
+    // }
+
+    std::cout << optkit::core::pmu::cpu::QueryPMU::default_pmu_info().num_cntrs << "\n";
+    {
+        auto metric = Metrics<AMDMetricsImpl>::AllMPKI();
+        std::cout << metric << "\n";
+        OPTKIT_CPU_EVENTS("b0", metric);
+        sleep(5);
+    }
+
+    std::cout << "#########################\n";
+    {
+        auto metric = Metrics<AMDMetricsImpl>::AllMPKI();
+        // metric.metric_events.pop_back();
+
+        MetricBuilder mb{};
+        mb.add(metric.metric_events);
+
+        std::cout << mb << "\n";
+        OPTKIT_CPU_BLOCK_EVENTS("b1", mb);
+        sleep(5);
+    }
     return 0;
 }

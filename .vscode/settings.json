@@ -75,7 +75,8 @@
         "csignal": "cpp",
         "set": "cpp",
         "unordered_set": "cpp",
-        "__nullptr": "cpp"
+        "__nullptr": "cpp",
+        "*.inc": "cpp"
     },
     "Lua.diagnostics.globals": [
         "ld_has_library"

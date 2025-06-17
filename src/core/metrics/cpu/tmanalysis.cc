@@ -166,15 +166,15 @@ namespace optkit::core::metrics::cpu
         {
             OPTKIT_CORE_DEBUG("TMA chose block profiler");
             this->profiler_config.setGrouped(false);
-            profiler_ref = std::unique_ptr<core::pmu::cpu::perf::BlockProfiler>(
-                new core::pmu::cpu::perf::BlockProfiler(this->block_name, this->event_name, this->recipie_to_monitor, false, this->profiler_config));
+            // profiler_ref = std::unique_ptr<core::pmu::cpu::perf::BlockProfiler>(
+            //     new core::pmu::cpu::perf::BlockProfiler(this->block_name, this->recipie_to_monitor, false, this->profiler_config));
         }
         else
         {
             OPTKIT_CORE_DEBUG("TMA chose block group profiler");
             this->profiler_config.setGrouped(true);
-            profiler_ref = std::unique_ptr<core::pmu::cpu::perf::BlockGroupProfiler>(
-                new core::pmu::cpu::perf::BlockGroupProfiler(this->block_name, this->event_name, this->recipie_to_monitor, false, this->profiler_config));
+            // profiler_ref = std::unique_ptr<core::pmu::cpu::perf::BlockGroupProfiler>(
+            //     new core::pmu::cpu::perf::BlockGroupProfiler(this->block_name, this->event_name, this->recipie_to_monitor, false, this->profiler_config));
         }
     }
 

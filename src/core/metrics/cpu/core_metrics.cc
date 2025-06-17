@@ -6,12 +6,26 @@ namespace optkit::core::metrics::cpu
     std::string to_string(const MetricBuilder &mb)
     {
         std::ostringstream oss;
-        oss << "MetricBuilder: " << mb.metric_name << "\n";
-        oss << "Events:\n";
-        for (std::vector<std::pair<std::string, uint64_t>>::const_iterator it = mb.metric_events.begin(); it != mb.metric_events.end(); ++it)
+
+        // Header summary
+        oss << "MetricBuilder Summary:\n";
+        oss << "  Total Events: " << mb.metric_events.size() << "\n";
+        oss << "  Defined Metrics: " << mb.metric_names().size() << "\n\n";
+
+        // List metric names
+        oss << "Metrics:\n";
+        for (const auto &name : mb.metric_names())
         {
-            oss << "  " << it->first << " = 0x" << std::hex << it->second << std::dec << "\n";
+            oss << "  - " << name << "\n";
         }
+
+        // List event codes
+        oss << "\nEvents:\n";
+        for (const auto &pair : mb.metric_events)
+        {
+            oss << "  " << pair.first << " = 0x" << std::hex << pair.second << std::dec << "\n";
+        }
+
         return oss.str();
     }
 

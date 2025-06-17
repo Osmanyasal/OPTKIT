@@ -11,13 +11,14 @@ namespace optkit::core
     class BaseProfiler
     {
     public:
-        BaseProfiler(const char *block_name, const char *event_name, bool verbose) : block_name{block_name}, event_name{event_name}, verbose{verbose}, start{std::chrono::high_resolution_clock::now()}
+        BaseProfiler(const char *block_name, const char *metric_name, bool verbose) : block_name{block_name}, metric_name{metric_name}, verbose{verbose}, start{std::chrono::high_resolution_clock::now()}
         {
         }
         virtual ~BaseProfiler() {}
 
         virtual void disable() = 0;
         virtual void enable() = 0;
+        virtual void reset() = 0;
 
         /**
          * @brief Reads the value and STORES it in a buffer for subsequent saving to a file.
@@ -63,6 +64,23 @@ namespace optkit::core
         //     return read_buffer;
         // }
 
+        /**
+         * @brief Aggregates all collected data from the read buffer.
+         *
+         * If multiple `read_and_save()` calls are made while monitoring events (e.g., x, y, z),
+         * the `read_buffer` may contain several entries, each holding a duration and a list of event values.
+         *
+         * This method processes the entire buffer, summing up the total duration and combining
+         * all recorded event-value pairs into a single list.
+         *
+         * You should call MetricBuffer.calculate(...) to see the results
+         *
+         * @return A pair consisting of:
+         *         - total duration (in seconds),
+         *         - a vector of <event name, value> pairs.
+         */
+        virtual std::pair<double, std::vector<std::pair<std::string, uint64_t>>> aggregate() = 0;
+
     protected:
         /**
          * @brief Converts the buffer to JSON format and writes it to a file.
@@ -74,14 +92,15 @@ namespace optkit::core
             std::string file_name = block_name;
             file_name = file_name;
             std::replace(file_name.begin(), file_name.end(), ' ', '_');
-            file_name = optkit::utils::EXECUTION_FOLDER_NAME + "/" + file_name + "__" + event_name + ".json";
+            file_name = optkit::utils::EXECUTION_FOLDER_NAME + "/" + file_name + "__" + this->metric_name + ".json";
             optkit::utils::write_file(file_name, json_data, verbose);
         }
 
     public:
         const char *block_name;
-        const char *event_name;
+        const char *metric_name;
         bool verbose;
+        double total_duration_ms;
 
     protected:
         std::chrono::high_resolution_clock::time_point start;

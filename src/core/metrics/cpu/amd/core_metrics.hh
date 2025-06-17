@@ -36,7 +36,7 @@ namespace optkit::core::metrics::cpu
 
                            // Avoid div by zero
                            if (inst_retired == 0)
-                               return -1.0;
+                               std::numeric_limits<double>::quiet_NaN();
                            return 1000.0 * static_cast<double>(l1_misses) / static_cast<double>(inst_retired);
                        });
 
@@ -58,7 +58,7 @@ namespace optkit::core::metrics::cpu
 
                            // Avoid div by zero
                            if (inst_retired == 0)
-                               return -1.0;
+                               std::numeric_limits<double>::quiet_NaN();
                            return 1000.0 * static_cast<double>(l2_misses) / static_cast<double>(inst_retired);
                        });
         } ///< 1000 * L2_MISSES / INST_RETIRED
@@ -79,7 +79,7 @@ namespace optkit::core::metrics::cpu
 
                            // Avoid div by zero
                            if (inst_retired == 0)
-                               return -1.0;
+                               std::numeric_limits<double>::quiet_NaN();
                            return 1000.0 * static_cast<double>(l3_misses) / static_cast<double>(inst_retired);
                        });
         } ///< 1000 * L3_MISSES / INST_RETIRED
@@ -101,7 +101,7 @@ namespace optkit::core::metrics::cpu
 
                            // Avoid div by zero
                            if (branch_inst == 0)
-                               return -1.0;
+                               std::numeric_limits<double>::quiet_NaN();
                            return static_cast<double>(branch_misp) / static_cast<double>(branch_inst);
                        });
         } ///< BR_MISP_RETIRED.ALL_BRANCHES / BR_INST_RETIRED.ALL_BRANCHES
@@ -122,7 +122,7 @@ namespace optkit::core::metrics::cpu
                            uint64_t inst_retired = counts.at(inst_retired_name);
 
                            if (inst_retired == 0)
-                               return -1.0;
+                               std::numeric_limits<double>::quiet_NaN();
                            return 1000.0 * static_cast<double>(itlb_misses) / static_cast<double>(inst_retired);
                        });
         } ///< 1000 * ITLB_MISSES / INST_RETIRED
@@ -143,7 +143,7 @@ namespace optkit::core::metrics::cpu
                            uint64_t inst_retired = counts.at(inst_retired_name);
 
                            if (inst_retired == 0)
-                               return -1.0;
+                               std::numeric_limits<double>::quiet_NaN();
                            return 1000.0 * static_cast<double>(itlb_misses) / static_cast<double>(inst_retired);
                        });
         } ///< 1000 * DTLB_MISSES / INST_RETIRED
@@ -167,7 +167,7 @@ namespace optkit::core::metrics::cpu
                            uint64_t inst_retired = counts.at(inst_retired_name);
 
                            if (inst_retired == 0)
-                               return -1.0;
+                               std::numeric_limits<double>::quiet_NaN();
                            return 1000.0 * (static_cast<double>(dtlb_misses) + static_cast<double>(itlb_misses)) / static_cast<double>(inst_retired);
                        });
         } ///< 1000 * DTLB_MISSES.WALK_COMPLETED / INST_RETIRED
@@ -175,7 +175,7 @@ namespace optkit::core::metrics::cpu
         // Latency and parallelism metrics
         static MetricBuilder LoadMissLatency()
         {
-
+            return {};
         } ///< L1D_PEND_MISS.PENDING / MEM_LD_COMPLETED.L1_MISS_ANY
 
         static MetricBuilder IpC()
@@ -233,7 +233,7 @@ namespace optkit::core::metrics::cpu
 
                            // Avoid div by zero
                            if (branch_inst_retired == 0)
-                               return -1.0;
+                               std::numeric_limits<double>::quiet_NaN();
                            return static_cast<double>(inst_retired) / static_cast<double>(branch_inst_retired);
                        });
         } ///< INST_RETIRED / BR_INST_RETIRED.ALL_BRANCHES
@@ -253,7 +253,7 @@ namespace optkit::core::metrics::cpu
 
                            // Avoid div by zero
                            if (mem_load_retired == 0)
-                               return -1.0;
+                               std::numeric_limits<double>::quiet_NaN();
                            return static_cast<double>(inst_retired) / static_cast<double>(mem_load_retired);
                        });
         } ///< INST_RETIRED / MEM_INST_RETIRED.ALL_LOADS_PS
@@ -273,7 +273,7 @@ namespace optkit::core::metrics::cpu
 
                            // Avoid div by zero
                            if (mem_store_retired == 0)
-                               return -1.0;
+                               std::numeric_limits<double>::quiet_NaN();
                            return static_cast<double>(inst_retired) / static_cast<double>(mem_store_retired);
                        });
         } ///< INST_RETIRED / MEM_INST_RETIRED.ALL_STORES_PS
@@ -293,7 +293,7 @@ namespace optkit::core::metrics::cpu
 
                            // Avoid div by zero
                            if (branch_misp_retired == 0)
-                               return -1.0;
+                               std::numeric_limits<double>::quiet_NaN();
                            return static_cast<double>(inst_retired) / static_cast<double>(branch_misp_retired);
                        });
         } ///< INST_RETIRED / BR_MISP_RETIRED.ALL_BRANCHES
@@ -349,7 +349,7 @@ namespace optkit::core::metrics::cpu
 
                            // Avoid div by zero
                            if (retired_sse_avx_flops_any == 0)
-                               return -1.0;
+                               std::numeric_limits<double>::quiet_NaN();
                            return static_cast<double>(inst_retired) / static_cast<double>(retired_sse_avx_flops_any);
                        });
 
@@ -371,7 +371,7 @@ namespace optkit::core::metrics::cpu
 
                            // Avoid div by zero
                            if (sw_load_prefetch == 0)
-                               return -1.0;
+                               std::numeric_limits<double>::quiet_NaN();
                            return static_cast<double>(inst_retired) / static_cast<double>(sw_load_prefetch);
                        });
         } ///< INST_RETIRED / SW_PREFETCH_ACCESS.T0:u0xF
@@ -379,71 +379,82 @@ namespace optkit::core::metrics::cpu
         // Aggregated Metrics
 
         // Aggregate all cache miss metrics
-        static std::vector<MetricBuilder> AllMPKI()
+        static MetricBuilder AllMPKI()
         {
-            return {
-                L1MPKI(),
-                L2MPKI(),
-                L3MPKI()};
+            MetricBuilder mb;
+            mb.add(L1MPKI());
+            mb.add(L2MPKI());
+            mb.add(L3MPKI());
+            return mb;
         }
 
         // Aggregate all STLB MPKI metrics
-        static std::vector<MetricBuilder> AllSTLBMPKI()
+        static MetricBuilder AllSTLBMPKI()
         {
-            return {
-                TLBMPKI(),
-                ITLBMPKI(),
-                DTLBMPKI()};
+            MetricBuilder mb;
+            mb.add(TLBMPKI());
+            mb.add(ITLBMPKI());
+            mb.add(DTLBMPKI());
+            return mb;
         }
 
         // Aggregate all latency and parallelism metrics
-        static std::vector<MetricBuilder> AllLatencyAndParallelism()
+        static MetricBuilder AllLatencyAndParallelism()
         {
-            return {
-                LoadMissLatency(), ILP(), MLP()};
+            MetricBuilder mb;
+            mb.add(LoadMissLatency());
+            mb.add(ILP());
+            mb.add(MLP());
+            return mb;
         }
 
         // Aggregate all DRAM bandwidth metrics
-        static std::vector<MetricBuilder> AllDRAMBandwidth()
+        static MetricBuilder AllDRAMBandwidth()
         {
-            return {DRAMBandwidthGBs()};
+            MetricBuilder mb;
+            mb.add(DRAMBandwidthGBs());
+            return mb;
         }
 
         // Aggregate all instruction-per-event metrics
-        static std::vector<MetricBuilder> AllIpMetrics()
+        static MetricBuilder AllIpMetrics()
         {
-            return {
-                IpCall(), IpBranch(), IpLoad(), IpStore(), IpMispredict(), IpFLOP(), IpArith(), IpArithScalarSP(), IpArithScalarDP()
-                //,IpArithAVX128()
-                //,IpArithAVX256()
-                //,IpArithAVX512()
-                //,IpArithAVXALL()
-                ,
-                IpSWPF()};
+            MetricBuilder mb;
+            mb.add(IpCall());
+            mb.add(IpBranch());
+            mb.add(IpLoad());
+            mb.add(IpStore());
+            mb.add(IpMispredict());
+            mb.add(IpFLOP());
+            mb.add(IpArith());
+            mb.add(IpArithScalarSP());
+            mb.add(IpArithScalarDP());
+            // mb.add(IpArithAVX128());
+            // mb.add(IpArithAVX256());
+            // mb.add(IpArithAVX512());
+            // mb.add(IpArithAVXAny());
+            mb.add(IpSWPF());
+            return mb;
         }
 
         // Aggregate all branch-related metrics
-        static std::vector<MetricBuilder> AllBranchMetrics()
+        static MetricBuilder AllBranchMetrics()
         {
-            return {
-                BranchMisprRatio()};
+            MetricBuilder mb;
+            mb.add(BranchMisprRatio());
+            return mb;
         }
 
-        static std::vector<MetricBuilder> AllMetrics()
+        // Aggregate all metrics
+        static MetricBuilder AllMetrics()
         {
-            std::vector<MetricBuilder> all;
-            auto append = [&](const std::vector<MetricBuilder> &vec)
-            {
-                all.insert(all.end(), vec.begin(), vec.end());
-            };
-
-            append(AllMPKI());
-            append(AllSTLBMPKI());
-            append(AllLatencyAndParallelism());
-            append(AllDRAMBandwidth());
-            append(AllIpMetrics());
-            append(AllBranchMetrics());
-
+            MetricBuilder all;
+            all.add(AllMPKI());
+            all.add(AllSTLBMPKI());
+            all.add(AllLatencyAndParallelism());
+            all.add(AllDRAMBandwidth());
+            all.add(AllIpMetrics());
+            all.add(AllBranchMetrics());
             return all;
         }
     };

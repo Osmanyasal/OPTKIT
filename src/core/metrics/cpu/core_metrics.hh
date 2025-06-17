@@ -7,46 +7,66 @@
 #include <functional>
 #include <unordered_set>
 #include <unordered_map>
+#include <iostream>
 namespace optkit::core::metrics::cpu
 {
     /**
      * @class MetricBuilder
-     * @brief Utility class for aggregating unique CPU performance metric events.
+     * @brief Utility class for aggregating unique CPU performance metric events and associating metric calculations.
      *
-     * MetricBuilder implements a builder pattern to accumulate CPU performance metric events,
-     * represented as pairs of event names and their associated event codes.
+     * MetricBuilder implements a builder pattern to:
+     * - Accumulate CPU performance metric events (pairs of event names and event codes)
+     * - Attach one or more calculation functions to generate named metrics from the collected event results
      *
-     * Key characteristics:
-     * - Each event is uniquely identified by the combination of its event code and event name.
-     * - Duplicate pairs of (event_code, event_name) are ignored, ensuring no repeated entries.
-     * - An event name can be associated with multiple different event codes, allowing flexible grouping.
+     * 🔧 Key Features:
+     * - Each raw event is uniquely identified by the combination of its event name and event code.
+     * - Duplicate entries, (name, code) pairs, are added only once.
+     * - Events can be added in groups using either:
+     *     - `add(name, codes)` — associates multiple codes with a single name
+     *     - `add(events)` — adds a list of (name, code) pairs usually coming from other MetricBuilder objects.
+     * - Multiple named metric calculations can be registered via `build(name, func)`
+     * - Use `calculate(results)` to compute **all registered metrics** at once, returning a vector of (metric_name, value) pairs
+     * - Use `metric_names()` to list all registered metric calculations
      *
-     * The class provides two overloads of the add() method:
-     * - add(name, codes): Adds multiple event codes under a single event name.
-     * - add(events): Adds multiple (code, name) pairs at once from another event collection.
-     *
-     * Use getEvents() to retrieve the accumulated unique event pairs as a vector of (code, name),
-     * compatible with PMU class constructors or similar consumers.
-     *
-     * Example usage:
+     * ✅ Example:
      * @code
      * MetricBuilder builder;
-     * builder.add("L1MPKI", {1001, 1002, 1003})
-     *        .add("IpFLOP", {2001});
-     * auto all_events = builder.getEvents();
+     * builder.add("inst_retired", {0x00c0})
+     *        .add("cpu_cycles", {0x003c})
+     *        .add("cache_misses", {0x412e})
+     *        .build("IPC", [](const auto &m) {
+     *            return m.at("inst_retired") / static_cast<double>(m.at("cpu_cycles"));
+     *        })
+     *        .build("MPKI", [](const auto &m) {
+     *            return m.at("cache_misses") * 1000.0 / m.at("inst_retired");
+     *        });
+     *
+     * std::vector<std::pair<std::string, uint64_t>> results = {
+     *     {"inst_retired", 5'000'000},
+     *     {"cpu_cycles", 10'000'000},
+     *     {"cache_misses", 25'000}
+     * };
+     *
+     * auto all_metrics = builder.calculate(results);
+     * for (const auto &[name, value] : all_metrics) {
+     *     std::cout << name << ": " << value << "\n";
+     * }
      * @endcode
      *
-     * This class is especially useful for consolidating performance monitoring events
-     * from different CPU vendors or metric sources into a unified list for monitoring.
+     * 📌 Use Case:
+     * MetricBuilder is ideal for defining and computing CPU-level performance metrics in tools
+     * that use PMUs (Performance Monitoring Units), like profilers, simulators, or monitoring agents.
+     * It helps cleanly organize both raw events and derived metrics using a simple declarative API.
      */
 
     class MetricBuilder
     {
     public:
         using CalculationFunc = std::function<double(const std::unordered_map<std::string, uint64_t> &)>;
+
         MetricBuilder() = default;
 
-        // New method accepting a single name and associated event codes
+        // Add event codes with a name (no change here)
         MetricBuilder &add(const std::string &name, const std::vector<uint64_t> &codes)
         {
             for (uint64_t code : codes)
@@ -60,7 +80,6 @@ namespace optkit::core::metrics::cpu
             return *this;
         }
 
-        // to add from another MetricBuilder's event vector
         MetricBuilder &add(const std::vector<std::pair<std::string, uint64_t>> &events)
         {
             for (const auto &pair : events)
@@ -74,32 +93,66 @@ namespace optkit::core::metrics::cpu
             return *this;
         }
 
-        MetricBuilder &build(const std::string &metric_name, CalculationFunc calculation_func)
+        MetricBuilder &add(const MetricBuilder &mb)
         {
-            this->metric_name = metric_name;
-            this->calculate_func = calculation_func;
+            this->add(mb.metric_events);
+
+            // Add calculation functions (overwrites if names collide)
+            for (std::unordered_map<std::string, CalculationFunc>::const_iterator it = mb.calculation_funcs.begin(); it != mb.calculation_funcs.end(); ++it)
+            {
+                const std::string &name = it->first;
+                const CalculationFunc &func = it->second;
+                this->calculation_funcs[name] = func;
+            }
+
             return *this;
         }
 
-        double calculate(const std::vector<std::pair<std::string, uint64_t>> &results) const
+        MetricBuilder &build(const std::string &metric_name, CalculationFunc func)
         {
-            if (!calculate_func)
-                return -1;
+            calculation_funcs[metric_name] = func;
+            return *this;
+        }
+
+        // Get the result of a specific metric
+        std::vector<std::pair<std::string, double>> calculate(const std::vector<std::pair<std::string, uint64_t>> &results) const
+        {
+            if (calculation_funcs.empty())
+                return {};
+
+            std::vector<std::pair<std::string, double>> computed_metrics;
 
             std::unordered_map<std::string, uint64_t> results_map;
-            for (const auto &pair : results)
-                results_map[pair.first] = pair.second;
+            for (auto it = results.begin(); it != results.end(); ++it)
+                results_map[it->first] += it->second; // accumulate
 
-            return calculate_func(results_map);
+            for (auto it = calculation_funcs.begin(); it != calculation_funcs.end(); ++it)
+            {
+                const std::string &name = it->first;
+                const CalculationFunc &func = it->second;
+                computed_metrics.push_back(std::make_pair(name, func(results_map)));
+            }
+
+            return computed_metrics;
+        }
+
+        // Optional: get list of supported metrics
+        std::vector<std::string> metric_names() const
+        {
+            std::vector<std::string> names;
+            for (std::unordered_map<std::string, CalculationFunc>::const_iterator it = calculation_funcs.begin(); it != calculation_funcs.end(); ++it)
+            {
+                names.push_back(it->first);
+            }
+            return names;
         }
 
     public:
         std::vector<std::pair<std::string, uint64_t>> metric_events;
-        std::string metric_name;
 
     private:
         std::unordered_set<std::string> added_keys_;
-        CalculationFunc calculate_func;
+        std::unordered_map<std::string, CalculationFunc> calculation_funcs;
     };
 
     /**
@@ -158,13 +211,13 @@ namespace optkit::core::metrics::cpu
         static MetricBuilder IpSWPF() { return {}; } ///< INST_RETIRED / SW_PREFETCH_ACCESS.T0:u0xF
 
         // Aggregated Metrics
-        static std::vector<MetricBuilder> AllMPKI() { return {}; }
-        static std::vector<MetricBuilder> AllSTLBMPKI() { return {}; }
-        static std::vector<MetricBuilder> AllLatencyAndParallelism() { return {}; }
-        static std::vector<MetricBuilder> AllDRAMBandwidth() { return {}; }
-        static std::vector<MetricBuilder> AllIpMetrics() { return {}; }
-        static std::vector<MetricBuilder> AllBranchMetrics() { return {}; }
-        static std::vector<MetricBuilder> AllMetrics() { return {}; }
+        static MetricBuilder AllMPKI() { return {}; }
+        static MetricBuilder AllSTLBMPKI() { return {}; }
+        static MetricBuilder AllLatencyAndParallelism() { return {}; }
+        static MetricBuilder AllDRAMBandwidth() { return {}; }
+        static MetricBuilder AllIpMetrics() { return {}; }
+        static MetricBuilder AllBranchMetrics() { return {}; }
+        static MetricBuilder AllMetrics() { return {}; }
 
     private:
         Metrics() {}

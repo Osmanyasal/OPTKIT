@@ -1,16 +1,17 @@
 #pragma once
 
+#include <iostream>
+#include <vector>
 #include "core/pmu/cpu/perf/profiler_config.hh"
 #include "utils/environment_config.hh"
 #if OPTKIT_ENV_LIB_PERF_EVENT
 
-#include <iostream>
-#include <vector>
 #include "utils/utils.hh"
 #include "utils/base_profiler.hh"
 #include "core/pmu/cpu/perf/profiler_config.hh"
 #include "core/pmu/cpu/pmu_event_manager.hh"
 #include "core/pmu/cpu/pmu_utils.hh"
+#include "core/metrics/cpu/core_metrics.hh"
 
 namespace optkit::core::pmu::cpu::perf
 {
@@ -28,7 +29,8 @@ namespace optkit::core::pmu::cpu::perf
     class BlockProfiler : public BaseProfiler<std::vector<uint64_t>>
     {
     public:
-        BlockProfiler(const char *block_name, const char *event_name, const std::vector<std::pair<std::string, uint64_t>> &raw_events, bool verbose = true, const PerfProfilerConfig &config = PerfProfilerConfig{true, true, false, 0, -1});
+        // BlockProfiler(const char *block_name, const std::vector<std::pair<std::string, uint64_t>> &raw_events, bool verbose = true, const PerfProfilerConfig &config = PerfProfilerConfig{true, true, false, 0, -1});
+        BlockProfiler(const char *block_name, const core::metrics::cpu::MetricBuilder &mb, bool verbose = true, const PerfProfilerConfig &config = PerfProfilerConfig{true, true, false, 0, -1});
         virtual ~BlockProfiler();
         /**
          * @brief Disables this block profiler and associated events
@@ -43,6 +45,12 @@ namespace optkit::core::pmu::cpu::perf
         virtual void enable() override;
 
         /**
+         * @brief Reset this block profiler and associated events
+         *
+         */
+        virtual void reset() override;
+
+        /**
          * @brief converts buffer to json
          *
          */
@@ -55,6 +63,23 @@ namespace optkit::core::pmu::cpu::perf
          */
         virtual std::vector<uint64_t> read() override;
 
+        /**
+         * @brief Aggregates all collected data from the read buffer.
+         *
+         * If multiple `read_and_save()` calls are made while monitoring events (e.g., x, y, z),
+         * the `read_buffer` may contain several entries, each holding a duration and a list of event values.
+         *
+         * This method processes the entire buffer, summing up the total duration and combining
+         * all recorded event-value pairs into a single list.
+         *
+         * You should call MetricBuffer.calculate(...) to see the results
+         *
+         * @return A pair consisting of:
+         *         - total duration (in seconds),
+         *         - a vector of <event name, value> pairs.
+         */
+        virtual std::pair<double, std::vector<std::pair<std::string, uint64_t>>> aggregate() override;
+
     public:
         /**
          * @brief fd_list holds pmu events being monitor by this BlockProfiler Object.
@@ -65,7 +90,9 @@ namespace optkit::core::pmu::cpu::perf
         PerfProfilerConfig profiler_config;
 
     private:
-        std::vector<std::pair<std::string, uint64_t>> raw_events;
+        std::vector<std::pair<std::string, uint64_t>> results;
+        std::vector<std::pair<std::string, double>> metric_results;
+        core::metrics::cpu::MetricBuilder metric_builder;
     };
 
 } // namespace optkit::core::pmu::cpu::perf
