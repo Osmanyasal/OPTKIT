@@ -28,8 +28,8 @@ function define_custom_actions()
             print("[REMOVE]: ./src/utils/environment_config.hh")
             os.remove("./src/utils/environment_config.hh")
 
-            print("[REMOVE]: ./test/utils/environment_config.hh")
-            os.remove("./test/utils/environment_config.hh")
+            -- print("[REMOVE]: ./test/utils/environment_config.hh")
+            -- os.remove("./test/utils/environment_config.hh")
 
             print("[REMOVE]: " .. CPU_PMU_EVENTS_DIR)
             os.rmdir(CPU_PMU_EVENTS_DIR)

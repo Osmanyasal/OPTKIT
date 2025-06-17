@@ -1,9 +1,9 @@
-#include "core/metrics/cpu/amd/event_wrapper.hh"
+#include "core/metrics/cpu/amd/event_mapper.hh"
 
 namespace optkit::core::metrics::cpu::amd
 {
 
-    const std::unordered_map<metrics::cpu::CoreEvents, std::vector<uint64_t>> EventWrapper::core_event_map = {
+    const std::unordered_map<metrics::cpu::CoreEvents, std::vector<uint64_t>> EventMapper::core_event_map = {
 
         // Pipeline and Stalls
         {cpu::CoreEvents::UNHALTED_CORE_CYCLES, {0x76}},
@@ -64,7 +64,7 @@ namespace optkit::core::metrics::cpu::amd
 #endif
     };
 
-    const std::unordered_map<cpu::amd::CoreEvents, std::vector<uint64_t>> EventWrapper::amd_event_map = {
+    const std::unordered_map<cpu::amd::CoreEvents, std::vector<uint64_t>> EventMapper::amd_event_map = {
 
     };
 }

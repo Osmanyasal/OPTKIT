@@ -251,7 +251,7 @@ main() {
     write_cpu_cache_info
 
     echo "[✅ generate_environment_config.sh executed]"
-    cp $SRC_CONFIG_FILE ./test/utils/    ## copy this to test directory.
+    # cp $SRC_CONFIG_FILE ./test/utils/    ## copy this to test directory.
 }
 
 main

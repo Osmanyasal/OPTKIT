@@ -163,7 +163,7 @@ namespace optkit::core::metrics::cpu
      * So it returns empty list.
      */
     template <typename T>
-    class Metrics
+    class CoreMetrics
     {
     public:
         // Cache miss per kilo instruction (MPKI)
@@ -220,8 +220,8 @@ namespace optkit::core::metrics::cpu
         static MetricBuilder AllMetrics() { return {}; }
 
     private:
-        Metrics() {}
-        ~Metrics() {}
+        CoreMetrics() {}
+        ~CoreMetrics() {}
     };
 
     std::string to_string(const MetricBuilder &mb);

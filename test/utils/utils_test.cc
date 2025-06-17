@@ -1,7 +1,8 @@
 #include <gtest/gtest.h>
-#include "utils/utils.hh"
 #include <filesystem>
 #include <fstream>
+
+#include "utils/utils.hh"
 
 namespace fs = std::filesystem;
 using namespace optkit::utils;

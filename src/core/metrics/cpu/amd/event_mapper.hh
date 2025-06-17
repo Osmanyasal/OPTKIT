@@ -16,7 +16,7 @@ namespace optkit::core::metrics::cpu::amd
      * @brief Considered only zen1 to zen4. others are not guaranteed.
      *
      */
-    class EventWrapper final
+    class EventMapper final
     {
     public:
         static std::vector<uint64_t> get(cpu::CoreEvents event)
@@ -40,8 +40,8 @@ namespace optkit::core::metrics::cpu::amd
         }
 
     private:
-        EventWrapper() {}
-        ~EventWrapper() {}
+        EventMapper() {}
+        ~EventMapper() {}
         static const std::unordered_map<cpu::CoreEvents, std::vector<uint64_t>> core_event_map;     // coreEvent - even nums to monitor.
         static const std::unordered_map<cpu::amd::CoreEvents, std::vector<uint64_t>> amd_event_map; // coreEvent - even nums to monitor.
     };

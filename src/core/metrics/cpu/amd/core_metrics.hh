@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/metrics/cpu/amd/event_wrapper.hh"
+#include "core/metrics/cpu/amd/event_mapper.hh"
 #include "core/metrics/cpu/core_metrics.hh"
 
 // Warn: to use template initialisation for a certain type, they must be in the same namespace. so do NOT change it.
@@ -16,18 +16,18 @@ namespace optkit::core::metrics::cpu
     };
 
     template <>
-    class Metrics<AMDMetricsImpl>
+    class CoreMetrics<AMDMetricsImpl>
     {
 
     public:
         // Cache miss per kilo instruction (MPKI)
         static MetricBuilder L1MPKI()
         {
-            std::string l1_misses_name = to_string(metrics::cpu::CoreEvents::L1_MISSES);
-            std::string inst_retired_name = to_string(metrics::cpu::CoreEvents::INST_RETIRED);
+            std::string l1_misses_name = to_string(CoreEvents::L1_MISSES);
+            std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
             return MetricBuilder{}
-                .add(l1_misses_name, amd::EventWrapper::get(cpu::CoreEvents::L1_MISSES))
-                .add(inst_retired_name, amd::EventWrapper::get(cpu::CoreEvents::INST_RETIRED))
+                .add(l1_misses_name, amd::EventMapper::get(cpu::CoreEvents::L1_MISSES))
+                .add(inst_retired_name, amd::EventMapper::get(cpu::CoreEvents::INST_RETIRED))
                 .build("L1MPKI",
                        [l1_misses_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
@@ -44,12 +44,12 @@ namespace optkit::core::metrics::cpu
 
         static MetricBuilder L2MPKI()
         {
-            std::string l2_misses_name = to_string(metrics::cpu::CoreEvents::L2_MISSES);
-            std::string inst_retired_name = to_string(metrics::cpu::CoreEvents::INST_RETIRED);
+            std::string l2_misses_name = to_string(CoreEvents::L2_MISSES);
+            std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
 
-            return metrics::cpu::MetricBuilder{}
-                .add(l2_misses_name, amd::EventWrapper::get(cpu::CoreEvents::L2_MISSES))
-                .add(inst_retired_name, amd::EventWrapper::get(cpu::CoreEvents::INST_RETIRED))
+            return MetricBuilder{}
+                .add(l2_misses_name, amd::EventMapper::get(cpu::CoreEvents::L2_MISSES))
+                .add(inst_retired_name, amd::EventMapper::get(cpu::CoreEvents::INST_RETIRED))
                 .build("L2MPKI",
                        [l2_misses_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
@@ -65,12 +65,12 @@ namespace optkit::core::metrics::cpu
 
         static MetricBuilder L3MPKI()
         {
-            std::string l3_misses_name = to_string(metrics::cpu::CoreEvents::L3_MISSES);
-            std::string inst_retired_name = to_string(metrics::cpu::CoreEvents::INST_RETIRED);
+            std::string l3_misses_name = to_string(CoreEvents::L3_MISSES);
+            std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
 
-            return metrics::cpu::MetricBuilder{}
-                .add(l3_misses_name, amd::EventWrapper::get(cpu::CoreEvents::L3_MISSES))
-                .add(inst_retired_name, amd::EventWrapper::get(cpu::CoreEvents::INST_RETIRED))
+            return MetricBuilder{}
+                .add(l3_misses_name, amd::EventMapper::get(cpu::CoreEvents::L3_MISSES))
+                .add(inst_retired_name, amd::EventMapper::get(cpu::CoreEvents::INST_RETIRED))
                 .build("L3MPKI",
                        [l3_misses_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
@@ -90,9 +90,9 @@ namespace optkit::core::metrics::cpu
             std::string branch_inst_retired_name = to_string(cpu::CoreEvents::BRANCH_INST_RETIRED);
             std::string branch_misp_retired_name = to_string(cpu::CoreEvents::BRANCH_MISP_RETIRED);
 
-            return metrics::cpu::MetricBuilder{}
-                .add(branch_inst_retired_name, amd::EventWrapper::get(cpu::CoreEvents::BRANCH_INST_RETIRED))
-                .add(branch_misp_retired_name, amd::EventWrapper::get(cpu::CoreEvents::BRANCH_MISP_RETIRED))
+            return MetricBuilder{}
+                .add(branch_inst_retired_name, amd::EventMapper::get(cpu::CoreEvents::BRANCH_INST_RETIRED))
+                .add(branch_misp_retired_name, amd::EventMapper::get(cpu::CoreEvents::BRANCH_MISP_RETIRED))
                 .build("BranchMisprRatio",
                        [branch_misp_retired_name, branch_inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
@@ -113,8 +113,8 @@ namespace optkit::core::metrics::cpu
             std::string inst_retired_name = to_string(cpu::CoreEvents::INST_RETIRED);
 
             return MetricBuilder{}
-                .add(itlb_misses_name, amd::EventWrapper::get(cpu::CoreEvents::ITLB_MISSES))
-                .add(inst_retired_name, amd::EventWrapper::get(cpu::CoreEvents::INST_RETIRED))
+                .add(itlb_misses_name, amd::EventMapper::get(cpu::CoreEvents::ITLB_MISSES))
+                .add(inst_retired_name, amd::EventMapper::get(cpu::CoreEvents::INST_RETIRED))
                 .build("ITLBMPKI",
                        [itlb_misses_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
@@ -134,8 +134,8 @@ namespace optkit::core::metrics::cpu
             std::string inst_retired_name = to_string(cpu::CoreEvents::INST_RETIRED);
 
             return MetricBuilder{}
-                .add(dtlb_misses_name, amd::EventWrapper::get(cpu::CoreEvents::DTLB_MISSES))
-                .add(inst_retired_name, amd::EventWrapper::get(cpu::CoreEvents::INST_RETIRED))
+                .add(dtlb_misses_name, amd::EventMapper::get(cpu::CoreEvents::DTLB_MISSES))
+                .add(inst_retired_name, amd::EventMapper::get(cpu::CoreEvents::INST_RETIRED))
                 .build("DTLBMPKI",
                        [dtlb_misses_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
@@ -156,9 +156,9 @@ namespace optkit::core::metrics::cpu
             std::string inst_retired_name = to_string(cpu::CoreEvents::INST_RETIRED);
 
             return MetricBuilder{}
-                .add(itlb_misses_name, amd::EventWrapper::get(cpu::CoreEvents::DTLB_MISSES))
-                .add(dtlb_misses_name, amd::EventWrapper::get(cpu::CoreEvents::ITLB_MISSES))
-                .add(inst_retired_name, amd::EventWrapper::get(cpu::CoreEvents::INST_RETIRED))
+                .add(itlb_misses_name, amd::EventMapper::get(cpu::CoreEvents::DTLB_MISSES))
+                .add(dtlb_misses_name, amd::EventMapper::get(cpu::CoreEvents::ITLB_MISSES))
+                .add(inst_retired_name, amd::EventMapper::get(cpu::CoreEvents::INST_RETIRED))
                 .build("TLBMPKI",
                        [itlb_misses_name, dtlb_misses_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
@@ -184,8 +184,8 @@ namespace optkit::core::metrics::cpu
             std::string unhalted_core_cycles_name = to_string(cpu::CoreEvents::UNHALTED_CORE_CYCLES);
 
             return MetricBuilder{}
-                .add(inst_retired_name, amd::EventWrapper::get(cpu::CoreEvents::INST_RETIRED))
-                .add(unhalted_core_cycles_name, amd::EventWrapper::get(cpu::CoreEvents::UNHALTED_CORE_CYCLES))
+                .add(inst_retired_name, amd::EventMapper::get(cpu::CoreEvents::INST_RETIRED))
+                .add(unhalted_core_cycles_name, amd::EventMapper::get(cpu::CoreEvents::UNHALTED_CORE_CYCLES))
                 .build("IpC", [inst_retired_name, unhalted_core_cycles_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
                            uint64_t inst_retired = counts.at(inst_retired_name);
@@ -220,11 +220,11 @@ namespace optkit::core::metrics::cpu
 
         static MetricBuilder IpBranch()
         {
-            std::string inst_retired_name = to_string(metrics::cpu::CoreEvents::INST_RETIRED);
-            std::string branch_inst_retired_name = to_string(metrics::cpu::CoreEvents::BRANCH_INST_RETIRED);
+            std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
+            std::string branch_inst_retired_name = to_string(CoreEvents::BRANCH_INST_RETIRED);
             return MetricBuilder{}
-                .add(inst_retired_name, amd::EventWrapper::get(cpu::CoreEvents::INST_RETIRED))
-                .add(branch_inst_retired_name, amd::EventWrapper::get(cpu::CoreEvents::BRANCH_INST_RETIRED))
+                .add(inst_retired_name, amd::EventMapper::get(cpu::CoreEvents::INST_RETIRED))
+                .add(branch_inst_retired_name, amd::EventMapper::get(cpu::CoreEvents::BRANCH_INST_RETIRED))
                 .build("IpBranch",
                        [branch_inst_retired_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
@@ -240,11 +240,11 @@ namespace optkit::core::metrics::cpu
 
         static MetricBuilder IpLoad()
         {
-            std::string inst_retired_name = to_string(metrics::cpu::CoreEvents::INST_RETIRED);
-            std::string mem_load_retired_name = to_string(metrics::cpu::CoreEvents::MEM_LOAD_RETIRED);
+            std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
+            std::string mem_load_retired_name = to_string(CoreEvents::MEM_LOAD_RETIRED);
             return MetricBuilder{}
-                .add(inst_retired_name, amd::EventWrapper::get(cpu::CoreEvents::INST_RETIRED))
-                .add(mem_load_retired_name, amd::EventWrapper::get(cpu::CoreEvents::MEM_LOAD_RETIRED))
+                .add(inst_retired_name, amd::EventMapper::get(cpu::CoreEvents::INST_RETIRED))
+                .add(mem_load_retired_name, amd::EventMapper::get(cpu::CoreEvents::MEM_LOAD_RETIRED))
                 .build("IpLoad",
                        [mem_load_retired_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
@@ -260,11 +260,11 @@ namespace optkit::core::metrics::cpu
 
         static MetricBuilder IpStore()
         {
-            std::string inst_retired_name = to_string(metrics::cpu::CoreEvents::INST_RETIRED);
-            std::string mem_store_retired_name = to_string(metrics::cpu::CoreEvents::MEM_STORE_RETIRED);
+            std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
+            std::string mem_store_retired_name = to_string(CoreEvents::MEM_STORE_RETIRED);
             return MetricBuilder{}
-                .add(inst_retired_name, amd::EventWrapper::get(cpu::CoreEvents::INST_RETIRED))
-                .add(mem_store_retired_name, amd::EventWrapper::get(cpu::CoreEvents::MEM_STORE_RETIRED))
+                .add(inst_retired_name, amd::EventMapper::get(cpu::CoreEvents::INST_RETIRED))
+                .add(mem_store_retired_name, amd::EventMapper::get(cpu::CoreEvents::MEM_STORE_RETIRED))
                 .build("IpStore",
                        [mem_store_retired_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
@@ -280,11 +280,11 @@ namespace optkit::core::metrics::cpu
 
         static MetricBuilder IpMispredict()
         {
-            std::string inst_retired_name = to_string(metrics::cpu::CoreEvents::INST_RETIRED);
-            std::string branch_misp_retired_name = to_string(metrics::cpu::CoreEvents::BRANCH_MISP_RETIRED);
+            std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
+            std::string branch_misp_retired_name = to_string(CoreEvents::BRANCH_MISP_RETIRED);
             return MetricBuilder{}
-                .add(inst_retired_name, amd::EventWrapper::get(cpu::CoreEvents::INST_RETIRED))
-                .add(branch_misp_retired_name, amd::EventWrapper::get(cpu::CoreEvents::BRANCH_MISP_RETIRED))
+                .add(inst_retired_name, amd::EventMapper::get(cpu::CoreEvents::INST_RETIRED))
+                .add(branch_misp_retired_name, amd::EventMapper::get(cpu::CoreEvents::BRANCH_MISP_RETIRED))
                 .build("IpMispredict",
                        [branch_misp_retired_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
@@ -336,11 +336,11 @@ namespace optkit::core::metrics::cpu
 
         static MetricBuilder IpArithAVXAny()
         {
-            std::string inst_retired_name = to_string(metrics::cpu::CoreEvents::INST_RETIRED);
-            std::string retired_sse_avx_flops_any_name = to_string(metrics::cpu::CoreEvents::RETIRED_SSE_AVX_FLOPS_ANY);
+            std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
+            std::string retired_sse_avx_flops_any_name = to_string(CoreEvents::RETIRED_SSE_AVX_FLOPS_ANY);
             return MetricBuilder{}
-                .add(inst_retired_name, amd::EventWrapper::get(cpu::CoreEvents::INST_RETIRED))
-                .add(retired_sse_avx_flops_any_name, amd::EventWrapper::get(cpu::CoreEvents::RETIRED_SSE_AVX_FLOPS_ANY))
+                .add(inst_retired_name, amd::EventMapper::get(cpu::CoreEvents::INST_RETIRED))
+                .add(retired_sse_avx_flops_any_name, amd::EventMapper::get(cpu::CoreEvents::RETIRED_SSE_AVX_FLOPS_ANY))
                 .build("IpArithAVXAny",
                        [retired_sse_avx_flops_any_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
@@ -358,11 +358,11 @@ namespace optkit::core::metrics::cpu
         // Software prefetch
         static MetricBuilder IpSWPF()
         {
-            std::string inst_retired_name = to_string(metrics::cpu::CoreEvents::INST_RETIRED);
-            std::string sw_load_prefetch_name = to_string(metrics::cpu::CoreEvents::SW_LOAD_PREFETCH_ACCESS);
+            std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
+            std::string sw_load_prefetch_name = to_string(CoreEvents::SW_LOAD_PREFETCH_ACCESS);
             return MetricBuilder{}
-                .add(inst_retired_name, amd::EventWrapper::get(cpu::CoreEvents::INST_RETIRED))
-                .add(sw_load_prefetch_name, amd::EventWrapper::get(cpu::CoreEvents::SW_LOAD_PREFETCH_ACCESS))
+                .add(inst_retired_name, amd::EventMapper::get(cpu::CoreEvents::INST_RETIRED))
+                .add(sw_load_prefetch_name, amd::EventMapper::get(cpu::CoreEvents::SW_LOAD_PREFETCH_ACCESS))
                 .build("IpSWPF",
                        [sw_load_prefetch_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {

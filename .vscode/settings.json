@@ -76,7 +76,8 @@
         "set": "cpp",
         "unordered_set": "cpp",
         "__nullptr": "cpp",
-        "*.inc": "cpp"
+        "*.inc": "cpp",
+        "filesystem": "cpp"
     },
     "Lua.diagnostics.globals": [
         "ld_has_library"

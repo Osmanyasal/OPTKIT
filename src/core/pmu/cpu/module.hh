@@ -7,9 +7,9 @@
 
 
 // Select which way (perf or msr) to macro
-#if OPTKIT_CONF_PMU_USE_PERF
+#if OPTKIT_CONF_PMU_MACROS_ENABLED && OPTKIT_CONF_PMU_USE_PERF
     #include "core/pmu/cpu/perf/module.hh"
-#elif OPTKIT_CONF_PMU_USE_MSR
+#elif OPTKIT_CONF_PMU_MACROS_ENABLED && OPTKIT_CONF_PMU_USE_MSR
     #include "core/pmu/cpu/msr/module.hh"
 #else
     #define OPTKIT_CPU_EVENTS(block_name, event_name, ...)
