@@ -75,11 +75,9 @@ namespace optkit::core
          *
          * You should call MetricBuffer.calculate(...) to see the results
          *
-         * @return A pair consisting of:
-         *         - total duration (in seconds),
-         *         - a vector of <event name, value> pairs.
+         * @return unique event-value map.
          */
-        virtual std::pair<double, std::vector<std::pair<std::string, uint64_t>>> aggregate() = 0;
+        virtual std::unordered_map<std::string, uint64_t> aggregate() = 0;
 
     protected:
         /**
@@ -89,10 +87,10 @@ namespace optkit::core
         virtual void save() final
         {
             const std::string &json_data = to_json();
-            std::string file_name = block_name;
+            std::string file_name = this->block_name;
             file_name = file_name;
             std::replace(file_name.begin(), file_name.end(), ' ', '_');
-            file_name = optkit::utils::EXECUTION_FOLDER_NAME + "/" + file_name + "__" + this->metric_name + ".json";
+            file_name = optkit::utils::EXECUTION_FOLDER_NAME + "/" + this->metric_name + "__" + file_name + ".json";
             optkit::utils::write_file(file_name, json_data, verbose);
         }
 
@@ -100,9 +98,9 @@ namespace optkit::core
         const char *block_name;
         const char *metric_name;
         bool verbose;
-        double total_duration_ms;
 
     protected:
+        double total_duration_ms;
         std::chrono::high_resolution_clock::time_point start;
         std::vector<std::pair<double, T>> read_buffer; // single timestamp -- measurements
     };

@@ -62,6 +62,10 @@ namespace optkit::core::metrics::cpu
             return "DTLB_MISSES";
         case CoreEvents::ITLB_MISSES:
             return "ITLB_MISSES";
+        case CoreEvents::DTLB_MISSES_GOES_PAGE_WALK:
+            return "DTLB_MISSES_GOES_PAGE_WALK";
+        case CoreEvents::ITLB_MISSES_GOES_PAGE_WALK:
+            return "ITLB_MISSES_GOES_PAGE_WALK";
         case CoreEvents::SW_LOAD_PREFETCH_ACCESS:
             return "SW_LOAD_PREFETCH_ACCESS";
 

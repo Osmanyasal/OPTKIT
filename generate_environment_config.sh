@@ -52,19 +52,21 @@ write_compiler_macro() {
 write_cpu_info() {
     echo -e "\n// CPU Vendor" >> "$SRC_CONFIG_FILE"
 
-    # Default all to 0
+    # Default all vendors to 0
     echo "#define OPTKIT_ENV_CPU_INTEL 0" >> "$SRC_CONFIG_FILE"
     echo "#define OPTKIT_ENV_CPU_AMD 0" >> "$SRC_CONFIG_FILE"
-    echo "#define OPTKIT_ENV_CPU_ARM 0" >> "$SRC_CONFIG_FILE"
-    echo "#define OPTKIT_ENV_CPU_RISCV 0" >> "$SRC_CONFIG_FILE"
+    echo "#define OPTKIT_ENV_CPU_ARM 0" >> "$SRC_CONFIG_FILE" 
+    echo "#define OPTKIT_ENV_CPU_RISCV 0" >> "$SRC_CONFIG_FILE" 
     echo "#define OPTKIT_ENV_CPU_MIPS 0" >> "$SRC_CONFIG_FILE"
     echo "#define OPTKIT_ENV_CPU_POWERPC 0" >> "$SRC_CONFIG_FILE"
 
     echo -e "\n// CPU Architecture" >> "$SRC_CONFIG_FILE"
 
-    echo "#define OPTKIT_ENV_CPU_ARCH_X86_64 0" >> "$SRC_CONFIG_FILE"
-    echo "#define OPTKIT_ENV_CPU_ARCH_ARM 0" >> "$SRC_CONFIG_FILE"
-    echo "#define OPTKIT_ENV_CPU_ARCH_RISCV64  0" >> "$SRC_CONFIG_FILE"
+    echo "#define OPTKIT_ENV_CPU_ARCH_X86_64 0" >> "$SRC_CONFIG_FILE" 
+    echo "#define OPTKIT_ENV_CPU_ARCH_ARM32 0" >> "$SRC_CONFIG_FILE"
+    echo "#define OPTKIT_ENV_CPU_ARCH_ARM64 0" >> "$SRC_CONFIG_FILE"
+    echo "#define OPTKIT_ENV_CPU_ARCH_RISCV32 0" >> "$SRC_CONFIG_FILE"
+    echo "#define OPTKIT_ENV_CPU_ARCH_RISCV64 0" >> "$SRC_CONFIG_FILE"
     echo "#define OPTKIT_ENV_CPU_ARCH_MIPS 0" >> "$SRC_CONFIG_FILE"
     echo "#define OPTKIT_ENV_CPU_ARCH_POWERPC 0" >> "$SRC_CONFIG_FILE"
 
@@ -91,15 +93,25 @@ write_cpu_info() {
                         ;;
                 esac
                 ;;
-            aarch64|armv7l|armv8l)
-                print_status "Checking CPU Architecture:" "ARM"
+            aarch64)
+                print_status "Checking CPU Architecture:" "ARM64 (AArch64)"
                 sed -i "s/^#define OPTKIT_ENV_CPU_ARM.*/#define OPTKIT_ENV_CPU_ARM 1/" "$SRC_CONFIG_FILE"
-                sed -i "s/^#define OPTKIT_ENV_CPU_ARCH_ARM.*/#define OPTKIT_ENV_CPU_ARCH_ARM 1/" "$SRC_CONFIG_FILE"
+                sed -i "s/^#define OPTKIT_ENV_CPU_ARCH_ARM64.*/#define OPTKIT_ENV_CPU_ARCH_ARM64 1/" "$SRC_CONFIG_FILE"
                 ;;
-            riscv64|riscv32)
-                print_status "Checking CPU Architecture:" "RISC-V"
+            armv7l|armv8l)
+                print_status "Checking CPU Architecture:" "ARM32"
+                sed -i "s/^#define OPTKIT_ENV_CPU_ARM.*/#define OPTKIT_ENV_CPU_ARM 1/" "$SRC_CONFIG_FILE"
+                sed -i "s/^#define OPTKIT_ENV_CPU_ARCH_ARM32.*/#define OPTKIT_ENV_CPU_ARCH_ARM32 1/" "$SRC_CONFIG_FILE"
+                ;;
+            riscv64)
+                print_status "Checking CPU Architecture:" "RISC-V 64-bit"
                 sed -i "s/^#define OPTKIT_ENV_CPU_RISCV.*/#define OPTKIT_ENV_CPU_RISCV 1/" "$SRC_CONFIG_FILE"
                 sed -i "s/^#define OPTKIT_ENV_CPU_ARCH_RISCV64.*/#define OPTKIT_ENV_CPU_ARCH_RISCV64 1/" "$SRC_CONFIG_FILE"
+                ;;
+            riscv32)
+                print_status "Checking CPU Architecture:" "RISC-V 32-bit"
+                sed -i "s/^#define OPTKIT_ENV_CPU_RISCV.*/#define OPTKIT_ENV_CPU_RISCV 1/" "$SRC_CONFIG_FILE"
+                sed -i "s/^#define OPTKIT_ENV_CPU_ARCH_RISCV32.*/#define OPTKIT_ENV_CPU_ARCH_RISCV32 1/" "$SRC_CONFIG_FILE"
                 ;;
             mips|mips64)
                 print_status "Checking CPU Architecture:" "MIPS"

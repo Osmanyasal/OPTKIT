@@ -81,51 +81,46 @@ void loopInterchangeMatrixMultiplication(const std::vector<std::vector<int>> &A,
     }
 }
 
+void vector_add(const std::vector<float> &a,
+                const std::vector<float> &b,
+                std::vector<float> &result)
+{
+    size_t size = a.size();
+    result.resize(size);
+
+#pragma omp parallel for simd
+    for (size_t i = 0; i < size; ++i)
+    {
+        result[i] = a[i] + b[i];
+    }
+}
+
+using namespace optkit::core::metrics;
 int32_t main(int32_t argc, char **argv)
 {
     OPTKIT_INIT();
+    size_t n = 1 << 20;            // ~1 million elements
+    std::vector<float> A(n, 1.0f); // all 1s
+    std::vector<float> B(n, 2.0f); // all 2s
+    std::vector<float> C;
 
-    // {
-    //     OPTKIT_CPU_EVENTS("b2", {{"Retired Instructions", optkit::intel::icl::INSTRUCTIONS_RETIRED}});
-
-    //     // 10 instructions
-    //     int i = 3;
-    //     i++;
-    //     i++;
-    //     i++;
-    //     i++;
-    //     i++;
-    //     i++;
-    // }
-
-    using namespace optkit::core::metrics::cpu;
-
-    MetricBuilder branch_mispr = metrics::BranchMisprRatio();
-    branch_mispr.add(to_string(CoreEvents::INST_RETIRED), mapper::get(CoreEvents::INST_RETIRED));
-    std::cout << branch_mispr << "\n";
-
+    MetricBuilder mb{};
+    mb.add(to_string(cpu::core_events::RETIRED_SSE_AVX_FLOPS_ANY), cpu::event_mapper::get(cpu::core_events::RETIRED_SSE_AVX_FLOPS_ANY))
+        .add(to_string(cpu::core_events::RETIRED_FLOPS_ANY), cpu::event_mapper::get(cpu::core_events::RETIRED_FLOPS_ANY))
+        .add(to_string(cpu::core_events::INST_RETIRED), cpu::event_mapper::get(cpu::core_events::INST_RETIRED));
     {
-        OPTKIT_CPU_EVENTS("b0", branch_mispr);
-        // var112.read();
-        // 9 instructions
-        int i = 3;
-        if (i >= 3)
+        OPTKIT_CPU_EVENTS("main", mb);
+
+#pragma omp parallel
         {
-            i++;
-            i++;
-            i++;
-            i++;
-            i++;
-            i++;
+#pragma omp master
+            {
+                std::cout << omp_get_max_threads() << "\n";
+            }
+
+            vector_add(A, B, C);
         }
     }
-
-    std::cout << optkit::core::pmu::cpu::QueryPMU::default_pmu_info().num_cntrs << "\n";
-    {
-        auto metric = metrics::AllMPKI();
-        std::cout << metric << "\n";
-        OPTKIT_CPU_EVENTS("b0", metric);
-        sleep(5);
-    }
+    std::cout << "done \n";
     return 0;
 }

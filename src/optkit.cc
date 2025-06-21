@@ -12,7 +12,7 @@ namespace optkit::core
      * @param execution_file
      */
 
-    OptimizerKit::OptimizerKit(const OPTKIT_CONFIG config) : config{config}
+    OPTKIT::OPTKIT(const OPTKIT_CONFIG config) : config{config}
     {
         optkit::utils::logger::BaseLogger::init();  // logger init
         optkit::core::pmu::cpu::QueryPMU::init();   // pmf init
@@ -27,8 +27,8 @@ namespace optkit::core
         }
         else
         {
-
-            if (OPT_LIKELY(config.create_folder))
+            Query::create_folder = config.create_folder;
+            if (OPT_LIKELY(Query::create_folder))
             {
                 if (this->config.execution_file.size() > 0)
                     optkit::utils::EXECUTION_FOLDER_NAME = this->config.execution_file;
@@ -45,7 +45,7 @@ namespace optkit::core
         }
     }
 
-    void OptimizerKit::process_env_variables()
+    void OPTKIT::process_env_variables()
     {
         const char *socket0__enabled = std::getenv("OPTKIT_SOCKET0__ENABLED");
         const char *socket0__core_freq = std::getenv("OPTKIT_SOCKET0__CORE_FREQ");
@@ -162,7 +162,7 @@ namespace optkit::core
      *  Destroy Query utility
      *
      */
-    OptimizerKit::~OptimizerKit()
+    OPTKIT::~OPTKIT()
     {
         optkit::core::pmu::cpu::QueryPMU::destroy();
     }

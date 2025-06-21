@@ -9,15 +9,13 @@
 
 #if OPTKIT_ENV_CPU_INTEL
 #elif OPTKIT_ENV_CPU_AMD
-#include "core/metrics/cpu/amd/core_events.hh"
 #include "core/metrics/cpu/amd/core_metrics.hh"
 #include "core/metrics/cpu/amd/event_mapper.hh"
 namespace optkit::core::metrics::cpu
 {
     using metrics = CoreMetrics<AMDMetricsImpl>;
-    using mapper = amd::EventMapper;
+    using event_mapper = amd::EventMapper;
     using core_events = CoreEvents;
-    using vendor_events = amd::CoreEvents;
 }
 #elif OPTKIT_ENV_CPU_ARM
 #elif OPTKIT_ENV_CPU_RISCV

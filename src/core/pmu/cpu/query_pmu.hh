@@ -24,10 +24,6 @@ namespace optkit::core::pmu::cpu
     class QueryPMU final
     {
     public:
-        static const int64_t num_cores;
-
-    public:
-
         /**
          * @brief Initializes libpfm4 library.
          *

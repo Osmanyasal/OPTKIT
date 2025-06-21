@@ -1,8 +1,10 @@
 #pragma once
+#include "utils/deployment/deployment_config.hh"
+#if OPTKIT_ENV_CPU_AMD
 
 #include "core/metrics/cpu/amd/event_mapper.hh"
 #include "core/metrics/cpu/core_metrics.hh"
-
+#include "core/metrics/metric_builder.hh"
 // Warn: to use template initialisation for a certain type, they must be in the same namespace. so do NOT change it.
 namespace optkit::core::metrics::cpu
 {
@@ -459,3 +461,4 @@ namespace optkit::core::metrics::cpu
         }
     };
 }
+#endif

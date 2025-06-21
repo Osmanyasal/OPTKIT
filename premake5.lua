@@ -10,14 +10,13 @@ system_init()
 define_custom_actions()
 
 workspace "OPTKIT"
-configurations { "Debug", "Release" }
+configurations { "Debug", "Release", "Test" }
 -- architecture "x86_64" -- this doesn't have to be. It can be risc-v, arm, etc.
 
 project(OPTKIT_APP)
 kind "ConsoleApp"
 base_project_setup()
 linkoptions { LIB_PFM_PATH .. "/lib/libpfm.a" }
-
 
 project(OPTKIT_LIB_DYNAMIC)
 kind "SharedLib"
@@ -26,33 +25,35 @@ libdirs { LIB_PFM_PATH .. "/lib" } -- so that pfm.so can be found, we link this 
 links { "pfm" }
 removefiles { "./src/main.cc" }
 
-
-
 project(OPTKIT_LIB_STATIC)
 kind "StaticLib"
 base_project_setup()
 removefiles { "./src/main.cc" }
 -- linkoptions { LIB_PFM_PATH .. "/lib/libpfm.a" } -- this one doesn't work with StaticLib
-filter { "configurations:Release" }
+filter { "configurations:Release or configurations:Test" }
 postbuildcommands {
-    -- Create obj directory if needed
+    -- Create object extraction directory
     "mkdir -p bin/obj/pfm_extract",
 
-    -- Extract libpfm objects to bin/obj/pfm_extract
+    -- Extract objects from libpfm.a
     "cd bin/obj/pfm_extract && ar -x " .. path.getabsolute(LIB_PFM_PATH .. "/lib/libpfm.a"),
 
-    -- Combine with your library
+    -- Merge libpfm objects into static library
     "cd bin/obj/pfm_extract && ar -r ../../%{cfg.buildcfg}/liboptkit_static.a *.o",
 
-    -- Clean up (optional)
-    "rm -rf bin/obj/pfm_extract",
+    -- Optional cleanup
+    "rm -rf bin/obj/pfm_extract"
+}
 
-    -- build tools with OPTKIT static
+-- Add tool build step only for Release
+filter { "configurations:Release" }
+postbuildcommands {
     "@echo [COMPILE UTILITY TOOLS]",
     "@cd ./tools && ./compile.sh && echo [✅ COMPILE UTILITY TOOLS]"
 }
-filter {} -- stop filtering, release is needed for static lib.
+-- Reset filter to avoid affecting other sections
+filter {}
 
 project(OPTKIT_TEST)
 kind "ConsoleApp"
-test_project_setup()  
+test_project_setup()

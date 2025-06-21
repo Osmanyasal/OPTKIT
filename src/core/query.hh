@@ -29,10 +29,10 @@ namespace optkit::core
         static int64_t OPTKIT_SOCKET0__UNCORE_FREQ;
         static int64_t OPTKIT_SOCKET1__UNCORE_FREQ;
 
+        static bool create_folder;
         static const int16_t num_sockets;
         static const int16_t num_logical_cores;
         static const bool is_root_priv_enabled;
-
         /**
          * @brief Gets package - # of cores information
          * @return const ref of static std::unordered_map<int32_t,std::vector<int32_t>> object: package - # of cores

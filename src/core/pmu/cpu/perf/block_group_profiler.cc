@@ -5,7 +5,7 @@
 namespace optkit::core::pmu::cpu::perf
 {
 
-    BlockGroupProfiler::BlockGroupProfiler(const char *block_name, const core::metrics::cpu::MetricBuilder &mb, bool verbose, const PerfProfilerConfig &config) : BaseProfiler{block_name, "cpu_pmu", verbose}, group_leader{-1}, profiler_config{config}, metric_builder{mb}
+    BlockGroupProfiler::BlockGroupProfiler(const char *block_name, const core::metrics::MetricBuilder &mb, bool verbose, const PerfProfilerConfig &config) : BaseProfiler{block_name, "cpu_pmu", verbose}, group_leader{-1}, profiler_config{config}, metric_builder{mb}
     {
         PMUEventManager::disable_all_events();
 
@@ -48,18 +48,17 @@ namespace optkit::core::pmu::cpu::perf
     {
         PMUEventManager::disable_all_events();
 
-        if(is_configured == false)  
+        if (is_configured == false)
             return;
 
         this->read_and_store(); // read the last one.
 
         PMUEventManager::unregister_event(group_leader);
 
-        auto eval_result = aggregate();
-        this->total_duration_ms = eval_result.first;
-        this->results = eval_result.second;
+        this->metric_results = this->metric_builder.calculate(aggregate());
 
-        this->metric_results = metric_builder.calculate(this->results);
+        if (OPT_LIKELY(!metric_builder.print_events))
+            this->results.clear();
 
         if (OPT_LIKELY(profiler_config.dump_results_to_file))
             this->save();
@@ -69,6 +68,7 @@ namespace optkit::core::pmu::cpu::perf
             std::cout << "\033[1;35m"
                       << "Block: " << this->block_name << "\033[0m"
                       << " [" << this->total_duration_ms << "ms] Measured\n";
+
             for (auto &&event : this->results)
                 std::cout << "\t" << event.first << ": " << event.second << std::endl;
             for (auto &&metric : this->metric_results)
@@ -123,28 +123,32 @@ namespace optkit::core::pmu::cpu::perf
         return ss.str();
     }
 
-    std::pair<double, std::vector<std::pair<std::string, uint64_t>>> BlockGroupProfiler::aggregate()
+    std::unordered_map<std::string, uint64_t> BlockGroupProfiler::aggregate()
     {
-        double total_duration = 0.0;
-        std::vector<std::pair<std::string, uint64_t>> event_value;
+        double total_duration_ms = 0.0;
+        std::unordered_map<std::string, uint64_t> aggregated_events;
 
         for (const auto &entry : read_buffer)
         {
-            total_duration += entry.first;
+            total_duration_ms += entry.first;
 
-            const std::vector<uint64_t> &values = entry.second;                                         // to get the event values (measured)
-            const std::vector<std::pair<std::string, uint64_t>> &events = metric_builder.metric_events; // to get the event names
+            const std::vector<uint64_t> &values = entry.second;
+            const std::vector<std::pair<std::string, uint64_t>> &events = metric_builder.metric_events;
 
             size_t count = std::min(values.size(), events.size());
             for (size_t j = 0; j < count; ++j)
             {
-                event_value.emplace_back(events[j].first, values[j]);
+                aggregated_events[events[j].first] += values[j];
             }
         }
+        std::vector<std::pair<std::string, uint64_t>> event_value(
+            aggregated_events.begin(), aggregated_events.end());
 
-        return std::make_pair(total_duration, std::move(event_value));
+        this->results = event_value;
+        this->total_duration_ms = total_duration_ms;
+
+        return aggregated_events;
     }
-
 } // namespace optkit::core::pmu::cpu::perf
 
 #endif

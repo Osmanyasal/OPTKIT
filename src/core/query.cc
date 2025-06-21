@@ -12,6 +12,7 @@ namespace optkit::core
     int64_t Query::OPTKIT_SOCKET0__UNCORE_FREQ = -1;
     int64_t Query::OPTKIT_SOCKET1__UNCORE_FREQ = -1;
 
+    bool Query::create_folder;
     const int16_t Query::num_sockets = OPTKIT_ENV_CPU_NUM_SOCKETS;
     const int16_t Query::num_logical_cores = OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS;
     const bool Query::is_root_priv_enabled = (geteuid() == 0);

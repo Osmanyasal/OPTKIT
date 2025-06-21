@@ -1,9 +1,10 @@
 #pragma once
+#include "utils/deployment/deployment_config.hh"
+#if OPTKIT_ENV_CPU_AMD
 
 #include <unordered_map>
 #include "utils/utils.hh"
 #include "core/metrics/cpu/core_events.hh"
-#include "core/metrics/cpu/amd/core_events.hh"
 
 /**
  * @brief metrics are mapped based on the manual:
@@ -29,20 +30,10 @@ namespace optkit::core::metrics::cpu::amd
             return {};
         }
 
-        static std::vector<uint64_t> get(cpu::amd::CoreEvents event)
-        {
-            auto it = amd_event_map.find(event);
-            if (it != amd_event_map.end())
-            {
-                return it->second;
-            }
-            return {};
-        }
-
     private:
         EventMapper() {}
         ~EventMapper() {}
         static const std::unordered_map<cpu::CoreEvents, std::vector<uint64_t>> core_event_map;     // coreEvent - even nums to monitor.
-        static const std::unordered_map<cpu::amd::CoreEvents, std::vector<uint64_t>> amd_event_map; // coreEvent - even nums to monitor.
     };
 };
+#endif

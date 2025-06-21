@@ -20,6 +20,7 @@ namespace optkit::core::pmu::cpu::perf
         /**
          * @brief Construct a new Profiler Config object
          *
+         * @param dump_results_to_file Dump results to file or not. By default; true if folder is created
          * @param is_reset_after_read Reset the counter after any read operations or not.
          * @param is_grouped indicates all events in the BlockProfiler should be groupped or not @see perf_event_open man page
          * @param pid
@@ -50,8 +51,8 @@ namespace optkit::core::pmu::cpu::perf
          *
          */
 
-        PerfProfilerConfig(bool dump_results_to_file = true, bool is_reset_after_read = true, bool is_grouped = false, int32_t pid = 0, int32_t cpu = -1);
-        PerfProfilerConfig(perf_event_attr perf_event_config, bool dump_results_to_file = true, bool is_reset_after_read = true, int32_t pid = 0, int32_t cpu = -1);
+        PerfProfilerConfig(bool dump_results_to_file = Query::create_folder, bool is_reset_after_read = true, bool is_grouped = false, int32_t pid = 0, int32_t cpu = -1);
+        PerfProfilerConfig(perf_event_attr perf_event_config, bool dump_results_to_file = Query::create_folder, bool is_reset_after_read = true, int32_t pid = 0, int32_t cpu = -1);
         void setGrouped(bool is_grouped);
 
         bool dump_results_to_file;

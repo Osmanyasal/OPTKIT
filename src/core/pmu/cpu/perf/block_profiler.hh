@@ -29,8 +29,7 @@ namespace optkit::core::pmu::cpu::perf
     class BlockProfiler : public BaseProfiler<std::vector<uint64_t>>
     {
     public:
-        // BlockProfiler(const char *block_name, const std::vector<std::pair<std::string, uint64_t>> &raw_events, bool verbose = true, const PerfProfilerConfig &config = PerfProfilerConfig{true, true, false, 0, -1});
-        BlockProfiler(const char *block_name, const core::metrics::cpu::MetricBuilder &mb, bool verbose = true, const PerfProfilerConfig &config = PerfProfilerConfig{true, true, false, 0, -1});
+        BlockProfiler(const char *block_name, const core::metrics::MetricBuilder &mb, bool verbose = !Query::create_folder, const PerfProfilerConfig &config = {});
         virtual ~BlockProfiler();
         /**
          * @brief Disables this block profiler and associated events
@@ -74,25 +73,24 @@ namespace optkit::core::pmu::cpu::perf
          *
          * You should call MetricBuffer.calculate(...) to see the results
          *
-         * @return A pair consisting of:
-         *         - total duration (in seconds),
-         *         - a vector of <event name, value> pairs.
+         * It updates the this->results and this->duration_ms
+         *
+         * @return unique event-value map
          */
-        virtual std::pair<double, std::vector<std::pair<std::string, uint64_t>>> aggregate() override;
+        virtual std::unordered_map<std::string, uint64_t> aggregate() override;
 
-    public:
+#if !OPTKIT_TESTING // if not testing (in prod) then make those private, in testin make those public
+    private:
+#endif
         /**
          * @brief fd_list holds pmu events being monitor by this BlockProfiler Object.
          * when created the same file description must be registered global fd_stack
-         *
          */
         std::vector<int32_t> fd_list;
         PerfProfilerConfig profiler_config;
-
-    private:
         std::vector<std::pair<std::string, uint64_t>> results;
         std::vector<std::pair<std::string, double>> metric_results;
-        core::metrics::cpu::MetricBuilder metric_builder;
+        core::metrics::MetricBuilder metric_builder;
     };
 
 } // namespace optkit::core::pmu::cpu::perf

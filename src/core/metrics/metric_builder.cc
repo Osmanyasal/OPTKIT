@@ -1,6 +1,6 @@
-#include "core/metrics/cpu/core_metrics.hh"
+#include "core/metrics/metric_builder.hh"
 
-namespace optkit::core::metrics::cpu
+namespace optkit::core::metrics
 {
     // Global to_string function
     std::string to_string(const MetricBuilder &mb)

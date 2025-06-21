@@ -28,7 +28,7 @@ namespace optkit::core::pmu::cpu::perf
     {
 
     public:
-        BlockGroupProfiler(const char *block_name, const core::metrics::cpu::MetricBuilder &mb, bool verbose = true, const PerfProfilerConfig &config = PerfProfilerConfig{true, true, true, 0, -1});
+        BlockGroupProfiler(const char *block_name, const core::metrics::MetricBuilder &mb, bool verbose = !Query::create_folder, const PerfProfilerConfig &config = PerfProfilerConfig{Query::create_folder, true, true, 0, -1});
         virtual ~BlockGroupProfiler();
         /**
          * @brief Disables this block profiler and associated events
@@ -41,7 +41,6 @@ namespace optkit::core::pmu::cpu::perf
          *
          */
         virtual void enable() override;
-
 
         /**
          * @brief Reset this block profiler and associated events
@@ -73,24 +72,27 @@ namespace optkit::core::pmu::cpu::perf
          *
          * You should call MetricBuffer.calculate(...) to see the results
          *
-         * @return A pair consisting of:
-         *         - total duration (in seconds),
-         *         - a vector of <event name, value> pairs.
+         * It updates the this->results and this->duration_ms
+         *
+         * @return unique event-value map
          */
-        virtual std::pair<double, std::vector<std::pair<std::string, uint64_t>>> aggregate() override;
+        virtual std::unordered_map<std::string, uint64_t> aggregate() override;
         int32_t get_group_leader()
         {
             return this->group_leader;
         }
 
+#if !OPTKIT_TESTING // if not testing (in prod) then make those private, in testin make those public
     private:
+#endif
+
         bool is_configured;
         PerfProfilerConfig profiler_config;
         int32_t group_leader;
 
         std::vector<std::pair<std::string, uint64_t>> results;
         std::vector<std::pair<std::string, double>> metric_results;
-        core::metrics::cpu::MetricBuilder metric_builder;
+        core::metrics::MetricBuilder metric_builder;
 
         struct read_format
         {

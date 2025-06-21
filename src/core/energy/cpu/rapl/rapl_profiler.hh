@@ -12,7 +12,7 @@
 #include "core/energy/cpu/rapl/rapl_perf_reader.hh"
 #include "core/energy/cpu/rapl/rapl_utils.hh"
 namespace optkit::core::energy::rapl
-{ 
+{
 
     class RaplProfiler : public BaseProfiler<std::map<int32_t, std::map<RaplDomain, double>>>
     {
@@ -32,6 +32,8 @@ namespace optkit::core::energy::rapl
          */
         virtual void enable() override;
 
+        virtual void reset() override {};
+
         virtual std::string to_json() override;
 
         /**
@@ -41,11 +43,13 @@ namespace optkit::core::energy::rapl
          */
         virtual std::map<int32_t, std::map<RaplDomain, double>> read() override;
 
+        virtual std::unordered_map<std::string, uint64_t> aggregate() override {};
+
     private:
         std::unique_ptr<optkit::core::energy::rapl::RaplPerfReader> rapl_reader;
         RaplConfig rapl_config;
     };
- 
+
     // Overloading << for map with RaplDomain as keys
     std::string to_string(const std::map<optkit::core::energy::rapl::RaplDomain, double> &map);
     std::ostream &operator<<(std::ostream &os, const std::map<optkit::core::energy::rapl::RaplDomain, double> &map);

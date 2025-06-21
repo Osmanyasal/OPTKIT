@@ -10,26 +10,27 @@
 // =============================================
 
 // based on the configuration, each module is responsible including "ways" for the module.
-#include "core/pmu/cpu/module.hh"   // if use_msr is enabled, include defaults + use_msr module likewise for perf. same macro but different classes is defined for them.
+#include "core/pmu/cpu/module.hh" // if use_msr is enabled, include defaults + use_msr module likewise for perf. same macro but different classes is defined for them.
 #include "core/energy/cpu/rapl/module.hh"
 #include "core/metrics/module.hh"
 #include "core/frequency/module.hh"
 
 namespace optkit::core
 {
-    struct OPTKIT_CONFIG
+    class OPTKIT_CONFIG
     {
+    public:
         OPTKIT_CONFIG(bool create_folder = true, const std::string &execution_file = "") : create_folder{create_folder}, execution_file{execution_file} {}
 
         const bool create_folder;
         const std::string execution_file;
     };
-    class OptimizerKit
-    { 
+    class OPTKIT
+    {
 
     public:
-        OptimizerKit(const OPTKIT_CONFIG config = {});
-        ~OptimizerKit();
+        OPTKIT(const OPTKIT_CONFIG config = {});
+        ~OPTKIT();
 
     private:
         void process_env_variables();
@@ -39,4 +40,4 @@ namespace optkit::core
     };
 }
 
-#define OPTKIT_INIT(...) optkit::core::OptimizerKit optkit{__VA_ARGS__}
+#define OPTKIT_INIT(...) optkit::core::OPTKIT optkit { __VA_ARGS__ }
