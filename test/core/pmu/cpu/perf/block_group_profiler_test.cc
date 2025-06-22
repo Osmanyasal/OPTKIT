@@ -5,7 +5,7 @@
 using namespace optkit::core::metrics;
 using namespace optkit::core::pmu::cpu;
 
-TEST(CPUPerfBlockEventsTest, Instructions_1M)
+TEST(CPUPerfGroupEventsTest, Instructions_1M)
 {
     int32_t expected_result = 1'000'000;
 
@@ -14,7 +14,7 @@ TEST(CPUPerfBlockEventsTest, Instructions_1M)
         .build(to_string(cpu::core_events::INST_RETIRED), [](const auto &map) -> double
                { return map.at(to_string(cpu::core_events::INST_RETIRED)) / (double)REPEAT; });
 
-    OPTKIT_CPU_BLOCK_EVENTS_REPEAT("Instructions_1M", mb, REPEAT)
+    OPTKIT_CPU_GROUP_EVENTS_REPEAT("Instructions_1M", mb, REPEAT)
     {
         instructions_million();
     }
@@ -22,7 +22,7 @@ TEST(CPUPerfBlockEventsTest, Instructions_1M)
     auto result = aggregated_results.at(to_string(cpu::core_events::INST_RETIRED)) / (double)REPEAT;
     EXPECT_NEAR(expected_result, result, expected_result * ERROR_RATE);
 }
-TEST(CPUPerfBlockEventsTest, BranchInst1500K)
+TEST(CPUPerfGroupEventsTest, BranchInst1500K)
 {
     int32_t expected_result = 1'500'000;
 
@@ -31,7 +31,7 @@ TEST(CPUPerfBlockEventsTest, BranchInst1500K)
         .build(to_string(cpu::core_events::BRANCH_INST_RETIRED), [](const auto &map) -> double
                { return map.at(to_string(cpu::core_events::BRANCH_INST_RETIRED)) / (double)REPEAT; });
 
-    OPTKIT_CPU_BLOCK_EVENTS_REPEAT("BranchInst1500K", mb, REPEAT)
+    OPTKIT_CPU_GROUP_EVENTS_REPEAT("BranchInst1500K", mb, REPEAT)
     {
         branches();
     }
@@ -40,7 +40,7 @@ TEST(CPUPerfBlockEventsTest, BranchInst1500K)
     EXPECT_NEAR(expected_result, result, expected_result * ERROR_RATE);
 }
 
-TEST(CPUPerfBlockEventsTest, BranchMisp250K)
+TEST(CPUPerfGroupEventsTest, BranchMisp250K)
 {
     int32_t expected_result = 250'000;
 
@@ -49,7 +49,7 @@ TEST(CPUPerfBlockEventsTest, BranchMisp250K)
         .build(to_string(cpu::core_events::BRANCH_MISP_RETIRED), [](const auto &map) -> double
                { return map.at(to_string(cpu::core_events::BRANCH_MISP_RETIRED)) / (double)REPEAT; });
 
-    OPTKIT_CPU_BLOCK_EVENTS_REPEAT("BranchMisp250K", mb, REPEAT)
+    OPTKIT_CPU_GROUP_EVENTS_REPEAT("BranchMisp250K", mb, REPEAT)
     {
         random_branches(500'000, true);
     }
@@ -59,7 +59,7 @@ TEST(CPUPerfBlockEventsTest, BranchMisp250K)
     EXPECT_NEAR(expected_result, result, expected_result * ERROR_RATE * 5); // error rate -> 25%
 }
 
-TEST(CPUPerfBlockEventsTest, RetiredFlopAny1M)
+TEST(CPUPerfGroupEventsTest, RetiredFlopAny1M)
 {
     size_t expected_result = 1'000'000;
     MetricBuilder mb{false};
@@ -75,7 +75,7 @@ TEST(CPUPerfBlockEventsTest, RetiredFlopAny1M)
     size_t size = A.size();
     C.resize(size);
 
-    OPTKIT_CPU_BLOCK_EVENTS_REPEAT("RetiredFlopAny1M", mb, REPEAT)
+    OPTKIT_CPU_GROUP_EVENTS_REPEAT("RetiredFlopAny1M", mb, REPEAT)
     {
         for (size_t i = 0; i < size; ++i)
         {
@@ -87,14 +87,14 @@ TEST(CPUPerfBlockEventsTest, RetiredFlopAny1M)
     EXPECT_NEAR(expected_result, result, expected_result * ERROR_RATE);
 }
 // note that accumulated result also contains elements below, not just the region.
-TEST(CPUPerfBlockEventsTest, ReadsAndAccumulatesEventData)
+TEST(CPUPerfGroupEventsTest, ReadsAndAccumulatesEventData)
 {
     MetricBuilder mb{false};
     mb.add(to_string(cpu::core_events::INST_RETIRED), cpu::event_mapper::get(cpu::core_events::INST_RETIRED))
         .build(to_string(cpu::core_events::INST_RETIRED), [](const auto &map) -> double
                { return map.at(to_string(cpu::core_events::INST_RETIRED)) / (double)REPEAT; });
     double total = 0;
-    OPTKIT_CPU_BLOCK_EVENTS_REPEAT("ReadsAndAccumulatesEventData", mb, REPEAT)
+    OPTKIT_CPU_GROUP_EVENTS_REPEAT("ReadsAndAccumulatesEventData", mb, REPEAT)
     {
         instructions_million();
         // Note: *REPEAT already reads_and_store each iteration automatically.
@@ -106,7 +106,7 @@ TEST(CPUPerfBlockEventsTest, ReadsAndAccumulatesEventData)
     auto result = aggregated_results.at(to_string(cpu::core_events::INST_RETIRED)) / (double)REPEAT;
     EXPECT_NEAR(total, result, total * ERROR_RATE);
 }
-TEST(CPUPerfBlockEventsTest, EnableDisableEventCounting)
+TEST(CPUPerfGroupEventsTest, EnableDisableEventCounting)
 {
     size_t expected_result = 500'000; // apprx
     MetricBuilder mb{false};
@@ -115,7 +115,7 @@ TEST(CPUPerfBlockEventsTest, EnableDisableEventCounting)
                { return map.at(to_string(cpu::core_events::INST_RETIRED)) / (double)REPEAT; });
 
     bool is_enabled = true;
-    OPTKIT_CPU_BLOCK_EVENTS_REPEAT("EnableDisableEventCounting", mb, REPEAT)
+    OPTKIT_CPU_GROUP_EVENTS_REPEAT("EnableDisableEventCounting", mb, REPEAT)
     {
         if (is_enabled)
             PMUEventManager::enable_all_events();
@@ -130,7 +130,7 @@ TEST(CPUPerfBlockEventsTest, EnableDisableEventCounting)
     EXPECT_NEAR(expected_result, result, expected_result * ERROR_RATE);
 }
 
-TEST(CPUPerfBlockEventsTest, AddMoreEventsThanGroupLimitTest)
+TEST(CPUPerfGroupEventsTest, AddMoreEventsThanGroupLimitTest)
 {
     size_t expected_result = 500'000; // apprx
     MetricBuilder mb{false};
@@ -142,7 +142,7 @@ TEST(CPUPerfBlockEventsTest, AddMoreEventsThanGroupLimitTest)
     for (int i = 1; i < PMUEventManager::pmu_num_cntrs(); i++)
         mb.metric_events.push_back(event);
 
-    OPTKIT_CPU_BLOCK_EVENTS_REPEAT("EnableDisableEventCounting", mb, REPEAT)
+    OPTKIT_CPU_GROUP_EVENTS_REPEAT("EnableDisableEventCounting", mb, REPEAT)
     {
         instructions_million();
     }
