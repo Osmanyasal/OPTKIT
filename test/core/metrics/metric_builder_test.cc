@@ -1,7 +1,9 @@
 #include <gtest/gtest.h>
-#include "core/metrics/cpu/core_metrics.hh" // Update with actual header path
+#include "core/metrics/metric_builder.hh"
 
 using namespace optkit::core::metrics;
+
+// Note that, event numbers (hex format) are not important here, we do not measure any events we just test the behaviour of MetricBuilder.
 
 TEST(MetricBuilderTest, AddSingleEventAvoidsDuplicates)
 {
