@@ -99,6 +99,9 @@ namespace optkit::core::pmu::cpu::perf
 
         std::vector<uint64_t> result;
 
+        if (!is_configured)
+            return {0};
+
         char buf[4096];
         struct read_format *rf = (struct read_format *)buf;
         ::read(group_leader, buf, sizeof(buf));

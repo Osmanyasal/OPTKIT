@@ -13,3 +13,7 @@
 
 #define OPTKIT_CPU_BLOCK_EVENTS(block_name, metric_builder, ...) \
     optkit::core::pmu::cpu::perf::BlockGroupProfiler EXPAND_AND_CONCAT(var, __LINE__) { block_name, metric_builder, __VA_ARGS__ }
+
+#define OPTKIT_CPU_BLOCK_EVENTS_REPEAT(block_name, metric_builder, count, ...)                                                   \
+    optkit::core::pmu::cpu::perf::BlockGroupProfiler EXPAND_AND_CONCAT(var, __LINE__){block_name, metric_builder, __VA_ARGS__}; \
+    for (int32_t i = 0; i < count; i++, EXPAND_AND_CONCAT(var, __LINE__).read_and_store())
