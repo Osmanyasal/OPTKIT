@@ -12,11 +12,15 @@ namespace optkit::core::metrics::cpu::amd
         BEGIN = 0,
         
         RETIRED_OPS,
+        RETIRED_MICROCODE_OPS,
         DISPATCH_STALLS_1,
+        DISPATCH_STALLS_1_0x6,
         BACKEND_STALLS_1,
         SMT_STALLS_1,
         OPS_SOURCE_DISPATCHED_FROM_DECODER,
-
+        RESYNCS,
+        CYCLES_NO_RETIRE_NOT_COMPLETE,
+        CYCLES_NO_RETIRE_LOAD_NOT_COMPLETE,
         END,
     };
 

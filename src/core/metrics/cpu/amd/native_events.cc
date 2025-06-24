@@ -10,14 +10,28 @@ namespace optkit::core::metrics::cpu::amd
         // Pipeline and Stalls
         case NativeEvents::RETIRED_OPS:
             return "RETIRED_OPS";
+        case NativeEvents::RETIRED_MICROCODE_OPS:
+            return "RETIRED_MICROCODE_OPS";
         case NativeEvents::DISPATCH_STALLS_1:
             return "DISPATCH_STALLS_1";
+        case NativeEvents::DISPATCH_STALLS_1_0x6:
+            return "DISPATCH_STALLS_1_0x6";
         case NativeEvents::BACKEND_STALLS_1:
             return "BACKEND_STALLS_1";
         case NativeEvents::SMT_STALLS_1:
             return "SMT_STALLS_1";
         case NativeEvents::OPS_SOURCE_DISPATCHED_FROM_DECODER:
             return "OPS_SOURCE_DISPATCHED_FROM_DECODER";
+        case NativeEvents::RESYNCS:
+            return "RESYNCS";
+        case NativeEvents::CYCLES_NO_RETIRE_NOT_COMPLETE:
+            return "CYCLES_NO_RETIRE_NOT_COMPLETE";
+        case NativeEvents::CYCLES_NO_RETIRE_LOAD_NOT_COMPLETE:
+            return "CYCLES_NO_RETIRE_LOAD_NOT_COMPLETE";
+
+
+
+
 
         default:
             return "UNKNOWN_CORE_EVENT";

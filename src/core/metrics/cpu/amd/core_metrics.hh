@@ -17,7 +17,7 @@
  * For detailed information on supported Performance Monitor Counters (PMCs), refer to the
  * AMD Family 1Ah Model 00h–0Fh documentation:
  * https://www.amd.com/content/dam/amd/en/documents/epyc-technical-docs/programmer-references/58550-0.01.pdf
- * 
+ *
  * Perf imlementation:
  * https://github.com/torvalds/linux/blob/master/tools/perf/pmu-events/arch/x86/amdzen4/pipeline.json
  * https://github.com/torvalds/linux/blob/master/tools/perf/pmu-events/arch/x86/amdzen4/other.json
@@ -412,8 +412,6 @@ namespace optkit::core::metrics::cpu
                            uint64_t no_ops_from_frontend = counts.at(no_ops_from_frontend_name);
                            uint64_t dispatch_slots = 6 * counts.at(dispatch_slots_name);
 
-                           std::cout << "!!!!!!!!!!!!! ---->>" << counts.at(dispatch_slots_name) << " -- " << dispatch_slots << "\n";
-
                            // Avoid div by zero
                            if (dispatch_slots == 0)
                                std::numeric_limits<double>::quiet_NaN();
@@ -464,7 +462,7 @@ namespace optkit::core::metrics::cpu
                                std::numeric_limits<double>::quiet_NaN();
                            return 100 * static_cast<double>(backend_stalls) / (static_cast<double>(dispatch_slots));
                        });
-        } ///< BACKEND_BOUND.SLOTS / (6 * CPU_CLK_UNHALTED.THREAD) — Fraction of slots where backend was unable to accept uops
+        } ///< BACKEND_STALLS_1 / (6 * CPU_CLK_UNHALTED.THREAD) — Fraction of slots where backend was unable to accept uops
         static MetricBuilder Retiring()
         {
             std::string dispatch_slots_name = to_string(CoreEvents::DISPATCH_SLOTS);
@@ -484,7 +482,7 @@ namespace optkit::core::metrics::cpu
                                std::numeric_limits<double>::quiet_NaN();
                            return 100 * (static_cast<double>(retired_ops)) / (static_cast<double>(dispatch_slots));
                        });
-        } ///< UOPS_RETIRED.RETIRE_SLOTS / (6 * CPU_CLK_UNHALTED.THREAD) — Fraction of slots retired successfully (i.e., useful work done)
+        } ///< RETIRED_OPS / (6 * CPU_CLK_UNHALTED.THREAD) — Fraction of slots retired successfully (i.e., useful work done)
         static MetricBuilder SMTContention()
         {
             std::string dispatch_slots_name = to_string(CoreEvents::DISPATCH_SLOTS);
@@ -503,17 +501,223 @@ namespace optkit::core::metrics::cpu
                                std::numeric_limits<double>::quiet_NaN();
                            return 100 * static_cast<double>(smt_stalls) / (static_cast<double>(dispatch_slots));
                        });
-        } ///< DISPATHC_SLOTS / (6 * CPU_CLK_UNHALTED.THREAD) — Fraction of unused dispatch slots because the other thread was selected
+        } ///< SMT_STALLS / (6 * CPU_CLK_UNHALTED.THREAD) — Fraction of unused dispatch slots because the other thread was selected
 
         // Topdown (Pipeline Utilisation) Analysis L1
-        static MetricBuilder FrontendBound_Latency() { return {}; }           ///< ICACHE.MISSES + ITLB_MISSES.STLB_HIT / IDQ_UOPS_NOT_DELIVERED.CORE — Portion of FrontendBound due to instruction cache or TLB latency
-        static MetricBuilder FrontendBound_BW() { return {}; }                ///< DECODE_STALL.CYCLES / IDQ_UOPS_NOT_DELIVERED.CORE — Portion of FrontendBound due to bandwidth limitations (decode/queue saturation)
-        static MetricBuilder BadSpeculation_Mispredicts() { return {}; }      ///< BR_MISP_RETIRED.ALL_BRANCHES / (6 * CPU_CLK_UNHALTED.THREAD) — Portion of BadSpeculation due to branch mispredicts
-        static MetricBuilder BadSpeculation_PipelineRestarts() { return {}; } ///< MACHINE_CLEARS.COUNT / (6 * CPU_CLK_UNHALTED.THREAD) — Portion of BadSpeculation due to pipeline clears (e.g., memory ordering violations)
-        static MetricBuilder BackendEndbound_Memory() { return {}; }          ///< MEM_BOUND / BACKEND_BOUND — Portion of BackendBound due to memory issues (DRAM, L3 misses, etc.)
-        static MetricBuilder BackendEndbound_CPU() { return {}; }             ///< CORE_BOUND / BACKEND_BOUND — Portion of BackendBound due to non-memory backend issues (e.g., execution unit contention)
-        static MetricBuilder Retiring_Fastpath() { return {}; }               ///< UOPS_RETIRED.RETIRE_SLOTS (from scalar/simple ops) / TotalSlots — Portion of Retiring that was serviced via fast-path execution
-        static MetricBuilder Retiring_Microcode() { return {}; }              ///< MICROCODE.SEQUENCER_UOPS / TotalSlots — Portion of Retiring that came from microcode assists or complex flows
+        static MetricBuilder FrontendBound_Latency()
+        {
+            std::string dispatch_slots_name = to_string(CoreEvents::DISPATCH_SLOTS);
+            std::string no_ops_from_frontend_0x6flag_name = to_string(amd::NativeEvents::DISPATCH_STALLS_1_0x6);
+            return MetricBuilder{}
+                .add(no_ops_from_frontend_0x6flag_name, amd::EventMapper::get(cpu::amd::NativeEvents::DISPATCH_STALLS_1_0x6))
+                .add(dispatch_slots_name, amd::EventMapper::get(cpu::CoreEvents::UNHALTED_CORE_CYCLES))
+                .build("FrontendBound_Latency",
+                       [dispatch_slots_name, no_ops_from_frontend_0x6flag_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                       {
+                           uint64_t no_ops_from_frontend_0x6flag = 6 * counts.at(no_ops_from_frontend_0x6flag_name); // this is latency specific. it is dispatch_stalls/dispatch_slots no multiply with cpu wide.
+                           uint64_t dispatch_slots = 6 * counts.at(dispatch_slots_name);
+
+                           // Avoid div by zero
+                           if (dispatch_slots == 0)
+                               std::numeric_limits<double>::quiet_NaN();
+                           return 100 * static_cast<double>(no_ops_from_frontend_0x6flag) / (static_cast<double>(dispatch_slots));
+                       });
+        } ///< Fraction of dispatch slots that remained unused because of a latency bottleneck in the frontend, such as Instruction Cache or ITLB misses.
+
+        static MetricBuilder FrontendBound_BW()
+        {
+            std::string dispatch_slots_name = to_string(CoreEvents::DISPATCH_SLOTS);
+            std::string no_ops_from_frontend_name = to_string(amd::NativeEvents::DISPATCH_STALLS_1);
+            std::string no_ops_from_frontend_0x6flag_name = to_string(amd::NativeEvents::DISPATCH_STALLS_1_0x6);
+            return MetricBuilder{}
+                .add(no_ops_from_frontend_name, amd::EventMapper::get(cpu::amd::NativeEvents::DISPATCH_STALLS_1))
+                .add(no_ops_from_frontend_0x6flag_name, amd::EventMapper::get(cpu::amd::NativeEvents::DISPATCH_STALLS_1_0x6))
+                .add(dispatch_slots_name, amd::EventMapper::get(cpu::CoreEvents::UNHALTED_CORE_CYCLES))
+                .build("FrontendBound_BW",
+                       [dispatch_slots_name, no_ops_from_frontend_name, no_ops_from_frontend_0x6flag_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                       {
+                           uint64_t no_ops_from_frontend = counts.at(no_ops_from_frontend_name); // this is latency specific. it is backend_stalls/dispatch_slots no multiply with cpu wide.
+                           uint64_t no_ops_from_frontend_0x6flag = 8 * counts.at(no_ops_from_frontend_0x6flag_name);
+                           uint64_t dispatch_slots = 6 * counts.at(dispatch_slots_name);
+
+                           // Avoid div by zero
+                           if (dispatch_slots == 0)
+                               std::numeric_limits<double>::quiet_NaN();
+                           return 100 * (static_cast<double>(no_ops_from_frontend) - 6 * static_cast<double>(no_ops_from_frontend_0x6flag)) / (static_cast<double>(dispatch_slots));
+                       });
+        } ///< Fraction of dispatch slots that remained unused because of a bandwidth bottleneck in the frontend, such as decode bandwidth or Op Cache fetch bandwidth.
+        static MetricBuilder BadSpeculation_Mispredicts()
+        {
+
+            std::string branch_misp_retired_name = to_string(CoreEvents::BRANCH_MISP_RETIRED);
+            std::string resyncs_name = to_string(amd::NativeEvents::RESYNCS);
+            std::string dispatch_slots_name = to_string(CoreEvents::DISPATCH_SLOTS);
+            std::string retired_ops_name = to_string(amd::NativeEvents::RETIRED_OPS);
+            std::string ops_source_dispatched_from_decoder_name = to_string(amd::NativeEvents::OPS_SOURCE_DISPATCHED_FROM_DECODER);
+
+            return MetricBuilder{}
+                .add(branch_misp_retired_name, amd::EventMapper::get(CoreEvents::BRANCH_MISP_RETIRED))
+                .add(dispatch_slots_name, amd::EventMapper::get(cpu::CoreEvents::UNHALTED_CORE_CYCLES))
+                .add(resyncs_name, amd::EventMapper::get(amd::NativeEvents::RESYNCS))
+                .add(retired_ops_name, amd::EventMapper::get(cpu::amd::NativeEvents::RETIRED_OPS))
+                .add(ops_source_dispatched_from_decoder_name, amd::EventMapper::get(cpu::amd::NativeEvents::OPS_SOURCE_DISPATCHED_FROM_DECODER))
+                .build("BadSpeculation_Mispredicts",
+                       [branch_misp_retired_name, dispatch_slots_name, resyncs_name, retired_ops_name, ops_source_dispatched_from_decoder_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                       {
+                           uint64_t branch_misp_retired = counts.at(branch_misp_retired_name);
+                           uint64_t dispatch_slots = 6 * counts.at(dispatch_slots_name);
+                           uint64_t resyncs = counts.at(resyncs_name);
+                           uint64_t retired_ops = counts.at(retired_ops_name);
+                           uint64_t ops_source_dispatched_from_decoder = counts.at(ops_source_dispatched_from_decoder_name);
+
+                           // Avoid div by zero
+                           if (dispatch_slots == 0 || (branch_misp_retired + resyncs) == 0)
+                               std::numeric_limits<double>::quiet_NaN();
+
+                           double bad_speculation = (static_cast<double>(ops_source_dispatched_from_decoder) - static_cast<double>(retired_ops)) / (static_cast<double>(dispatch_slots));
+                           return 100 * (bad_speculation * branch_misp_retired) / (branch_misp_retired + resyncs);
+                       });
+
+        } ///< Fraction of dispatched ops that were flushed due to branch mispredicts
+        static MetricBuilder BadSpeculation_PipelineRestarts()
+        {
+
+            std::string branch_misp_retired_name = to_string(CoreEvents::BRANCH_MISP_RETIRED);
+            std::string dispatch_slots_name = to_string(CoreEvents::DISPATCH_SLOTS);
+            std::string resyncs_name = to_string(amd::NativeEvents::RESYNCS);
+            std::string retired_ops_name = to_string(amd::NativeEvents::RETIRED_OPS);
+            std::string ops_source_dispatched_from_decoder_name = to_string(amd::NativeEvents::OPS_SOURCE_DISPATCHED_FROM_DECODER);
+
+            return MetricBuilder{}
+                .add(branch_misp_retired_name, amd::EventMapper::get(CoreEvents::BRANCH_MISP_RETIRED))
+                .add(dispatch_slots_name, amd::EventMapper::get(cpu::CoreEvents::UNHALTED_CORE_CYCLES))
+                .add(resyncs_name, amd::EventMapper::get(amd::NativeEvents::RESYNCS))
+                .add(retired_ops_name, amd::EventMapper::get(cpu::amd::NativeEvents::RETIRED_OPS))
+                .add(ops_source_dispatched_from_decoder_name, amd::EventMapper::get(cpu::amd::NativeEvents::OPS_SOURCE_DISPATCHED_FROM_DECODER))
+                .build("BadSpeculation_PipelineRestarts",
+                       [branch_misp_retired_name, dispatch_slots_name, resyncs_name, retired_ops_name, ops_source_dispatched_from_decoder_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                       {
+                           uint64_t branch_misp_retired = counts.at(branch_misp_retired_name);
+                           uint64_t dispatch_slots = 6 * counts.at(dispatch_slots_name);
+                           uint64_t resyncs = counts.at(resyncs_name);
+                           uint64_t retired_ops = counts.at(retired_ops_name);
+                           uint64_t ops_source_dispatched_from_decoder = counts.at(ops_source_dispatched_from_decoder_name);
+
+                           // Avoid div by zero
+                           if (dispatch_slots == 0 || (branch_misp_retired + resyncs) == 0)
+                               std::numeric_limits<double>::quiet_NaN();
+
+                           double bad_speculation = (static_cast<double>(ops_source_dispatched_from_decoder) - static_cast<double>(retired_ops)) / (static_cast<double>(dispatch_slots));
+                           return 100 * (bad_speculation * resyncs) / (branch_misp_retired + resyncs);
+                       });
+        } ///< Fraction of dispatched ops that were flushed due to pipeline restarts (resyncs).
+
+        static MetricBuilder BackendEndbound_Memory()
+        {
+            std::string dispatch_slots_name = to_string(CoreEvents::DISPATCH_SLOTS);
+            std::string backend_stalls_name = to_string(amd::NativeEvents::BACKEND_STALLS_1);
+            std::string cycles_no_retire_not_complete_name = to_string(amd::NativeEvents::CYCLES_NO_RETIRE_NOT_COMPLETE);
+            std::string cycles_no_retire_load_not_complete_name = to_string(amd::NativeEvents::CYCLES_NO_RETIRE_LOAD_NOT_COMPLETE);
+
+            return MetricBuilder{}
+                .add(backend_stalls_name, amd::EventMapper::get(cpu::amd::NativeEvents::BACKEND_STALLS_1))
+                .add(dispatch_slots_name, amd::EventMapper::get(cpu::CoreEvents::UNHALTED_CORE_CYCLES))
+                .add(cycles_no_retire_not_complete_name, amd::EventMapper::get(cpu::amd::NativeEvents::CYCLES_NO_RETIRE_NOT_COMPLETE))
+                .add(cycles_no_retire_load_not_complete_name, amd::EventMapper::get(cpu::amd::NativeEvents::CYCLES_NO_RETIRE_LOAD_NOT_COMPLETE))
+                .build("BackendEndbound_Memory",
+                       [dispatch_slots_name, backend_stalls_name, cycles_no_retire_not_complete_name, cycles_no_retire_load_not_complete_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                       {
+                           uint64_t backend_stalls = counts.at(backend_stalls_name);
+                           uint64_t dispatch_slots = 6 * counts.at(dispatch_slots_name);
+                           uint64_t cycles_no_retire_not_complete = counts.at(cycles_no_retire_not_complete_name);
+                           uint64_t cycles_no_retire_load_not_complete = counts.at(cycles_no_retire_load_not_complete_name);
+
+                           // Avoid div by zero
+                           if (dispatch_slots == 0 || cycles_no_retire_load_not_complete == 0)
+                               std::numeric_limits<double>::quiet_NaN();
+                           double backend_bound = static_cast<double>(backend_stalls) / (static_cast<double>(dispatch_slots));
+                           return 100 * backend_bound * (static_cast<double>(cycles_no_retire_not_complete) / static_cast<double>(cycles_no_retire_load_not_complete));
+                       });
+        } ///< Fraction of dispatched slots that remained unused because of stalls due to the memory subsystem.
+
+        static MetricBuilder BackendEndbound_CPU()
+        {
+            std::string dispatch_slots_name = to_string(CoreEvents::DISPATCH_SLOTS);
+            std::string backend_stalls_name = to_string(amd::NativeEvents::BACKEND_STALLS_1);
+            std::string cycles_no_retire_not_complete_name = to_string(amd::NativeEvents::CYCLES_NO_RETIRE_NOT_COMPLETE);
+            std::string cycles_no_retire_load_not_complete_name = to_string(amd::NativeEvents::CYCLES_NO_RETIRE_LOAD_NOT_COMPLETE);
+
+            return MetricBuilder{}
+                .add(backend_stalls_name, amd::EventMapper::get(cpu::amd::NativeEvents::BACKEND_STALLS_1))
+                .add(dispatch_slots_name, amd::EventMapper::get(cpu::CoreEvents::UNHALTED_CORE_CYCLES))
+                .add(cycles_no_retire_not_complete_name, amd::EventMapper::get(cpu::amd::NativeEvents::CYCLES_NO_RETIRE_NOT_COMPLETE))
+                .add(cycles_no_retire_load_not_complete_name, amd::EventMapper::get(cpu::amd::NativeEvents::CYCLES_NO_RETIRE_LOAD_NOT_COMPLETE))
+                .build("BackendEndbound_CPU",
+                       [dispatch_slots_name, backend_stalls_name, cycles_no_retire_not_complete_name, cycles_no_retire_load_not_complete_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                       {
+                           uint64_t backend_stalls = counts.at(backend_stalls_name);
+                           uint64_t dispatch_slots = 6 * counts.at(dispatch_slots_name);
+                           uint64_t cycles_no_retire_not_complete = counts.at(cycles_no_retire_not_complete_name);
+                           uint64_t cycles_no_retire_load_not_complete = counts.at(cycles_no_retire_load_not_complete_name);
+
+                           // Avoid div by zero
+                           if (dispatch_slots == 0 || cycles_no_retire_load_not_complete == 0)
+                               std::numeric_limits<double>::quiet_NaN();
+                           double backend_bound = static_cast<double>(backend_stalls) / (static_cast<double>(dispatch_slots));
+                           return 100 * backend_bound * (1.0 - (static_cast<double>(cycles_no_retire_not_complete) / static_cast<double>(cycles_no_retire_load_not_complete)));
+                       });
+
+        } ///< CORE_BOUND / BACKEND_BOUND — Portion of BackendBound due to non-memory backend issues (e.g., execution unit contention)
+        static MetricBuilder Retiring_Fastpath()
+        {
+            std::string dispatch_slots_name = to_string(CoreEvents::DISPATCH_SLOTS);
+            std::string retired_microcode_ops_name = to_string(amd::NativeEvents::RETIRED_MICROCODE_OPS);
+            std::string retired_ops_name = to_string(amd::NativeEvents::RETIRED_OPS);
+
+            return MetricBuilder{}
+                .add(dispatch_slots_name, amd::EventMapper::get(cpu::CoreEvents::UNHALTED_CORE_CYCLES))
+                .add(retired_microcode_ops_name, amd::EventMapper::get(amd::NativeEvents::RETIRED_MICROCODE_OPS))
+                .add(retired_ops_name, amd::EventMapper::get(cpu::amd::NativeEvents::RETIRED_OPS))
+                .build("Retiring_Fastpath",
+                       [dispatch_slots_name, retired_microcode_ops_name, retired_ops_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                       {
+                           uint64_t dispatch_slots = 6 * counts.at(dispatch_slots_name);
+                           uint64_t retired_ops = counts.at(retired_ops_name);
+                           uint64_t retired_microcode_ops = counts.at(retired_microcode_ops_name);
+
+                           // Avoid div by zero
+                           if (retired_ops == 0 || dispatch_slots)
+                               std::numeric_limits<double>::quiet_NaN();
+                           double retiring = (static_cast<double>(retired_ops)) / (static_cast<double>(dispatch_slots));
+
+                           return 100 * retiring * (retired_ops - retired_microcode_ops) / retired_ops;
+                       });
+        } ///< Fraction of dispatch slots used by fastpath ops that retired
+        static MetricBuilder Retiring_Microcode()
+        {
+            std::string dispatch_slots_name = to_string(CoreEvents::DISPATCH_SLOTS);
+            std::string retired_microcode_ops_name = to_string(amd::NativeEvents::RETIRED_MICROCODE_OPS);
+            std::string retired_ops_name = to_string(amd::NativeEvents::RETIRED_OPS);
+
+            return MetricBuilder{}
+                .add(dispatch_slots_name, amd::EventMapper::get(cpu::CoreEvents::UNHALTED_CORE_CYCLES))
+                .add(retired_microcode_ops_name, amd::EventMapper::get(amd::NativeEvents::RETIRED_MICROCODE_OPS))
+                .add(retired_ops_name, amd::EventMapper::get(cpu::amd::NativeEvents::RETIRED_OPS))
+                .build("Retiring_Microcode",
+                       [dispatch_slots_name, retired_microcode_ops_name, retired_ops_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                       {
+                           uint64_t dispatch_slots = 6 * counts.at(dispatch_slots_name);
+                           uint64_t retired_ops = counts.at(retired_ops_name);
+                           uint64_t retired_microcode_ops = counts.at(retired_microcode_ops_name);
+
+                           // Avoid div by zero
+                           if (retired_ops == 0 || dispatch_slots)
+                               std::numeric_limits<double>::quiet_NaN();
+                           double retiring = (static_cast<double>(retired_ops)) / (static_cast<double>(dispatch_slots));
+
+                           return 100 * retiring * retired_microcode_ops / retired_ops;
+                       });
+        } ///< Fraction of dispatch slots used by microcode ops that retired.
 
 #else
         // Topdown (Pipeline Utilisation) Analysis L1
