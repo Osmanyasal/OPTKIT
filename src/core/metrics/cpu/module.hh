@@ -13,7 +13,7 @@
 #include "core/metrics/cpu/amd/event_mapper.hh"
 namespace optkit::core::metrics::cpu
 {
-    using metrics = CoreMetrics<AMDMetricsImpl>;
+    using core_metrics = CoreMetrics<AMDMetricsImpl>;
     using event_mapper = amd::EventMapper;
     using core_events = CoreEvents;
 }

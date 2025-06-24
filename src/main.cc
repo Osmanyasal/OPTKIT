@@ -5,7 +5,9 @@
 #include "core/pmu/cpu/events/intel/icl.hh"
 #include "core/pmu/cpu/query_pmu.hh"
 
-#include "core/metrics/cpu/amd/core_metrics.hh"
+#include "core/metrics/cpu/module.hh"
+#include "instructions.hh"
+
 #include <unistd.h>
 
 #define VECTOR_SIZE 100000000  // 100 million elements
@@ -99,28 +101,41 @@ using namespace optkit::core::metrics;
 int32_t main(int32_t argc, char **argv)
 {
     OPTKIT_INIT();
-    size_t n = 1 << 20;            // ~1 million elements
-    std::vector<float> A(n, 1.0f); // all 1s
-    std::vector<float> B(n, 2.0f); // all 2s
-    std::vector<float> C;
+    //     size_t n = 1 << 20;            // ~1 million elements
+    //     std::vector<float> A(n, 1.0f); // all 1s
+    //     std::vector<float> B(n, 2.0f); // all 2s
+    //     std::vector<float> C;
 
-    MetricBuilder mb{};
-    mb.add(to_string(cpu::core_events::RETIRED_SSE_AVX_FLOPS_ANY), cpu::event_mapper::get(cpu::core_events::RETIRED_SSE_AVX_FLOPS_ANY))
-        .add(to_string(cpu::core_events::RETIRED_FLOPS_ANY), cpu::event_mapper::get(cpu::core_events::RETIRED_FLOPS_ANY))
-        .add(to_string(cpu::core_events::INST_RETIRED), cpu::event_mapper::get(cpu::core_events::INST_RETIRED));
+    //     MetricBuilder mb{};
+    //     mb.add(to_string(cpu::core_events::RETIRED_SSE_AVX_FLOPS_ANY), cpu::event_mapper::get(cpu::core_events::RETIRED_SSE_AVX_FLOPS_ANY))
+    //         .add(to_string(cpu::core_events::RETIRED_FLOPS_ANY), cpu::event_mapper::get(cpu::core_events::RETIRED_FLOPS_ANY))
+    //         .add(to_string(cpu::core_events::INST_RETIRED), cpu::event_mapper::get(cpu::core_events::INST_RETIRED));
+    //     {
+    //         OPTKIT_CPU_EVENTS("main", mb);
+
+    // #pragma omp parallel
+    //         {
+    // #pragma omp master
+    //             {
+    //                 std::cout << omp_get_max_threads() << "\n";
+    //             }
+
+    //             vector_add(A, B, C);
+    //         }
+    //     }
+    //     std::cout << "done \n";
+
+    MetricBuilder tt = cpu::core_metrics::TopdownL1();
+
+    OPTKIT_CPU_EVENTS("test", tt);
+
+    sleep(1);
+    for (int i = 0; i < 100; i++)
     {
-        OPTKIT_CPU_EVENTS("main", mb);
-
-#pragma omp parallel
-        {
-#pragma omp master
-            {
-                std::cout << omp_get_max_threads() << "\n";
-            }
-
-            vector_add(A, B, C);
-        }
+        std::cout << "i->" << i << "\n";
+        instructions_million();
     }
-    std::cout << "done \n";
+
+    std::cout << "end!\n";
     return 0;
 }

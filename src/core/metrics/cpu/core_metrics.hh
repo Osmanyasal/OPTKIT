@@ -66,6 +66,23 @@ namespace optkit::core::metrics::cpu
         // Software prefetch
         static MetricBuilder IpSWPF() { return {}; } ///< INST_RETIRED / SW_PREFETCH_ACCESS.T0:u0xF
 
+        // Topdown (Pipeline Utilisation) Analysis L1
+        static MetricBuilder FrontendBound() { return {}; }   ///< IDQ_UOPS_NOT_DELIVERED.CORE / (4 * CPU_CLK_UNHALTED.THREAD) — Fraction of slots not delivered by frontend
+        static MetricBuilder BadSpeculation() { return {}; }  ///< (BR_MISP_RETIRED.ALL_BRANCHES + MACHINE_CLEARS.COUNT) / (4 * CPU_CLK_UNHALTED.THREAD) — Fraction of slots wasted due to branch mispredicts or other speculation issues
+        static MetricBuilder BackendBound() { return {}; } ///< BACKEND_BOUND.SLOTS / (4 * CPU_CLK_UNHALTED.THREAD) — Fraction of slots where backend was unable to accept uops
+        static MetricBuilder Retiring() { return {}; }        ///< UOPS_RETIRED.RETIRE_SLOTS / (4 * CPU_CLK_UNHALTED.THREAD) — Fraction of slots retired successfully (i.e., useful work done)
+        static MetricBuilder SMTContention() { return {}; }        ///< DISPATHC_SLOTS / (4 * CPU_CLK_UNHALTED.THREAD) — Fraction of unused dispatch slots because the other thread was selected
+
+        // Topdown (Pipeline Utilisation) Analysis L1
+        static MetricBuilder FrontendBound_Latency() { return {}; }           ///< ICACHE.MISSES + ITLB_MISSES.STLB_HIT / IDQ_UOPS_NOT_DELIVERED.CORE — Portion of FrontendBound due to instruction cache or TLB latency
+        static MetricBuilder FrontendBound_BW() { return {}; }                ///< DECODE_STALL.CYCLES / IDQ_UOPS_NOT_DELIVERED.CORE — Portion of FrontendBound due to bandwidth limitations (decode/queue saturation)
+        static MetricBuilder BadSpeculation_Mispredicts() { return {}; }      ///< BR_MISP_RETIRED.ALL_BRANCHES / (4 * CPU_CLK_UNHALTED.THREAD) — Portion of BadSpeculation due to branch mispredicts
+        static MetricBuilder BadSpeculation_PipelineRestarts() { return {}; } ///< MACHINE_CLEARS.COUNT / (4 * CPU_CLK_UNHALTED.THREAD) — Portion of BadSpeculation due to pipeline clears (e.g., memory ordering violations)
+        static MetricBuilder BackendEndbound_Memory() { return {}; }          ///< MEM_BOUND / BACKEND_BOUND — Portion of BackendBound due to memory issues (DRAM, L3 misses, etc.)
+        static MetricBuilder BackendEndbound_CPU() { return {}; }             ///< CORE_BOUND / BACKEND_BOUND — Portion of BackendBound due to non-memory backend issues (e.g., execution unit contention)
+        static MetricBuilder Retiring_Fastpath() { return {}; }               ///< UOPS_RETIRED.RETIRE_SLOTS (from scalar/simple ops) / TotalSlots — Portion of Retiring that was serviced via fast-path execution
+        static MetricBuilder Retiring_Microcode() { return {}; }              ///< MICROCODE.SEQUENCER_UOPS / TotalSlots — Portion of Retiring that came from microcode assists or complex flows
+
         // Aggregated Metrics
         static MetricBuilder AllMPKI() { return {}; }
         static MetricBuilder AllSTLBMPKI() { return {}; }
@@ -73,6 +90,11 @@ namespace optkit::core::metrics::cpu
         static MetricBuilder AllDRAMBandwidth() { return {}; }
         static MetricBuilder AllIpMetrics() { return {}; }
         static MetricBuilder AllBranchMetrics() { return {}; }
+
+        static MetricBuilder TopdownL1() { return {}; }
+        static MetricBuilder TopdownL2() { return {}; }
+        static MetricBuilder AllTopdown() { return {}; }
+        
         static MetricBuilder AllMetrics() { return {}; }
 
     private:

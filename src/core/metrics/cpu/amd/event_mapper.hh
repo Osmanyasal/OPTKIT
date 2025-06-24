@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include "utils/utils.hh"
 #include "core/metrics/cpu/core_events.hh"
+#include "core/metrics/cpu/amd/native_events.hh"
 
 /**
  * @brief metrics are mapped based on the manual:
@@ -29,11 +30,21 @@ namespace optkit::core::metrics::cpu::amd
             }
             return {};
         }
+        static std::vector<uint64_t> get(cpu::amd::NativeEvents event)
+        {
+            auto it = native_event_map.find(event);
+            if (it != native_event_map.end())
+            {
+                return it->second;
+            }
+            return {};
+        }
 
     private:
         EventMapper() {}
         ~EventMapper() {}
         static const std::unordered_map<cpu::CoreEvents, std::vector<uint64_t>> core_event_map;     // coreEvent - even nums to monitor.
+        static const std::unordered_map<cpu::amd::NativeEvents, std::vector<uint64_t>> native_event_map; // coreEvent - even nums to monitor.
     };
 };
 #endif

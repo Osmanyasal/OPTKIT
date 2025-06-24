@@ -8,6 +8,7 @@
 #include <unordered_set>
 #include <unordered_map>
 #include <iostream>
+#include "utils/utils.hh"
 namespace optkit::core::metrics
 {
     /**
@@ -42,7 +43,7 @@ namespace optkit::core::metrics
      *        });
      *
      * Following steps are automatically done in OPTKIT_CPU_METRICS macro, you just need to provide block name and MetricBuilder class of your own.
-     * 
+     *
      * std::vector<std::pair<std::string, uint64_t>> results = {
      *     {"inst_retired", 5'000'000},
      *     {"cpu_cycles", 10'000'000},
@@ -71,9 +72,12 @@ namespace optkit::core::metrics
         MetricBuilder(bool print_events = true) : print_events{print_events} {};
 
         // Add event codes with a name (no change here)
-        MetricBuilder &add(const std::string &name, const std::vector<uint64_t> &codes)
+        MetricBuilder &add(const std::string &name, const std::vector<uint64_t> &event_codes)
         {
-            for (uint64_t code : codes)
+            if (OPT_UNLIKELY(event_codes.empty()))
+                return *this; // nothing to add
+
+            for (uint64_t code : event_codes)
             {
                 std::string key = name + "_" + std::to_string(code);
                 if (added_keys_.insert(key).second)
@@ -86,6 +90,9 @@ namespace optkit::core::metrics
 
         MetricBuilder &add(const std::vector<std::pair<std::string, uint64_t>> &events)
         {
+            if (OPT_UNLIKELY(events.empty()))
+                return *this; // nothing to add
+
             for (const auto &pair : events)
             {
                 std::string key = pair.first + "_" + std::to_string(pair.second);
@@ -99,6 +106,9 @@ namespace optkit::core::metrics
 
         MetricBuilder &add(const MetricBuilder &mb)
         {
+            if (mb.metric_events.empty())
+                return *this;
+
             this->add(mb.metric_events);
 
             // Add calculation functions (overwrites if names collide)

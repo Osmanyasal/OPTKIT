@@ -5,6 +5,38 @@ using namespace optkit::core::metrics;
 
 // Note that, event numbers (hex format) are not important here, we do not measure any events we just test the behaviour of MetricBuilder.
 
+TEST(MetricBuilderTest, AddEmptySingleName)
+{
+    MetricBuilder builder;
+    builder.add("cycles", {});
+    ASSERT_TRUE(builder.metric_events.empty());
+}
+
+TEST(MetricBuilderTest, AddEmptyVectorOfEvents)
+{
+    MetricBuilder builder;
+    std::vector<std::pair<std::string, uint64_t>> empty_events;
+    builder.add(empty_events);
+    ASSERT_TRUE(builder.metric_events.empty());
+}
+
+TEST(MetricBuilderTest, AddEmptyNameButEventCode)
+{
+    MetricBuilder builder;
+    std::vector<std::pair<std::string, uint64_t>> empty_events{{"",333}};
+    builder.add(empty_events);
+    ASSERT_EQ(builder.metric_events.size(), 1);
+}
+
+TEST(MetricBuilderTest, AddEmptyBuilder)
+{
+    MetricBuilder builder;
+    MetricBuilder empty;
+    builder.add(empty);
+    ASSERT_TRUE(builder.metric_events.empty());
+    ASSERT_TRUE(builder.metric_names().empty());
+}
+
 TEST(MetricBuilderTest, AddSingleEventAvoidsDuplicates)
 {
     MetricBuilder builder;

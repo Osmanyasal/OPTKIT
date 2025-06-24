@@ -8,6 +8,8 @@ namespace optkit::core::metrics::cpu
         switch (event)
         {
         // Pipeline and Stalls
+        case CoreEvents::DISPATCH_SLOTS:
+            return "DISPATCH_SLOTS";
         case CoreEvents::UNHALTED_CORE_CYCLES:
             return "UNHALTED_CORE_CYCLES";
         case CoreEvents::UNHALTED_REFERENCE_CYCLES:
