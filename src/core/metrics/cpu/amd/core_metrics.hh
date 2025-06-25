@@ -537,13 +537,13 @@ namespace optkit::core::metrics::cpu
                        [dispatch_slots_name, no_ops_from_frontend_name, no_ops_from_frontend_0x6flag_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
                            uint64_t no_ops_from_frontend = counts.at(no_ops_from_frontend_name); // this is latency specific. it is backend_stalls/dispatch_slots no multiply with cpu wide.
-                           uint64_t no_ops_from_frontend_0x6flag = 8 * counts.at(no_ops_from_frontend_0x6flag_name);
+                           uint64_t no_ops_from_frontend_0x6flag = 6 * counts.at(no_ops_from_frontend_0x6flag_name);
                            uint64_t dispatch_slots = 6 * counts.at(dispatch_slots_name);
 
                            // Avoid div by zero
                            if (dispatch_slots == 0)
                                std::numeric_limits<double>::quiet_NaN();
-                           return 100 * (static_cast<double>(no_ops_from_frontend) - 6 * static_cast<double>(no_ops_from_frontend_0x6flag)) / (static_cast<double>(dispatch_slots));
+                           return 100 * (static_cast<double>(no_ops_from_frontend) - static_cast<double>(no_ops_from_frontend_0x6flag)) / (static_cast<double>(dispatch_slots));
                        });
         } ///< Fraction of dispatch slots that remained unused because of a bandwidth bottleneck in the frontend, such as decode bandwidth or Op Cache fetch bandwidth.
         static MetricBuilder BadSpeculation_Mispredicts()

@@ -41,8 +41,6 @@ function base_project_setup()
         "-g",
         "-fopenmp",
         "-fPIC",
-        "-msse",
-        "-march=native",
         "-DCONF_LOG_PRINT_GUID_LENGTH=10",
         "-DCONF_LOG_DISABLE_DEBUG=0",
         "-DCONF_LOG_DISABLE_TRACE=0",
