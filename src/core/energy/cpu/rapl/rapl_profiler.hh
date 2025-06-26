@@ -32,7 +32,7 @@ namespace optkit::core::energy::rapl
          */
         virtual void enable() override;
 
-        virtual void reset() override {};
+        virtual void reset() override {}
 
         virtual std::string to_json() override;
 
@@ -43,7 +43,7 @@ namespace optkit::core::energy::rapl
          */
         virtual std::map<int32_t, std::map<RaplDomain, double>> read() override;
 
-        virtual std::unordered_map<std::string, uint64_t> aggregate() override {};
+        virtual std::unordered_map<std::string, uint64_t> aggregate() override { return {};}
 
     private:
         std::unique_ptr<optkit::core::energy::rapl::RaplPerfReader> rapl_reader;

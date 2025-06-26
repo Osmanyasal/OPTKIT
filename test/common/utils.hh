@@ -38,6 +38,7 @@ inline std::vector<size_t> generate_shuffled_indices(size_t n = VECTOR_SIZE)
     return indices;
 }
 
+
 template <class T>
 inline std::vector<std::vector<T>> createMatrix(size_t rows, size_t cols, size_t val = 1)
 {

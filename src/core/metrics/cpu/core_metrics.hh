@@ -67,11 +67,11 @@ namespace optkit::core::metrics::cpu
         static MetricBuilder IpSWPF() { return {}; } ///< INST_RETIRED / SW_PREFETCH_ACCESS.T0:u0xF
 
         // Topdown (Pipeline Utilisation) Analysis L1
-        static MetricBuilder FrontendBound() { return {}; }   ///< IDQ_UOPS_NOT_DELIVERED.CORE / (4 * CPU_CLK_UNHALTED.THREAD) — Fraction of slots not delivered by frontend
-        static MetricBuilder BadSpeculation() { return {}; }  ///< (BR_MISP_RETIRED.ALL_BRANCHES + MACHINE_CLEARS.COUNT) / (4 * CPU_CLK_UNHALTED.THREAD) — Fraction of slots wasted due to branch mispredicts or other speculation issues
-        static MetricBuilder BackendBound() { return {}; } ///< BACKEND_BOUND.SLOTS / (4 * CPU_CLK_UNHALTED.THREAD) — Fraction of slots where backend was unable to accept uops
-        static MetricBuilder Retiring() { return {}; }        ///< UOPS_RETIRED.RETIRE_SLOTS / (4 * CPU_CLK_UNHALTED.THREAD) — Fraction of slots retired successfully (i.e., useful work done)
-        static MetricBuilder SMTContention() { return {}; }        ///< DISPATHC_SLOTS / (4 * CPU_CLK_UNHALTED.THREAD) — Fraction of unused dispatch slots because the other thread was selected
+        static MetricBuilder FrontendBound() { return {}; }  ///< IDQ_UOPS_NOT_DELIVERED.CORE / (4 * CPU_CLK_UNHALTED.THREAD) — Fraction of slots not delivered by frontend
+        static MetricBuilder BadSpeculation() { return {}; } ///< (BR_MISP_RETIRED.ALL_BRANCHES + MACHINE_CLEARS.COUNT) / (4 * CPU_CLK_UNHALTED.THREAD) — Fraction of slots wasted due to branch mispredicts or other speculation issues
+        static MetricBuilder BackendBound() { return {}; }   ///< BACKEND_BOUND.SLOTS / (4 * CPU_CLK_UNHALTED.THREAD) — Fraction of slots where backend was unable to accept uops
+        static MetricBuilder Retiring() { return {}; }       ///< UOPS_RETIRED.RETIRE_SLOTS / (4 * CPU_CLK_UNHALTED.THREAD) — Fraction of slots retired successfully (i.e., useful work done)
+        static MetricBuilder SMTContention() { return {}; }  ///< DISPATHC_SLOTS / (4 * CPU_CLK_UNHALTED.THREAD) — Fraction of unused dispatch slots because the other thread was selected
 
         // Topdown (Pipeline Utilisation) Analysis L1
         static MetricBuilder FrontendBound_Latency() { return {}; }           ///< ICACHE.MISSES + ITLB_MISSES.STLB_HIT / IDQ_UOPS_NOT_DELIVERED.CORE — Portion of FrontendBound due to instruction cache or TLB latency
@@ -85,6 +85,7 @@ namespace optkit::core::metrics::cpu
 
         // Aggregated Metrics
         static MetricBuilder AllMPKI() { return {}; }
+        static MetricBuilder AllCacheHitRatio() { return {}; }
         static MetricBuilder AllSTLBMPKI() { return {}; }
         static MetricBuilder AllLatencyAndParallelism() { return {}; }
         static MetricBuilder AllDRAMBandwidth() { return {}; }
@@ -94,7 +95,7 @@ namespace optkit::core::metrics::cpu
         static MetricBuilder TopdownL1() { return {}; }
         static MetricBuilder TopdownL2() { return {}; }
         static MetricBuilder AllTopdown() { return {}; }
-        
+
         static MetricBuilder AllMetrics() { return {}; }
 
     private:

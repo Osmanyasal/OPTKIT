@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-namespace optkit::core::metrics::cpu::amd
+namespace optkit::core::metrics::cpu::intel
 {
     /**
      * @brief These are the core events to be monitored for metrics. It is expected to exists in every CPUs
@@ -11,19 +11,7 @@ namespace optkit::core::metrics::cpu::amd
     {
         BEGIN = 0,
         
-        RETIRED_OPS,
-        RETIRED_MICROCODE_OPS,
-        DISPATCH_STALLS_1,
-        DISPATCH_STALLS_1_0x6,
-        BACKEND_STALLS_1,
-        SMT_STALLS_1,
-        OPS_SOURCE_DISPATCHED_FROM_DECODER,
-        RESYNCS,
-        CYCLES_NO_RETIRE_NOT_COMPLETE,
-        CYCLES_NO_RETIRE_LOAD_NOT_COMPLETE,
-
-        L3_CACHE_ACCESSES,
-        L2_CACHE_ACCESSES,
+        
         END,
     };
 

@@ -39,16 +39,59 @@ namespace optkit::core::metrics::cpu
     template <>
     class CoreMetrics<AMDMetricsImpl>
     {
+    public:
+        // Native Metric implementations (not included in CoreMetrics)
+        static MetricBuilder L2HitRatio()
+        {
+            std::string l2_cache_accesses_name = to_string(amd::NativeEvents::L2_CACHE_ACCESSES);
+            std::string l2_hits_name = to_string(CoreEvents::L2_HITS);
+            return MetricBuilder{}
+                .add(l2_cache_accesses_name, amd::EventMapper::get(amd::NativeEvents::L2_CACHE_ACCESSES))
+                .add(l2_hits_name, amd::EventMapper::get(CoreEvents::L2_HITS))
+                .build("L2HitRatio",
+                       [l2_hits_name, l2_cache_accesses_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                       {
+                           uint64_t l2_hits = counts.at(l2_hits_name);
+                           uint64_t l2_cache_accesses = counts.at(l2_cache_accesses_name);
+
+                           // Avoid div by zero
+                           if (l2_cache_accesses == 0)
+                               std::numeric_limits<double>::quiet_NaN();
+                           return (static_cast<double>(l2_hits) / static_cast<double>(l2_cache_accesses));
+                       });
+        } ///< (L2_Hits/L2_Accesses)
+
+        static MetricBuilder L3HitRatio()
+        {
+            std::string l3_cache_accesses_name = to_string(amd::NativeEvents::L3_CACHE_ACCESSES);
+            std::string l3_misses_name = to_string(CoreEvents::L3_MISSES);
+            return MetricBuilder{}
+                .add(l3_cache_accesses_name, amd::EventMapper::get(amd::NativeEvents::L3_CACHE_ACCESSES))
+                .add(l3_misses_name, amd::EventMapper::get(CoreEvents::L3_MISSES))
+                .build("L3HitRatio",
+                       [l3_misses_name, l3_cache_accesses_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                       {
+                           uint64_t l3_misses = counts.at(l3_misses_name);
+                           uint64_t l3_cache_accesses = counts.at(l3_cache_accesses_name);
+
+                           // Avoid div by zero
+                           if (l3_cache_accesses == 0)
+                               std::numeric_limits<double>::quiet_NaN();
+                           return 1 - (static_cast<double>(l3_misses) / static_cast<double>(l3_cache_accesses));
+                       });
+        } ///< 1 - (L2_Misses/L3_Accesses)
 
     public:
+        // CoreMetrics Implementation
+
         // Cache miss per kilo instruction (MPKI)
         static MetricBuilder L1MPKI()
         {
             std::string l1_misses_name = to_string(CoreEvents::L1_MISSES);
             std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
             return MetricBuilder{}
-                .add(l1_misses_name, amd::EventMapper::get(cpu::CoreEvents::L1_MISSES))
-                .add(inst_retired_name, amd::EventMapper::get(cpu::CoreEvents::INST_RETIRED))
+                .add(l1_misses_name, amd::EventMapper::get(CoreEvents::L1_MISSES))
+                .add(inst_retired_name, amd::EventMapper::get(CoreEvents::INST_RETIRED))
                 .build("L1MPKI",
                        [l1_misses_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
@@ -69,8 +112,8 @@ namespace optkit::core::metrics::cpu
             std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
 
             return MetricBuilder{}
-                .add(l2_misses_name, amd::EventMapper::get(cpu::CoreEvents::L2_MISSES))
-                .add(inst_retired_name, amd::EventMapper::get(cpu::CoreEvents::INST_RETIRED))
+                .add(l2_misses_name, amd::EventMapper::get(CoreEvents::L2_MISSES))
+                .add(inst_retired_name, amd::EventMapper::get(CoreEvents::INST_RETIRED))
                 .build("L2MPKI",
                        [l2_misses_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
@@ -90,8 +133,8 @@ namespace optkit::core::metrics::cpu
             std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
 
             return MetricBuilder{}
-                .add(l3_misses_name, amd::EventMapper::get(cpu::CoreEvents::L3_MISSES))
-                .add(inst_retired_name, amd::EventMapper::get(cpu::CoreEvents::INST_RETIRED))
+                .add(l3_misses_name, amd::EventMapper::get(CoreEvents::L3_MISSES))
+                .add(inst_retired_name, amd::EventMapper::get(CoreEvents::INST_RETIRED))
                 .build("L3MPKI",
                        [l3_misses_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
@@ -108,12 +151,12 @@ namespace optkit::core::metrics::cpu
         // Branch
         static MetricBuilder BranchMisprRatio()
         {
-            std::string branch_inst_retired_name = to_string(cpu::CoreEvents::BRANCH_INST_RETIRED);
-            std::string branch_misp_retired_name = to_string(cpu::CoreEvents::BRANCH_MISP_RETIRED);
+            std::string branch_inst_retired_name = to_string(CoreEvents::BRANCH_INST_RETIRED);
+            std::string branch_misp_retired_name = to_string(CoreEvents::BRANCH_MISP_RETIRED);
 
             return MetricBuilder{}
-                .add(branch_inst_retired_name, amd::EventMapper::get(cpu::CoreEvents::BRANCH_INST_RETIRED))
-                .add(branch_misp_retired_name, amd::EventMapper::get(cpu::CoreEvents::BRANCH_MISP_RETIRED))
+                .add(branch_inst_retired_name, amd::EventMapper::get(CoreEvents::BRANCH_INST_RETIRED))
+                .add(branch_misp_retired_name, amd::EventMapper::get(CoreEvents::BRANCH_MISP_RETIRED))
                 .build("BranchMisprRatio",
                        [branch_misp_retired_name, branch_inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
@@ -130,12 +173,12 @@ namespace optkit::core::metrics::cpu
         // ITLB MPKI metrics
         static MetricBuilder ITLBMPKI()
         {
-            std::string itlb_misses_name = to_string(cpu::CoreEvents::ITLB_MISSES);
-            std::string inst_retired_name = to_string(cpu::CoreEvents::INST_RETIRED);
+            std::string itlb_misses_name = to_string(CoreEvents::ITLB_MISSES);
+            std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
 
             return MetricBuilder{}
-                .add(itlb_misses_name, amd::EventMapper::get(cpu::CoreEvents::ITLB_MISSES))
-                .add(inst_retired_name, amd::EventMapper::get(cpu::CoreEvents::INST_RETIRED))
+                .add(itlb_misses_name, amd::EventMapper::get(CoreEvents::ITLB_MISSES))
+                .add(inst_retired_name, amd::EventMapper::get(CoreEvents::INST_RETIRED))
                 .build("ITLBMPKI",
                        [itlb_misses_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
@@ -151,12 +194,12 @@ namespace optkit::core::metrics::cpu
         // DTLB MPKI metrics
         static MetricBuilder DTLBMPKI()
         {
-            std::string dtlb_misses_name = to_string(cpu::CoreEvents::DTLB_MISSES);
-            std::string inst_retired_name = to_string(cpu::CoreEvents::INST_RETIRED);
+            std::string dtlb_misses_name = to_string(CoreEvents::DTLB_MISSES);
+            std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
 
             return MetricBuilder{}
-                .add(dtlb_misses_name, amd::EventMapper::get(cpu::CoreEvents::DTLB_MISSES))
-                .add(inst_retired_name, amd::EventMapper::get(cpu::CoreEvents::INST_RETIRED))
+                .add(dtlb_misses_name, amd::EventMapper::get(CoreEvents::DTLB_MISSES))
+                .add(inst_retired_name, amd::EventMapper::get(CoreEvents::INST_RETIRED))
                 .build("DTLBMPKI",
                        [dtlb_misses_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
@@ -172,14 +215,14 @@ namespace optkit::core::metrics::cpu
         // TLB MPKI metrics
         static MetricBuilder TLBMPKI()
         {
-            std::string dtlb_misses_name = to_string(cpu::CoreEvents::DTLB_MISSES);
-            std::string itlb_misses_name = to_string(cpu::CoreEvents::ITLB_MISSES);
-            std::string inst_retired_name = to_string(cpu::CoreEvents::INST_RETIRED);
+            std::string dtlb_misses_name = to_string(CoreEvents::DTLB_MISSES);
+            std::string itlb_misses_name = to_string(CoreEvents::ITLB_MISSES);
+            std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
 
             return MetricBuilder{}
-                .add(itlb_misses_name, amd::EventMapper::get(cpu::CoreEvents::DTLB_MISSES))
-                .add(dtlb_misses_name, amd::EventMapper::get(cpu::CoreEvents::ITLB_MISSES))
-                .add(inst_retired_name, amd::EventMapper::get(cpu::CoreEvents::INST_RETIRED))
+                .add(itlb_misses_name, amd::EventMapper::get(CoreEvents::DTLB_MISSES))
+                .add(dtlb_misses_name, amd::EventMapper::get(CoreEvents::ITLB_MISSES))
+                .add(inst_retired_name, amd::EventMapper::get(CoreEvents::INST_RETIRED))
                 .build("TLBMPKI",
                        [itlb_misses_name, dtlb_misses_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
@@ -201,12 +244,12 @@ namespace optkit::core::metrics::cpu
 
         static MetricBuilder IpC()
         {
-            std::string inst_retired_name = to_string(cpu::CoreEvents::INST_RETIRED);
-            std::string unhalted_core_cycles_name = to_string(cpu::CoreEvents::UNHALTED_CORE_CYCLES);
+            std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
+            std::string unhalted_core_cycles_name = to_string(CoreEvents::UNHALTED_CORE_CYCLES);
 
             return MetricBuilder{}
-                .add(inst_retired_name, amd::EventMapper::get(cpu::CoreEvents::INST_RETIRED))
-                .add(unhalted_core_cycles_name, amd::EventMapper::get(cpu::CoreEvents::UNHALTED_CORE_CYCLES))
+                .add(inst_retired_name, amd::EventMapper::get(CoreEvents::INST_RETIRED))
+                .add(unhalted_core_cycles_name, amd::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
                 .build("IpC", [inst_retired_name, unhalted_core_cycles_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
                            uint64_t inst_retired = counts.at(inst_retired_name);
@@ -244,8 +287,8 @@ namespace optkit::core::metrics::cpu
             std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
             std::string branch_inst_retired_name = to_string(CoreEvents::BRANCH_INST_RETIRED);
             return MetricBuilder{}
-                .add(inst_retired_name, amd::EventMapper::get(cpu::CoreEvents::INST_RETIRED))
-                .add(branch_inst_retired_name, amd::EventMapper::get(cpu::CoreEvents::BRANCH_INST_RETIRED))
+                .add(inst_retired_name, amd::EventMapper::get(CoreEvents::INST_RETIRED))
+                .add(branch_inst_retired_name, amd::EventMapper::get(CoreEvents::BRANCH_INST_RETIRED))
                 .build("IpBranch",
                        [branch_inst_retired_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
@@ -264,8 +307,8 @@ namespace optkit::core::metrics::cpu
             std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
             std::string mem_load_retired_name = to_string(CoreEvents::MEM_LOAD_RETIRED);
             return MetricBuilder{}
-                .add(inst_retired_name, amd::EventMapper::get(cpu::CoreEvents::INST_RETIRED))
-                .add(mem_load_retired_name, amd::EventMapper::get(cpu::CoreEvents::MEM_LOAD_RETIRED))
+                .add(inst_retired_name, amd::EventMapper::get(CoreEvents::INST_RETIRED))
+                .add(mem_load_retired_name, amd::EventMapper::get(CoreEvents::MEM_LOAD_RETIRED))
                 .build("IpLoad",
                        [mem_load_retired_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
@@ -284,8 +327,8 @@ namespace optkit::core::metrics::cpu
             std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
             std::string mem_store_retired_name = to_string(CoreEvents::MEM_STORE_RETIRED);
             return MetricBuilder{}
-                .add(inst_retired_name, amd::EventMapper::get(cpu::CoreEvents::INST_RETIRED))
-                .add(mem_store_retired_name, amd::EventMapper::get(cpu::CoreEvents::MEM_STORE_RETIRED))
+                .add(inst_retired_name, amd::EventMapper::get(CoreEvents::INST_RETIRED))
+                .add(mem_store_retired_name, amd::EventMapper::get(CoreEvents::MEM_STORE_RETIRED))
                 .build("IpStore",
                        [mem_store_retired_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
@@ -304,8 +347,8 @@ namespace optkit::core::metrics::cpu
             std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
             std::string branch_misp_retired_name = to_string(CoreEvents::BRANCH_MISP_RETIRED);
             return MetricBuilder{}
-                .add(inst_retired_name, amd::EventMapper::get(cpu::CoreEvents::INST_RETIRED))
-                .add(branch_misp_retired_name, amd::EventMapper::get(cpu::CoreEvents::BRANCH_MISP_RETIRED))
+                .add(inst_retired_name, amd::EventMapper::get(CoreEvents::INST_RETIRED))
+                .add(branch_misp_retired_name, amd::EventMapper::get(CoreEvents::BRANCH_MISP_RETIRED))
                 .build("IpMispredict",
                        [branch_misp_retired_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
@@ -360,8 +403,8 @@ namespace optkit::core::metrics::cpu
             std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
             std::string retired_sse_avx_flops_any_name = to_string(CoreEvents::RETIRED_SSE_AVX_FLOPS_ANY);
             return MetricBuilder{}
-                .add(inst_retired_name, amd::EventMapper::get(cpu::CoreEvents::INST_RETIRED))
-                .add(retired_sse_avx_flops_any_name, amd::EventMapper::get(cpu::CoreEvents::RETIRED_SSE_AVX_FLOPS_ANY))
+                .add(inst_retired_name, amd::EventMapper::get(CoreEvents::INST_RETIRED))
+                .add(retired_sse_avx_flops_any_name, amd::EventMapper::get(CoreEvents::RETIRED_SSE_AVX_FLOPS_ANY))
                 .build("IpArithAVXAny",
                        [retired_sse_avx_flops_any_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
@@ -382,8 +425,8 @@ namespace optkit::core::metrics::cpu
             std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
             std::string sw_load_prefetch_name = to_string(CoreEvents::SW_LOAD_PREFETCH_ACCESS);
             return MetricBuilder{}
-                .add(inst_retired_name, amd::EventMapper::get(cpu::CoreEvents::INST_RETIRED))
-                .add(sw_load_prefetch_name, amd::EventMapper::get(cpu::CoreEvents::SW_LOAD_PREFETCH_ACCESS))
+                .add(inst_retired_name, amd::EventMapper::get(CoreEvents::INST_RETIRED))
+                .add(sw_load_prefetch_name, amd::EventMapper::get(CoreEvents::SW_LOAD_PREFETCH_ACCESS))
                 .build("IpSWPF",
                        [sw_load_prefetch_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
@@ -405,7 +448,7 @@ namespace optkit::core::metrics::cpu
             std::string no_ops_from_frontend_name = to_string(amd::NativeEvents::DISPATCH_STALLS_1);
             return MetricBuilder{}
                 .add(no_ops_from_frontend_name, amd::EventMapper::get(cpu::amd::NativeEvents::DISPATCH_STALLS_1))
-                .add(dispatch_slots_name, amd::EventMapper::get(cpu::CoreEvents::UNHALTED_CORE_CYCLES))
+                .add(dispatch_slots_name, amd::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
                 .build("FrontendBound",
                        [dispatch_slots_name, no_ops_from_frontend_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
@@ -426,7 +469,7 @@ namespace optkit::core::metrics::cpu
             std::string ops_source_dispatched_from_decoder_name = to_string(amd::NativeEvents::OPS_SOURCE_DISPATCHED_FROM_DECODER);
 
             return MetricBuilder{}
-                .add(dispatch_slots_name, amd::EventMapper::get(cpu::CoreEvents::UNHALTED_CORE_CYCLES))
+                .add(dispatch_slots_name, amd::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
                 .add(retired_ops_name, amd::EventMapper::get(cpu::amd::NativeEvents::RETIRED_OPS))
                 .add(ops_source_dispatched_from_decoder_name, amd::EventMapper::get(cpu::amd::NativeEvents::OPS_SOURCE_DISPATCHED_FROM_DECODER))
                 .build("BadSpeculation",
@@ -450,7 +493,7 @@ namespace optkit::core::metrics::cpu
             std::string backend_stalls_name = to_string(amd::NativeEvents::BACKEND_STALLS_1);
             return MetricBuilder{}
                 .add(backend_stalls_name, amd::EventMapper::get(cpu::amd::NativeEvents::BACKEND_STALLS_1))
-                .add(dispatch_slots_name, amd::EventMapper::get(cpu::CoreEvents::UNHALTED_CORE_CYCLES))
+                .add(dispatch_slots_name, amd::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
                 .build("BackendBound",
                        [dispatch_slots_name, backend_stalls_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
@@ -469,7 +512,7 @@ namespace optkit::core::metrics::cpu
             std::string retired_ops_name = to_string(amd::NativeEvents::RETIRED_OPS);
 
             return MetricBuilder{}
-                .add(dispatch_slots_name, amd::EventMapper::get(cpu::CoreEvents::UNHALTED_CORE_CYCLES))
+                .add(dispatch_slots_name, amd::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
                 .add(retired_ops_name, amd::EventMapper::get(cpu::amd::NativeEvents::RETIRED_OPS))
                 .build("Retiring",
                        [dispatch_slots_name, retired_ops_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
@@ -489,7 +532,7 @@ namespace optkit::core::metrics::cpu
             std::string smt_stalls_name = to_string(amd::NativeEvents::SMT_STALLS_1);
             return MetricBuilder{}
                 .add(smt_stalls_name, amd::EventMapper::get(cpu::amd::NativeEvents::SMT_STALLS_1))
-                .add(dispatch_slots_name, amd::EventMapper::get(cpu::CoreEvents::UNHALTED_CORE_CYCLES))
+                .add(dispatch_slots_name, amd::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
                 .build("SMTContention",
                        [dispatch_slots_name, smt_stalls_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
@@ -510,7 +553,7 @@ namespace optkit::core::metrics::cpu
             std::string no_ops_from_frontend_0x6flag_name = to_string(amd::NativeEvents::DISPATCH_STALLS_1_0x6);
             return MetricBuilder{}
                 .add(no_ops_from_frontend_0x6flag_name, amd::EventMapper::get(cpu::amd::NativeEvents::DISPATCH_STALLS_1_0x6))
-                .add(dispatch_slots_name, amd::EventMapper::get(cpu::CoreEvents::UNHALTED_CORE_CYCLES))
+                .add(dispatch_slots_name, amd::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
                 .build("FrontendBound_Latency",
                        [dispatch_slots_name, no_ops_from_frontend_0x6flag_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
@@ -532,7 +575,7 @@ namespace optkit::core::metrics::cpu
             return MetricBuilder{}
                 .add(no_ops_from_frontend_name, amd::EventMapper::get(cpu::amd::NativeEvents::DISPATCH_STALLS_1))
                 .add(no_ops_from_frontend_0x6flag_name, amd::EventMapper::get(cpu::amd::NativeEvents::DISPATCH_STALLS_1_0x6))
-                .add(dispatch_slots_name, amd::EventMapper::get(cpu::CoreEvents::UNHALTED_CORE_CYCLES))
+                .add(dispatch_slots_name, amd::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
                 .build("FrontendBound_BW",
                        [dispatch_slots_name, no_ops_from_frontend_name, no_ops_from_frontend_0x6flag_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
@@ -557,7 +600,7 @@ namespace optkit::core::metrics::cpu
 
             return MetricBuilder{}
                 .add(branch_misp_retired_name, amd::EventMapper::get(CoreEvents::BRANCH_MISP_RETIRED))
-                .add(dispatch_slots_name, amd::EventMapper::get(cpu::CoreEvents::UNHALTED_CORE_CYCLES))
+                .add(dispatch_slots_name, amd::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
                 .add(resyncs_name, amd::EventMapper::get(amd::NativeEvents::RESYNCS))
                 .add(retired_ops_name, amd::EventMapper::get(cpu::amd::NativeEvents::RETIRED_OPS))
                 .add(ops_source_dispatched_from_decoder_name, amd::EventMapper::get(cpu::amd::NativeEvents::OPS_SOURCE_DISPATCHED_FROM_DECODER))
@@ -590,7 +633,7 @@ namespace optkit::core::metrics::cpu
 
             return MetricBuilder{}
                 .add(branch_misp_retired_name, amd::EventMapper::get(CoreEvents::BRANCH_MISP_RETIRED))
-                .add(dispatch_slots_name, amd::EventMapper::get(cpu::CoreEvents::UNHALTED_CORE_CYCLES))
+                .add(dispatch_slots_name, amd::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
                 .add(resyncs_name, amd::EventMapper::get(amd::NativeEvents::RESYNCS))
                 .add(retired_ops_name, amd::EventMapper::get(cpu::amd::NativeEvents::RETIRED_OPS))
                 .add(ops_source_dispatched_from_decoder_name, amd::EventMapper::get(cpu::amd::NativeEvents::OPS_SOURCE_DISPATCHED_FROM_DECODER))
@@ -621,7 +664,7 @@ namespace optkit::core::metrics::cpu
 
             return MetricBuilder{}
                 .add(backend_stalls_name, amd::EventMapper::get(cpu::amd::NativeEvents::BACKEND_STALLS_1))
-                .add(dispatch_slots_name, amd::EventMapper::get(cpu::CoreEvents::UNHALTED_CORE_CYCLES))
+                .add(dispatch_slots_name, amd::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
                 .add(cycles_no_retire_not_complete_name, amd::EventMapper::get(cpu::amd::NativeEvents::CYCLES_NO_RETIRE_NOT_COMPLETE))
                 .add(cycles_no_retire_load_not_complete_name, amd::EventMapper::get(cpu::amd::NativeEvents::CYCLES_NO_RETIRE_LOAD_NOT_COMPLETE))
                 .build("BackendEndbound_Memory",
@@ -649,7 +692,7 @@ namespace optkit::core::metrics::cpu
 
             return MetricBuilder{}
                 .add(backend_stalls_name, amd::EventMapper::get(cpu::amd::NativeEvents::BACKEND_STALLS_1))
-                .add(dispatch_slots_name, amd::EventMapper::get(cpu::CoreEvents::UNHALTED_CORE_CYCLES))
+                .add(dispatch_slots_name, amd::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
                 .add(cycles_no_retire_not_complete_name, amd::EventMapper::get(cpu::amd::NativeEvents::CYCLES_NO_RETIRE_NOT_COMPLETE))
                 .add(cycles_no_retire_load_not_complete_name, amd::EventMapper::get(cpu::amd::NativeEvents::CYCLES_NO_RETIRE_LOAD_NOT_COMPLETE))
                 .build("BackendEndbound_CPU",
@@ -675,7 +718,7 @@ namespace optkit::core::metrics::cpu
             std::string retired_ops_name = to_string(amd::NativeEvents::RETIRED_OPS);
 
             return MetricBuilder{}
-                .add(dispatch_slots_name, amd::EventMapper::get(cpu::CoreEvents::UNHALTED_CORE_CYCLES))
+                .add(dispatch_slots_name, amd::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
                 .add(retired_microcode_ops_name, amd::EventMapper::get(amd::NativeEvents::RETIRED_MICROCODE_OPS))
                 .add(retired_ops_name, amd::EventMapper::get(cpu::amd::NativeEvents::RETIRED_OPS))
                 .build("Retiring_Fastpath",
@@ -700,7 +743,7 @@ namespace optkit::core::metrics::cpu
             std::string retired_ops_name = to_string(amd::NativeEvents::RETIRED_OPS);
 
             return MetricBuilder{}
-                .add(dispatch_slots_name, amd::EventMapper::get(cpu::CoreEvents::UNHALTED_CORE_CYCLES))
+                .add(dispatch_slots_name, amd::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
                 .add(retired_microcode_ops_name, amd::EventMapper::get(amd::NativeEvents::RETIRED_MICROCODE_OPS))
                 .add(retired_ops_name, amd::EventMapper::get(cpu::amd::NativeEvents::RETIRED_OPS))
                 .build("Retiring_Microcode",
@@ -778,6 +821,15 @@ namespace optkit::core::metrics::cpu
             mb.add(L1MPKI());
             mb.add(L2MPKI());
             mb.add(L3MPKI());
+            return mb;
+        }
+
+
+        static MetricBuilder AllCacheHitRatio()
+        {
+            MetricBuilder mb;
+            mb.add(L2HitRatio());
+            mb.add(L3HitRatio());
             return mb;
         }
 

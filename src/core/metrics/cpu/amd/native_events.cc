@@ -28,7 +28,10 @@ namespace optkit::core::metrics::cpu::amd
             return "CYCLES_NO_RETIRE_NOT_COMPLETE";
         case NativeEvents::CYCLES_NO_RETIRE_LOAD_NOT_COMPLETE:
             return "CYCLES_NO_RETIRE_LOAD_NOT_COMPLETE";
-
+        case NativeEvents::L3_CACHE_ACCESSES:
+            return "L3_CACHE_ACCESSES";
+        case NativeEvents::L2_CACHE_ACCESSES:
+            return "L2_CACHE_ACCESSES";
 
 
 
