@@ -57,7 +57,7 @@ namespace optkit::core::metrics::cpu
                            // Avoid div by zero
                            if (l2_cache_accesses == 0)
                                std::numeric_limits<double>::quiet_NaN();
-                           return (static_cast<double>(l2_hits) / static_cast<double>(l2_cache_accesses));
+                           return 100 * (static_cast<double>(l2_hits) / static_cast<double>(l2_cache_accesses));
                        });
         } ///< (L2_Hits/L2_Accesses)
 
@@ -77,7 +77,7 @@ namespace optkit::core::metrics::cpu
                            // Avoid div by zero
                            if (l3_cache_accesses == 0)
                                std::numeric_limits<double>::quiet_NaN();
-                           return 1 - (static_cast<double>(l3_misses) / static_cast<double>(l3_cache_accesses));
+                           return 100 * (1 - (static_cast<double>(l3_misses) / static_cast<double>(l3_cache_accesses)));
                        });
         } ///< 1 - (L2_Misses/L3_Accesses)
 
@@ -368,6 +368,27 @@ namespace optkit::core::metrics::cpu
             return {};
         } ///< Instructions per FP operation
 
+        static MetricBuilder IpAVXAnyFlop()
+        {
+            std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
+            std::string retired_sse_avx_flops_any_name = to_string(CoreEvents::RETIRED_SSE_AVX_FLOPS_ANY);
+            return MetricBuilder{}
+                .add(inst_retired_name, amd::EventMapper::get(CoreEvents::INST_RETIRED))
+                .add(retired_sse_avx_flops_any_name, amd::EventMapper::get(CoreEvents::RETIRED_SSE_AVX_FLOPS_ANY))
+                .build("IpAVXAnyFlop",
+                       [retired_sse_avx_flops_any_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                       {
+                           uint64_t inst_retired = counts.at(inst_retired_name);
+                           uint64_t retired_sse_avx_flops_any = counts.at(retired_sse_avx_flops_any_name);
+
+                           // Avoid div by zero
+                           if (retired_sse_avx_flops_any == 0)
+                               std::numeric_limits<double>::quiet_NaN();
+                           return static_cast<double>(inst_retired) / static_cast<double>(retired_sse_avx_flops_any);
+                       });
+
+        } ///< INST_RETIRED / (RETIRED_SSE_AVX_FLOPS_ANY)
+
         static MetricBuilder IpArith()
         {
             return {};
@@ -398,26 +419,15 @@ namespace optkit::core::metrics::cpu
             return {};
         } ///< INST_RETIRED / (512B_PACKED_DOUBLE + 512B_PACKED_SINGLE)
 
-        static MetricBuilder IpArithAVXAny()
+        static MetricBuilder IpArithVectorAny()
         {
-            std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
-            std::string retired_sse_avx_flops_any_name = to_string(CoreEvents::RETIRED_SSE_AVX_FLOPS_ANY);
-            return MetricBuilder{}
-                .add(inst_retired_name, amd::EventMapper::get(CoreEvents::INST_RETIRED))
-                .add(retired_sse_avx_flops_any_name, amd::EventMapper::get(CoreEvents::RETIRED_SSE_AVX_FLOPS_ANY))
-                .build("IpArithAVXAny",
-                       [retired_sse_avx_flops_any_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
-                       {
-                           uint64_t inst_retired = counts.at(inst_retired_name);
-                           uint64_t retired_sse_avx_flops_any = counts.at(retired_sse_avx_flops_any_name);
-
-                           // Avoid div by zero
-                           if (retired_sse_avx_flops_any == 0)
-                               std::numeric_limits<double>::quiet_NaN();
-                           return static_cast<double>(inst_retired) / static_cast<double>(retired_sse_avx_flops_any);
-                       });
-
-        } ///< INST_RETIRED / (RETIRED_SSE_AVX_FLOPS_ANY)
+            return {};
+        } ///< INST_RETIRED / (RETIRED_SSE_AVX_INSTR_ANY)
+        
+        static MetricBuilder ScalarpArithVector()
+        {
+            return {};
+        } ///< SCALAR_FP / RETIRED_SSE_AVX_INSTR_ANY
 
         // Software prefetch
         static MetricBuilder IpSWPF()
@@ -823,7 +833,6 @@ namespace optkit::core::metrics::cpu
             mb.add(L3MPKI());
             return mb;
         }
-
 
         static MetricBuilder AllCacheHitRatio()
         {

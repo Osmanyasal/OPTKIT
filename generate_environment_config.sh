@@ -190,8 +190,8 @@ write_cpu_topology() {
 write_cpu_microarch() {
 
     # Reset all known uArch macros to 0
-    for uarch in SKL KBL CFL ICL TGL RKL ADL RPL MTL \
-                 ZEN ZENPLUS ZEN2 ZEN3 ZEN4 ZEN5; do
+    for uarch in SKL SPR HSW KBL CFL ICL TGL RKL ADL RPL MTL \
+                 ZEN ZENPLUS ZEN2 ZEN3 ZEN4 ZEN5 UNKNOWN; do
         echo "#define OPTKIT_ENV_CPU_MICROARCH_$uarch 0" >> "$SRC_CONFIG_FILE"
     done
 

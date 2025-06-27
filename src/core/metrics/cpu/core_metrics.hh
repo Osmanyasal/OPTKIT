@@ -54,14 +54,17 @@ namespace optkit::core::metrics::cpu
         static MetricBuilder IpMispredict() { return {}; } ///< INST_RETIRED / BR_MISP_RETIRED.ALL_BRANCHES
 
         // Floating-point operation metrics
-        static MetricBuilder IpFLOP() { return {}; }          ///< Instructions per FP operation
-        static MetricBuilder IpArith() { return {}; }         ///< Instructions per FP arithmetic instruction
-        static MetricBuilder IpArithScalarSP() { return {}; } ///< INST_RETIRED / FP_ARITH_INST.SCALAR_SINGLE
-        static MetricBuilder IpArithScalarDP() { return {}; } ///< INST_RETIRED / FP_ARITH_INST.SCALAR_DOUBLE
-        static MetricBuilder IpArithAVX128() { return {}; }   ///< INST_RETIRED / (128B_PACKED_DOUBLE + 128B_PACKED_SINGLE)
-        static MetricBuilder IpArithAVX256() { return {}; }   ///< INST_RETIRED / (256B_PACKED_DOUBLE + 256B_PACKED_SINGLE)
-        static MetricBuilder IpArithAVX512() { return {}; }   ///< INST_RETIRED / (512B_PACKED_DOUBLE + 512B_PACKED_SINGLE)
-        static MetricBuilder IpArithAVXAny() { return {}; }   ///< INST_RETIRED / (RETIRED_SSE_AVX_FLOPS_ANY)
+        static MetricBuilder IpFLOP() { return {}; }       ///< Instructions per FP operation
+        static MetricBuilder IpAVXAnyFLOP() { return {}; } ///< INST_RETIRED / (RETIRED_SSE_AVX_FLOPS_ANY)
+
+        static MetricBuilder IpArith() { return {}; }            ///< INST_RETIRED / (FP_ARITH_INST_RETIRED_SCALAR + FP_ARITH_INST_RETIRED_VECTOR)
+        static MetricBuilder IpArithScalarSP() { return {}; }    ///< INST_RETIRED / FP_ARITH_INST.SCALAR_SINGLE
+        static MetricBuilder IpArithScalarDP() { return {}; }    ///< INST_RETIRED / FP_ARITH_INST.SCALAR_DOUBLE
+        static MetricBuilder IpArithAVX128() { return {}; }      ///< INST_RETIRED / (128B_PACKED_DOUBLE + 128B_PACKED_SINGLE)
+        static MetricBuilder IpArithAVX256() { return {}; }      ///< INST_RETIRED / (256B_PACKED_DOUBLE + 256B_PACKED_SINGLE)
+        static MetricBuilder IpArithAVX512() { return {}; }      ///< INST_RETIRED / (512B_PACKED_DOUBLE + 512B_PACKED_SINGLE)
+        static MetricBuilder IpArithVectorAny() { return {}; }   ///< INST_RETIRED / (RETIRED_SSE_AVX_FLOPS_ANY)
+        static MetricBuilder ScalarpArithVector() { return {}; } ///< SCALAR_FP / RETIRED_SSE_AVX_FLOPS_ANY
 
         // Software prefetch
         static MetricBuilder IpSWPF() { return {}; } ///< INST_RETIRED / SW_PREFETCH_ACCESS.T0:u0xF
