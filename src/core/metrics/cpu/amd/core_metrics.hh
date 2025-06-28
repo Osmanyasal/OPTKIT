@@ -59,7 +59,7 @@ namespace optkit::core::metrics::cpu
                                std::numeric_limits<double>::quiet_NaN();
                            return 100 * (static_cast<double>(l2_hits) / static_cast<double>(l2_cache_accesses));
                        });
-        } ///< (L2_Hits/L2_Accesses)
+        }
 
         static MetricBuilder L3HitRatio()
         {
@@ -79,7 +79,7 @@ namespace optkit::core::metrics::cpu
                                std::numeric_limits<double>::quiet_NaN();
                            return 100 * (1 - (static_cast<double>(l3_misses) / static_cast<double>(l3_cache_accesses)));
                        });
-        } ///< 1 - (L2_Misses/L3_Accesses)
+        }
 
     public:
         // CoreMetrics Implementation
@@ -103,8 +103,7 @@ namespace optkit::core::metrics::cpu
                                std::numeric_limits<double>::quiet_NaN();
                            return 1000.0 * static_cast<double>(l1_misses) / static_cast<double>(inst_retired);
                        });
-
-        } ///< 1000 * L1_MISSES / INST_RETIRED
+        }
 
         static MetricBuilder L2MPKI()
         {
@@ -125,7 +124,7 @@ namespace optkit::core::metrics::cpu
                                std::numeric_limits<double>::quiet_NaN();
                            return 1000.0 * static_cast<double>(l2_misses) / static_cast<double>(inst_retired);
                        });
-        } ///< 1000 * L2_MISSES / INST_RETIRED
+        }
 
         static MetricBuilder L3MPKI()
         {
@@ -146,7 +145,7 @@ namespace optkit::core::metrics::cpu
                                std::numeric_limits<double>::quiet_NaN();
                            return 1000.0 * static_cast<double>(l3_misses) / static_cast<double>(inst_retired);
                        });
-        } ///< 1000 * L3_MISSES / INST_RETIRED
+        }
 
         // Branch
         static MetricBuilder BranchMisprRatio()
@@ -168,7 +167,7 @@ namespace optkit::core::metrics::cpu
                                std::numeric_limits<double>::quiet_NaN();
                            return static_cast<double>(branch_misp) / static_cast<double>(branch_inst);
                        });
-        } ///< BR_MISP_RETIRED.ALL_BRANCHES / BR_INST_RETIRED.ALL_BRANCHES
+        }
 
         // ITLB MPKI metrics
         static MetricBuilder ITLBMPKI()
@@ -189,7 +188,7 @@ namespace optkit::core::metrics::cpu
                                std::numeric_limits<double>::quiet_NaN();
                            return 1000.0 * static_cast<double>(itlb_misses) / static_cast<double>(inst_retired);
                        });
-        } ///< 1000 * ITLB_MISSES / INST_RETIRED
+        }
 
         // DTLB MPKI metrics
         static MetricBuilder DTLBMPKI()
@@ -210,7 +209,7 @@ namespace optkit::core::metrics::cpu
                                std::numeric_limits<double>::quiet_NaN();
                            return 1000.0 * static_cast<double>(itlb_misses) / static_cast<double>(inst_retired);
                        });
-        } ///< 1000 * DTLB_MISSES / INST_RETIRED
+        }
 
         // TLB MPKI metrics
         static MetricBuilder TLBMPKI()
@@ -234,13 +233,13 @@ namespace optkit::core::metrics::cpu
                                std::numeric_limits<double>::quiet_NaN();
                            return 1000.0 * (static_cast<double>(dtlb_misses) + static_cast<double>(itlb_misses)) / static_cast<double>(inst_retired);
                        });
-        } ///< 1000 * DTLB_MISSES.WALK_COMPLETED / INST_RETIRED
+        }
 
         // Latency and parallelism metrics
         static MetricBuilder LoadMissLatency()
         {
             return {};
-        } ///< L1D_PEND_MISS.PENDING / MEM_LD_COMPLETED.L1_MISS_ANY
+        }
 
         static MetricBuilder IpC()
         {
@@ -258,29 +257,29 @@ namespace optkit::core::metrics::cpu
                            if (unhalted_core_cycles == 0)
                                return -1;
                             return static_cast<double>(inst_retired) / static_cast<double>(unhalted_core_cycles); });
-        } ///< INST_RETIRED / UNHALTED_CLK_CYCLES
+        }
 
         static MetricBuilder ILP()
         {
             return {};
-        } ///< UOPS_EXECUTED.THREAD / UOPS_EXECUTED.CORE_CYCLES_GE1
+        }
 
         static MetricBuilder MLP()
         {
             return {};
-        } ///< L1D_PEND_MISS.PENDING / L1D_PEND_MISS.PENDING_CYCLES
+        }
 
         // DRAM bandwidth
         static MetricBuilder DRAMBandwidthGBs()
         {
             return {};
-        } ///< (64 * (RD + WR)) / (Time * 1GB)
+        }
 
         // Instruction per event
         static MetricBuilder IpCall()
         {
             return {};
-        } ///< INST_RETIRED / BR_INST_RETIRED.NEAR_CALL
+        }
 
         static MetricBuilder IpBranch()
         {
@@ -300,9 +299,9 @@ namespace optkit::core::metrics::cpu
                                std::numeric_limits<double>::quiet_NaN();
                            return static_cast<double>(inst_retired) / static_cast<double>(branch_inst_retired);
                        });
-        } ///< INST_RETIRED / BR_INST_RETIRED.ALL_BRANCHES
+        }
 
-        static MetricBuilder IpLoad()
+        static MetricBuilder IpMemLoad()
         {
             std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
             std::string mem_load_retired_name = to_string(CoreEvents::MEM_LOAD_RETIRED);
@@ -320,9 +319,9 @@ namespace optkit::core::metrics::cpu
                                std::numeric_limits<double>::quiet_NaN();
                            return static_cast<double>(inst_retired) / static_cast<double>(mem_load_retired);
                        });
-        } ///< INST_RETIRED / MEM_INST_RETIRED.ALL_LOADS_PS
+        }
 
-        static MetricBuilder IpStore()
+        static MetricBuilder IpMemStore()
         {
             std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
             std::string mem_store_retired_name = to_string(CoreEvents::MEM_STORE_RETIRED);
@@ -340,7 +339,7 @@ namespace optkit::core::metrics::cpu
                                std::numeric_limits<double>::quiet_NaN();
                            return static_cast<double>(inst_retired) / static_cast<double>(mem_store_retired);
                        });
-        } ///< INST_RETIRED / MEM_INST_RETIRED.ALL_STORES_PS
+        }
 
         static MetricBuilder IpMispredict()
         {
@@ -360,13 +359,13 @@ namespace optkit::core::metrics::cpu
                                std::numeric_limits<double>::quiet_NaN();
                            return static_cast<double>(inst_retired) / static_cast<double>(branch_misp_retired);
                        });
-        } ///< INST_RETIRED / BR_MISP_RETIRED.ALL_BRANCHES
+        }
 
         // Floating-point operation metrics
         static MetricBuilder IpFLOP()
         {
             return {};
-        } ///< Instructions per FP operation
+        }
 
         static MetricBuilder IpAVXAnyFlop()
         {
@@ -386,48 +385,47 @@ namespace optkit::core::metrics::cpu
                                std::numeric_limits<double>::quiet_NaN();
                            return static_cast<double>(inst_retired) / static_cast<double>(retired_sse_avx_flops_any);
                        });
-
-        } ///< INST_RETIRED / (RETIRED_SSE_AVX_FLOPS_ANY)
+        }
 
         static MetricBuilder IpArith()
         {
             return {};
-        } ///< Instructions per FP arithmetic instruction
+        }
 
         static MetricBuilder IpArithScalarSP()
         {
             return {};
-        } ///< Instructions per FP scalar single precision instruction
+        }
 
         static MetricBuilder IpArithScalarDP()
         {
             return {};
-        } ///< INST_RETIRED / FP_ARITH_INST.SCALAR_DOUBLE
+        }
 
         static MetricBuilder IpArithAVX128()
         {
             return {};
-        } ///< INST_RETIRED / (128B_PACKED_DOUBLE + 128B_PACKED_SINGLE)
+        }
 
         static MetricBuilder IpArithAVX256()
         {
             return {};
-        } ///< INST_RETIRED / (256B_PACKED_DOUBLE + 256B_PACKED_SINGLE)
+        }
 
         static MetricBuilder IpArithAVX512()
         {
             return {};
-        } ///< INST_RETIRED / (512B_PACKED_DOUBLE + 512B_PACKED_SINGLE)
+        }
 
         static MetricBuilder IpArithVectorAny()
         {
             return {};
-        } ///< INST_RETIRED / (RETIRED_SSE_AVX_INSTR_ANY)
-        
+        }
+
         static MetricBuilder ScalarpArithVector()
         {
             return {};
-        } ///< SCALAR_FP / RETIRED_SSE_AVX_INSTR_ANY
+        }
 
         // Software prefetch
         static MetricBuilder IpSWPF()
@@ -448,7 +446,7 @@ namespace optkit::core::metrics::cpu
                                std::numeric_limits<double>::quiet_NaN();
                            return static_cast<double>(inst_retired) / static_cast<double>(sw_load_prefetch);
                        });
-        } ///< INST_RETIRED / SW_PREFETCH_ACCESS.T0:u0xF
+        }
 
 #if OPTKIT_ENV_CPU_MICROARCH_ZEN4 || OPTKIT_ENV_CPU_MICROARCH_ZEN5
         // Topdown (Pipeline Utilisation) Analysis L1
@@ -470,7 +468,7 @@ namespace optkit::core::metrics::cpu
                                std::numeric_limits<double>::quiet_NaN();
                            return 100 * static_cast<double>(no_ops_from_frontend) / (static_cast<double>(dispatch_slots));
                        });
-        } ///< IDQ_UOPS_NOT_DELIVERED.CORE / (6 * CPU_CLK_UNHALTED.THREAD) — Fraction of slots not delivered by frontend
+        }
 
         static MetricBuilder BadSpeculation()
         {
@@ -494,8 +492,7 @@ namespace optkit::core::metrics::cpu
                                std::numeric_limits<double>::quiet_NaN();
                            return 100 * (static_cast<double>(ops_source_dispatched_from_decoder) - static_cast<double>(retired_ops)) / (static_cast<double>(dispatch_slots));
                        });
-
-        } ///< (OPS_SOURCE_DISPATCHED_FROM_DECODER - RETIRED_OPS) / (6 * CPU_CLK_UNHALTED.THREAD) — Fraction of dispatched ops that did not retire.
+        }
 
         static MetricBuilder BackendBound()
         {
@@ -515,7 +512,7 @@ namespace optkit::core::metrics::cpu
                                std::numeric_limits<double>::quiet_NaN();
                            return 100 * static_cast<double>(backend_stalls) / (static_cast<double>(dispatch_slots));
                        });
-        } ///< BACKEND_STALLS_1 / (6 * CPU_CLK_UNHALTED.THREAD) — Fraction of slots where backend was unable to accept uops
+        }
         static MetricBuilder Retiring()
         {
             std::string dispatch_slots_name = to_string(CoreEvents::DISPATCH_SLOTS);
@@ -535,7 +532,7 @@ namespace optkit::core::metrics::cpu
                                std::numeric_limits<double>::quiet_NaN();
                            return 100 * (static_cast<double>(retired_ops)) / (static_cast<double>(dispatch_slots));
                        });
-        } ///< RETIRED_OPS / (6 * CPU_CLK_UNHALTED.THREAD) — Fraction of slots retired successfully (i.e., useful work done)
+        }
         static MetricBuilder SMTContention()
         {
             std::string dispatch_slots_name = to_string(CoreEvents::DISPATCH_SLOTS);
@@ -554,7 +551,7 @@ namespace optkit::core::metrics::cpu
                                std::numeric_limits<double>::quiet_NaN();
                            return 100 * static_cast<double>(smt_stalls) / (static_cast<double>(dispatch_slots));
                        });
-        } ///< SMT_STALLS / (6 * CPU_CLK_UNHALTED.THREAD) — Fraction of unused dispatch slots because the other thread was selected
+        }
 
         // Topdown (Pipeline Utilisation) Analysis L1
         static MetricBuilder FrontendBound_Latency()
@@ -575,7 +572,7 @@ namespace optkit::core::metrics::cpu
                                std::numeric_limits<double>::quiet_NaN();
                            return 100 * static_cast<double>(no_ops_from_frontend_0x6flag) / (static_cast<double>(dispatch_slots));
                        });
-        } ///< Fraction of dispatch slots that remained unused because of a latency bottleneck in the frontend, such as Instruction Cache or ITLB misses.
+        }
 
         static MetricBuilder FrontendBound_BW()
         {
@@ -598,7 +595,7 @@ namespace optkit::core::metrics::cpu
                                std::numeric_limits<double>::quiet_NaN();
                            return 100 * (static_cast<double>(no_ops_from_frontend) - static_cast<double>(no_ops_from_frontend_0x6flag)) / (static_cast<double>(dispatch_slots));
                        });
-        } ///< Fraction of dispatch slots that remained unused because of a bandwidth bottleneck in the frontend, such as decode bandwidth or Op Cache fetch bandwidth.
+        }
         static MetricBuilder BadSpeculation_Mispredicts()
         {
 
@@ -630,8 +627,7 @@ namespace optkit::core::metrics::cpu
                            double bad_speculation = (static_cast<double>(ops_source_dispatched_from_decoder) - static_cast<double>(retired_ops)) / (static_cast<double>(dispatch_slots));
                            return 100 * (bad_speculation * branch_misp_retired) / (branch_misp_retired + resyncs);
                        });
-
-        } ///< Fraction of dispatched ops that were flushed due to branch mispredicts
+        }
         static MetricBuilder BadSpeculation_PipelineRestarts()
         {
 
@@ -663,7 +659,7 @@ namespace optkit::core::metrics::cpu
                            double bad_speculation = (static_cast<double>(ops_source_dispatched_from_decoder) - static_cast<double>(retired_ops)) / (static_cast<double>(dispatch_slots));
                            return 100 * (bad_speculation * resyncs) / (branch_misp_retired + resyncs);
                        });
-        } ///< Fraction of dispatched ops that were flushed due to pipeline restarts (resyncs).
+        }
 
         static MetricBuilder BackendEndbound_Memory()
         {
@@ -691,7 +687,7 @@ namespace optkit::core::metrics::cpu
                            double backend_bound = static_cast<double>(backend_stalls) / (static_cast<double>(dispatch_slots));
                            return 100 * backend_bound * (static_cast<double>(cycles_no_retire_not_complete) / static_cast<double>(cycles_no_retire_load_not_complete));
                        });
-        } ///< Fraction of dispatched slots that remained unused because of stalls due to the memory subsystem.
+        }
 
         static MetricBuilder BackendEndbound_CPU()
         {
@@ -719,8 +715,7 @@ namespace optkit::core::metrics::cpu
                            double backend_bound = static_cast<double>(backend_stalls) / (static_cast<double>(dispatch_slots));
                            return 100 * backend_bound * (1.0 - (static_cast<double>(cycles_no_retire_not_complete) / static_cast<double>(cycles_no_retire_load_not_complete)));
                        });
-
-        } ///< CORE_BOUND / BACKEND_BOUND — Portion of BackendBound due to non-memory backend issues (e.g., execution unit contention)
+        }
         static MetricBuilder Retiring_Fastpath()
         {
             std::string dispatch_slots_name = to_string(CoreEvents::DISPATCH_SLOTS);
@@ -745,7 +740,7 @@ namespace optkit::core::metrics::cpu
 
                            return 100 * retiring * (retired_ops - retired_microcode_ops) / retired_ops;
                        });
-        } ///< Fraction of dispatch slots used by fastpath ops that retired
+        }
         static MetricBuilder Retiring_Microcode()
         {
             std::string dispatch_slots_name = to_string(CoreEvents::DISPATCH_SLOTS);
@@ -770,26 +765,26 @@ namespace optkit::core::metrics::cpu
 
                            return 100 * retiring * retired_microcode_ops / retired_ops;
                        });
-        } ///< Fraction of dispatch slots used by microcode ops that retired.
+        }
 
 #else
         // Topdown (Pipeline Utilisation) Analysis L1
-        static MetricBuilder FrontendBound() { return {}; } ///< IDQ_UOPS_NOT_DELIVERED.CORE / (6 * CPU_CLK_UNHALTED.THREAD) — Fraction of slots not delivered by frontend
+        static MetricBuilder FrontendBound() { return {}; }
 
-        static MetricBuilder BadSpeculation() { return {}; } ///< (BR_MISP_RETIRED.ALL_BRANCHES + MACHINE_CLEARS.COUNT) / (6 * CPU_CLK_UNHALTED.THREAD) — Fraction of slots wasted due to branch mispredicts or other speculation issues
-        static MetricBuilder BackendBound() { return {}; }   ///< BACKEND_BOUND.SLOTS / (6 * CPU_CLK_UNHALTED.THREAD) — Fraction of slots where backend was unable to accept uops
-        static MetricBuilder Retiring() { return {}; }       ///< UOPS_RETIRED.RETIRE_SLOTS / (6 * CPU_CLK_UNHALTED.THREAD) — Fraction of slots retired successfully (i.e., useful work done)
-        static MetricBuilder SMTContention() { return {}; }  ///< DISPATHC_SLOTS / (6 * CPU_CLK_UNHALTED.THREAD) — Fraction of unused dispatch slots because the other thread was selected
+        static MetricBuilder BadSpeculation() { return {}; }
+        static MetricBuilder BackendBound() { return {}; }
+        static MetricBuilder Retiring() { return {}; }
+        static MetricBuilder SMTContention() { return {}; }
 
         // Topdown (Pipeline Utilisation) Analysis L1
-        static MetricBuilder FrontendBound_Latency() { return {}; }           ///< ICACHE.MISSES + ITLB_MISSES.STLB_HIT / IDQ_UOPS_NOT_DELIVERED.CORE — Portion of FrontendBound due to instruction cache or TLB latency
-        static MetricBuilder FrontendBound_BW() { return {}; }                ///< DECODE_STALL.CYCLES / IDQ_UOPS_NOT_DELIVERED.CORE — Portion of FrontendBound due to bandwidth limitations (decode/queue saturation)
-        static MetricBuilder BadSpeculation_Mispredicts() { return {}; }      ///< BR_MISP_RETIRED.ALL_BRANCHES / (6 * CPU_CLK_UNHALTED.THREAD) — Portion of BadSpeculation due to branch mispredicts
-        static MetricBuilder BadSpeculation_PipelineRestarts() { return {}; } ///< MACHINE_CLEARS.COUNT / (6 * CPU_CLK_UNHALTED.THREAD) — Portion of BadSpeculation due to pipeline clears (e.g., memory ordering violations)
-        static MetricBuilder BackendEndbound_Memory() { return {}; }          ///< MEM_BOUND / BACKEND_BOUND — Portion of BackendBound due to memory issues (DRAM, L3 misses, etc.)
-        static MetricBuilder BackendEndbound_CPU() { return {}; }             ///< CORE_BOUND / BACKEND_BOUND — Portion of BackendBound due to non-memory backend issues (e.g., execution unit contention)
-        static MetricBuilder Retiring_Fastpath() { return {}; }               ///< UOPS_RETIRED.RETIRE_SLOTS (from scalar/simple ops) / TotalSlots — Portion of Retiring that was serviced via fast-path execution
-        static MetricBuilder Retiring_Microcode() { return {}; }              ///< MICROCODE.SEQUENCER_UOPS / TotalSlots — Portion of Retiring that came from microcode assists or complex flows
+        static MetricBuilder FrontendBound_Latency() { return {}; }
+        static MetricBuilder FrontendBound_BW() { return {}; }
+        static MetricBuilder BadSpeculation_Mispredicts() { return {}; }
+        static MetricBuilder BadSpeculation_PipelineRestarts() { return {}; }
+        static MetricBuilder BackendEndbound_Memory() { return {}; }
+        static MetricBuilder BackendEndbound_CPU() { return {}; }
+        static MetricBuilder Retiring_Fastpath() { return {}; }
+        static MetricBuilder Retiring_Microcode() { return {}; }
 #endif
         // Aggregated Metrics
 

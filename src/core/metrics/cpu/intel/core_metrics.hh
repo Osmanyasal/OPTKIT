@@ -54,7 +54,7 @@ namespace optkit::core::metrics::cpu
                                std::numeric_limits<double>::quiet_NaN();
                            return 100 * (static_cast<double>(l1_hits) / static_cast<double>(l1_cache_accesses));
                        });
-        } ///< (L2_Hits/L2_Accesses)
+        }
         // Native Metric implementations (not included in CoreMetrics)
         static MetricBuilder L2HitRatio()
         {
@@ -74,7 +74,7 @@ namespace optkit::core::metrics::cpu
                                std::numeric_limits<double>::quiet_NaN();
                            return 100 * (static_cast<double>(l2_hits) / static_cast<double>(l2_cache_accesses));
                        });
-        } ///< (L2_Hits/L2_Accesses)
+        }
 
         static MetricBuilder L3HitRatio()
         {
@@ -94,7 +94,7 @@ namespace optkit::core::metrics::cpu
                                std::numeric_limits<double>::quiet_NaN();
                            return 100 * (static_cast<double>(l3_hits) / static_cast<double>(l3_cache_accesses));
                        });
-        } ///< 1 - (L2_Misses/L3_Accesses)
+        }
 
     public:
         // CoreMetrics Implementation
@@ -118,8 +118,7 @@ namespace optkit::core::metrics::cpu
                                std::numeric_limits<double>::quiet_NaN();
                            return 1000.0 * static_cast<double>(l1_misses) / static_cast<double>(inst_retired);
                        });
-
-        } ///< 1000 * L1_MISSES / INST_RETIRED
+        }
 
         static MetricBuilder L2MPKI()
         {
@@ -140,7 +139,7 @@ namespace optkit::core::metrics::cpu
                                std::numeric_limits<double>::quiet_NaN();
                            return 1000.0 * static_cast<double>(l2_misses) / static_cast<double>(inst_retired);
                        });
-        } ///< 1000 * L2_MISSES / INST_RETIRED
+        }
 
         static MetricBuilder L3MPKI()
         {
@@ -161,7 +160,7 @@ namespace optkit::core::metrics::cpu
                                std::numeric_limits<double>::quiet_NaN();
                            return 1000.0 * static_cast<double>(l3_misses) / static_cast<double>(inst_retired);
                        });
-        } ///< 1000 * L3_MISSES / INST_RETIRED
+        }
 
         // Branch
         static MetricBuilder BranchMisprRatio()
@@ -183,7 +182,7 @@ namespace optkit::core::metrics::cpu
                                std::numeric_limits<double>::quiet_NaN();
                            return static_cast<double>(branch_misp) / static_cast<double>(branch_inst);
                        });
-        } ///< BR_MISP_RETIRED.ALL_BRANCHES / BR_INST_RETIRED.ALL_BRANCHES
+        }
 
         // ITLB MPKI metrics
         static MetricBuilder ITLBMPKI()
@@ -204,7 +203,7 @@ namespace optkit::core::metrics::cpu
                                std::numeric_limits<double>::quiet_NaN();
                            return 1000.0 * static_cast<double>(itlb_misses) / static_cast<double>(inst_retired);
                        });
-        } ///< 1000 * ITLB_MISSES / INST_RETIRED
+        }
 
         // DTLB MPKI metrics
         static MetricBuilder DTLBMPKI()
@@ -225,7 +224,7 @@ namespace optkit::core::metrics::cpu
                                std::numeric_limits<double>::quiet_NaN();
                            return 1000.0 * static_cast<double>(itlb_misses) / static_cast<double>(inst_retired);
                        });
-        } ///< 1000 * DTLB_MISSES / INST_RETIRED
+        }
 
         // TLB MPKI metrics
         static MetricBuilder TLBMPKI()
@@ -249,13 +248,13 @@ namespace optkit::core::metrics::cpu
                                std::numeric_limits<double>::quiet_NaN();
                            return 1000.0 * (static_cast<double>(dtlb_misses) + static_cast<double>(itlb_misses)) / static_cast<double>(inst_retired);
                        });
-        } ///< 1000 * DTLB_MISSES.WALK_COMPLETED / INST_RETIRED
+        }
 
         // Latency and parallelism metrics
         static MetricBuilder LoadMissLatency()
         {
             return {};
-        } ///< L1D_PEND_MISS.PENDING / MEM_LD_COMPLETED.L1_MISS_ANY
+        }
 
         static MetricBuilder IpC()
         {
@@ -273,29 +272,59 @@ namespace optkit::core::metrics::cpu
                            if (unhalted_core_cycles == 0)
                                return -1;
                             return static_cast<double>(inst_retired) / static_cast<double>(unhalted_core_cycles); });
-        } ///< INST_RETIRED / UNHALTED_CLK_CYCLES
+        }
 
         static MetricBuilder ILP()
         {
-            return {};
-        } ///< UOPS_EXECUTED.THREAD / UOPS_EXECUTED.CORE_CYCLES_GE1
+            std::string uops_cycles_thread_name = to_string(intel::NativeEvents::UOPS_CORE_CYCLES_THREAD);
+            std::string core_cycles_ge_1_name = to_string(intel::NativeEvents::UOPS_CORE_CYCLES_GE_1);
+            return MetricBuilder{}
+                .add(uops_cycles_thread_name, intel::EventMapper::get(intel::NativeEvents::UOPS_CORE_CYCLES_THREAD))
+                .add(core_cycles_ge_1_name, intel::EventMapper::get(intel::NativeEvents::UOPS_CORE_CYCLES_GE_1))
+                .build("ILP",
+                       [uops_cycles_thread_name, core_cycles_ge_1_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                       {
+                           uint64_t uops_cycles_thread = counts.at(uops_cycles_thread_name);
+                           uint64_t core_cycles_ge_1 = counts.at(core_cycles_ge_1_name);
+
+                           // Avoid div by zero
+                           if (core_cycles_ge_1 == 0)
+                               std::numeric_limits<double>::quiet_NaN();
+                           return 100 * (static_cast<double>(uops_cycles_thread)) / ((Query::is_smt_enabled() ? 2 : 1) * static_cast<double>(core_cycles_ge_1));
+                       });
+        }
 
         static MetricBuilder MLP()
         {
             return {};
-        } ///< L1D_PEND_MISS.PENDING / L1D_PEND_MISS.PENDING_CYCLES
+        }
 
         // DRAM bandwidth
         static MetricBuilder DRAMBandwidthGBs()
         {
             return {};
-        } ///< (64 * (RD + WR)) / (Time * 1GB)
+        }
 
         // Instruction per event
         static MetricBuilder IpCall()
         {
-            return {};
-        } ///< INST_RETIRED / BR_INST_RETIRED.NEAR_CALL
+            std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
+            std::string inst_retired_near_call_name = to_string(intel::NativeEvents::BR_INST_RETIRED_NEAR_CALL);
+            return MetricBuilder{}
+                .add(inst_retired_name, intel::EventMapper::get(CoreEvents::INST_RETIRED))
+                .add(inst_retired_near_call_name, intel::EventMapper::get(intel::NativeEvents::BR_INST_RETIRED_NEAR_CALL))
+                .build("IpCall",
+                       [inst_retired_name,inst_retired_near_call_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                       {
+                           uint64_t inst_retired = counts.at(inst_retired_name);
+                           uint64_t inst_retired_near_call = counts.at(inst_retired_near_call_name);
+
+                           // Avoid div by zero
+                           if (inst_retired_near_call == 0)
+                               std::numeric_limits<double>::quiet_NaN();
+                           return static_cast<double>(inst_retired) / static_cast<double>(inst_retired_near_call);
+                       });
+        }
 
         static MetricBuilder IpBranch()
         {
@@ -315,9 +344,9 @@ namespace optkit::core::metrics::cpu
                                std::numeric_limits<double>::quiet_NaN();
                            return static_cast<double>(inst_retired) / static_cast<double>(branch_inst_retired);
                        });
-        } ///< INST_RETIRED / BR_INST_RETIRED.ALL_BRANCHES
+        }
 
-        static MetricBuilder IpLoad()
+        static MetricBuilder IpMemLoad()
         {
             std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
             std::string mem_load_retired_name = to_string(CoreEvents::MEM_LOAD_RETIRED);
@@ -335,9 +364,9 @@ namespace optkit::core::metrics::cpu
                                std::numeric_limits<double>::quiet_NaN();
                            return static_cast<double>(inst_retired) / static_cast<double>(mem_load_retired);
                        });
-        } ///< INST_RETIRED / MEM_INST_RETIRED.ALL_LOADS_PS
+        }
 
-        static MetricBuilder IpStore()
+        static MetricBuilder IpMemStore()
         {
             std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
             std::string mem_store_retired_name = to_string(CoreEvents::MEM_STORE_RETIRED);
@@ -355,7 +384,7 @@ namespace optkit::core::metrics::cpu
                                std::numeric_limits<double>::quiet_NaN();
                            return static_cast<double>(inst_retired) / static_cast<double>(mem_store_retired);
                        });
-        } ///< INST_RETIRED / MEM_INST_RETIRED.ALL_STORES_PS
+        }
 
         static MetricBuilder IpMispredict()
         {
@@ -375,7 +404,7 @@ namespace optkit::core::metrics::cpu
                                std::numeric_limits<double>::quiet_NaN();
                            return static_cast<double>(inst_retired) / static_cast<double>(branch_misp_retired);
                        });
-        } ///< INST_RETIRED / BR_MISP_RETIRED.ALL_BRANCHES
+        }
 
         // Floating-point operation metrics
         static MetricBuilder IpFLOP()
@@ -431,7 +460,7 @@ namespace optkit::core::metrics::cpu
                                std::numeric_limits<double>::quiet_NaN();
                            return static_cast<double>(inst_retired) / static_cast<double>(total_flops);
                        });
-        } ///< Instructions per FP operation
+        }
 
         static MetricBuilder IpAVXAnyFLOP()
         {
@@ -478,8 +507,7 @@ namespace optkit::core::metrics::cpu
                                std::numeric_limits<double>::quiet_NaN();
                            return static_cast<double>(inst_retired) / static_cast<double>(total_flops);
                        });
-
-        } ///< INST_RETIRED / (RETIRED_SSE_AVX_FLOPS_ANY)
+        }
 
         static MetricBuilder IpArith()
         {
@@ -502,7 +530,7 @@ namespace optkit::core::metrics::cpu
                                std::numeric_limits<double>::quiet_NaN();
                            return static_cast<double>(inst_retired) / static_cast<double>(inst_retired);
                        });
-        } ///< INST_RETIRED / (FP_ARITH_INST_RETIRED_SCALAR + FP_ARITH_INST_RETIRED_VECTOR)
+        }
 
         static MetricBuilder IpArithScalarSP()
         {
@@ -522,7 +550,7 @@ namespace optkit::core::metrics::cpu
                                std::numeric_limits<double>::quiet_NaN();
                            return static_cast<double>(inst_retired) / static_cast<double>(inst_scalar_single);
                        });
-        } ///< INST_RETIRED / FP_ARITH_INST_RETIRED_SCALAR_SINGLE
+        }
 
         static MetricBuilder IpArithScalarDP()
         {
@@ -542,7 +570,7 @@ namespace optkit::core::metrics::cpu
                                std::numeric_limits<double>::quiet_NaN();
                            return static_cast<double>(inst_retired) / static_cast<double>(inst_scalar_double);
                        });
-        } ///< INST_RETIRED / FP_ARITH_INST_RETIRED_SCALAR_DOUBLE
+        }
 
         static MetricBuilder IpArithAVX128()
         {
@@ -566,7 +594,7 @@ namespace optkit::core::metrics::cpu
                                std::numeric_limits<double>::quiet_NaN();
                            return static_cast<double>(inst_retired) / static_cast<double>(inst_packed_128);
                        });
-        } ///< INST_RETIRED / (128B_PACKED_DOUBLE + 128B_PACKED_SINGLE)
+        }
 
         static MetricBuilder IpArithAVX256()
         {
@@ -590,8 +618,7 @@ namespace optkit::core::metrics::cpu
                                std::numeric_limits<double>::quiet_NaN();
                            return static_cast<double>(inst_retired) / static_cast<double>(inst_packed_256);
                        });
-
-        } ///< INST_RETIRED / (256B_PACKED_DOUBLE + 256B_PACKED_SINGLE)
+        }
 
         static MetricBuilder IpArithAVX512()
         {
@@ -615,8 +642,7 @@ namespace optkit::core::metrics::cpu
                                std::numeric_limits<double>::quiet_NaN();
                            return static_cast<double>(inst_retired) / static_cast<double>(inst_packed_512);
                        });
-
-        } ///< INST_RETIRED / (512B_PACKED_DOUBLE + 512B_PACKED_SINGLE)
+        }
 
         static MetricBuilder ScalarArithpVector()
         {
@@ -635,8 +661,7 @@ namespace optkit::core::metrics::cpu
                                std::numeric_limits<double>::quiet_NaN();
                            return static_cast<double>(inst_scalar) / static_cast<double>(inst_vector);
                        });
-
-        } ///< INST_RETIRED / (RETIRED_SSE_AVX_FLOPS_ANY)
+        }
 
         static MetricBuilder IpArithVectorAny()
         {
@@ -683,13 +708,12 @@ namespace optkit::core::metrics::cpu
                                std::numeric_limits<double>::quiet_NaN();
                            return static_cast<double>(inst_retired) / static_cast<double>(total_avx_instr);
                        });
-
-        } ///< INST_RETIRED / (RETIRED_SSE_AVX_FLOPS_ANY)
+        }
 
         static MetricBuilder ScalarpArithVector()
         {
             return {};
-        } ///< SCALAR_FP / RETIRED_SSE_AVX_INSTR_ANY
+        }
 
         // Software prefetch
         static MetricBuilder IpSWPF()
@@ -710,7 +734,7 @@ namespace optkit::core::metrics::cpu
                                std::numeric_limits<double>::quiet_NaN();
                            return static_cast<double>(inst_retired) / static_cast<double>(sw_load_prefetch);
                        });
-        } ///< INST_RETIRED / SW_PREFETCH_ACCESS.T0:u0xF
+        }
 
 #if OPTKIT_ENV_CPU_MICROARCH_ZEN4 || OPTKIT_ENV_CPU_MICROARCH_SPR || OPTKIT_ENV_CPU_MICROARCH_SKL || OPTKIT_ENV_CPU_MICROARCH_ICL || OPTKIT_ENV_CPU_MICROARCH_HSW
         // Topdown (Pipeline Utilisation) Analysis L1
@@ -732,7 +756,7 @@ namespace optkit::core::metrics::cpu
                                std::numeric_limits<double>::quiet_NaN();
                            return 100 * static_cast<double>(no_ops_from_frontend) / (static_cast<double>(dispatch_slots));
                        });
-        } ///< IDQ_UOPS_NOT_DELIVERED.CORE / (4 *CPU_CLK_UNHALTED.THREAD) — Fraction of slots not delivered by frontend
+        }
 
         static MetricBuilder BadSpeculation()
         {
@@ -756,8 +780,7 @@ namespace optkit::core::metrics::cpu
                                std::numeric_limits<double>::quiet_NaN();
                            return 100 * (static_cast<double>(uops_issued) - static_cast<double>(uops_retired_slots) + 4 * static_cast<double>(uops_retired_slots)) / (static_cast<double>(dispatch_slots));
                        });
-
-        } ///< (OPS_SOURCE_DISPATCHED_FROM_DECODER - RETIRED_OPS) / (4 *CPU_CLK_UNHALTED.THREAD) — Fraction of dispatched ops that did not retire.
+        }
 
         static MetricBuilder Retiring()
         {
@@ -778,7 +801,7 @@ namespace optkit::core::metrics::cpu
                                std::numeric_limits<double>::quiet_NaN();
                            return 100 * (static_cast<double>(uops_retired_slots)) / (static_cast<double>(dispatch_slots));
                        });
-        } ///< RETIRED_OPS / (4 *CPU_CLK_UNHALTED.THREAD) — Fraction of slots retired successfully (i.e., useful work done)
+        }
 
         static MetricBuilder BackendBound()
         {
@@ -801,15 +824,15 @@ namespace optkit::core::metrics::cpu
                            uint64_t uops_issued = counts.at(uops_issued_name);
                            uint64_t uops_retired_slots = counts.at(uops_retired_slots_name);
 
-                            double retiring = static_cast<double>(uops_retired_slots) / (static_cast<double>(dispatch_slots));
-                            double frontend_bound = static_cast<double>(no_ops_from_frontend) / (static_cast<double>(dispatch_slots));
-                            double bad_speculation = (static_cast<double>(uops_issued) - static_cast<double>(uops_retired_slots) + 4 * static_cast<double>(uops_retired_slots)) / (static_cast<double>(dispatch_slots));
-                            // Avoid div by zero
-                            if (dispatch_slots == 0)
-                                std::numeric_limits<double>::quiet_NaN();
-                            return 100 * (1 - (frontend_bound + bad_speculation + retiring));
+                           double retiring = static_cast<double>(uops_retired_slots) / (static_cast<double>(dispatch_slots));
+                           double frontend_bound = static_cast<double>(no_ops_from_frontend) / (static_cast<double>(dispatch_slots));
+                           double bad_speculation = (static_cast<double>(uops_issued) - static_cast<double>(uops_retired_slots) + 4 * static_cast<double>(uops_retired_slots)) / (static_cast<double>(dispatch_slots));
+                           // Avoid div by zero
+                           if (dispatch_slots == 0)
+                               std::numeric_limits<double>::quiet_NaN();
+                           return 100 * (1 - (frontend_bound + bad_speculation + retiring));
                        });
-        } ///< (1 - (frontend_bound + bad_speculation + retiring));
+        }
 
         static MetricBuilder SMTContention()
         {
@@ -830,242 +853,264 @@ namespace optkit::core::metrics::cpu
             //                return 100 * static_cast<double>(smt_stalls) / (static_cast<double>(dispatch_slots));
             //            });
             return {};
-        } ///< SMT_STALLS / (4 *CPU_CLK_UNHALTED.THREAD) — Fraction of unused dispatch slots because the other thread was selected
+        }
 
         // Topdown (Pipeline Utilisation) Analysis L1
         static MetricBuilder FrontendBound_Latency()
         {
-            std::string dispatch_slots_name = to_string(CoreEvents::UNHALTED_CORE_CYCLES);
-            std::string no_ops_from_frontend_0x6flag_name = to_string(intel::NativeEvents::DISPATCH_STALLS_1_0x6);
-            return MetricBuilder{}
-                .add(no_ops_from_frontend_0x6flag_name, intel::EventMapper::get(cpu::intel::NativeEvents::DISPATCH_STALLS_1_0x6))
-                .add(dispatch_slots_name, intel::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
-                .build("FrontendBound_Latency",
-                       [dispatch_slots_name, no_ops_from_frontend_0x6flag_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
-                       {
-                           uint64_t no_ops_from_frontend_0x6flag = 4 * counts.at(no_ops_from_frontend_0x6flag_name); // this is latency specific. it is dispatch_stalls/dispatch_slots no multiply with cpu wide.
-                           uint64_t dispatch_slots = 4 * counts.at(dispatch_slots_name);
+            std::string clocks_name = to_string(CoreEvents::UNHALTED_CORE_CYCLES);
+            std::string no_ops_from_frontend_name = to_string(intel::NativeEvents::IDQ_UOPS_NOT_DELIVERED_CORE);
+            std::string uops_not_delivered_cycles_name = to_string(intel::NativeEvents::IDQ_UOPS_NOT_DELIVERED_CYCLES_0);
 
+            return MetricBuilder{}
+                .add(clocks_name, intel::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
+                .add(no_ops_from_frontend_name, intel::EventMapper::get(intel::NativeEvents::IDQ_UOPS_NOT_DELIVERED_CORE))
+                .add(uops_not_delivered_cycles_name, intel::EventMapper::get(intel::NativeEvents::IDQ_UOPS_NOT_DELIVERED_CYCLES_0))
+                .build("FrontendBound_Latency",
+                       [clocks_name, no_ops_from_frontend_name, uops_not_delivered_cycles_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                       {
+                           uint64_t clocks = counts.at(clocks_name);
+                           uint64_t dispatch_slots = 4 * clocks;
+                           uint64_t no_ops_from_frontend = counts.at(no_ops_from_frontend_name);
+                           uint64_t uops_not_delivered_cycles = counts.at(uops_not_delivered_cycles_name);
+
+                           double frontend_bw = (static_cast<double>(uops_not_delivered_cycles) / static_cast<double>(clocks));
                            // Avoid div by zero
                            if (dispatch_slots == 0)
                                std::numeric_limits<double>::quiet_NaN();
-                           return 100 * static_cast<double>(no_ops_from_frontend_0x6flag) / (static_cast<double>(dispatch_slots));
+                           return 100 * (static_cast<double>(no_ops_from_frontend) / static_cast<double>(dispatch_slots) - frontend_bw);
                        });
-        } ///< Fraction of dispatch slots that remained unused because of a latency bottleneck in the frontend, such as Instruction Cache or ITLB misses.
+        }
 
         static MetricBuilder FrontendBound_BW()
         {
-            std::string dispatch_slots_name = to_string(CoreEvents::UNHALTED_CORE_CYCLES);
-            std::string no_ops_from_frontend_name = to_string(intel::NativeEvents::DISPATCH_STALLS_1);
-            std::string no_ops_from_frontend_0x6flag_name = to_string(intel::NativeEvents::DISPATCH_STALLS_1_0x6);
-            return MetricBuilder{}
-                .add(no_ops_from_frontend_name, intel::EventMapper::get(cpu::intel::NativeEvents::DISPATCH_STALLS_1))
-                .add(no_ops_from_frontend_0x6flag_name, intel::EventMapper::get(cpu::intel::NativeEvents::DISPATCH_STALLS_1_0x6))
-                .add(dispatch_slots_name, intel::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
-                .build("FrontendBound_BW",
-                       [dispatch_slots_name, no_ops_from_frontend_name, no_ops_from_frontend_0x6flag_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
-                       {
-                           uint64_t no_ops_from_frontend = counts.at(no_ops_from_frontend_name); // this is latency specific. it is backend_stalls/dispatch_slots no multiply with cpu wide.
-                           uint64_t no_ops_from_frontend_0x6flag = 4 * counts.at(no_ops_from_frontend_0x6flag_name);
-                           uint64_t dispatch_slots = 4 * counts.at(dispatch_slots_name);
+            std::string clocks_name = to_string(CoreEvents::UNHALTED_CORE_CYCLES);
+            std::string uops_not_delivered_cycles_name = to_string(intel::NativeEvents::IDQ_UOPS_NOT_DELIVERED_CYCLES_0);
 
+            return MetricBuilder{}
+                .add(clocks_name, intel::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
+                .add(uops_not_delivered_cycles_name, intel::EventMapper::get(intel::NativeEvents::IDQ_UOPS_NOT_DELIVERED_CYCLES_0))
+                .build("FrontendBound_BW",
+                       [clocks_name, uops_not_delivered_cycles_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                       {
+                           uint64_t clocks = counts.at(clocks_name);
+                           uint64_t uops_not_delivered_cycles = counts.at(uops_not_delivered_cycles_name);
                            // Avoid div by zero
-                           if (dispatch_slots == 0)
+                           if (clocks == 0)
                                std::numeric_limits<double>::quiet_NaN();
-                           return 100 * (static_cast<double>(no_ops_from_frontend) - static_cast<double>(no_ops_from_frontend_0x6flag)) / (static_cast<double>(dispatch_slots));
+                           return 100 * (static_cast<double>(uops_not_delivered_cycles) / static_cast<double>(clocks));
                        });
-        } ///< Fraction of dispatch slots that remained unused because of a bandwidth bottleneck in the frontend, such as decode bandwidth or Op Cache fetch bandwidth.
+        }
+
         static MetricBuilder BadSpeculation_Mispredicts()
         {
-
-            std::string branch_misp_retired_name = to_string(CoreEvents::BRANCH_MISP_RETIRED);
-            std::string resyncs_name = to_string(intel::NativeEvents::RESYNCS);
             std::string dispatch_slots_name = to_string(CoreEvents::UNHALTED_CORE_CYCLES);
-            std::string retired_ops_name = to_string(intel::NativeEvents::RETIRED_OPS);
-            std::string ops_source_dispatched_from_decoder_name = to_string(intel::NativeEvents::OPS_SOURCE_DISPATCHED_FROM_DECODER);
+            std::string branch_misp_retired_name = to_string(CoreEvents::BRANCH_MISP_RETIRED);
+            std::string machine_clears_count_name = to_string(intel::NativeEvents::MACHINE_CLEARS_COUNT);
+            std::string uops_issued_name = to_string(intel::NativeEvents::UOPS_ISSUED);
+            std::string uops_retired_slots_name = to_string(intel::NativeEvents::UOPS_RETIRED_SLOTS);
+            std::string recovery_cycles_name = to_string(intel::NativeEvents::INT_MISC_RECOVERY_CYCLES);
 
             return MetricBuilder{}
-                .add(branch_misp_retired_name, intel::EventMapper::get(CoreEvents::BRANCH_MISP_RETIRED))
                 .add(dispatch_slots_name, intel::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
-                .add(resyncs_name, intel::EventMapper::get(intel::NativeEvents::RESYNCS))
-                .add(retired_ops_name, intel::EventMapper::get(cpu::intel::NativeEvents::RETIRED_OPS))
-                .add(ops_source_dispatched_from_decoder_name, intel::EventMapper::get(cpu::intel::NativeEvents::OPS_SOURCE_DISPATCHED_FROM_DECODER))
+                .add(branch_misp_retired_name, intel::EventMapper::get(CoreEvents::BRANCH_MISP_RETIRED))
+                .add(machine_clears_count_name, intel::EventMapper::get(intel::NativeEvents::MACHINE_CLEARS_COUNT))
+                .add(uops_issued_name, intel::EventMapper::get(intel::NativeEvents::UOPS_ISSUED))
+                .add(uops_retired_slots_name, intel::EventMapper::get(intel::NativeEvents::UOPS_RETIRED_SLOTS))
+                .add(recovery_cycles_name, intel::EventMapper::get(intel::NativeEvents::INT_MISC_RECOVERY_CYCLES))
                 .build("BadSpeculation_Mispredicts",
-                       [branch_misp_retired_name, dispatch_slots_name, resyncs_name, retired_ops_name, ops_source_dispatched_from_decoder_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                       [dispatch_slots_name, branch_misp_retired_name, machine_clears_count_name, uops_issued_name, uops_retired_slots_name, recovery_cycles_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
-                           uint64_t branch_misp_retired = counts.at(branch_misp_retired_name);
                            uint64_t dispatch_slots = 4 * counts.at(dispatch_slots_name);
-                           uint64_t resyncs = counts.at(resyncs_name);
-                           uint64_t retired_ops = counts.at(retired_ops_name);
-                           uint64_t ops_source_dispatched_from_decoder = counts.at(ops_source_dispatched_from_decoder_name);
+                           uint64_t branch_misp_retired = counts.at(branch_misp_retired_name);
+                           uint64_t machine_clears_count = counts.at(machine_clears_count_name);
+                           uint64_t uops_issued = counts.at(uops_issued_name);
+                           uint64_t uops_retired_slots = counts.at(uops_retired_slots_name);
+                           uint64_t recovery_cycles = counts.at(recovery_cycles_name);
 
                            // Avoid div by zero
-                           if (dispatch_slots == 0 || (branch_misp_retired + resyncs) == 0)
+                           if (dispatch_slots == 0 || (branch_misp_retired + machine_clears_count) == 0)
                                std::numeric_limits<double>::quiet_NaN();
+                           double bad_speculation = (static_cast<double>(uops_issued) - static_cast<double>(uops_retired_slots) + 4 * static_cast<double>(uops_retired_slots)) / (static_cast<double>(dispatch_slots));
 
-                           double bad_speculation = (static_cast<double>(ops_source_dispatched_from_decoder) - static_cast<double>(retired_ops)) / (static_cast<double>(dispatch_slots));
-                           return 100 * (bad_speculation * branch_misp_retired) / (branch_misp_retired + resyncs);
+                           return 100 * bad_speculation * (static_cast<double>(branch_misp_retired / (branch_misp_retired + machine_clears_count)));
                        });
+        }
 
-        } ///< Fraction of dispatched ops that were flushed due to branch mispredicts
         static MetricBuilder BadSpeculation_PipelineRestarts()
         {
-
-            std::string branch_misp_retired_name = to_string(CoreEvents::BRANCH_MISP_RETIRED);
             std::string dispatch_slots_name = to_string(CoreEvents::UNHALTED_CORE_CYCLES);
-            std::string resyncs_name = to_string(intel::NativeEvents::RESYNCS);
-            std::string retired_ops_name = to_string(intel::NativeEvents::RETIRED_OPS);
-            std::string ops_source_dispatched_from_decoder_name = to_string(intel::NativeEvents::OPS_SOURCE_DISPATCHED_FROM_DECODER);
+            std::string branch_misp_retired_name = to_string(CoreEvents::BRANCH_MISP_RETIRED);
+            std::string machine_clears_count_name = to_string(intel::NativeEvents::MACHINE_CLEARS_COUNT);
+            std::string uops_issued_name = to_string(intel::NativeEvents::UOPS_ISSUED);
+            std::string uops_retired_slots_name = to_string(intel::NativeEvents::UOPS_RETIRED_SLOTS);
+            std::string recovery_cycles_name = to_string(intel::NativeEvents::INT_MISC_RECOVERY_CYCLES);
 
             return MetricBuilder{}
-                .add(branch_misp_retired_name, intel::EventMapper::get(CoreEvents::BRANCH_MISP_RETIRED))
                 .add(dispatch_slots_name, intel::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
-                .add(resyncs_name, intel::EventMapper::get(intel::NativeEvents::RESYNCS))
-                .add(retired_ops_name, intel::EventMapper::get(cpu::intel::NativeEvents::RETIRED_OPS))
-                .add(ops_source_dispatched_from_decoder_name, intel::EventMapper::get(cpu::intel::NativeEvents::OPS_SOURCE_DISPATCHED_FROM_DECODER))
+                .add(branch_misp_retired_name, intel::EventMapper::get(CoreEvents::BRANCH_MISP_RETIRED))
+                .add(machine_clears_count_name, intel::EventMapper::get(intel::NativeEvents::MACHINE_CLEARS_COUNT))
+                .add(uops_issued_name, intel::EventMapper::get(intel::NativeEvents::UOPS_ISSUED))
+                .add(uops_retired_slots_name, intel::EventMapper::get(intel::NativeEvents::UOPS_RETIRED_SLOTS))
+                .add(recovery_cycles_name, intel::EventMapper::get(intel::NativeEvents::INT_MISC_RECOVERY_CYCLES))
                 .build("BadSpeculation_PipelineRestarts",
-                       [branch_misp_retired_name, dispatch_slots_name, resyncs_name, retired_ops_name, ops_source_dispatched_from_decoder_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                       [dispatch_slots_name, branch_misp_retired_name, machine_clears_count_name, uops_issued_name, uops_retired_slots_name, recovery_cycles_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
-                           uint64_t branch_misp_retired = counts.at(branch_misp_retired_name);
                            uint64_t dispatch_slots = 4 * counts.at(dispatch_slots_name);
-                           uint64_t resyncs = counts.at(resyncs_name);
-                           uint64_t retired_ops = counts.at(retired_ops_name);
-                           uint64_t ops_source_dispatched_from_decoder = counts.at(ops_source_dispatched_from_decoder_name);
+                           uint64_t branch_misp_retired = counts.at(branch_misp_retired_name);
+                           uint64_t machine_clears_count = counts.at(machine_clears_count_name);
+                           uint64_t uops_issued = counts.at(uops_issued_name);
+                           uint64_t uops_retired_slots = counts.at(uops_retired_slots_name);
+                           uint64_t recovery_cycles = counts.at(recovery_cycles_name);
 
                            // Avoid div by zero
-                           if (dispatch_slots == 0 || (branch_misp_retired + resyncs) == 0)
+                           if (dispatch_slots == 0 || (branch_misp_retired + machine_clears_count) == 0)
                                std::numeric_limits<double>::quiet_NaN();
+                           double bad_speculation = (static_cast<double>(uops_issued) - static_cast<double>(uops_retired_slots) + 4 * static_cast<double>(uops_retired_slots)) / (static_cast<double>(dispatch_slots));
 
-                           double bad_speculation = (static_cast<double>(ops_source_dispatched_from_decoder) - static_cast<double>(retired_ops)) / (static_cast<double>(dispatch_slots));
-                           return 100 * (bad_speculation * resyncs) / (branch_misp_retired + resyncs);
+                           return 100 * bad_speculation - (bad_speculation * (static_cast<double>(branch_misp_retired / (branch_misp_retired + machine_clears_count))));
                        });
-        } ///< Fraction of dispatched ops that were flushed due to pipeline restarts (resyncs).
+        }
 
         static MetricBuilder BackendEndbound_Memory()
         {
-            std::string dispatch_slots_name = to_string(CoreEvents::UNHALTED_CORE_CYCLES);
-            std::string backend_stalls_name = to_string(intel::NativeEvents::BACKEND_STALLS_1);
-            std::string cycles_no_retire_not_complete_name = to_string(intel::NativeEvents::CYCLES_NO_RETIRE_NOT_COMPLETE);
-            std::string cycles_no_retire_load_not_complete_name = to_string(intel::NativeEvents::CYCLES_NO_RETIRE_LOAD_NOT_COMPLETE);
+            std::string unhalted_cycles_name = to_string(CoreEvents::UNHALTED_CORE_CYCLES);
+            std::string stalls_l1d_miss_name = to_string(intel::NativeEvents::STALLS_L1D_MISS);
+            std::string stalls_l2_miss_name = to_string(intel::NativeEvents::STALLS_L2_MISS);
+            std::string stalls_l3_miss_name = to_string(intel::NativeEvents::STALLS_L3_MISS);
+            std::string resource_stalls_sb_name = to_string(intel::NativeEvents::RESOURCE_STALLS_SB);
 
             return MetricBuilder{}
-                .add(backend_stalls_name, intel::EventMapper::get(cpu::intel::NativeEvents::BACKEND_STALLS_1))
-                .add(dispatch_slots_name, intel::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
-                .add(cycles_no_retire_not_complete_name, intel::EventMapper::get(cpu::intel::NativeEvents::CYCLES_NO_RETIRE_NOT_COMPLETE))
-                .add(cycles_no_retire_load_not_complete_name, intel::EventMapper::get(cpu::intel::NativeEvents::CYCLES_NO_RETIRE_LOAD_NOT_COMPLETE))
+                .add(unhalted_cycles_name, intel::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
+                .add(stalls_l1d_miss_name, intel::EventMapper::get(intel::NativeEvents::STALLS_L1D_MISS))
+                .add(stalls_l2_miss_name, intel::EventMapper::get(intel::NativeEvents::STALLS_L2_MISS))
+                .add(stalls_l3_miss_name, intel::EventMapper::get(intel::NativeEvents::STALLS_L3_MISS))
+                .add(resource_stalls_sb_name, intel::EventMapper::get(intel::NativeEvents::RESOURCE_STALLS_SB))
                 .build("BackendEndbound_Memory",
-                       [dispatch_slots_name, backend_stalls_name, cycles_no_retire_not_complete_name, cycles_no_retire_load_not_complete_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                       [unhalted_cycles_name, stalls_l1d_miss_name, stalls_l2_miss_name, stalls_l3_miss_name, resource_stalls_sb_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
-                           uint64_t backend_stalls = counts.at(backend_stalls_name);
-                           uint64_t dispatch_slots = 4 * counts.at(dispatch_slots_name);
-                           uint64_t cycles_no_retire_not_complete = counts.at(cycles_no_retire_not_complete_name);
-                           uint64_t cycles_no_retire_load_not_complete = counts.at(cycles_no_retire_load_not_complete_name);
-
+                           uint64_t unhalted_cycles = counts.at(unhalted_cycles_name);
+                           uint64_t stalls_l1d_miss = counts.at(stalls_l1d_miss_name);
+                           uint64_t stalls_l2_miss = counts.at(stalls_l2_miss_name);
+                           uint64_t stalls_l3_miss = counts.at(stalls_l3_miss_name);
+                           uint64_t resource_stalls_sb = counts.at(resource_stalls_sb_name);
                            // Avoid div by zero
-                           if (dispatch_slots == 0 || cycles_no_retire_load_not_complete == 0)
+                           if (unhalted_cycles == 0)
                                std::numeric_limits<double>::quiet_NaN();
-                           double backend_bound = static_cast<double>(backend_stalls) / (static_cast<double>(dispatch_slots));
-                           return 100 * backend_bound * (static_cast<double>(cycles_no_retire_not_complete) / static_cast<double>(cycles_no_retire_load_not_complete));
+                           return 100 * ((static_cast<double>(stalls_l1d_miss) +
+                                          static_cast<double>(stalls_l2_miss) +
+                                          static_cast<double>(stalls_l3_miss) -
+                                          static_cast<double>(resource_stalls_sb)) /
+                                         unhalted_cycles);
                        });
-        } ///< Fraction of dispatched slots that remained unused because of stalls due to the memory subsystem.
+        }
 
         static MetricBuilder BackendEndbound_CPU()
         {
-            std::string dispatch_slots_name = to_string(CoreEvents::UNHALTED_CORE_CYCLES);
-            std::string backend_stalls_name = to_string(intel::NativeEvents::BACKEND_STALLS_1);
-            std::string cycles_no_retire_not_complete_name = to_string(intel::NativeEvents::CYCLES_NO_RETIRE_NOT_COMPLETE);
-            std::string cycles_no_retire_load_not_complete_name = to_string(intel::NativeEvents::CYCLES_NO_RETIRE_LOAD_NOT_COMPLETE);
+            std::string unhalted_cycles_name = to_string(CoreEvents::UNHALTED_CORE_CYCLES);
+            std::string stalls_l1d_miss_name = to_string(intel::NativeEvents::STALLS_L1D_MISS);
+            std::string stalls_l2_miss_name = to_string(intel::NativeEvents::STALLS_L2_MISS);
+            std::string stalls_l3_miss_name = to_string(intel::NativeEvents::STALLS_L3_MISS);
+            std::string resource_stalls_sb_name = to_string(intel::NativeEvents::RESOURCE_STALLS_SB);
 
             return MetricBuilder{}
-                .add(backend_stalls_name, intel::EventMapper::get(cpu::intel::NativeEvents::BACKEND_STALLS_1))
-                .add(dispatch_slots_name, intel::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
-                .add(cycles_no_retire_not_complete_name, intel::EventMapper::get(cpu::intel::NativeEvents::CYCLES_NO_RETIRE_NOT_COMPLETE))
-                .add(cycles_no_retire_load_not_complete_name, intel::EventMapper::get(cpu::intel::NativeEvents::CYCLES_NO_RETIRE_LOAD_NOT_COMPLETE))
+                .add(unhalted_cycles_name, intel::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
+                .add(stalls_l1d_miss_name, intel::EventMapper::get(intel::NativeEvents::STALLS_L1D_MISS))
+                .add(stalls_l2_miss_name, intel::EventMapper::get(intel::NativeEvents::STALLS_L2_MISS))
+                .add(stalls_l3_miss_name, intel::EventMapper::get(intel::NativeEvents::STALLS_L3_MISS))
+                .add(resource_stalls_sb_name, intel::EventMapper::get(intel::NativeEvents::RESOURCE_STALLS_SB))
                 .build("BackendEndbound_CPU",
-                       [dispatch_slots_name, backend_stalls_name, cycles_no_retire_not_complete_name, cycles_no_retire_load_not_complete_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                       [unhalted_cycles_name, stalls_l1d_miss_name, stalls_l2_miss_name, stalls_l3_miss_name, resource_stalls_sb_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
-                           uint64_t backend_stalls = counts.at(backend_stalls_name);
-                           uint64_t dispatch_slots = 4 * counts.at(dispatch_slots_name);
-                           uint64_t cycles_no_retire_not_complete = counts.at(cycles_no_retire_not_complete_name);
-                           uint64_t cycles_no_retire_load_not_complete = counts.at(cycles_no_retire_load_not_complete_name);
-
+                           uint64_t unhalted_cycles = counts.at(unhalted_cycles_name);
+                           uint64_t stalls_l1d_miss = counts.at(stalls_l1d_miss_name);
+                           uint64_t stalls_l2_miss = counts.at(stalls_l2_miss_name);
+                           uint64_t stalls_l3_miss = counts.at(stalls_l3_miss_name);
+                           uint64_t resource_stalls_sb = counts.at(resource_stalls_sb_name);
                            // Avoid div by zero
-                           if (dispatch_slots == 0 || cycles_no_retire_load_not_complete == 0)
+                           if (unhalted_cycles == 0)
                                std::numeric_limits<double>::quiet_NaN();
-                           double backend_bound = static_cast<double>(backend_stalls) / (static_cast<double>(dispatch_slots));
-                           return 100 * backend_bound * (1.0 - (static_cast<double>(cycles_no_retire_not_complete) / static_cast<double>(cycles_no_retire_load_not_complete)));
+                           double backend_memory_bound = ((static_cast<double>(stalls_l1d_miss) +
+                                                           static_cast<double>(stalls_l2_miss) +
+                                                           static_cast<double>(stalls_l3_miss) -
+                                                           static_cast<double>(resource_stalls_sb)) /
+                                                          unhalted_cycles);
+                           return 100.0 * (1 - backend_memory_bound);
                        });
-
-        } ///< CORE_BOUND / BACKEND_BOUND — Portion of BackendBound due to non-memory backend issues (e.g., execution unit contention)
+        }
         static MetricBuilder Retiring_Fastpath()
         {
             std::string dispatch_slots_name = to_string(CoreEvents::UNHALTED_CORE_CYCLES);
-            std::string retired_microcode_ops_name = to_string(intel::NativeEvents::RETIRED_MICROCODE_OPS);
-            std::string retired_ops_name = to_string(intel::NativeEvents::RETIRED_OPS);
+            std::string uops_retired_slots_name = to_string(intel::NativeEvents::UOPS_RETIRED_SLOTS);
+            std::string idq_ms_uops_name = to_string(intel::NativeEvents::IDQ_MS_UOPS);
+            std::string uops_issued_name = to_string(intel::NativeEvents::UOPS_ISSUED);
 
             return MetricBuilder{}
                 .add(dispatch_slots_name, intel::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
-                .add(retired_microcode_ops_name, intel::EventMapper::get(intel::NativeEvents::RETIRED_MICROCODE_OPS))
-                .add(retired_ops_name, intel::EventMapper::get(cpu::intel::NativeEvents::RETIRED_OPS))
+                .add(uops_retired_slots_name, intel::EventMapper::get(intel::NativeEvents::UOPS_RETIRED_SLOTS))
+                .add(idq_ms_uops_name, intel::EventMapper::get(intel::NativeEvents::IDQ_MS_UOPS))
+                .add(uops_issued_name, intel::EventMapper::get(intel::NativeEvents::UOPS_ISSUED))
                 .build("Retiring_Fastpath",
-                       [dispatch_slots_name, retired_microcode_ops_name, retired_ops_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                       [dispatch_slots_name, uops_retired_slots_name, idq_ms_uops_name, uops_issued_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
                            uint64_t dispatch_slots = 4 * counts.at(dispatch_slots_name);
-                           uint64_t retired_ops = counts.at(retired_ops_name);
-                           uint64_t retired_microcode_ops = counts.at(retired_microcode_ops_name);
+                           uint64_t uops_retired_slots = counts.at(uops_retired_slots_name);
+                           uint64_t idq_ms_uops = counts.at(idq_ms_uops_name);
+                           uint64_t uops_issued = counts.at(uops_issued_name);
 
                            // Avoid div by zero
-                           if (retired_ops == 0 || dispatch_slots)
+                           if (dispatch_slots)
                                std::numeric_limits<double>::quiet_NaN();
-                           double retiring = (static_cast<double>(retired_ops)) / (static_cast<double>(dispatch_slots));
-
-                           return 100 * retiring * (retired_ops - retired_microcode_ops) / retired_ops;
+                           double retiring_microcode = ((static_cast<double>(uops_retired_slots) / static_cast<double>(dispatch_slots)) * (static_cast<double>(idq_ms_uops) / static_cast<double>(dispatch_slots)));
+                           return 100 * ((static_cast<double>(uops_retired_slots) / static_cast<double>(dispatch_slots)) - retiring_microcode);
                        });
-        } ///< Fraction of dispatch slots used by fastpath ops that retired
+        }
+
         static MetricBuilder Retiring_Microcode()
         {
             std::string dispatch_slots_name = to_string(CoreEvents::UNHALTED_CORE_CYCLES);
-            std::string retired_microcode_ops_name = to_string(intel::NativeEvents::RETIRED_MICROCODE_OPS);
-            std::string retired_ops_name = to_string(intel::NativeEvents::RETIRED_OPS);
+            std::string uops_retired_slots_name = to_string(intel::NativeEvents::UOPS_RETIRED_SLOTS);
+            std::string idq_ms_uops_name = to_string(intel::NativeEvents::IDQ_MS_UOPS);
+            std::string uops_issued_name = to_string(intel::NativeEvents::UOPS_ISSUED);
 
             return MetricBuilder{}
                 .add(dispatch_slots_name, intel::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
-                .add(retired_microcode_ops_name, intel::EventMapper::get(intel::NativeEvents::RETIRED_MICROCODE_OPS))
-                .add(retired_ops_name, intel::EventMapper::get(cpu::intel::NativeEvents::RETIRED_OPS))
+                .add(uops_retired_slots_name, intel::EventMapper::get(intel::NativeEvents::UOPS_RETIRED_SLOTS))
+                .add(idq_ms_uops_name, intel::EventMapper::get(intel::NativeEvents::IDQ_MS_UOPS))
+                .add(uops_issued_name, intel::EventMapper::get(intel::NativeEvents::UOPS_ISSUED))
                 .build("Retiring_Microcode",
-                       [dispatch_slots_name, retired_microcode_ops_name, retired_ops_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                       [dispatch_slots_name, uops_retired_slots_name, idq_ms_uops_name, uops_issued_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
                            uint64_t dispatch_slots = 4 * counts.at(dispatch_slots_name);
-                           uint64_t retired_ops = counts.at(retired_ops_name);
-                           uint64_t retired_microcode_ops = counts.at(retired_microcode_ops_name);
+                           uint64_t uops_retired_slots = counts.at(uops_retired_slots_name);
+                           uint64_t idq_ms_uops = counts.at(idq_ms_uops_name);
+                           uint64_t uops_issued = counts.at(uops_issued_name);
 
                            // Avoid div by zero
-                           if (retired_ops == 0 || dispatch_slots)
+                           if (dispatch_slots)
                                std::numeric_limits<double>::quiet_NaN();
-                           double retiring = (static_cast<double>(retired_ops)) / (static_cast<double>(dispatch_slots));
-
-                           return 100 * retiring * retired_microcode_ops / retired_ops;
+                           return 100 * ((static_cast<double>(uops_retired_slots) / static_cast<double>(dispatch_slots)) * (static_cast<double>(idq_ms_uops) / static_cast<double>(dispatch_slots)));
                        });
-        } ///< Fraction of dispatch slots used by microcode ops that retired.
+        }
 
 #else
         // Topdown (Pipeline Utilisation) Analysis L1
-        static MetricBuilder FrontendBound() { return {}; } ///< IDQ_UOPS_NOT_DELIVERED.CORE / (4 *CPU_CLK_UNHALTED.THREAD) — Fraction of slots not delivered by frontend
+        static MetricBuilder FrontendBound() { return {}; }
 
-        static MetricBuilder BadSpeculation() { return {}; } ///< (BR_MISP_RETIRED.ALL_BRANCHES + MACHINE_CLEARS.COUNT) / (4 *CPU_CLK_UNHALTED.THREAD) — Fraction of slots wasted due to branch mispredicts or other speculation issues
-        static MetricBuilder BackendBound() { return {}; }   ///< BACKEND_BOUND.SLOTS / (4 *CPU_CLK_UNHALTED.THREAD) — Fraction of slots where backend was unable to accept uops
-        static MetricBuilder Retiring() { return {}; }       ///< UOPS_RETIRED.RETIRE_SLOTS / (4 *CPU_CLK_UNHALTED.THREAD) — Fraction of slots retired successfully (i.e., useful work done)
-        static MetricBuilder SMTContention() { return {}; }  ///< DISPATHC_SLOTS / (4 *CPU_CLK_UNHALTED.THREAD) — Fraction of unused dispatch slots because the other thread was selected
+        static MetricBuilder BadSpeculation() { return {}; }
+        static MetricBuilder BackendBound() { return {}; }
+        static MetricBuilder Retiring() { return {}; }
+        static MetricBuilder SMTContention() { return {}; }
 
         // Topdown (Pipeline Utilisation) Analysis L1
-        static MetricBuilder FrontendBound_Latency() { return {}; }           ///< ICACHE.MISSES + ITLB_MISSES.STLB_HIT / IDQ_UOPS_NOT_DELIVERED.CORE — Portion of FrontendBound due to instruction cache or TLB latency
-        static MetricBuilder FrontendBound_BW() { return {}; }                ///< DECODE_STALL.CYCLES / IDQ_UOPS_NOT_DELIVERED.CORE — Portion of FrontendBound due to bandwidth limitations (decode/queue saturation)
-        static MetricBuilder BadSpeculation_Mispredicts() { return {}; }      ///< BR_MISP_RETIRED.ALL_BRANCHES / (4 *CPU_CLK_UNHALTED.THREAD) — Portion of BadSpeculation due to branch mispredicts
-        static MetricBuilder BadSpeculation_PipelineRestarts() { return {}; } ///< MACHINE_CLEARS.COUNT / (4 *CPU_CLK_UNHALTED.THREAD) — Portion of BadSpeculation due to pipeline clears (e.g., memory ordering violations)
-        static MetricBuilder BackendEndbound_Memory() { return {}; }          ///< MEM_BOUND / BACKEND_BOUND — Portion of BackendBound due to memory issues (DRAM, L3 misses, etc.)
-        static MetricBuilder BackendEndbound_CPU() { return {}; }             ///< CORE_BOUND / BACKEND_BOUND — Portion of BackendBound due to non-memory backend issues (e.g., execution unit contention)
-        static MetricBuilder Retiring_Fastpath() { return {}; }               ///< UOPS_RETIRED.RETIRE_SLOTS (from scalar/simple ops) / TotalSlots — Portion of Retiring that was serviced via fast-path execution
-        static MetricBuilder Retiring_Microcode() { return {}; }              ///< MICROCODE.SEQUENCER_UOPS / TotalSlots — Portion of Retiring that came from microcode assists or complex flows
+        static MetricBuilder FrontendBound_Latency() { return {}; }
+        static MetricBuilder FrontendBound_BW() { return {}; }
+        static MetricBuilder BadSpeculation_Mispredicts() { return {}; }
+        static MetricBuilder BadSpeculation_PipelineRestarts() { return {}; }
+        static MetricBuilder BackendEndbound_Memory() { return {}; }
+        static MetricBuilder BackendEndbound_CPU() { return {}; }
+        static MetricBuilder Retiring_Fastpath() { return {}; }
+        static MetricBuilder Retiring_Microcode() { return {}; }
 #endif
         // Aggregated Metrics
 

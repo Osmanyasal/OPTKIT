@@ -12,8 +12,8 @@ namespace optkit::core::metrics::cpu
             return "DISPATCH_SLOTS";
         case CoreEvents::UNHALTED_CORE_CYCLES:
             return "UNHALTED_CORE_CYCLES";
-        case CoreEvents::UNHALTED_REFERENCE_CYCLES:
-            return "UNHALTED_REFERENCE_CYCLES";
+        // case CoreEvents::UNHALTED_REFERENCE_CYCLES:
+        //     return "UNHALTED_REFERENCE_CYCLES";
         case CoreEvents::RESOURCE_STALLS:
             return "RESOURCE_STALLS";
         // case CoreEvents::RECOVERY_CYCLES:

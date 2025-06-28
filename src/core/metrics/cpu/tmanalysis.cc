@@ -284,11 +284,11 @@ namespace optkit::core::metrics::cpu
     {
         static std::vector<std::pair<std::string, uint64_t>> default_mapping{
             // here 1 + 2 + 3 = stalls_mem_any
-            {"CPU_CLK_UNHALTED", 0x3c},                                          // 0
-            {"STALLS_L1D_MISS", (0xa3 | 0x0c00 | (0xc << INTEL_X86_CMASK_BIT))}, // 1
-            {"STALLS_L2_MISS", (0xa3 | 0x0500 | (0x5 << INTEL_X86_CMASK_BIT))},  // 2
-            {"STALLS_L3_MISS", (0xa3 | 0x0600 | (0x6 << INTEL_X86_CMASK_BIT))},  // 3
-            {"RESOURCE_STALLS_SB", (0xa2 | 0x800)}                               // 4
+            {"CPU_CLK_UNHALTED", 0x3c},                                           // 0
+            {"STALLS_L1D_MISS ", (0xa3 | 0x0c00 | (0xc << INTEL_X86_CMASK_BIT))}, // 1
+            {"STALLS_L2_MISS  ", (0xa3 | 0x0500 | (0x5 << INTEL_X86_CMASK_BIT))}, // 2
+            {"STALLS_L3_MISS  ", (0xa3 | 0x0600 | (0x6 << INTEL_X86_CMASK_BIT))}, // 3
+            {"RESOURCE_STALLS_SB", (0xa2 | 0x800)}                                // 4
         };
         return default_mapping;
     }
@@ -324,6 +324,7 @@ namespace optkit::core::metrics::cpu
         static std::vector<std::pair<std::string, uint64_t>> default_mapping;
         return default_mapping; // BadSpeculation - BranchMispredicts
     };
+    
     std::map<L2Metric, double> TMAnalysis::L1__bad_speculation__analise()
     {
         std::map<L2Metric, double> result;

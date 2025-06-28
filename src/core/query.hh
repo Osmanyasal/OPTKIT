@@ -10,7 +10,7 @@
 #include <unistd.h>
 
 namespace optkit::core
-{ 
+{
     /**
      * @brief  ASK System & CPU related queries here<br>
      * This Query class uses <b>libpfm4</b> to retrieve information
@@ -21,7 +21,7 @@ namespace optkit::core
     class Query final
     {
     public:
-        //TODO: there can be many sockets, make this an array using env_config socket count.
+        // TODO: there can be many sockets, make this an array using env_config socket count.
         static int64_t OPTKIT_SOCKET0__ENABLED;
         static int64_t OPTKIT_SOCKET1__ENABLED;
         static int64_t OPTKIT_SOCKET0__CORE_FREQ;
@@ -39,6 +39,7 @@ namespace optkit::core
          */
         static const std::map<int32_t, std::vector<int32_t>> &detect_cpu_packages();
 
+        static bool is_smt_enabled() { return true; }
 
         /**
          * @brief Returns current perf_event_paranoid value from "/proc/sys/kernel/perf_event_paranoid"<br>
