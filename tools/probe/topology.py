@@ -162,18 +162,30 @@ def draw_dynamic_socket_layout(socket_id, core_groups, cache_hierarchy):
     headers = [" Core(s) ".center(box_w)]
     
     for level in cache_levels:
-        # Get first cache type (usually one type per level)
-        cache_type = next(iter(cache_hierarchy[level].keys()))
-        instances = cache_hierarchy[level][cache_type]
-        per_instance_size = f"{instances[0]['size_kb']}K"
-        headers.append(f" L{level} Cache ".center(box_w))
+        level_types = cache_hierarchy[level]
         
+        # Determine if unified or split (e.g. L1d and L1i)
+        if 'Unified' in level_types:
+            instances = level_types['Unified']
+            per_instance_size = f"{instances[0]['size_kb']}K"
+        elif 'Data' in level_types and 'Instruction' in level_types:
+            # Sum sizes
+            d_size = level_types['Data'][0]['size_kb']
+            i_size = level_types['Instruction'][0]['size_kb']
+            per_instance_size = f"{d_size}K+{i_size}K"
+        else:
+            # Fallback to first available type
+            first_type = next(iter(level_types))
+            instances = level_types[first_type]
+            per_instance_size = f"{instances[0]['size_kb']}K"
+
+        headers.append(f" L{level} Cache ".center(box_w))
+
         if level == max(cache_levels):
-            # Last level cache typically shared, one box spanning cores
+            # Shared L3: one big box
             cache_box = make_cache_box(per_instance_size, box_w, num_cores * 3)
             cache_columns.append(cache_box)
         else:
-            # Lower level caches typically per core (one box per core group)
             cache_boxes = [make_box_lines(per_instance_size, box_w) for _ in core_groups]
             cache_columns.append(join_vertical(cache_boxes))
     
