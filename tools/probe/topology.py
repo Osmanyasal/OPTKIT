@@ -146,62 +146,56 @@ def make_cache_box(size, box_w, height):
     return box
 
 def draw_dynamic_socket_layout(socket_id, core_groups, cache_hierarchy):
-    box_w = 9
     num_cores = len(core_groups)
     cache_levels = sorted(cache_hierarchy.keys())
-    
-    # Create core boxes
+
     core_boxes = []
+    core_label_width = max(len(' '.join(map(str, core))) for core in core_groups) + 2
+    core_box_w = max(core_label_width, 9)
     for core in core_groups:
         label = ' '.join(map(str, sorted(core)))
-        core_boxes.append(make_box_lines(label, box_w))
+        core_boxes.append(make_box_lines(label, core_box_w))
     core_column = join_vertical(core_boxes)
-    
-    # Create cache columns
+
+    # Prepare cache columns and headers
     cache_columns = []
-    headers = [" Core(s) ".center(box_w)]
-    
+    column_widths = [core_box_w]
+    headers = [" Core(s) ".center(core_box_w)]
+
     for level in cache_levels:
         level_types = cache_hierarchy[level]
-        
-        # Determine if unified or split (e.g. L1d and L1i)
+
         if 'Unified' in level_types:
-            instances = level_types['Unified']
-            per_instance_size = f"{instances[0]['size_kb']}K"
+            size_str = f"{level_types['Unified'][0]['size_kb']}K"
         elif 'Data' in level_types and 'Instruction' in level_types:
-            # Sum sizes
             d_size = level_types['Data'][0]['size_kb']
             i_size = level_types['Instruction'][0]['size_kb']
-            per_instance_size = f"{d_size}K+{i_size}K"
+            size_str = f"d:{d_size}K+i:{i_size}K"
         else:
-            # Fallback to first available type
             first_type = next(iter(level_types))
-            instances = level_types[first_type]
-            per_instance_size = f"{instances[0]['size_kb']}K"
+            size_str = f"{level_types[first_type][0]['size_kb']}K"
 
+        # Compute box width dynamically
+        box_w = max(len(size_str) + 2, 9)
+        column_widths.append(box_w)
         headers.append(f" L{level} Cache ".center(box_w))
 
         if level == max(cache_levels):
-            # Shared L3: one big box
-            cache_box = make_cache_box(per_instance_size, box_w, num_cores * 3)
+            cache_box = make_cache_box(size_str, box_w, num_cores * 3)
             cache_columns.append(cache_box)
         else:
-            cache_boxes = [make_box_lines(per_instance_size, box_w) for _ in core_groups]
+            cache_boxes = [make_box_lines(size_str, box_w) for _ in core_groups]
             cache_columns.append(join_vertical(cache_boxes))
-    
-    # Equalize heights
+
     all_columns = [core_column] + cache_columns
     max_height = max(len(col) for col in all_columns)
     padded_columns = [pad_lines(col, max_height) for col in all_columns]
-    
-    # Print socket header
+
     print(f"\nSocket {socket_id}:")
-    print(" ".join(headers))
+    print(" ".join(h for h in headers))
     print()
-    
-    # Print rows
     for i in range(max_height):
-        print(" ".join(col[i] for col in padded_columns))
+        print(" ".join(padded_columns[j][i].ljust(column_widths[j]) for j in range(len(padded_columns))))
 
 def print_cache_topology_for_socket_compact(socket_id, socket_caches):
     print("\n" + "*" * 80)
