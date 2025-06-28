@@ -8,6 +8,14 @@
 #if OPTKIT_CONF_PMU_MACROS_ENABLED
 
 #if OPTKIT_ENV_CPU_INTEL
+#include "core/metrics/cpu/intel/core_metrics.hh"
+#include "core/metrics/cpu/intel/event_mapper.hh"
+namespace optkit::core::metrics::cpu
+{
+    using core_metrics = CoreMetrics<IntelMetricsImpl>;
+    using event_mapper = intel::EventMapper;
+    using core_events = CoreEvents;
+}
 #elif OPTKIT_ENV_CPU_AMD
 #include "core/metrics/cpu/amd/core_metrics.hh"
 #include "core/metrics/cpu/amd/event_mapper.hh"

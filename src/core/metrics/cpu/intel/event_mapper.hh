@@ -1,6 +1,6 @@
 #pragma once
 #include "utils/deployment/deployment_config.hh"
-#if OPTKIT_ENV_CPU_AMD  // TODO: change it to Intel
+#if OPTKIT_ENV_CPU_INTEL
 
 #include <unordered_map>
 #include "utils/utils.hh"

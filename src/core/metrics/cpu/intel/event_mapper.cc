@@ -1,5 +1,5 @@
 #include "core/metrics/cpu/intel/event_mapper.hh"
-#if OPTKIT_ENV_CPU_AMD
+#if OPTKIT_ENV_CPU_INTEL
 
 #define INTEL_X86_EDGE_BIT 18
 #define INTEL_X86_ANY_BIT 21
@@ -12,7 +12,7 @@
 namespace optkit::core::metrics::cpu::intel
 {
 
-        const std::unordered_map<metrics::cpu::CoreEvents, std::vector<uint64_t>> EventMapper::core_event_map = {
+        const std::unordered_map<cpu::CoreEvents, std::vector<uint64_t>> EventMapper::core_event_map = {
 
             {cpu::CoreEvents::UNHALTED_CORE_CYCLES, {0x003c}},
 
@@ -84,7 +84,8 @@ namespace optkit::core::metrics::cpu::intel
             //     {cpu::CoreEvents::RETIRED_SSE_AVX_FLOPS_ANY, {}}, // check native events.
             //     {cpu::CoreEvents::RETIRED_FLOPS_ANY, {}},         // check native events.
         };
-        const std::unordered_map<metrics::cpu::intel::NativeEvents, std::vector<uint64_t>> EventMapper::native_event_map = {
+
+        const std::unordered_map<cpu::intel::NativeEvents, std::vector<uint64_t>> EventMapper::native_event_map = {
             {intel::NativeEvents::BR_INST_RETIRED_NEAR_CALL, {0x02c4}},
 
             {intel::NativeEvents::RESOURCE_STALLS_SB, {0x08a2}},
@@ -132,10 +133,6 @@ namespace optkit::core::metrics::cpu::intel
             {intel::NativeEvents::STALLS_L1D_MISS, {}},
             {intel::NativeEvents::STALLS_L2_MISS, {}},
             {intel::NativeEvents::STALLS_L3_MISS, {}},
-
-#if OPTKIT_ENV_CPU_MICROARCH_SPR
-
-#endif
         };
 }
 
