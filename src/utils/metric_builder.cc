@@ -1,4 +1,4 @@
-#include "core/metrics/metric_builder.hh"
+#include "utils/metric_builder.hh"
 
 namespace optkit::core::metrics
 {

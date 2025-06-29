@@ -155,6 +155,16 @@ namespace optkit::core::metrics
             return names;
         }
 
+        std::vector<std::string> event_names() const
+        {
+            std::vector<std::string> names;
+            for (auto it = metric_events.begin(); it != metric_events.end(); ++it)
+            {
+                names.push_back(it->first);
+            }
+            return names;
+        }
+
         CalculationFunc metric_calculation_func(const std::string &name) const
         {
             auto it = calculation_funcs.find(name);

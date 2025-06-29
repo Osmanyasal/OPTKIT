@@ -11,7 +11,7 @@ namespace optkit::core
     class BaseProfiler
     {
     public:
-        BaseProfiler(const char *block_name, const char *metric_name, bool verbose) : block_name{block_name}, metric_name{metric_name}, verbose{verbose}, start{std::chrono::high_resolution_clock::now()}
+        BaseProfiler(const char *block_name, const char *measurement_type, bool verbose) : block_name{block_name}, measurement_type{measurement_type}, verbose{verbose}, start{std::chrono::high_resolution_clock::now()}
         {
         }
         virtual ~BaseProfiler() {}
@@ -73,7 +73,7 @@ namespace optkit::core
          * This method processes the entire buffer, summing up the total duration and combining
          * all recorded event-value pairs into a single list.
          *
-         * You should call MetricBuffer.calculate(...) to see the results
+         * You should call MetricBuffer.calculate(...) to see the results of your metrics.
          *
          * @return unique event-value map.
          */
@@ -86,23 +86,35 @@ namespace optkit::core
          */
         virtual void save() final
         {
-            const std::string &json_data = to_json();
-            std::string file_name = this->block_name;
-            file_name = file_name;
-            std::replace(file_name.begin(), file_name.end(), ' ', '_');
-            file_name = optkit::utils::EXECUTION_FOLDER_NAME + "/" + this->metric_name + "__" + file_name + ".json";
-            optkit::utils::write_file(file_name, json_data, verbose);
+            std::string json_data = to_json();
+            std::string block_name = this->block_name;
+            std::replace(block_name.begin(), block_name.end(), ' ', '_');
+            utils::write_file(utils::EXECUTION_FOLDER_NAME + "/" + block_name + "__" + this->measurement_type + ".json", json_data, verbose);
         }
 
     public:
         const char *block_name;
-        const char *metric_name;
+        const char *measurement_type;
         bool verbose;
 
     protected:
         double total_duration_ms;
         std::chrono::high_resolution_clock::time_point start;
-        std::vector<std::pair<double, T>> read_buffer; // single timestamp -- measurements
+
+        /**
+         * @brief Vector of timestamp–measurement pairs.
+         *
+         * Note: Timestamps may vary across different workloads or basically user takes samples at random places.
+         * Each timestamp represents the elapsed time at which the corresponding measurement was taken.
+         *
+         */
+        std::vector<std::pair<double, T>> read_buffer;
+
+        /**
+         * @brief Aggregated view of the read_buffer, where each element
+         *        represents an event name and its accumulated value. it is filled by aggregate() method.
+         */
+        std::vector<std::pair<std::string, uint64_t>> event_results;
     };
 
 } // namespace optkit::core

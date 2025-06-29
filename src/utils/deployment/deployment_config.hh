@@ -22,6 +22,10 @@
 #define OPTKIT_CONF_FREQ_MACROS_ENABLED 1
 #endif
 
+#ifndef OPTKIT_CONF_DISK_MACROS_ENABLED
+#define OPTKIT_CONF_DISK_MACROS_ENABLED 1  // Default: enabled
+#endif
+
 #ifndef OPTKIT_CONF_PMU_USE_PERF
 #define OPTKIT_CONF_PMU_USE_PERF (OPTKIT_CONF_PMU_MACROS_ENABLED && OPTKIT_ENV_LIB_PERF_EVENT)  // Default: enabled if system has perf_event
 #endif

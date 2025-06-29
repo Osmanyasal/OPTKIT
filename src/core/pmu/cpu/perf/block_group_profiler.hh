@@ -12,7 +12,6 @@
 #include "utils/base_profiler.hh"
 #include "core/pmu/cpu/perf/profiler_config.hh"
 #include "core/pmu/cpu/pmu_event_manager.hh"
-#include "core/pmu/cpu/pmu_utils.hh"
 #include "core/metrics/cpu/core_metrics.hh"
 namespace optkit::core::pmu::cpu::perf
 {
@@ -60,28 +59,14 @@ namespace optkit::core::pmu::cpu::perf
          * @return std::vector<uint64_t> contains each raw_events' pmu data.
          */
         virtual std::vector<uint64_t> read() override;
-
-        /**
-         * @brief Aggregates all collected data from the read buffer.
-         *
-         * If multiple `read_and_save()` calls are made while monitoring events (e.g., x, y, z),
-         * the `read_buffer` may contain several entries, each holding a duration and a list of event values.
-         *
-         * This method processes the entire buffer, summing up the total duration and combining
-         * all recorded event-value pairs into a single list.
-         *
-         * You should call MetricBuffer.calculate(...) to see the results
-         *
-         * It updates the this->results and this->duration_ms
-         *
-         * @return unique event-value map
-         */
-        virtual std::unordered_map<std::string, uint64_t> aggregate() override;
+ 
         int32_t get_group_leader()
         {
             return this->group_leader;
         }
 
+        virtual std::unordered_map<std::string, uint64_t> aggregate() override;
+        
 #if !OPTKIT_TESTING // if not testing (in prod) then make those private, in testin make those public
     private:
 #endif
@@ -89,11 +74,10 @@ namespace optkit::core::pmu::cpu::perf
         bool is_configured;
         PerfProfilerConfig profiler_config;
         int32_t group_leader;
-
-        std::vector<std::pair<std::string, uint64_t>> results;
+ 
         std::vector<std::pair<std::string, double>> metric_results;
         core::metrics::MetricBuilder metric_builder;
-
+        
         struct read_format
         {
             uint64_t nr;

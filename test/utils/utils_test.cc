@@ -8,7 +8,7 @@ namespace fs = std::filesystem;
 using namespace optkit::utils;
 
 // Define a temporary folder to store test artifacts
-const std::string test_folder = "test_output";
+const std::string test_folder = "bin/test_output";
 
 // Ensure setup and cleanup for tests
 class UtilsTest : public ::testing::Test {
@@ -43,8 +43,9 @@ TEST_F(UtilsTest, WriteAndReadFile) {
 TEST_F(UtilsTest, GetAllFilesInDirectory) {
     std::string file1 = test_folder + "/a.txt";
     std::string file2 = test_folder + "/b.txt";
-    std::ofstream(file1) << "A";
-    std::ofstream(file2) << "B";
+
+    write_file(file1, "A");
+    write_file(file2, "B");
 
     auto files = get_all_files(test_folder);
     EXPECT_GE(files.size(), 2);

@@ -2,7 +2,7 @@
 
 namespace optkit::core::energy::rapl
 {
-    RaplProfiler::RaplProfiler(const char *block_name, const char *metric_name, const RaplConfig &config) : BaseProfiler{block_name, metric_name, true}, rapl_config{config}
+    RaplProfiler::RaplProfiler(const char *block_name, const char *measurement_type, const RaplConfig &config) : BaseProfiler{block_name, measurement_type, true}, rapl_config{config}
     {
         const std::map<int32_t, std::vector<int32_t>> &packages = Query::detect_cpu_packages();
         const std::vector<RaplDomainInfo> &avail_domains = QueryRapl::rapl_domain_info(); // Monitor for all available domains
@@ -71,7 +71,7 @@ namespace optkit::core::energy::rapl
         std::stringstream ss;
         ss << "[\n";
         // based on the insertion order.
-        ss << core::energy::rapl::to_json(this->metric_name, this->read_buffer);
+        ss << core::energy::rapl::to_json(this->measurement_type, this->read_buffer);
         ss << "]\n";
         return ss.str();
     }

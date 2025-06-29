@@ -25,6 +25,9 @@
 // PROFILING HEADERS
 #include "core/query.hh"
 
+// JSON
+#include "utils/json.hh"
+
 // MACRO DEFINITIONS
 #define BIT(x) (1 << x)
 #define STRINGIFY(...) #__VA_ARGS__
@@ -113,6 +116,7 @@ namespace optkit::utils
     std::string get_time(const std::string &format = "%H_%M_%S");
     std::vector<std::string> get_all_files(const std::string &directory_name);
     std::vector<std::string> str_split(const std::string& s, const std::string& delimiter);
+    nlohmann::json to_json(double duration, const char *metric_name, const std::vector<std::pair<std::string, uint64_t>> &results, const std::vector<std::pair<std::string, double>>& metric_results, int32_t socket_number = -1);
 
     OPT_FORCE_INLINE bool is_path_exists(const std::string &location)
     {
@@ -194,4 +198,5 @@ namespace optkit::utils
             OPTKIT_CORE_WARN("read msr error -- cannot read register {}", MSR_REGISTER_address);
         }
     }
+    
 }

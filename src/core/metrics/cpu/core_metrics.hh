@@ -8,7 +8,7 @@
 #include <unordered_set>
 #include <unordered_map>
 #include <iostream>
-#include "core/metrics/metric_builder.hh"
+#include "utils/metric_builder.hh"
 namespace optkit::core::metrics::cpu
 {
     /**

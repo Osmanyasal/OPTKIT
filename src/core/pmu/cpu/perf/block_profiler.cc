@@ -44,9 +44,6 @@ namespace optkit::core::pmu::cpu::perf
 
         this->metric_results = this->metric_builder.calculate(aggregate());
 
-        if (OPT_LIKELY(!this->metric_builder.print_events))
-            this->results.clear();
-
         if (OPT_LIKELY(profiler_config.dump_results_to_file))
             this->save();
 
@@ -56,8 +53,9 @@ namespace optkit::core::pmu::cpu::perf
                       << "Block: " << this->block_name << "\033[0m"
                       << " [" << this->total_duration_ms << "ms] Measured\n";
 
-            for (auto &&event : this->results)
-                std::cout << std::fixed << "\t" << event.first << ": " << event.second << std::endl;
+            if (OPT_UNLIKELY(this->metric_builder.print_events))
+                for (auto &&event : this->event_results)
+                    std::cout << std::fixed << "\t" << event.first << ": " << event.second << std::endl;
 
             for (auto &&metric : this->metric_results)
                 std::cout << std::fixed << "\t" << metric.first << ": " << metric.second << std::endl;
@@ -94,7 +92,7 @@ namespace optkit::core::pmu::cpu::perf
         std::stringstream ss;
         ss << "[\n";
         // based on the insertion order.
-        ss << core::pmu::cpu::perf::to_json(this->total_duration_ms, this->metric_name, this->results, this->metric_results);
+        ss << utils::to_json(this->total_duration_ms, this->measurement_type, this->event_results, this->metric_results);
         ss << "]\n";
         return ss.str();
     }
@@ -117,29 +115,27 @@ namespace optkit::core::pmu::cpu::perf
 
         return result;
     }
-
     std::unordered_map<std::string, uint64_t> BlockProfiler::aggregate()
     {
         double total_duration = 0.0;
         std::unordered_map<std::string, uint64_t> aggregated_events;
+        const std::vector<std::string> &event_names = this->metric_builder.event_names();
 
         for (const auto &entry : read_buffer)
         {
             total_duration += entry.first;
 
             const std::vector<uint64_t> &values = entry.second;
-            const std::vector<std::pair<std::string, uint64_t>> &events = metric_builder.metric_events;
 
-            size_t count = std::min(values.size(), events.size());
-            for (size_t j = 0; j < count; ++j)
+            for (size_t j = 0; j < values.size(); ++j)
             {
-                aggregated_events[events[j].first] += values[j];
+                aggregated_events[event_names[j]] += values[j];
             }
         }
         std::vector<std::pair<std::string, uint64_t>> event_value(
             aggregated_events.begin(), aggregated_events.end());
 
-        this->results = event_value;
+        this->event_results = event_value;
         this->total_duration_ms = total_duration;
 
         return aggregated_events;

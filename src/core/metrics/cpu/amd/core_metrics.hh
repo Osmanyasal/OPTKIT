@@ -1,8 +1,7 @@
 #pragma once
 #include "utils/deployment/deployment_config.hh"
 #if OPTKIT_ENV_CPU_AMD
-
-#include "core/metrics/metric_builder.hh"
+ 
 #include "core/metrics/cpu/core_metrics.hh"
 #include "core/metrics/cpu/amd/event_mapper.hh"
 #include "core/metrics/cpu/amd/native_events.hh"
@@ -871,8 +870,8 @@ namespace optkit::core::metrics::cpu
             MetricBuilder mb;
             mb.add(IpCall());
             mb.add(IpBranch());
-            mb.add(IpLoad());
-            mb.add(IpStore());
+            mb.add(IpMemLoad());
+            mb.add(IpMemStore());
             mb.add(IpMispredict());
             mb.add(IpFLOP());
             mb.add(IpArith());
