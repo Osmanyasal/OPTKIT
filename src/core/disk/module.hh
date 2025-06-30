@@ -1,7 +1,6 @@
 #pragma once
 
 #include "utils/utils.hh"
-#include "core/disk/core_events.hh"
 #include "core/disk/disk_profiler.hh"
 
 // Select which way (perf or msr) to macro
@@ -13,5 +12,3 @@
 #else
 #define OPTKIT_DISK_EVENTS(block_name, metric_builder, ...)
 #endif
-
-using optkit::core::disk::operator<<; // make available to global namespace

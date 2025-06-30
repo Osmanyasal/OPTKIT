@@ -11,7 +11,7 @@ namespace optkit::core
     class BaseProfiler
     {
     public:
-        BaseProfiler(const char *block_name, const char *measurement_type, bool verbose) : block_name{block_name}, measurement_type{measurement_type}, verbose{verbose}, start{std::chrono::high_resolution_clock::now()}
+        BaseProfiler(const char *block_name, const char *measurement_type, bool verbose) : block_name{block_name}, measurement_type{measurement_type}, verbose{verbose}, total_duration_ms{0}, start{std::chrono::high_resolution_clock::now()}
         {
         }
         virtual ~BaseProfiler() {}

@@ -13,9 +13,9 @@ namespace optkit::core::metrics::cpu
 {
     /**
      * @class Metrics
-     * @brief Interface for retrieving CPU performance metrics. Each metric method returns the set of events required for its computation.
+     * @brief Interface for retrieving CPU performance metrics. Each metric method returns a MetricBuilder containing events and metrics derived from them.
      *
-     * Implementation should take place in cpu vendors not here. The reason these are not fully abstract is that it is possible metric is generic but not exist in any cpu.
+     * Implementation should take place in cpu vendors not here. The reason these are not fully abstract is that it is possible metric is generic but not exist in a cpu and to access directly by the class since instaces would not make-sense.
      * So it returns empty list.
      *
      * Documentation formulations are pseudo formulas. Actual event names migh be (likely is) different than that take place here.
@@ -49,8 +49,8 @@ namespace optkit::core::metrics::cpu
         static MetricBuilder IpC() { return {}; }          ///< INST_RETIRED / UNHALTED_CLK_CYCLES  -- Instructions per cycle
         static MetricBuilder IpCall() { return {}; }       ///< INST_RETIRED / BR_INST_RETIRED.NEAR_CALL  -- Instructions per near (function/method) call (lower number means higher occurrence rate) | in current systems all function calls are considered near.
         static MetricBuilder IpBranch() { return {}; }     ///< INST_RETIRED / BR_INST_RETIRED.ALL_BRANCHES  -- Instructions per branch
-        static MetricBuilder IpMemLoad() { return {}; }       ///< INST_RETIRED / MEM_INST_RETIRED.ALL_LOADS_PS  -- Instructions per memory load instructions
-        static MetricBuilder IpMemStore() { return {}; }      ///< INST_RETIRED / MEM_INST_RETIRED.ALL_STORES_PS -- Instructions per memory store instructions
+        static MetricBuilder IpMemLoad() { return {}; }    ///< INST_RETIRED / MEM_INST_RETIRED.ALL_LOADS_PS  -- Instructions per memory load instructions
+        static MetricBuilder IpMemStore() { return {}; }   ///< INST_RETIRED / MEM_INST_RETIRED.ALL_STORES_PS -- Instructions per memory store instructions
         static MetricBuilder IpMispredict() { return {}; } ///< INST_RETIRED / BR_MISP_RETIRED.ALL_BRANCHES  -- Instructions per mispredictions
 
         // Floating-point operation metrics

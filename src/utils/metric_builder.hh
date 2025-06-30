@@ -128,7 +128,7 @@ namespace optkit::core::metrics
             return *this;
         }
 
-        // Get the result of a specific metric
+        // Pass event results and calculate all metrics defined then return the result
         std::vector<std::pair<std::string, double>> calculate(const std::unordered_map<std::string, uint64_t> &results) const
         {
             if (calculation_funcs.empty())
