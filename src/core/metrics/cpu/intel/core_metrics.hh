@@ -43,7 +43,7 @@ namespace optkit::core::metrics::cpu
             return MetricBuilder{}
                 .add(l1_misses_name, intel::EventMapper::get(CoreEvents::L1_MISSES))
                 .add(l1_hits_name, intel::EventMapper::get(CoreEvents::L1_HITS))
-                .build("L1HitRatio",
+                .build("L1HitRatio__%",
                        [l1_hits_name, l1_misses_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
                            uint64_t l1_hits = counts.at(l1_hits_name);
@@ -63,7 +63,7 @@ namespace optkit::core::metrics::cpu
             return MetricBuilder{}
                 .add(l2_misses_name, intel::EventMapper::get(CoreEvents::L2_MISSES))
                 .add(l2_hits_name, intel::EventMapper::get(CoreEvents::L2_HITS))
-                .build("L2HitRatio",
+                .build("L2HitRatio__%",
                        [l2_hits_name, l2_misses_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
                            uint64_t l2_hits = counts.at(l2_hits_name);
@@ -83,7 +83,7 @@ namespace optkit::core::metrics::cpu
             return MetricBuilder{}
                 .add(l3_misses_name, intel::EventMapper::get(CoreEvents::L3_MISSES))
                 .add(l3_hits_name, intel::EventMapper::get(CoreEvents::L3_HITS))
-                .build("L3HitRatio",
+                .build("L3HitRatio__%",
                        [l3_hits_name, l3_misses_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
                            uint64_t l3_hits = counts.at(l3_hits_name);
@@ -281,7 +281,7 @@ namespace optkit::core::metrics::cpu
             return MetricBuilder{}
                 .add(uops_cycles_thread_name, intel::EventMapper::get(intel::NativeEvents::UOPS_CORE_CYCLES_THREAD))
                 .add(core_cycles_ge_1_name, intel::EventMapper::get(intel::NativeEvents::UOPS_CORE_CYCLES_GE_1))
-                .build("ILP",
+                .build("ILP__%",
                        [uops_cycles_thread_name, core_cycles_ge_1_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
                            uint64_t uops_cycles_thread = counts.at(uops_cycles_thread_name);
@@ -745,7 +745,7 @@ namespace optkit::core::metrics::cpu
             return MetricBuilder{}
                 .add(no_ops_from_frontend_name, intel::EventMapper::get(cpu::intel::NativeEvents::IDQ_UOPS_NOT_DELIVERED_CORE))
                 .add(dispatch_slots_name, intel::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
-                .build("FrontendBound",
+                .build("FrontendBound__%",
                        [dispatch_slots_name, no_ops_from_frontend_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
                            uint64_t no_ops_from_frontend = counts.at(no_ops_from_frontend_name);
@@ -768,7 +768,7 @@ namespace optkit::core::metrics::cpu
                 .add(dispatch_slots_name, intel::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
                 .add(uops_issued_name, intel::EventMapper::get(intel::NativeEvents::UOPS_ISSUED))
                 .add(uops_retired_slots_name, intel::EventMapper::get(cpu::intel::NativeEvents::UOPS_RETIRED_SLOTS))
-                .build("BadSpeculation",
+                .build("BadSpeculation__%",
                        [dispatch_slots_name, uops_issued_name, uops_retired_slots_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
                            uint64_t dispatch_slots = 4 * counts.at(dispatch_slots_name);
@@ -790,7 +790,7 @@ namespace optkit::core::metrics::cpu
             return MetricBuilder{}
                 .add(dispatch_slots_name, intel::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
                 .add(uops_retired_slots_name, intel::EventMapper::get(intel::NativeEvents::UOPS_RETIRED_SLOTS))
-                .build("Retiring",
+                .build("Retiring__%",
                        [dispatch_slots_name, uops_retired_slots_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
                            uint64_t dispatch_slots = 4 * counts.at(dispatch_slots_name);
@@ -816,7 +816,7 @@ namespace optkit::core::metrics::cpu
                 .add(no_ops_from_frontend_name, intel::EventMapper::get(intel::NativeEvents::IDQ_UOPS_NOT_DELIVERED_CORE))
                 .add(uops_issued_name, intel::EventMapper::get(intel::NativeEvents::UOPS_ISSUED))
                 .add(uops_retired_slots_name, intel::EventMapper::get(intel::NativeEvents::UOPS_RETIRED_SLOTS))
-                .build("BackendBound",
+                .build("BackendBound__%",
                        [dispatch_slots_name, no_ops_from_frontend_name, uops_issued_name, uops_retired_slots_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
                            uint64_t dispatch_slots = 4 * counts.at(dispatch_slots_name);
@@ -866,7 +866,7 @@ namespace optkit::core::metrics::cpu
                 .add(clocks_name, intel::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
                 .add(no_ops_from_frontend_name, intel::EventMapper::get(intel::NativeEvents::IDQ_UOPS_NOT_DELIVERED_CORE))
                 .add(uops_not_delivered_cycles_name, intel::EventMapper::get(intel::NativeEvents::IDQ_UOPS_NOT_DELIVERED_CYCLES_0))
-                .build("FrontendBound_Latency",
+                .build("FrontendBound_Latency__%",
                        [clocks_name, no_ops_from_frontend_name, uops_not_delivered_cycles_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
                            uint64_t clocks = counts.at(clocks_name);
@@ -890,7 +890,7 @@ namespace optkit::core::metrics::cpu
             return MetricBuilder{}
                 .add(clocks_name, intel::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
                 .add(uops_not_delivered_cycles_name, intel::EventMapper::get(intel::NativeEvents::IDQ_UOPS_NOT_DELIVERED_CYCLES_0))
-                .build("FrontendBound_BW",
+                .build("FrontendBound_BW__%",
                        [clocks_name, uops_not_delivered_cycles_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
                            uint64_t clocks = counts.at(clocks_name);
@@ -918,7 +918,7 @@ namespace optkit::core::metrics::cpu
                 .add(uops_issued_name, intel::EventMapper::get(intel::NativeEvents::UOPS_ISSUED))
                 .add(uops_retired_slots_name, intel::EventMapper::get(intel::NativeEvents::UOPS_RETIRED_SLOTS))
                 .add(recovery_cycles_name, intel::EventMapper::get(intel::NativeEvents::INT_MISC_RECOVERY_CYCLES))
-                .build("BadSpeculation_Mispredicts",
+                .build("BadSpeculation_Mispredicts__%",
                        [dispatch_slots_name, branch_misp_retired_name, machine_clears_count_name, uops_issued_name, uops_retired_slots_name, recovery_cycles_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
                            uint64_t dispatch_slots = 4 * counts.at(dispatch_slots_name);
@@ -953,7 +953,7 @@ namespace optkit::core::metrics::cpu
                 .add(uops_issued_name, intel::EventMapper::get(intel::NativeEvents::UOPS_ISSUED))
                 .add(uops_retired_slots_name, intel::EventMapper::get(intel::NativeEvents::UOPS_RETIRED_SLOTS))
                 .add(recovery_cycles_name, intel::EventMapper::get(intel::NativeEvents::INT_MISC_RECOVERY_CYCLES))
-                .build("BadSpeculation_PipelineRestarts",
+                .build("BadSpeculation_PipelineRestarts__%",
                        [dispatch_slots_name, branch_misp_retired_name, machine_clears_count_name, uops_issued_name, uops_retired_slots_name, recovery_cycles_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
                            uint64_t dispatch_slots = 4 * counts.at(dispatch_slots_name);
@@ -986,7 +986,7 @@ namespace optkit::core::metrics::cpu
                 .add(stalls_l2_miss_name, intel::EventMapper::get(intel::NativeEvents::STALLS_L2_MISS))
                 .add(stalls_l3_miss_name, intel::EventMapper::get(intel::NativeEvents::STALLS_L3_MISS))
                 .add(resource_stalls_sb_name, intel::EventMapper::get(intel::NativeEvents::RESOURCE_STALLS_SB))
-                .build("BackendEndbound_Memory",
+                .build("BackendEndbound_Memory__%",
                        [unhalted_cycles_name, stalls_l1d_miss_name, stalls_l2_miss_name, stalls_l3_miss_name, resource_stalls_sb_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
                            uint64_t unhalted_cycles = counts.at(unhalted_cycles_name);
@@ -1019,7 +1019,7 @@ namespace optkit::core::metrics::cpu
                 .add(stalls_l2_miss_name, intel::EventMapper::get(intel::NativeEvents::STALLS_L2_MISS))
                 .add(stalls_l3_miss_name, intel::EventMapper::get(intel::NativeEvents::STALLS_L3_MISS))
                 .add(resource_stalls_sb_name, intel::EventMapper::get(intel::NativeEvents::RESOURCE_STALLS_SB))
-                .build("BackendEndbound_CPU",
+                .build("BackendEndbound_CPU__%",
                        [unhalted_cycles_name, stalls_l1d_miss_name, stalls_l2_miss_name, stalls_l3_miss_name, resource_stalls_sb_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
                            uint64_t unhalted_cycles = counts.at(unhalted_cycles_name);
@@ -1050,7 +1050,7 @@ namespace optkit::core::metrics::cpu
                 .add(uops_retired_slots_name, intel::EventMapper::get(intel::NativeEvents::UOPS_RETIRED_SLOTS))
                 .add(idq_ms_uops_name, intel::EventMapper::get(intel::NativeEvents::IDQ_MS_UOPS))
                 .add(uops_issued_name, intel::EventMapper::get(intel::NativeEvents::UOPS_ISSUED))
-                .build("Retiring_Fastpath",
+                .build("Retiring_Fastpath__%",
                        [dispatch_slots_name, uops_retired_slots_name, idq_ms_uops_name, uops_issued_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
                            uint64_t dispatch_slots = 4 * counts.at(dispatch_slots_name);
@@ -1078,7 +1078,7 @@ namespace optkit::core::metrics::cpu
                 .add(uops_retired_slots_name, intel::EventMapper::get(intel::NativeEvents::UOPS_RETIRED_SLOTS))
                 .add(idq_ms_uops_name, intel::EventMapper::get(intel::NativeEvents::IDQ_MS_UOPS))
                 .add(uops_issued_name, intel::EventMapper::get(intel::NativeEvents::UOPS_ISSUED))
-                .build("Retiring_Microcode",
+                .build("Retiring_Microcode__%",
                        [dispatch_slots_name, uops_retired_slots_name, idq_ms_uops_name, uops_issued_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
                            uint64_t dispatch_slots = 4 * counts.at(dispatch_slots_name);

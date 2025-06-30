@@ -79,37 +79,65 @@ namespace optkit::utils
                            int32_t socket_number)
     {
         nlohmann::json result;
-
         nlohmann::json packageJson;
         packageJson["duration"] = duration;
         packageJson["duration_unit"] = "ms";
-        packageJson["socket_number"] = socket_number; // by default -1 indicating all sockets / cores used by the program at that time.
+        packageJson["socket_number"] = socket_number;
         packageJson["measurement_type"] = metric_name;
 
-        for (int32_t i = 0; i < results.size(); i++)
+        // Helper for splitting name and unit
+        auto split_name_and_unit = [](const std::string &full_name) -> std::pair<std::string, std::string>
         {
-            std::ostringstream ss;
-            ss << std::fixed << std::setprecision(3) << static_cast<double>(results[i].second);
+            size_t pos = full_name.rfind("__");
+            if (pos != std::string::npos && pos + 2 < full_name.size())
+            {
+                return std::make_pair(full_name.substr(0, pos), full_name.substr(pos + 2));
+            }
+            return std::make_pair(full_name, "None");
+        };
 
-            packageJson["measurements"].push_back({
-                {"type", "event"},
-                {"name", results[i].first},
-                {"value", ss.str()},
-                {"units", "uint"},
-            });
+        for (size_t i = 0; i < results.size(); ++i)
+        {
+            const std::string &raw_name = results[i].first;
+            uint64_t value = results[i].second;
+
+            std::pair<std::string, std::string> parsed = split_name_and_unit(raw_name);
+            const std::string &name = parsed.first;
+            const std::string &unit = parsed.second;
+
+            std::ostringstream ss;
+            ss << std::fixed << value;
+
+            nlohmann::json entry;
+            entry["type"] = "event";
+            entry["name"] = name;
+            entry["value"] = ss.str();
+            entry["value_unit"] = unit;
+            entry["dtype"] = "uint64_t";
+
+            packageJson["measurements"].push_back(entry);
         }
 
-        for (int32_t i = 0; i < metric_results.size(); i++)
+        for (size_t i = 0; i < metric_results.size(); ++i)
         {
-            std::ostringstream ss;
-            ss << std::fixed << std::setprecision(3) << metric_results[i].second;
+            const std::string &raw_name = metric_results[i].first;
+            double value = metric_results[i].second;
 
-            packageJson["measurements"].push_back({
-                {"type", "metric"},
-                {"name", metric_results[i].first},
-                {"value", ss.str()},
-                {"units", "double"},
-            });
+            std::pair<std::string, std::string> parsed = split_name_and_unit(raw_name);
+            const std::string &name = parsed.first;
+            const std::string &unit = parsed.second;
+
+            std::ostringstream ss;
+            ss << std::fixed << value;
+
+            nlohmann::json entry;
+            entry["type"] = "metric";
+            entry["name"] = name;
+            entry["value"] = ss.str();
+            entry["value_unit"] = unit;
+            entry["dtype"] = "double";
+
+            packageJson["measurements"].push_back(entry);
         }
 
         result["readings"].push_back(packageJson);

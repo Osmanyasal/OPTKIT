@@ -43,7 +43,7 @@ namespace optkit::core::metrics::disk
             return optkit::core::metrics::MetricBuilder{}
                 .add(rchar, {0x0})
                 .add(syscr, {0x0})
-                .build("read_batch_size",
+                .build("ReadBatchSize",
                        [rchar, syscr](const std::unordered_map<std::string, uint64_t> &m)
                        {
                            uint64_t val_rchar = m.at(rchar);
@@ -71,7 +71,7 @@ namespace optkit::core::metrics::disk
             return optkit::core::metrics::MetricBuilder{}
                 .add(wchar, {0x0})
                 .add(syscw, {0x0})
-                .build("write_batch_size",
+                .build("WriteBatchSize",
                        [wchar, syscw](const std::unordered_map<std::string, uint64_t> &m)
                        {
                            uint64_t val_wchar = m.at(wchar);
@@ -99,7 +99,7 @@ namespace optkit::core::metrics::disk
             return optkit::core::metrics::MetricBuilder{}
                 .add(rchar, {0x0})
                 .add(read_bytes, {0x0})
-                .build("read_cache_hit_rate_%",
+                .build("ReadCacheHitRate__%",
                        [rchar, read_bytes](const std::unordered_map<std::string, uint64_t> &m)
                        {
                            uint64_t val_rchar = m.at(rchar);
@@ -127,7 +127,7 @@ namespace optkit::core::metrics::disk
             return optkit::core::metrics::MetricBuilder{}
                 .add(wchar, {0x0})
                 .add(write_bytes, {0x0})
-                .build("write_cache_bypass_rate_%",
+                .build("WriteCacheBypassRate__%",
                        [wchar, write_bytes](const std::unordered_map<std::string, uint64_t> &m)
                        {
                            uint64_t val_wchar = m.at(wchar);
@@ -160,7 +160,7 @@ namespace optkit::core::metrics::disk
                 .add(wchar, {0x0})
                 .add(read_bytes, {0x0})
                 .add(write_bytes, {0x0})
-                .build("io_amplification_factor",
+                .build("IOAmplificationFactor",
                        [rchar, wchar, read_bytes, write_bytes](const std::unordered_map<std::string, uint64_t> &m)
                        {
                            uint64_t val_rchar = m.at(rchar);
@@ -194,7 +194,7 @@ namespace optkit::core::metrics::disk
             return optkit::core::metrics::MetricBuilder{}
                 .add(rchar, {0x0})
                 .add(wchar, {0x0})
-                .build("read_write_ratio",
+                .build("ReadWriteRatio",
                        [rchar, wchar](const std::unordered_map<std::string, uint64_t> &m)
                        {
                            uint64_t val_rchar = m.at(rchar);
@@ -230,7 +230,7 @@ namespace optkit::core::metrics::disk
                 .add(wchar, {0x0})
                 .add(syscr, {0x0})
                 .add(syscw, {0x0})
-                .build("syscall_efficiency",
+                .build("SyscallEfficiency",
                        [rchar, wchar, syscr, syscw](const std::unordered_map<std::string, uint64_t> &m)
                        {
                            uint64_t val_rchar = m.at(rchar);
@@ -268,7 +268,7 @@ namespace optkit::core::metrics::disk
                 .add(wchar, {0x0})
                 .add(read_bytes, {0x0})
                 .add(write_bytes, {0x0})
-                .build("disk_utilization_rate_%",
+                .build("DiskUtilizationRate__%",
                        [rchar, wchar, read_bytes, write_bytes](const std::unordered_map<std::string, uint64_t> &m)
                        {
                            uint64_t val_rchar = m.at(rchar);
