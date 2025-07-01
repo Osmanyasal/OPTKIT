@@ -209,8 +209,8 @@ write_cpu_microarch() {
         6_ADH|6_AEH)              uarch="GRN" ;; # Granite Rapids (successor of Sapphire Rapids)
 
         6_55H|6_4EH|6_5EH)        uarch="SKL" ;; # Skylake
-        6_8EH)                    uarch="KBL" ;;        # Kaby Lake (7th gen)
-        6_9EH)                    uarch="CFL" ;;        # Coffee Lake (8th/9th gen)
+        6_8EH)                    uarch="KBL" ;; # Kaby Lake (7th gen) (successor of Skylake)
+        6_9EH)                    uarch="CFL" ;; # Coffee Lake (8th/9th gen) (successor of Kaby Lake)
         6_A5H|6_A6H)              uarch="CML" ;; # CometLake (successor of CoffeeLake)
 
         6_6AH|6_6CH|6_7DH|6_7EH)  uarch="ICL" ;; # IceLake
@@ -259,9 +259,34 @@ write_cpu_microarch() {
         *)                        uarch="UNKNOWN" ;;
     esac
 
-    if [ -n "$uarch" ]; then
-        sed -i "s/^#define OPTKIT_ENV_CPU_MICROARCH_$uarch 0/#define OPTKIT_ENV_CPU_MICROARCH_$uarch 1/" "$SRC_CONFIG_FILE"
-        print_status "Detected microarchitecture:" "$uarch"
+
+
+  # Map of predecessors: key = uarch, value = predecessor uarch or empty if none
+    declare -A predecessor=(
+        [EMR]="SPR"
+        [GRN]="EMR"
+        [KBL]="SKL"
+        [CFL]="KBL"
+        [CML]="CFL"
+        [TGL]="ICL"
+        [RKL]="TGL"
+        [ADL]="RKL"
+        [RPL]="ADL"
+        [MTL]="RPL"
+    )
+
+
+    set_macro_ancestors() {
+        local arch=$1
+        while [ -n "$arch" ] && [ "$arch" != "UNKNOWN" ]; do
+            sed -i "s/^#define OPTKIT_ENV_CPU_MICROARCH_$arch 0/#define OPTKIT_ENV_CPU_MICROARCH_$arch 1/" "$SRC_CONFIG_FILE"
+            print_status "Enabling microarchitecture:" "$arch"
+            arch=${predecessor[$arch]}
+        done
+    }
+
+    if [ -n "$uarch" ] && [ "$uarch" != "UNKNOWN" ]; then
+        set_macro_ancestors "$uarch"
     else
         print_status "Detected microarchitecture:" "Unknown ($fm_model_hex)"
     fi
