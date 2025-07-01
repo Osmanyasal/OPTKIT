@@ -189,8 +189,10 @@ write_cpu_topology() {
 
 write_cpu_microarch() {
 
+    ## Following grouping is constructed from https://en.wikichip.org/wiki/intel/cpuid
+
     # Reset all known uArch macros to 0
-    for uarch in SPR SKL ICL HSW KBL BDW CFL TGL RKL ADL RPL MTL GRN SFR MER NEH SIB P6 ATM KNI\
+    for uarch in SPR EMR GRN SKL KBL CFL CML ICL TGL RKL ADL RPL MTL HSW BDW SFR NHM WSM SNB IVB SLM TMT KNL KNM MER P6\
                  ZEN ZENPLUS ZEN2 ZEN3 ZEN4 ZEN5 UNKNOWN; do
         echo "#define OPTKIT_ENV_CPU_MICROARCH_$uarch 0" >> "$SRC_CONFIG_FILE"
     done
@@ -200,33 +202,48 @@ write_cpu_microarch() {
 
     # Match known uArch
     case "$fm_model_hex" in
-        6_8FH|6_CFH|6_9AH)          uarch="SPR" ;; # Sapphire Rapids
-        6_55H|6_4EH|6_5EH)          uarch="SKL" ;; # Skylake
-        6_6AH|6_6CH|6_7DH|6_7EH)    uarch="ICL" ;; # Ice Lake
-        6_3FH|6_3CH|6_45H|6_46H)    uarch="HSW" ;; # Haswell
-        6_8EH|6_9EH)                uarch="KBL" ;; # Kaby Lake
-        6_4FH|6_56H|6_3DH|6_47H)    uarch="BDW" ;; # Broadwell
-        6_8EH|6_9EH)                uarch="CFL" ;; # Coffee Lake
-        6_8CH|6_8DH)                uarch="TGL" ;; # Tiger Lake
-        6_A7H)                      uarch="RKL" ;; # Rocket Lake
-        6_97H)                      uarch="ADL" ;; # Alder Lake
-        6_B7H|6_BAH|6_BEH|6_BFH)    uarch="RPL" ;; # Raptor Lake (more stepping variants)
-        6_AAH|6_ABH|6_ACH)          uarch="MTL" ;; # Meteor Lake
-        6_AEH|6_ADH)                uarch="GRN" ;; # Granite Rapids
-        6_AFH)                      uarch="SFR" ;; # Sierra Forest
-        6_6EH|6_6FH)                uarch="MER" ;; # Merom/Penryn (Core 2 era)
-        6_2EH|6_2FH)                uarch="NEH" ;; # Nehalem/Westmere
-        6_2AH|6_3AH)                uarch="SIB" ;; # Sandy/Ivy Bridge
-        6_0AH|6_0DH|6_16H)          uarch="P6"  ;; # P6 (Pentium Pro/MII/III)
-        6_3EH|6_4CH|6_5DH)          uarch="ATM" ;; # Atom (Silvermont, Tremont)
-        0_57H|0_85H|0_09H)          uarch="KNI" ;; # Knights family (KNC, KNL, KML)
-        17_01H)                     uarch="ZEN" ;; # Zen
-        17_08H)                     uarch="ZENPLUS" ;; # Zen+
-        17_18H)                     uarch="ZEN2" ;; # Zen 2
-        19_21H)                     uarch="ZEN3" ;; # Zen 3
-        19_61H)                     uarch="ZEN4" ;; # Zen 4
-        1E_00H)                     uarch="ZEN5" ;; # Zen 5
-        *)                          uarch="UNKNOWN" ;;
+        6_8FH)                    uarch="SPR" ;; # Sapphire Rapids
+        6_CFH)                    uarch="EMR" ;; # Emerald Rapids (successor of Sapphire Rapids)
+        6_ADH|6_AEH)              uarch="GRN" ;; # Granite Rapids (successor of Sapphire Rapids)
+
+        6_55H|6_4EH|6_5EH)        uarch="SKL" ;; # Skylake
+        6_8EH)                    uarch="KBL" ;;        # Kaby Lake (7th gen)
+        6_9EH)                    uarch="CFL" ;;        # Coffee Lake (8th/9th gen)
+        6_A5H|6_A6H)              uarch="CML" ;; # CometLake (successor of CoffeeLake)
+
+        6_6AH|6_6CH|6_7DH|6_7EH)  uarch="ICL" ;; # IceLake
+        6_8CH|6_8DH)              uarch="TGL" ;; # TigerLake (Successor of IceLake)
+        6_A7H)                    uarch="RKL" ;; # RocketLake (successor of TigerLake)
+        6_97H|6_9AH)              uarch="ADL" ;; # AlderLake (Both IceLake and TigerLake)
+        6_B7H|6_BAH|6_BEH|6_BFH)  uarch="RPL" ;; # RaptorLake (sucessor to AlderLake)
+        6_AAH|6_ABH|6_ACH)        uarch="MTL" ;; # MeteorLake (successor to RaptorLake)
+        
+
+        6_3FH|6_3CH|6_45H|6_46H)  uarch="HSW" ;; # Haswell
+        6_4FH|6_56H|6_3DH|6_47H)  uarch="BDW" ;; # Broadwell
+        6_AFH)                    uarch="SFR" ;; # Sierra Forest 
+        6_1AH|6_1EH|6_1FH|6_2EH)  uarch="NHM" ;; # Nehalem
+        6_25H|6_2CH|6_2FH)        uarch="WSM" ;; # Westmere
+
+        6_2AH|6_2DH)              uarch="SNB" ;; # Sandy Bridge
+        6_3AH|6_3EH)              uarch="IVB" ;; # Ivy Bridge
+
+        6_5DH|6_5AH|6_4DH|6_4AH|6_37H)    uarch="SLM" ;; # Silvermont
+        6_8AH|6_96H|6_9CH)        uarch="TMT" ;; # Tremont
+
+        6_57H)                    uarch="KNL" ;; # KNL Knights Landing
+        6_85H)                    uarch="KNM" ;; # Knights Mill (KNL based)
+
+        6_FH|6_16H)               uarch="MER" ;; # Merom/Penryn (Core 2 era) (based on core pmu architecture)
+        6_9H|6_AH|6_DH|6_15H)     uarch="P6"  ;; # P6 (Pentium Pro/MII/III)
+
+        17_1H)                    uarch="ZEN" ;; # Zen
+        17_8H)                    uarch="ZENPLUS" ;; # Zen+
+        17_18H|17_60H)            uarch="ZEN2" ;; # Zen 2
+        19_21H|19_50H)            uarch="ZEN3" ;; # Zen 3
+        19_61H|19_74H)            uarch="ZEN4" ;; # Zen 4
+        1A_00H|1A_20H)            uarch="ZEN5" ;; # Zen 5
+        *)                        uarch="UNKNOWN" ;;
     esac
 
     if [ -n "$uarch" ]; then
