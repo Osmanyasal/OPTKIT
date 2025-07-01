@@ -202,6 +202,8 @@ write_cpu_microarch() {
 
     # Match known uArch
     case "$fm_model_hex" in
+
+        ## INTEL CPUs
         6_8FH)                    uarch="SPR" ;; # Sapphire Rapids
         6_CFH)                    uarch="EMR" ;; # Emerald Rapids (successor of Sapphire Rapids)
         6_ADH|6_AEH)              uarch="GRN" ;; # Granite Rapids (successor of Sapphire Rapids)
@@ -237,11 +239,22 @@ write_cpu_microarch() {
         6_FH|6_16H)               uarch="MER" ;; # Merom/Penryn (Core 2 era) (based on core pmu architecture)
         6_9H|6_AH|6_DH|6_15H)     uarch="P6"  ;; # P6 (Pentium Pro/MII/III)
 
-        17_1H)                    uarch="ZEN" ;; # Zen
-        17_8H)                    uarch="ZENPLUS" ;; # Zen+
-        17_18H|17_60H)            uarch="ZEN2" ;; # Zen 2
-        19_21H|19_50H)            uarch="ZEN3" ;; # Zen 3
-        19_61H|19_74H)            uarch="ZEN4" ;; # Zen 4
+        ## AMD CPUs
+        17_1H|17_11H|17_18H|17_20H)  uarch="ZEN" ;; # Zen
+        17_8h|17_18H)                uarch="ZENPLUS" ;; # Zen+
+        17_31H|17_47H|17_60H\
+        |17_68H|17_71H|17_90H\
+        |17_98H|17_AAH)           uarch="ZEN2" ;; # Zen 2
+
+        19_00H|19_01H|19_10H\
+        |19_12H|19_31H|19_40H\
+        |19_41H|19_50H)            uarch="ZEN3" ;; # Zen 3
+
+        19_AAH|19_90H|19_80H\
+        |19_7CH|19_78H|19_75H\
+        |19_74H|19_61H|19_18H\
+        |19_11H|19_10H)           uarch="ZEN4" ;; # Zen 4 family variants
+
         1A_00H|1A_20H)            uarch="ZEN5" ;; # Zen 5
         *)                        uarch="UNKNOWN" ;;
     esac
