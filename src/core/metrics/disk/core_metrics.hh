@@ -35,7 +35,7 @@ namespace optkit::core::metrics::disk
          * Indicates read efficiency - larger values suggest better batching.
          * Values < 4KB may indicate inefficient small reads.
          */
-        static optkit::core::metrics::MetricBuilder ReadBatchSize()
+        static optkit::core::metrics::MetricBuilder LogicalReadPerSyscall()
         {
             std::string rchar = to_string(CoreEvents::RCHAR);
             std::string syscr = to_string(CoreEvents::SYSCR);
@@ -43,7 +43,7 @@ namespace optkit::core::metrics::disk
             return optkit::core::metrics::MetricBuilder{}
                 .add(rchar, {0x0})
                 .add(syscr, {0x0})
-                .build("ReadBatchSize",
+                .build("LogicalReadPerSyscall",
                        [rchar, syscr](const std::unordered_map<std::string, uint64_t> &m)
                        {
                            uint64_t val_rchar = m.at(rchar);
@@ -63,7 +63,7 @@ namespace optkit::core::metrics::disk
          * Indicates write efficiency - larger values suggest better batching.
          * Values < 4KB may indicate inefficient small writes.
          */
-        static optkit::core::metrics::MetricBuilder WriteBatchSize()
+        static optkit::core::metrics::MetricBuilder LogicalWritePerSyscall()
         {
             std::string wchar = to_string(CoreEvents::WCHAR);
             std::string syscw = to_string(CoreEvents::SYSCW);
@@ -71,7 +71,7 @@ namespace optkit::core::metrics::disk
             return optkit::core::metrics::MetricBuilder{}
                 .add(wchar, {0x0})
                 .add(syscw, {0x0})
-                .build("WriteBatchSize",
+                .build("LogicalWritePerSyscall",
                        [wchar, syscw](const std::unordered_map<std::string, uint64_t> &m)
                        {
                            uint64_t val_wchar = m.at(wchar);
@@ -91,7 +91,7 @@ namespace optkit::core::metrics::disk
          * 100% = all reads from cache, 0% = all reads from disk
          * Higher values indicate better cache utilization.
          */
-        static optkit::core::metrics::MetricBuilder ReadCacheHitRate()
+        static optkit::core::metrics::MetricBuilder PhysicalReadCacheHitRate()
         {
             std::string rchar = to_string(CoreEvents::RCHAR);
             std::string read_bytes = to_string(CoreEvents::READ_BYTES);
@@ -99,7 +99,7 @@ namespace optkit::core::metrics::disk
             return optkit::core::metrics::MetricBuilder{}
                 .add(rchar, {0x0})
                 .add(read_bytes, {0x0})
-                .build("ReadCacheHitRate__%",
+                .build("PhysicalReadCacheHitRate__%",
                        [rchar, read_bytes](const std::unordered_map<std::string, uint64_t> &m)
                        {
                            uint64_t val_rchar = m.at(rchar);
@@ -112,30 +112,28 @@ namespace optkit::core::metrics::disk
         }
 
         /**
-         * @brief Percentage of write operations that bypassed cache.
+         * @brief Percentage of write operations served by cache/buffering.
          *
-         * Formula: 100 * (write_bytes/wchar)
+         * Formula: 100 * (1 - write_bytes/wchar)
          *
-         * High values indicate sync writes or cache bypassing.
-         * Low values indicate good write caching/buffering.
+         * 100% = all writes cached/buffered, 0% = all writes go directly to disk
+         * Higher values indicate better write caching/buffering.
          */
-        static optkit::core::metrics::MetricBuilder WriteCacheBypassRate()
+        static optkit::core::metrics::MetricBuilder PhysicalWriteCacheHitRate()
         {
             std::string wchar = to_string(CoreEvents::WCHAR);
             std::string write_bytes = to_string(CoreEvents::WRITE_BYTES);
-
             return optkit::core::metrics::MetricBuilder{}
                 .add(wchar, {0x0})
                 .add(write_bytes, {0x0})
-                .build("WriteCacheBypassRate__%",
+                .build("PhysicalWriteCacheHitRate__%",
                        [wchar, write_bytes](const std::unordered_map<std::string, uint64_t> &m)
                        {
                            uint64_t val_wchar = m.at(wchar);
                            uint64_t val_write_bytes = m.at(write_bytes);
-
                            if (val_wchar == 0)
                                return std::numeric_limits<double>::quiet_NaN();
-                           return 100.0 * (static_cast<double>(val_write_bytes) / val_wchar);
+                           return 100.0 * (1.0 - static_cast<double>(val_write_bytes) / val_wchar);
                        });
         }
 
@@ -178,6 +176,64 @@ namespace optkit::core::metrics::disk
         }
 
         /**
+         * @brief Read amplification factor.
+         *
+         * Formula: read_bytes / rchar
+         *
+         * Values > 1.0 are unusual and may indicate measurement inconsistencies.
+         * Values < 1.0 indicate caching effectiveness (most reads served from cache).
+         * Values near 0 mean almost all reads are cached.
+         */
+        static optkit::core::metrics::MetricBuilder ReadAmplificationFactor()
+        {
+            std::string rchar = to_string(CoreEvents::RCHAR);
+            std::string read_bytes = to_string(CoreEvents::READ_BYTES);
+
+            return optkit::core::metrics::MetricBuilder{}
+                .add(rchar, {0x0})
+                .add(read_bytes, {0x0})
+                .build("ReadAmplificationFactor",
+                       [rchar, read_bytes](const std::unordered_map<std::string, uint64_t> &m)
+                       {
+                           uint64_t val_rchar = m.at(rchar);
+                           uint64_t val_read_bytes = m.at(read_bytes);
+
+                           if (val_rchar == 0)
+                               return std::numeric_limits<double>::quiet_NaN();
+                           return static_cast<double>(val_read_bytes) / val_rchar;
+                       });
+        }
+
+        /**
+         * @brief Write amplification factor.
+         *
+         * Formula: write_bytes / wchar
+         *
+         * Values >= 1.0 may indicate extra internal writes (e.g., journaling, SSD overhead).
+         * Values close to 1.0 indicate little amplification.
+         * Values < 1.0 suggest write buffering or caching.
+         */
+        static optkit::core::metrics::MetricBuilder WriteAmplificationFactor()
+        {
+            std::string wchar = to_string(CoreEvents::WCHAR);
+            std::string write_bytes = to_string(CoreEvents::WRITE_BYTES);
+
+            return optkit::core::metrics::MetricBuilder{}
+                .add(wchar, {0x0})
+                .add(write_bytes, {0x0})
+                .build("WriteAmplificationFactor",
+                       [wchar, write_bytes](const std::unordered_map<std::string, uint64_t> &m)
+                       {
+                           uint64_t val_wchar = m.at(wchar);
+                           uint64_t val_write_bytes = m.at(write_bytes);
+
+                           if (val_wchar == 0)
+                               return std::numeric_limits<double>::quiet_NaN();
+                           return static_cast<double>(val_write_bytes) / val_wchar;
+                       });
+        }
+
+        /**
          * @brief Read/Write operation ratio.
          *
          * Formula: rchar / wchar
@@ -186,7 +242,7 @@ namespace optkit::core::metrics::disk
          * < 1.0 = Write-heavy workload
          * Helps characterize workload patterns
          */
-        static optkit::core::metrics::MetricBuilder ReadWriteRatio()
+        static optkit::core::metrics::MetricBuilder LogicalReadPerWrite()
         {
             std::string rchar = to_string(CoreEvents::RCHAR);
             std::string wchar = to_string(CoreEvents::WCHAR);
@@ -194,7 +250,7 @@ namespace optkit::core::metrics::disk
             return optkit::core::metrics::MetricBuilder{}
                 .add(rchar, {0x0})
                 .add(wchar, {0x0})
-                .build("ReadWriteRatio",
+                .build("LogicalReadPerWrite",
                        [rchar, wchar](const std::unordered_map<std::string, uint64_t> &m)
                        {
                            uint64_t val_rchar = m.at(rchar);
@@ -210,7 +266,7 @@ namespace optkit::core::metrics::disk
         }
 
         /**
-         * @brief Syscall efficiency indicator.
+         * @brief Logical io per syscall indicator.
          *
          * Formula: (rchar + wchar) / (syscr + syscw)
          *
@@ -218,7 +274,7 @@ namespace optkit::core::metrics::disk
          * Values < 1KB suggest very inefficient syscall patterns.
          * Values > 64KB suggest good I/O batching.
          */
-        static optkit::core::metrics::MetricBuilder SyscallEfficiency()
+        static optkit::core::metrics::MetricBuilder LogicalIOPerSyscall()
         {
             std::string rchar = to_string(CoreEvents::RCHAR);
             std::string wchar = to_string(CoreEvents::WCHAR);
@@ -230,7 +286,7 @@ namespace optkit::core::metrics::disk
                 .add(wchar, {0x0})
                 .add(syscr, {0x0})
                 .add(syscw, {0x0})
-                .build("SyscallEfficiency",
+                .build("LogicalIOPerSyscall",
                        [rchar, wchar, syscr, syscw](const std::unordered_map<std::string, uint64_t> &m)
                        {
                            uint64_t val_rchar = m.at(rchar);
@@ -288,13 +344,15 @@ namespace optkit::core::metrics::disk
         static optkit::core::metrics::MetricBuilder AllMetrics()
         {
             return optkit::core::metrics::MetricBuilder{}
-                .add(ReadBatchSize())
-                .add(WriteBatchSize())
-                .add(ReadCacheHitRate())
-                .add(WriteCacheBypassRate())
+                .add(LogicalReadPerSyscall())
+                .add(LogicalWritePerSyscall())
+                .add(PhysicalReadCacheHitRate())
+                .add(PhysicalWriteCacheHitRate())
                 .add(IOAmplificationFactor())
-                .add(ReadWriteRatio())
-                .add(SyscallEfficiency())
+                .add(ReadAmplificationFactor())
+                .add(WriteAmplificationFactor())
+                .add(LogicalReadPerWrite())
+                .add(LogicalIOPerSyscall())
                 .add(DiskUtilizationRate());
         }
 

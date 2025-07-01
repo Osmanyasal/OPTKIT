@@ -2,7 +2,6 @@
 #include "gtest/gtest.h"
 #include "common/module.hh"
 #include "optkit.hh"
-
 using namespace optkit::core::metrics;
 using namespace optkit::core::pmu::cpu;
 

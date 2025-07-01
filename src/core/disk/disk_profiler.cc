@@ -39,10 +39,9 @@ namespace optkit::core::disk
         auto curr_snapshot = read_selected_io_counters(event_names);
         for (const auto &key : event_names)
         {
-            std::cout << "key:" << key << "\n";
+            // std::cout << "key:" << key << "\n";
             uint64_t curr_val = curr_snapshot.at(key);
             uint64_t prev_val = last_snapshot.at(key);
-            std::cout << "\t" << "cur_val:" << curr_val << " - " << "prev_val:" << prev_val << "\n";
 
             // Calculate delta, careful with possible counter reset (wraparound)
             uint64_t delta = 0;
@@ -51,9 +50,10 @@ namespace optkit::core::disk
             else
                 delta = curr_val; // wrapped around, treat as new value
 
-            // Update last snapshot
-            last_snapshot.at(key) = curr_val;
-
+            // std::cout << "\t" << "cur_val:" << curr_val << " - " << "prev_val:" << prev_val << " delta:" << delta << "\n";
+            
+            // Update last snapshot with current one.
+            last_snapshot.at(key) = curr_val; 
             result.push_back(delta); // store the delta
         }
         return result;

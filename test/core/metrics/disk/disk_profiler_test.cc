@@ -1,66 +1,77 @@
-#include <gtest/gtest.h>
-#include <fstream>
-#include <cstdio>
+#include "gtest/gtest.h"
+#include "common/module.hh"
 #include "optkit.hh"
 
-using namespace optkit::core::disk;
 using namespace optkit::core::metrics;
+using namespace optkit::core::metrics::disk;
 
+constexpr int64_t WRITE_SIZE = 41298;
+constexpr int64_t READ_SIZE = WRITE_SIZE;
 
-TEST(IoDiskProfilerTest, MeasuresFileReadWriteEventsConsistently)
+class DiskProfiler : public ::testing::Test
 {
-    MetricBuilder mb{};
-    mb.add(to_string(CoreEvents::RCHAR), {0x0});
-    mb.add(to_string(CoreEvents::READ_BYTES), {0x0});
-    mb.add(to_string(CoreEvents::WRITE_BYTES), {0x0});
-    mb.add(to_string(CoreEvents::SYSCR), {0x0});
-    mb.add(to_string(CoreEvents::SYSCW), {0x0});
-    mb.add(to_string(CoreEvents::WCHAR), {0x0});
-    mb.add(to_string(CoreEvents::CANCELLED_WRITE_BYTES), {0x0});
+protected:
+    const std::string write_path = "bin/disk_test_write.dump";
+    const std::string read_path = "bin/disk_test_read.dump";
 
-    // Use the macro to create a profiler named 'profiler_var'
-    OPTKIT_DISK_EVENTS("file_block_test", mb);
-
-    double total_write_bytes = 0;
-    double total_read_bytes = 0;
-
-    // Repeat some file IO and measure deltas
-    for (int i = 0; i < 5; i++)
+    void SetUp() override
     {
-        // Write some data to a temporary file
-        std::ofstream ofs("bin/test_io_disk_profiler.tmp");
-        ofs << std::string(50 * 1024, 'x'); // write 50 KB
-        ofs.close();
-
-        // Read from a common system file (e.g. /etc/hostname or /proc/version)
-        std::ifstream ifs("/etc/hostname");
-        char buf[4096];
-        ifs.read(buf, sizeof(buf));
-        ifs.close();
-
-        // Accumulate deltas for write_bytes and read_bytes
-        auto deltas = var22.read_and_store().second;
-        auto event_names = mb.event_names();
-
-        for (size_t j = 0; j < event_names.size(); j++)
-        {
-            if (event_names[j] == "write_bytes")
-                total_write_bytes += deltas[j];
-            else if (event_names[j] == "read_bytes")
-                total_read_bytes += deltas[j];
-        }
+        // Clean files before each test
+        std::remove(write_path.c_str());
+        std::remove(read_path.c_str());
     }
 
-    // Aggregate the buffered results
-    auto agg = var22.aggregate();
+    void TearDown() override
+    {
+        // Clean files after each test
+        std::remove(write_path.c_str());
+        std::remove(read_path.c_str());
+    }
+};
 
-    // Compare accumulated per-iteration totals with aggregate results
-    double agg_write = static_cast<double>(agg["write_bytes"]);
-    double agg_read = static_cast<double>(agg["read_bytes"]);
+TEST_F(DiskProfiler, Write82KCharsAtOnce)
+{
+    MetricBuilder mb{};
+    mb.add(core_metrics::AllMetrics());
 
-    EXPECT_NEAR(total_write_bytes, agg_write, agg_write * 0.05) << "Write bytes mismatch";
-    EXPECT_NEAR(total_read_bytes, agg_read, agg_read * 0.05) << "Read bytes mismatch";
+    OPTKIT_DISK_EVENTS("Write82KCharsAtOnce", mb);
 
-    // Cleanup temporary file
-    std::remove("bin/test_io_disk_profiler.tmp");
+    optkit::utils::write_file(write_path, std::string(WRITE_SIZE * 2, 'M'));
+
+    var37.read_and_store();
+    const auto &result = var37.aggregate();
+    EXPECT_NEAR(result.at(to_string(disk::core_events::WCHAR)), WRITE_SIZE * 2, WRITE_SIZE * 2 * ERROR_RATE);
+}
+
+TEST_F(DiskProfiler, Write82KCharsDivided)
+{
+    MetricBuilder mb{};
+    mb.add(core_metrics::AllMetrics());
+
+    OPTKIT_DISK_EVENTS("Write82KCharsDivided", mb);
+    
+    optkit::utils::write_file(write_path, std::string(WRITE_SIZE, 'A'));
+    optkit::utils::write_file(write_path, std::string(WRITE_SIZE, 'B'));
+    
+    var51.read_and_store();
+    const auto &result = var51.aggregate();
+    EXPECT_NEAR(result.at(to_string(disk::core_events::WCHAR)), WRITE_SIZE * 2, WRITE_SIZE * 2 * ERROR_RATE);
+}
+
+TEST_F(DiskProfiler, Read82KChars)
+{
+    optkit::utils::write_file(read_path, std::string(WRITE_SIZE, 'X'));
+
+    MetricBuilder mb{};
+    mb.add(core_metrics::AllMetrics());
+
+    OPTKIT_DISK_EVENTS("Read82KChars", mb);
+    {
+        std::string data = optkit::utils::read_file(read_path);
+        ASSERT_FALSE(data.empty());
+    }
+    var68.read_and_store();
+    const auto result = var68.aggregate();
+
+    EXPECT_NEAR(result.at(to_string(disk::core_events::RCHAR)), READ_SIZE, READ_SIZE * ERROR_RATE);
 }
