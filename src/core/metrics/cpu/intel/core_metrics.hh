@@ -79,20 +79,31 @@ namespace optkit::core::metrics::cpu
         static MetricBuilder L3HitRatio()
         {
             std::string l3_misses_name = to_string(CoreEvents::L3_MISSES);
+#if OPTKIT_ENV_CPU_MICROARCH_KNL
+            std::string l3_hits_name = to_string(intel::NativeEvents::L3_DEMAND_REFERENCES);
+#else
             std::string l3_hits_name = to_string(CoreEvents::L3_HITS);
+#endif
             return MetricBuilder{}
                 .add(l3_misses_name, intel::EventMapper::get(CoreEvents::L3_MISSES))
+#if OPTKIT_ENV_CPU_MICROARCH_KNL
+                .add(l3_hits_name, intel::EventMapper::get(intel::NativeEvents::L3_DEMAND_REFERENCES))
+#else
                 .add(l3_hits_name, intel::EventMapper::get(CoreEvents::L3_HITS))
+#endif
                 .build("L3HitRatio__%",
                        [l3_hits_name, l3_misses_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
                            uint64_t l3_hits = counts.at(l3_hits_name);
                            uint64_t l3_misses = counts.at(l3_misses_name);
+#if OPTKIT_ENV_CPU_MICROARCH_KNL
+                           l3_hits = l3_hits - l3_misses;   // L3_DEMANDS - L3_MISSES 
+#endif
+
                            uint64_t l3_cache_accesses = l3_hits + l3_misses;
-                           // Avoid div by zero
                            if (l3_cache_accesses == 0)
-                               std::numeric_limits<double>::quiet_NaN();
-                           return 100 * (static_cast<double>(l3_hits) / static_cast<double>(l3_cache_accesses));
+                               return std::numeric_limits<double>::quiet_NaN();
+                           return 100.0 * static_cast<double>(l3_hits) / static_cast<double>(l3_cache_accesses);
                        });
         }
 
@@ -314,7 +325,7 @@ namespace optkit::core::metrics::cpu
                 .add(inst_retired_name, intel::EventMapper::get(CoreEvents::INST_RETIRED))
                 .add(inst_retired_near_call_name, intel::EventMapper::get(intel::NativeEvents::BR_INST_RETIRED_NEAR_CALL))
                 .build("IpCall",
-                       [inst_retired_name,inst_retired_near_call_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                       [inst_retired_name, inst_retired_near_call_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
                            uint64_t inst_retired = counts.at(inst_retired_name);
                            uint64_t inst_retired_near_call = counts.at(inst_retired_near_call_name);

@@ -15,6 +15,7 @@ namespace optkit::core::metrics::cpu::intel
         UOPS_CORE_CYCLES_THREAD,
         RESOURCE_STALLS_SB,
         L2_DEMAND_REFERENCES,
+        L3_DEMAND_REFERENCES,
         UOPS_ISSUED,
         UOPS_EXECUTED,
         UOPS_RETIRED_SLOTS,

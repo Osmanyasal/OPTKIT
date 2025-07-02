@@ -31,22 +31,80 @@ namespace optkit::core::metrics::cpu::intel
             // Instruction Events
             {cpu::CoreEvents::INST_RETIRED, {0x00c0}}, // INSTRUCTION_RETIRED
 
-            // Branch Prediction
+// Branch Prediction
+#if OPTKIT_ENV_CPU_MICROARCH_SNB
+            {cpu::CoreEvents::BRANCH_INST_RETIRED, {0x04c4}}, // BR_INST_RETIRED
+            {cpu::CoreEvents::BRANCH_MISP_RETIRED, {0x04c5}}, // BR_MISP_RETIRED
+#elif OPTKIT_ENV_CPU_MICROARCH_NHM
+            {cpu::CoreEvents::BRANCH_INST_RETIRED, {0x00c4}}, // BR_INST_RETIRED
+            {cpu::CoreEvents::BRANCH_MISP_RETIRED, {0x7f89}}, // BR_MISP_RETIRED
+#else
             {cpu::CoreEvents::BRANCH_INST_RETIRED, {0x00c4}}, // BR_INST_RETIRED
             {cpu::CoreEvents::BRANCH_MISP_RETIRED, {0x00c5}}, // BR_MISP_RETIRED
+#endif
 
-            // Cache Events
+        // Cache Events
+#if OPTKIT_ENV_CPU_MICROARCH_NHM || OPTKIT_ENV_CPU_MICROARCH_WSM
+
+            {cpu::CoreEvents::L1_HITS, {0x01cb}},   // MEM_LOAD_RETIRED__L1D_HIT
+            {cpu::CoreEvents::L1_MISSES, {0x40cb}}, // MEM_LOAD_RETIRED__MASK__NHM_MEM_LOAD_RETIRED__HIT_LFB
+
+            {cpu::CoreEvents::L2_HITS, {0x02cb}},   // MEM_LOAD_RETIRED__L2_HIT
+            {cpu::CoreEvents::L2_MISSES, {0xaa24}}, // L2_RQSTS__MASK__NHM_L2_RQSTS__MISS
+
+            {cpu::CoreEvents::L3_HITS, {0x04cb}},   // MEM_LOAD_RETIRED__L3_UNSHARED_HIT
+            {cpu::CoreEvents::L3_MISSES, {0x10cb}}, // MEM_LOAD_RETIRED__L3_MISS
+
+#elif OPTKIT_ENV_CPU_MICROARCH_SNB
+
             {cpu::CoreEvents::L1_HITS, {0x01d1}},   // MEM_LOAD_RETIRED__L1_HIT
-            {cpu::CoreEvents::L1_MISSES, {0x08d1}}, // MEM_LOAD_RETIRED__L1_MISS
+            {cpu::CoreEvents::L1_MISSES, {0x0148}}, // L1D_PEND_MISS
+
             {cpu::CoreEvents::L2_HITS, {0x02d1}},   // MEM_LOAD_RETIRED__L2_HIT
-            {cpu::CoreEvents::L2_MISSES, {0x10d1}}, // MEM_LOAD_RETIRED__L2_MISS
+            {cpu::CoreEvents::L2_MISSES, {0xa824}}, // L2_RQSTS | CODE_RD_MISS | PF_MISS | RFO_MISS
+
             {cpu::CoreEvents::L3_HITS, {0x04d1}},   // MEM_LOAD_RETIRED__L3_HIT
             {cpu::CoreEvents::L3_MISSES, {0x20d1}}, // MEM_LOAD_RETIRED__L3_MISS
 
-            // Memory Events
+#elif OPTKIT_ENV_CPU_MICROARCH_KNL
+
+            {cpu::CoreEvents::L1_HITS, {0x0180}},   // ICACHE__MASK__KNL_ICACHE__HIT
+            {cpu::CoreEvents::L1_MISSES, {0x0104}}, // MEM_LOAD_RETIRED__L1_MISS
+
+            {cpu::CoreEvents::L2_HITS, {0x0204}},   // MEM_LOAD_RETIRED__L2_HIT
+            {cpu::CoreEvents::L2_MISSES, {0x0404}}, // MEM_LOAD_RETIRED__L2_MISS
+
+            {cpu::CoreEvents::L3_HITS, {}},         // MEM_LOAD_RETIRED__L3_HIT (added as Native event calculation, check L1MPKI)
+            {cpu::CoreEvents::L3_MISSES, {0x412e}}, // MEM_LOAD_RETIRED__L3_MISS
+#else
+
+            {cpu::CoreEvents::L1_HITS, {0x01d1}},   // MEM_LOAD_RETIRED__L1_HIT
+            {cpu::CoreEvents::L1_MISSES, {0x08d1}}, // MEM_LOAD_RETIRED__L1_MISS
+
+            {cpu::CoreEvents::L2_HITS, {0x02d1}},   // MEM_LOAD_RETIRED__L2_HIT
+            {cpu::CoreEvents::L2_MISSES, {0x10d1}}, // MEM_LOAD_RETIRED__L2_MISS
+
+            {cpu::CoreEvents::L3_HITS, {0x04d1}},   // MEM_LOAD_RETIRED__L3_HIT
+            {cpu::CoreEvents::L3_MISSES, {0x20d1}}, // MEM_LOAD_RETIRED__L3_MISS
+#endif
+
+        // Memory Events
+#if OPTKIT_ENV_CPU_MICROARCH_KNL
+            {cpu::CoreEvents::MEM_INST_RETIRED, {0xc004}},  // MEM_INST_RETIRED__ANY
+            {cpu::CoreEvents::MEM_LOAD_RETIRED, {0x4004}},  // MEM_INST_RETIRED__ALL_LOADS
+            {cpu::CoreEvents::MEM_STORE_RETIRED, {0x8004}}, // MEM_INST_RETIRED__ALL_STORES
+
+#if OPTKIT_ENV_CPU_MICROARCH_NHM || OPTKIT_ENV_CPU_MICROARCH_WSM
+            {cpu::CoreEvents::MEM_INST_RETIRED, {0x030b}},  // MEM_INST_RETIRED__ANY
+            {cpu::CoreEvents::MEM_LOAD_RETIRED, {0x010b}},  // MEM_INST_RETIRED__ALL_LOADS
+            {cpu::CoreEvents::MEM_STORE_RETIRED, {0x020b}}, // MEM_INST_RETIRED__ALL_STORES
+#else
             {cpu::CoreEvents::MEM_INST_RETIRED, {0x83d0}},  // MEM_INST_RETIRED__ANY
             {cpu::CoreEvents::MEM_LOAD_RETIRED, {0x81d0}},  // MEM_INST_RETIRED__ALL_LOADS
             {cpu::CoreEvents::MEM_STORE_RETIRED, {0x82d0}}, // MEM_INST_RETIRED__ALL_STORES
+#endif
+
+
 
         // ITLB Miss Events
 #if OPTKIT_ENV_CPU_MICROARCH_SPR
@@ -133,6 +191,10 @@ namespace optkit::core::metrics::cpu::intel
             {intel::NativeEvents::STALLS_L1D_MISS, {}},
             {intel::NativeEvents::STALLS_L2_MISS, {}},
             {intel::NativeEvents::STALLS_L3_MISS, {}},
+
+#if OPTKIT_ENV_CPU_MICROARCH_KNL
+            {intel::NativeEvents::L3_DEMAND_REFERENCES, {0x4f2e}}, // L3_DEMAND_REFERENCES
+#endif
         };
 }
 

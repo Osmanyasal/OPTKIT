@@ -17,7 +17,8 @@ namespace optkit::core::metrics::cpu::intel
             return "UOPS_CORE_CYCLES_THREAD";
         case NativeEvents::L2_DEMAND_REFERENCES:
             return "L2_DEMAND_REFERENCES";
-
+        case NativeEvents::L3_DEMAND_REFERENCES:
+            return "L3_DEMAND_REFERENCES";
         case NativeEvents::UOPS_ISSUED:
             return "UOPS_ISSUED";
         case NativeEvents::UOPS_EXECUTED:
