@@ -1,6 +1,6 @@
 #pragma once
 #include "utils/deployment/deployment_config.hh"
-#if OPTKIT_ENV_CPU_AMD // TODO: Change it to Intel
+#if OPTKIT_ENV_CPU_INTEL
 
 #include "core/metrics/metric_builder.hh"
 #include "core/metrics/cpu/core_metrics.hh"

@@ -24,6 +24,7 @@ namespace optkit::core::metrics::cpu::intel
             {
                 return it->second;
             }
+            OPTKIT_CORE_WARN("EventMapper: No event found for core event: {}", to_string(event));
             return {};
         }
         static std::vector<uint64_t> get(cpu::intel::NativeEvents event)
@@ -33,6 +34,7 @@ namespace optkit::core::metrics::cpu::intel
             {
                 return it->second;
             }
+            OPTKIT_CORE_WARN("EventMapper: No event found for core event: {}", to_string(event));
             return {};
         }
 
