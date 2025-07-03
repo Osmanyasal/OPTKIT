@@ -12,7 +12,7 @@ TEST(CPUPerfGroupEventsTest, Instructions_1M)
     MetricBuilder mb{false};
     mb.add(to_string(cpu::core_events::INST_RETIRED), cpu::event_mapper::get(cpu::core_events::INST_RETIRED))
         .build(to_string(cpu::core_events::INST_RETIRED), [](const auto &map) -> double
-               { return map.at(to_string(cpu::core_events::INST_RETIRED)) / (double)REPEAT; });
+               { return get_event_count(map,to_string(cpu::core_events::INST_RETIRED)) / (double)REPEAT; });
 
     OPTKIT_CPU_GROUP_EVENTS_REPEAT("Instructions_1M", mb, REPEAT)
     {
@@ -29,7 +29,7 @@ TEST(CPUPerfGroupEventsTest, BranchInst1500K)
     MetricBuilder mb{false};
     mb.add(to_string(cpu::core_events::BRANCH_INST_RETIRED), cpu::event_mapper::get(cpu::core_events::BRANCH_INST_RETIRED))
         .build(to_string(cpu::core_events::BRANCH_INST_RETIRED), [](const auto &map) -> double
-               { return map.at(to_string(cpu::core_events::BRANCH_INST_RETIRED)) / (double)REPEAT; });
+               { return get_event_count(map,to_string(cpu::core_events::BRANCH_INST_RETIRED)) / (double)REPEAT; });
 
     OPTKIT_CPU_GROUP_EVENTS_REPEAT("BranchInst1500K", mb, REPEAT)
     {
@@ -47,7 +47,7 @@ TEST(CPUPerfGroupEventsTest, BranchMisp250K)
     MetricBuilder mb{false};
     mb.add(to_string(cpu::core_events::BRANCH_MISP_RETIRED), cpu::event_mapper::get(cpu::core_events::BRANCH_MISP_RETIRED))
         .build(to_string(cpu::core_events::BRANCH_MISP_RETIRED), [](const auto &map) -> double
-               { return map.at(to_string(cpu::core_events::BRANCH_MISP_RETIRED)) / (double)REPEAT; });
+               { return get_event_count(map,to_string(cpu::core_events::BRANCH_MISP_RETIRED)) / (double)REPEAT; });
 
     OPTKIT_CPU_GROUP_EVENTS_REPEAT("BranchMisp250K", mb, REPEAT)
     {
@@ -65,7 +65,7 @@ TEST(CPUPerfGroupEventsTest, RetiredFlopAny1M)
     MetricBuilder mb{false};
     mb.add(to_string(cpu::core_events::RETIRED_FLOPS_ANY), cpu::event_mapper::get(cpu::core_events::RETIRED_FLOPS_ANY))
         .build(to_string(cpu::core_events::RETIRED_FLOPS_ANY), [](const auto &map) -> double
-               { return map.at(to_string(cpu::core_events::RETIRED_FLOPS_ANY)) / (double)REPEAT; });
+               { return get_event_count(map, to_string(cpu::core_events::RETIRED_FLOPS_ANY)) / (double)REPEAT; });
 
     size_t n = 1 << 20;            // ~1 million elements
     std::vector<float> A(n, 1.0f); // all 1s
@@ -92,7 +92,7 @@ TEST(CPUPerfGroupEventsTest, ReadsAndAccumulatesEventData)
     MetricBuilder mb{false};
     mb.add(to_string(cpu::core_events::INST_RETIRED), cpu::event_mapper::get(cpu::core_events::INST_RETIRED))
         .build(to_string(cpu::core_events::INST_RETIRED), [](const auto &map) -> double
-               { return map.at(to_string(cpu::core_events::INST_RETIRED)) / (double)REPEAT; });
+               { return get_event_count(map,to_string(cpu::core_events::INST_RETIRED)) / (double)REPEAT; });
     double total = 0;
     OPTKIT_CPU_GROUP_EVENTS_REPEAT("ReadsAndAccumulatesEventData", mb, REPEAT)
     {
@@ -112,7 +112,7 @@ TEST(CPUPerfGroupEventsTest, EnableDisableEventCounting)
     MetricBuilder mb{false};
     mb.add(to_string(cpu::core_events::INST_RETIRED), cpu::event_mapper::get(cpu::core_events::INST_RETIRED))
         .build(to_string(cpu::core_events::INST_RETIRED), [](const auto &map) -> double
-               { return map.at(to_string(cpu::core_events::INST_RETIRED)) / (double)REPEAT; });
+               { return get_event_count(map,to_string(cpu::core_events::INST_RETIRED)) / (double)REPEAT; });
 
     bool is_enabled = true;
     OPTKIT_CPU_GROUP_EVENTS_REPEAT("EnableDisableEventCounting", mb, REPEAT)
@@ -136,7 +136,7 @@ TEST(CPUPerfGroupEventsTest, AddMoreEventsThanGroupLimitTest)
     MetricBuilder mb{false};
     mb.add(to_string(cpu::core_events::INST_RETIRED), cpu::event_mapper::get(cpu::core_events::INST_RETIRED))
         .build(to_string(cpu::core_events::INST_RETIRED), [](const auto &map) -> double
-               { return map.at(to_string(cpu::core_events::INST_RETIRED)) / (double)REPEAT; });
+               { return get_event_count(map,to_string(cpu::core_events::INST_RETIRED)) / (double)REPEAT; });
 
     auto event = mb.metric_events[0];
     for (int i = 1; i < PMUEventManager::pmu_num_cntrs(); i++)
