@@ -69,7 +69,7 @@ namespace optkit::core::metrics
     public:
         using CalculationFunc = std::function<double(const std::unordered_map<std::string, uint64_t> &)>;
 
-        MetricBuilder(bool print_events = true) : print_events{print_events} {};
+        MetricBuilder(bool print_events = true) : print_events{print_events}, ill_formed{false} {};
 
         // Add event codes with a name (no change here)
         MetricBuilder &add(const std::string &name, const std::vector<uint64_t> &event_codes)
@@ -182,8 +182,15 @@ namespace optkit::core::metrics
     private:
         std::unordered_set<std::string> added_keys_;
         std::unordered_map<std::string, CalculationFunc> calculation_funcs;
+
+        bool ill_formed; // if true, the MetricBuilder is not well formed, i.e. no events or no calculations.
     };
 
+    OPT_FORCE_INLINE uint64_t get_event_count(const std::unordered_map<std::string, uint64_t> &counts, const std::string &name)
+    {
+        auto it = counts.find(name);
+        return (it != counts.end()) ? it->second : 0;
+    }
     std::string to_string(const MetricBuilder &mb);
     std::ostream &operator<<(std::ostream &os, const MetricBuilder &mb);
 
