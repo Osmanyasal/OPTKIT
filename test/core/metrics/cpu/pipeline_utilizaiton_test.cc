@@ -20,7 +20,7 @@ TEST(PipelineUtilization, Instructions_10M)
 TEST(PipelineUtilization, NaiveMatMul)
 {
     sleep(1);
-    OPTKIT_CPU_GROUP_EVENTS("NaiveMatMul", cpu::core_metrics::TopdownL1());
+    OPTKIT_CPU_EVENTS("NaiveMatMul", cpu::core_metrics::TopdownL1());
     auto A = createMatrix<double>(MAT_SIZE, MAT_SIZE);
     auto B = createMatrix<double>(MAT_SIZE, MAT_SIZE);
     auto C = createMatrix<double>(MAT_SIZE, MAT_SIZE, 0);
@@ -31,7 +31,7 @@ TEST(PipelineUtilization, NaiveMatMul)
 TEST(PipelineUtilization, LoopInterchangeMatMul)
 {
     sleep(1);
-    OPTKIT_CPU_GROUP_EVENTS("LoopInterchangeMatMul", cpu::core_metrics::TopdownL1());
+    OPTKIT_CPU_EVENTS("LoopInterchangeMatMul", cpu::core_metrics::TopdownL1());
     auto A = createMatrix<double>(MAT_SIZE, MAT_SIZE);
     auto B = createMatrix<double>(MAT_SIZE, MAT_SIZE);
     auto C = createMatrix<double>(MAT_SIZE, MAT_SIZE, 0);
@@ -65,26 +65,26 @@ TEST(PipelineUtilization, L1RandomAccessParallelVectorSum)
     GTEST_LOG_(INFO) << "Results need to be evaluated by the user. In case of inconsistency, open a ticket at: https://github.com/Osmanyasal/OPTKIT/issues\n";
 }
 
-TEST(PipelineUtilization, TopdownAllSerialAccessVectorSum)
+TEST(PipelineUtilization, TopdownL2SerialAccessVectorSum)
 {
     sleep(1);
-    OPTKIT_CPU_EVENTS("TopdownAllSerialAccessVectorSum", cpu::core_metrics::AllTopdown());
+    OPTKIT_CPU_EVENTS("TopdownL2SerialAccessVectorSum", cpu::core_metrics::TopdownL2());
     GTEST_LOG_(INFO) << std::fixed << "Result->" << serial_access<int64_t>(generate_vector<int64_t>()) << " Expected->" << 499999500000.0;
     GTEST_LOG_(INFO) << std::fixed << "Results need to be evaluated by the user. In case of inconsistency, open a ticket at: https://github.com/Osmanyasal/OPTKIT/issues\n";
 }
 
-TEST(PipelineUtilization, TopdownAllRandomAccessVectorSum)
+TEST(PipelineUtilization, TopdownL2RandomAccessVectorSum)
 {
     sleep(1);
-    OPTKIT_CPU_EVENTS("TopdownAllRandomAccessVectorSum", cpu::core_metrics::AllTopdown());
+    OPTKIT_CPU_EVENTS("TopdownL2RandomAccessVectorSum", cpu::core_metrics::TopdownL2());
     GTEST_LOG_(INFO) << std::fixed << "Result->" << random_access<int64_t>(generate_vector<int64_t>(), generate_shuffled_indices()) << " Expected->" << 499999500000.0;
     GTEST_LOG_(INFO) << "Results need to be evaluated by the user. In case of inconsistency, open a ticket at: https://github.com/Osmanyasal/OPTKIT/issues\n";
 }
 
-TEST(PipelineUtilization, TopdownAllRandomAccessParallelVectorSum)
+TEST(PipelineUtilization, TopdownL2RandomAccessParallelVectorSum)
 {
     sleep(1);
-    OPTKIT_CPU_EVENTS("TopdownAllRandomAccessParallelVectorSum", cpu::core_metrics::AllTopdown());
+    OPTKIT_CPU_EVENTS("TopdownL2RandomAccessParallelVectorSum", cpu::core_metrics::TopdownL2());
     GTEST_LOG_(INFO) << std::fixed << "Result->" << random_access_parallel<int64_t>(generate_vector<int64_t>(), generate_shuffled_indices()) << " Expected->" << 499999500000.0;
     GTEST_LOG_(INFO) << "Results need to be evaluated by the user. In case of inconsistency, open a ticket at: https://github.com/Osmanyasal/OPTKIT/issues\n";
 }
