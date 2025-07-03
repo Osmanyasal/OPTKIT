@@ -94,7 +94,7 @@ namespace optkit::core::metrics::cpu::intel
             {cpu::CoreEvents::MEM_LOAD_RETIRED, {0x4004}},  // MEM_INST_RETIRED__ALL_LOADS
             {cpu::CoreEvents::MEM_STORE_RETIRED, {0x8004}}, // MEM_INST_RETIRED__ALL_STORES
 
-#if OPTKIT_ENV_CPU_MICROARCH_NHM || OPTKIT_ENV_CPU_MICROARCH_WSM
+#elif OPTKIT_ENV_CPU_MICROARCH_NHM || OPTKIT_ENV_CPU_MICROARCH_WSM
             {cpu::CoreEvents::MEM_INST_RETIRED, {0x030b}},  // MEM_INST_RETIRED__ANY
             {cpu::CoreEvents::MEM_LOAD_RETIRED, {0x010b}},  // MEM_INST_RETIRED__ALL_LOADS
             {cpu::CoreEvents::MEM_STORE_RETIRED, {0x020b}}, // MEM_INST_RETIRED__ALL_STORES
@@ -117,11 +117,11 @@ namespace optkit::core::metrics::cpu::intel
             {cpu::CoreEvents::ITLB_MISSES, {0x0e85, 0x6085}},        // ITLB_MISSES__WALK_COMPLETED, ITLB_MISSES__STLB_HIT
             {cpu::CoreEvents::ITLB_MISSES_GOES_PAGE_WALK, {0x0e85}}, // ITLB_MISSES__WALK_COMPLETED
 
-#if OPTKIT_ENV_CPU_MICROARCH_NHM || OPTKIT_ENV_CPU_MICROARCH_WSM || OPTKIT_ENV_CPU_MICROARCH_SNB || OPTKIT_ENV_CPU_MICROARCH_IVB
+#elif OPTKIT_ENV_CPU_MICROARCH_NHM || OPTKIT_ENV_CPU_MICROARCH_WSM || OPTKIT_ENV_CPU_MICROARCH_SNB || OPTKIT_ENV_CPU_MICROARCH_IVB
             {cpu::CoreEvents::ITLB_MISSES, {0x0285, 0x1085}},        // ITLB_MISSES__WALK_COMPLETED, ITLB_MISSES__STLB_HIT
             {cpu::CoreEvents::ITLB_MISSES_GOES_PAGE_WALK, {0x0285}}, // ITLB_MISSES__WALK_COMPLETED
 
-#if OPTKIT_ENV_CPU_MICROARCH_KNL
+#elif OPTKIT_ENV_CPU_MICROARCH_KNL
             {cpu::CoreEvents::ITLB_MISSES, {0x0804, 0x5 | 0x300 | INTEL_X86_MOD_EDGE | (1ULL << INTEL_X86_CMASK_BIT)}},        // ITLB_MISSES__WALK_COMPLETED, ITLB_MISSES__STLB_HIT
             {cpu::CoreEvents::ITLB_MISSES_GOES_PAGE_WALK, {0x5 | 0x300 | INTEL_X86_MOD_EDGE | (1ULL << INTEL_X86_CMASK_BIT)}}, // ITLB_MISSES__WALK_COMPLETED
 #else
@@ -221,6 +221,7 @@ namespace optkit::core::metrics::cpu::intel
             {intel::NativeEvents::IDQ_MS_UOPS, {0x3079}},
 #endif
 #endif
+
             {intel::NativeEvents::UOPS_RETIRED_SLOTS, {0x02c2}},
 
 #if !OPTKIT_ENV_CPU_MICROARCH_NHM && \
@@ -271,13 +272,13 @@ namespace optkit::core::metrics::cpu::intel
 
 #if OPTKIT_ENV_CPU_MICROARCH_SPR || /* Sapphire Rapids */ \
     OPTKIT_ENV_CPU_MICROARCH_SKL || /* Skylake */         \
-    OPTKIT_ENV_CPU_MICROARCH_ICL || /* Ice Lake */     
+    OPTKIT_ENV_CPU_MICROARCH_ICL /* Ice Lake */     
             {intel::NativeEvents::MACHINE_CLEARS_COUNT, {(0x00c3 | (0x0100ull | (0x1 << INTEL_X86_CMASK_BIT) | (0x1 << INTEL_X86_EDGE_BIT)))}},
 
-#elif OPTKIT_ENV_CPU_MICROARCH_HSW || \ /* Haswell */
-      OPTKIT_ENV_CPU_MICROARCH_BWD || \ /* Broadwell */
-      OPTKIT_ENV_CPU_MICROARCH_SNB || \ /* Sandy Bridge */
-      OPTKIT_ENV_CPU_MICROARCH_IVB || \ /* Ivy Bridge */
+#elif OPTKIT_ENV_CPU_MICROARCH_HSW ||
+      OPTKIT_ENV_CPU_MICROARCH_BWD ||
+      OPTKIT_ENV_CPU_MICROARCH_SNB ||
+      OPTKIT_ENV_CPU_MICROARCH_IVB
         {intel::NativeEvents::MACHINE_CLEARS_COUNT, {(0x00c3 | 0x100 | INTEL_X86_MOD_EDGE | (1 << INTEL_X86_CMASK_BIT))}},
 #elif OPTKIT_ENV_CPU_MICROARCH_NHM
             {intel::NativeEvents::MACHINE_CLEARS_COUNT, {0x17c3}}, // MACHINE_CLEARS_ALL

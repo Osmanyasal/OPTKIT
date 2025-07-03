@@ -13,7 +13,7 @@
 #define ERROR_RESULT -2
 #define ERROR_RATE 0.05 // 5% error rate
 #define REPEAT 100      // repeat measurements 100 times
-#define MAT_SIZE 512
+#define MAT_SIZE 1024
 #define VECTOR_SIZE 1'000'000
 
 // Generate a vector of doubles where vec[i] = i

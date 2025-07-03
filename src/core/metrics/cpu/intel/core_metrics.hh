@@ -7,6 +7,8 @@
 #include "core/metrics/cpu/intel/event_mapper.hh"
 #include "core/metrics/cpu/intel/native_events.hh"
 
+#define SUPERSCALAR_WIDE 6  // for modern intel cpus
+
 /**
  * @brief AMD CoreEvent implementation for Zen+ architecture.
  *
@@ -760,7 +762,7 @@ namespace optkit::core::metrics::cpu
                        [dispatch_slots_name, no_ops_from_frontend_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
                            uint64_t no_ops_from_frontend = counts.at(no_ops_from_frontend_name);
-                           uint64_t dispatch_slots = 4 * counts.at(dispatch_slots_name);
+                           uint64_t dispatch_slots = SUPERSCALAR_WIDE * counts.at(dispatch_slots_name);
 
                            // Avoid div by zero
                            if (dispatch_slots == 0)
@@ -774,22 +776,25 @@ namespace optkit::core::metrics::cpu
             std::string dispatch_slots_name = to_string(CoreEvents::UNHALTED_CORE_CYCLES);
             std::string uops_issued_name = to_string(intel::NativeEvents::UOPS_ISSUED);
             std::string uops_retired_slots_name = to_string(intel::NativeEvents::UOPS_RETIRED_SLOTS);
+            std::string recovery_cycles_name = to_string(intel::NativeEvents::INT_MISC_RECOVERY_CYCLES);
 
             return MetricBuilder{}
                 .add(dispatch_slots_name, intel::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
                 .add(uops_issued_name, intel::EventMapper::get(intel::NativeEvents::UOPS_ISSUED))
                 .add(uops_retired_slots_name, intel::EventMapper::get(cpu::intel::NativeEvents::UOPS_RETIRED_SLOTS))
+                .add(recovery_cycles_name, intel::EventMapper::get(intel::NativeEvents::INT_MISC_RECOVERY_CYCLES))
                 .build("BadSpeculation__%",
-                       [dispatch_slots_name, uops_issued_name, uops_retired_slots_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                       [dispatch_slots_name, uops_issued_name, uops_retired_slots_name, recovery_cycles_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
-                           uint64_t dispatch_slots = 4 * counts.at(dispatch_slots_name);
+                           uint64_t dispatch_slots = SUPERSCALAR_WIDE * counts.at(dispatch_slots_name);
                            uint64_t uops_issued = counts.at(uops_issued_name);
                            uint64_t uops_retired_slots = counts.at(uops_retired_slots_name);
+                           uint64_t recovery_cycles = counts.at(recovery_cycles_name);
 
                            // Avoid div by zero
                            if (dispatch_slots == 0)
                                std::numeric_limits<double>::quiet_NaN();
-                           return 100 * (static_cast<double>(uops_issued) - static_cast<double>(uops_retired_slots) + 4 * static_cast<double>(uops_retired_slots)) / (static_cast<double>(dispatch_slots));
+                           return 100 * (static_cast<double>(uops_issued) - static_cast<double>(uops_retired_slots) + SUPERSCALAR_WIDE * static_cast<double>(recovery_cycles)) / (static_cast<double>(dispatch_slots));
                        });
         }
 
@@ -804,7 +809,7 @@ namespace optkit::core::metrics::cpu
                 .build("Retiring__%",
                        [dispatch_slots_name, uops_retired_slots_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
-                           uint64_t dispatch_slots = 4 * counts.at(dispatch_slots_name);
+                           uint64_t dispatch_slots = SUPERSCALAR_WIDE * counts.at(dispatch_slots_name);
                            uint64_t uops_retired_slots = counts.at(uops_retired_slots_name);
 
                            // Avoid div by zero
@@ -832,7 +837,7 @@ namespace optkit::core::metrics::cpu
                 .build("BackendBound__%",
                        [dispatch_slots_name, no_ops_from_frontend_name, uops_issued_name, uops_retired_slots_name, recovery_cycles_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
-                           uint64_t dispatch_slots = 4 * counts.at(dispatch_slots_name);
+                           uint64_t dispatch_slots = SUPERSCALAR_WIDE * counts.at(dispatch_slots_name);
                            uint64_t no_ops_from_frontend = counts.at(no_ops_from_frontend_name);
                            uint64_t uops_issued = counts.at(uops_issued_name);
                            uint64_t uops_retired_slots = counts.at(uops_retired_slots_name);
@@ -840,7 +845,7 @@ namespace optkit::core::metrics::cpu
 
                            double retiring = static_cast<double>(uops_retired_slots) / (static_cast<double>(dispatch_slots));
                            double frontend_bound = static_cast<double>(no_ops_from_frontend) / (static_cast<double>(dispatch_slots));
-                           double bad_speculation = (static_cast<double>(uops_issued) - static_cast<double>(uops_retired_slots) + 4 * static_cast<double>(recovery_cycles)) / (static_cast<double>(dispatch_slots));
+                           double bad_speculation = (static_cast<double>(uops_issued) - static_cast<double>(uops_retired_slots) + SUPERSCALAR_WIDE * static_cast<double>(recovery_cycles)) / (static_cast<double>(dispatch_slots));
                            // Avoid div by zero
                            return 100 * (1 - (frontend_bound + bad_speculation + retiring));
                        });
@@ -857,7 +862,7 @@ namespace optkit::core::metrics::cpu
             //            [dispatch_slots_name, smt_stalls_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
             //            {
             //                uint64_t smt_stalls = counts.at(smt_stalls_name);
-            //                uint64_t dispatch_slots = 4 * counts.at(dispatch_slots_name);
+            //                uint64_t dispatch_slots = SUPERSCALAR_WIDE * counts.at(dispatch_slots_name);
 
             //                // Avoid div by zero
             //                if (dispatch_slots == 0)
@@ -882,7 +887,7 @@ namespace optkit::core::metrics::cpu
                        [clocks_name, no_ops_from_frontend_name, uops_not_delivered_cycles_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
                            uint64_t clocks = counts.at(clocks_name);
-                           uint64_t dispatch_slots = 4 * clocks;
+                           uint64_t dispatch_slots = SUPERSCALAR_WIDE * clocks;
                            uint64_t no_ops_from_frontend = counts.at(no_ops_from_frontend_name);
                            uint64_t uops_not_delivered_cycles = counts.at(uops_not_delivered_cycles_name);
 
@@ -933,7 +938,7 @@ namespace optkit::core::metrics::cpu
                 .build("BadSpeculation_Mispredicts__%",
                        [dispatch_slots_name, branch_misp_retired_name, machine_clears_count_name, uops_issued_name, uops_retired_slots_name, recovery_cycles_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
-                           uint64_t dispatch_slots = 4 * counts.at(dispatch_slots_name);
+                           uint64_t dispatch_slots = SUPERSCALAR_WIDE * counts.at(dispatch_slots_name);
                            uint64_t branch_misp_retired = counts.at(branch_misp_retired_name);
                            uint64_t machine_clears_count = counts.at(machine_clears_count_name);
                            uint64_t uops_issued = counts.at(uops_issued_name);
@@ -943,7 +948,7 @@ namespace optkit::core::metrics::cpu
                            // Avoid div by zero
                            if (dispatch_slots == 0 || (branch_misp_retired + machine_clears_count) == 0)
                                std::numeric_limits<double>::quiet_NaN();
-                           double bad_speculation = (static_cast<double>(uops_issued) - static_cast<double>(uops_retired_slots) + 4 * static_cast<double>(uops_retired_slots)) / (static_cast<double>(dispatch_slots));
+                           double bad_speculation = (static_cast<double>(uops_issued) - static_cast<double>(uops_retired_slots) + SUPERSCALAR_WIDE * static_cast<double>(uops_retired_slots)) / (static_cast<double>(dispatch_slots));
 
                            return 100 * bad_speculation * (static_cast<double>(branch_misp_retired / (branch_misp_retired + machine_clears_count)));
                        });
@@ -968,7 +973,7 @@ namespace optkit::core::metrics::cpu
                 .build("BadSpeculation_PipelineRestarts__%",
                        [dispatch_slots_name, branch_misp_retired_name, machine_clears_count_name, uops_issued_name, uops_retired_slots_name, recovery_cycles_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
-                           uint64_t dispatch_slots = 4 * counts.at(dispatch_slots_name);
+                           uint64_t dispatch_slots = SUPERSCALAR_WIDE * counts.at(dispatch_slots_name);
                            uint64_t branch_misp_retired = counts.at(branch_misp_retired_name);
                            uint64_t machine_clears_count = counts.at(machine_clears_count_name);
                            uint64_t uops_issued = counts.at(uops_issued_name);
@@ -978,7 +983,7 @@ namespace optkit::core::metrics::cpu
                            // Avoid div by zero
                            if (dispatch_slots == 0 || (branch_misp_retired + machine_clears_count) == 0)
                                std::numeric_limits<double>::quiet_NaN();
-                           double bad_speculation = (static_cast<double>(uops_issued) - static_cast<double>(uops_retired_slots) + 4 * static_cast<double>(uops_retired_slots)) / (static_cast<double>(dispatch_slots));
+                           double bad_speculation = (static_cast<double>(uops_issued) - static_cast<double>(uops_retired_slots) + SUPERSCALAR_WIDE * static_cast<double>(uops_retired_slots)) / (static_cast<double>(dispatch_slots));
 
                            return 100 * bad_speculation - (bad_speculation * (static_cast<double>(branch_misp_retired / (branch_misp_retired + machine_clears_count))));
                        });
@@ -1065,7 +1070,7 @@ namespace optkit::core::metrics::cpu
                 .build("Retiring_Fastpath__%",
                        [dispatch_slots_name, uops_retired_slots_name, idq_ms_uops_name, uops_issued_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
-                           uint64_t dispatch_slots = 4 * counts.at(dispatch_slots_name);
+                           uint64_t dispatch_slots = SUPERSCALAR_WIDE * counts.at(dispatch_slots_name);
                            uint64_t uops_retired_slots = counts.at(uops_retired_slots_name);
                            uint64_t idq_ms_uops = counts.at(idq_ms_uops_name);
                            uint64_t uops_issued = counts.at(uops_issued_name);
@@ -1093,7 +1098,7 @@ namespace optkit::core::metrics::cpu
                 .build("Retiring_Microcode__%",
                        [dispatch_slots_name, uops_retired_slots_name, idq_ms_uops_name, uops_issued_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
-                           uint64_t dispatch_slots = 4 * counts.at(dispatch_slots_name);
+                           uint64_t dispatch_slots = SUPERSCALAR_WIDE * counts.at(dispatch_slots_name);
                            uint64_t uops_retired_slots = counts.at(uops_retired_slots_name);
                            uint64_t idq_ms_uops = counts.at(idq_ms_uops_name);
                            uint64_t uops_issued = counts.at(uops_issued_name);

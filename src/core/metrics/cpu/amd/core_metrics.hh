@@ -6,6 +6,7 @@
 #include "core/metrics/cpu/amd/event_mapper.hh"
 #include "core/metrics/cpu/amd/native_events.hh"
 
+#define SUPERSCALAR_WIDE 6  // for modern amd cpus
 /**
  * @brief AMD CoreEvent implementation for Zen+ architecture.
  *
@@ -460,7 +461,7 @@ namespace optkit::core::metrics::cpu
                        [dispatch_slots_name, no_ops_from_frontend_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
                            uint64_t no_ops_from_frontend = counts.at(no_ops_from_frontend_name);
-                           uint64_t dispatch_slots = 6 * counts.at(dispatch_slots_name);
+                           uint64_t dispatch_slots = SUPERSCALAR_WIDE *  counts.at(dispatch_slots_name);
 
                            // Avoid div by zero
                            if (dispatch_slots == 0)
@@ -482,7 +483,7 @@ namespace optkit::core::metrics::cpu
                 .build("BadSpeculation__%",
                        [dispatch_slots_name, retired_ops_name, ops_source_dispatched_from_decoder_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
-                           uint64_t dispatch_slots = 6 * counts.at(dispatch_slots_name);
+                           uint64_t dispatch_slots = SUPERSCALAR_WIDE *  counts.at(dispatch_slots_name);
                            uint64_t retired_ops = counts.at(retired_ops_name);
                            uint64_t ops_source_dispatched_from_decoder = counts.at(ops_source_dispatched_from_decoder_name);
 
@@ -504,7 +505,7 @@ namespace optkit::core::metrics::cpu
                        [dispatch_slots_name, backend_stalls_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
                            uint64_t backend_stalls = counts.at(backend_stalls_name);
-                           uint64_t dispatch_slots = 6 * counts.at(dispatch_slots_name);
+                           uint64_t dispatch_slots = SUPERSCALAR_WIDE *  counts.at(dispatch_slots_name);
 
                            // Avoid div by zero
                            if (dispatch_slots == 0)
@@ -523,7 +524,7 @@ namespace optkit::core::metrics::cpu
                 .build("Retiring__%",
                        [dispatch_slots_name, retired_ops_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
-                           uint64_t dispatch_slots = 6 * counts.at(dispatch_slots_name);
+                           uint64_t dispatch_slots = SUPERSCALAR_WIDE *  counts.at(dispatch_slots_name);
                            uint64_t retired_ops = counts.at(retired_ops_name);
 
                            // Avoid div by zero
@@ -543,7 +544,7 @@ namespace optkit::core::metrics::cpu
                        [dispatch_slots_name, smt_stalls_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
                            uint64_t smt_stalls = counts.at(smt_stalls_name);
-                           uint64_t dispatch_slots = 6 * counts.at(dispatch_slots_name);
+                           uint64_t dispatch_slots = SUPERSCALAR_WIDE *  counts.at(dispatch_slots_name);
 
                            // Avoid div by zero
                            if (dispatch_slots == 0)
@@ -563,8 +564,8 @@ namespace optkit::core::metrics::cpu
                 .build("FrontendBound_Latency__%",
                        [dispatch_slots_name, no_ops_from_frontend_0x6flag_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
-                           uint64_t no_ops_from_frontend_0x6flag = 6 * counts.at(no_ops_from_frontend_0x6flag_name); // this is latency specific. it is dispatch_stalls/dispatch_slots no multiply with cpu wide.
-                           uint64_t dispatch_slots = 6 * counts.at(dispatch_slots_name);
+                           uint64_t no_ops_from_frontend_0x6flag = SUPERSCALAR_WIDE *  counts.at(no_ops_from_frontend_0x6flag_name); // this is latency specific. it is dispatch_stalls/dispatch_slots no multiply with cpu wide.
+                           uint64_t dispatch_slots = SUPERSCALAR_WIDE *  counts.at(dispatch_slots_name);
 
                            // Avoid div by zero
                            if (dispatch_slots == 0)
@@ -586,8 +587,8 @@ namespace optkit::core::metrics::cpu
                        [dispatch_slots_name, no_ops_from_frontend_name, no_ops_from_frontend_0x6flag_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
                            uint64_t no_ops_from_frontend = counts.at(no_ops_from_frontend_name); // this is latency specific. it is backend_stalls/dispatch_slots no multiply with cpu wide.
-                           uint64_t no_ops_from_frontend_0x6flag = 6 * counts.at(no_ops_from_frontend_0x6flag_name);
-                           uint64_t dispatch_slots = 6 * counts.at(dispatch_slots_name);
+                           uint64_t no_ops_from_frontend_0x6flag = SUPERSCALAR_WIDE *  counts.at(no_ops_from_frontend_0x6flag_name);
+                           uint64_t dispatch_slots = SUPERSCALAR_WIDE *  counts.at(dispatch_slots_name);
 
                            // Avoid div by zero
                            if (dispatch_slots == 0)
@@ -614,7 +615,7 @@ namespace optkit::core::metrics::cpu
                        [branch_misp_retired_name, dispatch_slots_name, resyncs_name, retired_ops_name, ops_source_dispatched_from_decoder_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
                            uint64_t branch_misp_retired = counts.at(branch_misp_retired_name);
-                           uint64_t dispatch_slots = 6 * counts.at(dispatch_slots_name);
+                           uint64_t dispatch_slots = SUPERSCALAR_WIDE *  counts.at(dispatch_slots_name);
                            uint64_t resyncs = counts.at(resyncs_name);
                            uint64_t retired_ops = counts.at(retired_ops_name);
                            uint64_t ops_source_dispatched_from_decoder = counts.at(ops_source_dispatched_from_decoder_name);
@@ -646,7 +647,7 @@ namespace optkit::core::metrics::cpu
                        [branch_misp_retired_name, dispatch_slots_name, resyncs_name, retired_ops_name, ops_source_dispatched_from_decoder_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
                            uint64_t branch_misp_retired = counts.at(branch_misp_retired_name);
-                           uint64_t dispatch_slots = 6 * counts.at(dispatch_slots_name);
+                           uint64_t dispatch_slots = SUPERSCALAR_WIDE *  counts.at(dispatch_slots_name);
                            uint64_t resyncs = counts.at(resyncs_name);
                            uint64_t retired_ops = counts.at(retired_ops_name);
                            uint64_t ops_source_dispatched_from_decoder = counts.at(ops_source_dispatched_from_decoder_name);
@@ -676,7 +677,7 @@ namespace optkit::core::metrics::cpu
                        [dispatch_slots_name, backend_stalls_name, cycles_no_retire_not_complete_name, cycles_no_retire_load_not_complete_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
                            uint64_t backend_stalls = counts.at(backend_stalls_name);
-                           uint64_t dispatch_slots = 6 * counts.at(dispatch_slots_name);
+                           uint64_t dispatch_slots = SUPERSCALAR_WIDE *  counts.at(dispatch_slots_name);
                            uint64_t cycles_no_retire_not_complete = counts.at(cycles_no_retire_not_complete_name);
                            uint64_t cycles_no_retire_load_not_complete = counts.at(cycles_no_retire_load_not_complete_name);
 
@@ -704,7 +705,7 @@ namespace optkit::core::metrics::cpu
                        [dispatch_slots_name, backend_stalls_name, cycles_no_retire_not_complete_name, cycles_no_retire_load_not_complete_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
                            uint64_t backend_stalls = counts.at(backend_stalls_name);
-                           uint64_t dispatch_slots = 6 * counts.at(dispatch_slots_name);
+                           uint64_t dispatch_slots = SUPERSCALAR_WIDE *  counts.at(dispatch_slots_name);
                            uint64_t cycles_no_retire_not_complete = counts.at(cycles_no_retire_not_complete_name);
                            uint64_t cycles_no_retire_load_not_complete = counts.at(cycles_no_retire_load_not_complete_name);
 
@@ -728,7 +729,7 @@ namespace optkit::core::metrics::cpu
                 .build("Retiring_Fastpath__%",
                        [dispatch_slots_name, retired_microcode_ops_name, retired_ops_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
-                           uint64_t dispatch_slots = 6 * counts.at(dispatch_slots_name);
+                           uint64_t dispatch_slots = SUPERSCALAR_WIDE *  counts.at(dispatch_slots_name);
                            uint64_t retired_ops = counts.at(retired_ops_name);
                            uint64_t retired_microcode_ops = counts.at(retired_microcode_ops_name);
 
@@ -753,7 +754,7 @@ namespace optkit::core::metrics::cpu
                 .build("Retiring_Microcode__%",
                        [dispatch_slots_name, retired_microcode_ops_name, retired_ops_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
-                           uint64_t dispatch_slots = 6 * counts.at(dispatch_slots_name);
+                           uint64_t dispatch_slots = SUPERSCALAR_WIDE *  counts.at(dispatch_slots_name);
                            uint64_t retired_ops = counts.at(retired_ops_name);
                            uint64_t retired_microcode_ops = counts.at(retired_microcode_ops_name);
 
