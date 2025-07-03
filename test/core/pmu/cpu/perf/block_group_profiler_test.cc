@@ -63,9 +63,15 @@ TEST(CPUPerfGroupEventsTest, RetiredFlopAny1M)
 {
     size_t expected_result = 1'000'000;
     MetricBuilder mb{false};
+#if OPTKIT_ENV_CPU_AMD
     mb.add(to_string(cpu::core_events::RETIRED_FLOPS_ANY), cpu::event_mapper::get(cpu::core_events::RETIRED_FLOPS_ANY))
         .build(to_string(cpu::core_events::RETIRED_FLOPS_ANY), [](const auto &map) -> double
                { return map.at(to_string(cpu::core_events::RETIRED_FLOPS_ANY)) / (double)REPEAT; });
+#else // OPTKIT_ENV_CPU_INTEL
+    mb.add(to_string(intel::NativeEvents::FP_ARITH_INST_RETIRED_SCALAR), cpu::event_mapper::get(intel::NativeEvents::FP_ARITH_INST_RETIRED_SCALAR))
+        .build(to_string(intel::NativeEvents::FP_ARITH_INST_RETIRED_SCALAR), [](const auto &map) -> double
+               { return map.at(to_string(intel::NativeEvents::FP_ARITH_INST_RETIRED_SCALAR)) / (double)REPEAT; });
+#endif
 
     size_t n = 1 << 20;            // ~1 million elements
     std::vector<float> A(n, 1.0f); // all 1s
@@ -99,10 +105,10 @@ TEST(CPUPerfGroupEventsTest, ReadsAndAccumulatesEventData)
         instructions_million();
         // Note: *REPEAT already reads_and_store each iteration automatically.
         // Since we reset counters any read, after the following line, loop will read close to 0. but it is okay since we save to same vector and accumulate.
-        total += var97.read_and_store().second[0]; // get the first value.
+        total += var102.read_and_store().second[0]; // get the first value.
     }
     total /= (double)REPEAT;
-    auto aggregated_results = var97.aggregate();
+    auto aggregated_results = var102.aggregate();
     auto result = aggregated_results.at(to_string(cpu::core_events::INST_RETIRED)) / (double)REPEAT;
     EXPECT_NEAR(total, result, total * ERROR_RATE);
 }
@@ -125,7 +131,7 @@ TEST(CPUPerfGroupEventsTest, EnableDisableEventCounting)
         is_enabled = !is_enabled;
         instructions_million();
     }
-    auto aggregated_results = var118.aggregate();
+    auto aggregated_results = var123.aggregate();
     auto result = aggregated_results.at(to_string(cpu::core_events::INST_RETIRED)) / (double)REPEAT;
     EXPECT_NEAR(expected_result, result, expected_result * ERROR_RATE);
 }
@@ -146,7 +152,7 @@ TEST(CPUPerfGroupEventsTest, AddMoreEventsThanGroupLimitTest)
     {
         instructions_million();
     }
-    auto aggregated_results = var145.aggregate();
+    auto aggregated_results = var151.aggregate();
     auto result = aggregated_results.at(to_string(cpu::core_events::INST_RETIRED)) / (double)REPEAT;
     GTEST_LOG_(INFO) << "result: " << result;
     EXPECT_NEAR(0, result, 0 * ERROR_RATE);

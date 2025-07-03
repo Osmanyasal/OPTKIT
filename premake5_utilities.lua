@@ -28,19 +28,49 @@ local allowed_actions = {
     codelite=true,
 }
 
+function print_help()
+    print("\nAvailable premake actions:")
+    print("  clean         - Clean the OptKit build.")
+    print("  install       - Build & install libraries.")
+    print("  remove        - Remove installed libraries from the system.")
+    print("  generate_doc  - Generate documentation.")
+    print("  remove_doc    - Delete documentation.")
+    print("  gmake         - Generate GNU Makefiles (only supported build system).")
+    print("  --help        - Show this help message.\n")
+end
+
+function print_help()
+    print("\nAvailable premake actions:")
+    print("  clean         - Clean the OptKit build.")
+    print("  install       - Build & install libraries.")
+    print("  remove        - Remove installed libraries from the system.")
+    print("  generate_doc  - Generate documentation.")
+    print("  remove_doc    - Delete documentation.")
+    print("  gmake         - Generate GNU Makefiles (only supported build system).")
+    print("  --help        - Show this help message.\n")
+end
+
 function system_checks()
     print("Current premake action: " .. tostring(_ACTION))
     print("Current platform: " .. os.target())
+
     -- Check if the platform is Linux
     if os.target() ~= "linux" then
         print("❌ This script is only supported on Linux platforms.")
-        os.exit(1) -- Exit with a non-zero status to terminate the script
+        os.exit(1)
     end
-    if not _ACTION or not allowed_actions[_ACTION] then
-        print("❌ Invalid or undefined action. Please use a valid premake action.")        
+
+    -- Handle --help or missing/invalid action
+    if _ACTION == "--help" then
+        print_help()
+        os.exit(0)
+    elseif not _ACTION or not allowed_actions[_ACTION] then
+        print("❌ Invalid or undefined action.\n")
+        print_help()
         os.exit(1)
     end
 end
+
 
 function system_init()
     if _ACTION == "gmake" or _ACTION == "gmakelegacy" or _ACTION == "codelite" then
