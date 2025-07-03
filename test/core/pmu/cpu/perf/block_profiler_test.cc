@@ -12,7 +12,7 @@ TEST(CPUPerfEventsTest, Instructions_1M)
     MetricBuilder mb{false};
     mb.add(to_string(cpu::core_events::INST_RETIRED), cpu::event_mapper::get(cpu::core_events::INST_RETIRED))
         .build(to_string(cpu::core_events::INST_RETIRED), [](const auto &map) -> double
-               { return map.at(to_string(cpu::core_events::INST_RETIRED)) / (double)REPEAT; });
+               { return get_event_count(map, to_string(cpu::core_events::INST_RETIRED)) / (double)REPEAT; });
 
     OPTKIT_CPU_EVENTS_REPEAT("Instructions_1M", mb, REPEAT)
     {
@@ -29,7 +29,7 @@ TEST(CPUPerfEventsTest, BranchInst1500K)
     MetricBuilder mb{false};
     mb.add(to_string(cpu::core_events::BRANCH_INST_RETIRED), cpu::event_mapper::get(cpu::core_events::BRANCH_INST_RETIRED))
         .build(to_string(cpu::core_events::BRANCH_INST_RETIRED), [](const auto &map) -> double
-               { return map.at(to_string(cpu::core_events::BRANCH_INST_RETIRED)) / (double)REPEAT; });
+               { return get_event_count(map, to_string(cpu::core_events::BRANCH_INST_RETIRED)) / (double)REPEAT; });
 
     OPTKIT_CPU_EVENTS_REPEAT("BranchInst1500K", mb, REPEAT)
     {
@@ -47,7 +47,7 @@ TEST(CPUPerfEventsTest, BranchMisp250K)
     MetricBuilder mb{false};
     mb.add(to_string(cpu::core_events::BRANCH_MISP_RETIRED), cpu::event_mapper::get(cpu::core_events::BRANCH_MISP_RETIRED))
         .build(to_string(cpu::core_events::BRANCH_MISP_RETIRED), [](const auto &map) -> double
-               { return map.at(to_string(cpu::core_events::BRANCH_MISP_RETIRED)) / (double)REPEAT; });
+               { return get_event_count(map, to_string(cpu::core_events::BRANCH_MISP_RETIRED)) / (double)REPEAT; });
 
     OPTKIT_CPU_EVENTS_REPEAT("BranchMisp250K", mb, REPEAT)
     {
@@ -66,11 +66,11 @@ TEST(CPUPerfEventsTest, RetiredFlopAny1M)
 #if OPTKIT_ENV_CPU_AMD
     mb.add(to_string(cpu::core_events::RETIRED_FLOPS_ANY), cpu::event_mapper::get(cpu::core_events::RETIRED_FLOPS_ANY))
         .build(to_string(cpu::core_events::RETIRED_FLOPS_ANY), [](const auto &map) -> double
-               { return map.at(to_string(cpu::core_events::RETIRED_FLOPS_ANY)) / (double)REPEAT; });
+               { return get_event_count(map, to_string(cpu::core_events::RETIRED_FLOPS_ANY)) / (double)REPEAT; });
 #else // OPTKIT_ENV_CPU_INTEL
     mb.add(to_string(intel::NativeEvents::FP_ARITH_INST_RETIRED_SCALAR), cpu::event_mapper::get(intel::NativeEvents::FP_ARITH_INST_RETIRED_SCALAR))
         .build(to_string(intel::NativeEvents::FP_ARITH_INST_RETIRED_SCALAR), [](const auto &map) -> double
-               { return map.at(to_string(intel::NativeEvents::FP_ARITH_INST_RETIRED_SCALAR)) / (double)REPEAT; });
+               { return get_event_count(map, to_string(intel::NativeEvents::FP_ARITH_INST_RETIRED_SCALAR)) / (double)REPEAT; });
 #endif
     size_t n = 1 << 20;            // ~1 million elements
     std::vector<float> A(n, 1.0f); // all 1s
@@ -97,7 +97,7 @@ TEST(CPUPerfEventsTest, ReadsAndAccumulatesEventData)
     MetricBuilder mb{false};
     mb.add(to_string(cpu::core_events::INST_RETIRED), cpu::event_mapper::get(cpu::core_events::INST_RETIRED))
         .build(to_string(cpu::core_events::INST_RETIRED), [](const auto &map) -> double
-               { return map.at(to_string(cpu::core_events::INST_RETIRED)) / (double)REPEAT; });
+               { return get_event_count(map, to_string(cpu::core_events::INST_RETIRED)) / (double)REPEAT; });
     double total = 0;
     OPTKIT_CPU_EVENTS_REPEAT("ReadsAndAccumulatesEventData", mb, REPEAT)
     {
@@ -117,7 +117,7 @@ TEST(CPUPerfEventsTest, EnableDisableEventCounting)
     MetricBuilder mb{false};
     mb.add(to_string(cpu::core_events::INST_RETIRED), cpu::event_mapper::get(cpu::core_events::INST_RETIRED))
         .build(to_string(cpu::core_events::INST_RETIRED), [](const auto &map) -> double
-               { return map.at(to_string(cpu::core_events::INST_RETIRED)) / (double)REPEAT; });
+               { return get_event_count(map, to_string(cpu::core_events::INST_RETIRED)) / (double)REPEAT; });
 
     bool is_enabled = true;
     OPTKIT_CPU_EVENTS_REPEAT("EnableDisableEventCounting", mb, REPEAT)

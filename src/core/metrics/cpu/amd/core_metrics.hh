@@ -917,4 +917,4 @@ namespace optkit::core::metrics::cpu
         }
     };
 }
-#endif
+#endif  // close OPTKIT_ENV_CPU_AMD

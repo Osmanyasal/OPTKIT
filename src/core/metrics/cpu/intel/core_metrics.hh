@@ -769,9 +769,7 @@ namespace optkit::core::metrics::cpu
                        });
         }
 
-        // #if !OPTKIT_ENV_CPU_MICROARCH_NHM && \
-//     !OPTKIT_ENV_CPU_MICROARCH_WSM && \
-//     !OPTKIT_ENV_CPU_MICROARCH_KNL
+        // #if !OPTKIT_ENV_CPU_MICROARCH_NHM && !OPTKIT_ENV_CPU_MICROARCH_WSM && !OPTKIT_ENV_CPU_MICROARCH_KNL
         // Topdown (Pipeline Utilisation) Analysis L1
         static MetricBuilder FrontendBound()
         {
@@ -883,6 +881,7 @@ namespace optkit::core::metrics::cpu
 //      OPTKIT_ENV_CPU_MICROARCH_BDW || \
 //      OPTKIT_ENV_CPU_MICROARCH_SNB || \
 //      OPTKIT_ENV_CPU_MICROARCH_IVB)
+
         static MetricBuilder BackendBound()
         {
 
@@ -914,6 +913,7 @@ namespace optkit::core::metrics::cpu
                            return 100 * (1 - (frontend_bound + bad_speculation + retiring));
                        });
         }
+<<<<<<< HEAD
         // Topdown (Pipeline Utilisation) Analysis L1
         static MetricBuilder FrontendBound_Latency()
         {
@@ -1297,4 +1297,8 @@ namespace optkit::core::metrics::cpu
         }
     };
 }
+<<<<<<< HEAD
 #endif // OPTKIT_ENV_CPU_INTEL
+=======
+#endif // close OPTKIT_ENV_CPU_INTEL
+    >>>>>>> 42b8635842bd984a03fb7f0e47ad718de2f1a41e
