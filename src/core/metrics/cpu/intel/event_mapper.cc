@@ -289,9 +289,15 @@ namespace optkit::core::metrics::cpu::intel
                 // other events has the common as "else", but since all were different, we can use the SPR as the latest one for future default.
                 {intel::NativeEvents::MACHINE_CLEARS_COUNT, {(0x00c3 | (0x0100ull | (0x1 << INTEL_X86_CMASK_BIT) | (0x1 << INTEL_X86_EDGE_BIT)))}},
 #endif
-        //     {intel::NativeEvents::STALLS_L1D_MISS, {}},
-        //     {intel::NativeEvents::STALLS_L2_MISS, {}},
-        //     {intel::NativeEvents::STALLS_L3_MISS, {}},
+
+
+#if !OPTKIT_ENV_CPU_MICROARCH_WSM && \
+    !OPTKIT_ENV_CPU_MICROARCH_SNB && \
+    !OPTKIT_ENV_CPU_MICROARCH_KNL
+            {intel::NativeEvents::STALLS_L1D_MISS, {0x00a3 | 0x0c00ull | (0xc << INTEL_X86_CMASK_BIT)}},
+            {intel::NativeEvents::STALLS_L2_MISS, {0x00a3 | 0x0500ull | (0x5 << INTEL_X86_CMASK_BIT)}},
+            {intel::NativeEvents::STALLS_L3_MISS, {0x00a3 | 0x0600ull | (0x6 << INTEL_X86_CMASK_BIT)}},
+#endif
 
 #if !OPTKIT_ENV_CPU_MICROARCH_SNB
             {intel::NativeEvents::L3_DEMAND_REFERENCES, {0x4f2e}}, // L3_DEMAND_REFERENCES
