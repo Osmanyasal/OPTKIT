@@ -68,9 +68,9 @@ TEST(CPUPerfEventsTest, RetiredFlopAny1M)
         .build(to_string(cpu::core_events::RETIRED_FLOPS_ANY), [](const auto &map) -> double
                { return get_event_count(map, to_string(cpu::core_events::RETIRED_FLOPS_ANY)) / (double)REPEAT; });
 #else // OPTKIT_ENV_CPU_INTEL
-    mb.add(to_string(intel::NativeEvents::FP_ARITH_INST_RETIRED_SCALAR), cpu::event_mapper::get(intel::NativeEvents::FP_ARITH_INST_RETIRED_SCALAR))
-        .build(to_string(intel::NativeEvents::FP_ARITH_INST_RETIRED_SCALAR), [](const auto &map) -> double
-               { return get_event_count(map, to_string(intel::NativeEvents::FP_ARITH_INST_RETIRED_SCALAR)) / (double)REPEAT; });
+    mb.add(to_string(cpu::native_events::FP_ARITH_INST_RETIRED_SCALAR), cpu::event_mapper::get(cpu::native_events::FP_ARITH_INST_RETIRED_SCALAR))
+        .build(to_string(cpu::native_events::FP_ARITH_INST_RETIRED_SCALAR), [](const auto &map) -> double
+               { return get_event_count(map, to_string(cpu::native_events::FP_ARITH_INST_RETIRED_SCALAR)) / (double)REPEAT; });
 #endif
     size_t n = 1 << 20;            // ~1 million elements
     std::vector<float> A(n, 1.0f); // all 1s
@@ -87,8 +87,12 @@ TEST(CPUPerfEventsTest, RetiredFlopAny1M)
             C[i] = A[i] + B[i];
         }
     }
-    auto aggregated_results = var78.aggregate();
+    auto aggregated_results = var83.aggregate();
+#if OPTKIT_ENV_CPU_AMD
     auto result = aggregated_results.at(to_string(cpu::core_events::RETIRED_FLOPS_ANY)) / (double)REPEAT;
+#else
+    auto result = aggregated_results.at(to_string(cpu::native_events::FP_ARITH_INST_RETIRED_SCALAR)) / (double)REPEAT;
+#endif
     EXPECT_NEAR(expected_result, result, expected_result * ERROR_RATE);
 }
 // note that accumulated result also contains elements below, not just the region.
@@ -104,10 +108,10 @@ TEST(CPUPerfEventsTest, ReadsAndAccumulatesEventData)
         instructions_million();
         // Note: *REPEAT already reads_and_store each iteration automatically.
         // Since we reset counters any read, after the following line, loop will read close to 0. but it is okay since we save to same vector and accumulate.
-        total += var102.read_and_store().second[0]; // get the first value.
+        total += var106.read_and_store().second[0]; // get the first value.
     }
     total /= (double)REPEAT;
-    auto aggregated_results = var102.aggregate();
+    auto aggregated_results = var106.aggregate();
     auto result = aggregated_results.at(to_string(cpu::core_events::INST_RETIRED)) / (double)REPEAT;
     EXPECT_NEAR(total, result, total * ERROR_RATE);
 }
@@ -130,7 +134,7 @@ TEST(CPUPerfEventsTest, EnableDisableEventCounting)
         is_enabled = !is_enabled;
         instructions_million();
     }
-    auto aggregated_results = var123.aggregate();
+    auto aggregated_results = var127.aggregate();
     auto result = aggregated_results.at(to_string(cpu::core_events::INST_RETIRED)) / (double)REPEAT;
     EXPECT_NEAR(expected_result, result, expected_result * ERROR_RATE);
 }

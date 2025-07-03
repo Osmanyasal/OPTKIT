@@ -912,13 +912,13 @@ namespace optkit::core::metrics::cpu
                            // Avoid div by zero
                            return 100 * (1 - (frontend_bound + bad_speculation + retiring));
                        });
-
-            // Topdown (Pipeline Utilisation) Analysis L1
-            static MetricBuilder FrontendBound_Latency()
-            {
-                std::string clocks_name = to_string(CoreEvents::UNHALTED_CORE_CYCLES);
-                std::string no_ops_from_frontend_name = to_string(intel::NativeEvents::IDQ_UOPS_NOT_DELIVERED_CORE);
-                std::string uops_not_delivered_cycles_name = to_string(intel::NativeEvents::IDQ_UOPS_NOT_DELIVERED_CYCLES_0);
+        }
+        // Topdown (Pipeline Utilisation) Analysis L1
+        static MetricBuilder FrontendBound_Latency()
+        {
+            std::string clocks_name = to_string(CoreEvents::UNHALTED_CORE_CYCLES);
+            std::string no_ops_from_frontend_name = to_string(intel::NativeEvents::IDQ_UOPS_NOT_DELIVERED_CORE);
+            std::string uops_not_delivered_cycles_name = to_string(intel::NativeEvents::IDQ_UOPS_NOT_DELIVERED_CYCLES_0);
 
             return MetricBuilder{}
                 .add(clocks_name, intel::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
@@ -1282,18 +1282,18 @@ namespace optkit::core::metrics::cpu
             return mb;
         }
 
-            static MetricBuilder AllMetrics()
-            {
-                MetricBuilder all;
-                all.add(AllMPKI());
-                all.add(AllSTLBMPKI());
-                all.add(AllLatencyAndParallelism());
-                all.add(AllDRAMBandwidth());
-                all.add(AllIpMetrics());
-                all.add(AllBranchMetrics());
-                all.add(AllTopdown());
-                return all;
-            }
-        };
-    }
+        static MetricBuilder AllMetrics()
+        {
+            MetricBuilder all;
+            all.add(AllMPKI());
+            all.add(AllSTLBMPKI());
+            all.add(AllLatencyAndParallelism());
+            all.add(AllDRAMBandwidth());
+            all.add(AllIpMetrics());
+            all.add(AllBranchMetrics());
+            all.add(AllTopdown());
+            return all;
+        }
+    };
+}
 #endif
