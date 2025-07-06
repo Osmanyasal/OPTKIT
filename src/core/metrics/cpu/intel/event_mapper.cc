@@ -309,4 +309,4 @@ namespace optkit::core::metrics::cpu::intel
 #undef INTEL_X86_MOD_ANY
 #undef INTEL_X86_MOD_INV
 
-#endif
+#endif // OPTKIT_ENV_CPU_INTEL

@@ -1,5 +1,5 @@
 #include "core/metrics/cpu/arm/native_events.hh"
-
+#if OPTKIT_ENV_CPU_ARM
 namespace optkit::core::metrics::cpu::arm
 {
 
@@ -39,3 +39,4 @@ namespace optkit::core::metrics::cpu::arm
         return os << to_string(event);
     }
 }
+#endif // OPTKIT_ENV_CPU_ARM

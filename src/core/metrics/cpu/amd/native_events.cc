@@ -1,5 +1,5 @@
 #include "core/metrics/cpu/amd/native_events.hh"
-
+#if OPTKIT_ENV_CPU_AMD
 namespace optkit::core::metrics::cpu::amd
 {
 
@@ -43,3 +43,4 @@ namespace optkit::core::metrics::cpu::amd
         return os << to_string(event);
     }
 }
+#endif // OPTKIT_ENV_CPU_AMD

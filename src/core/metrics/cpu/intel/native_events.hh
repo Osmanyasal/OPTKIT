@@ -1,5 +1,6 @@
 #pragma once
-
+#include "utils/deployment/deployment_config.hh"
+#if OPTKIT_ENV_CPU_INTEL
 #include <string>
 namespace optkit::core::metrics::cpu::intel
 {
@@ -43,3 +44,4 @@ namespace optkit::core::metrics::cpu::intel
     std::string to_string(NativeEvents event);
     std::ostream &operator<<(std::ostream &os, NativeEvents event);
 }
+#endif // OPTKIT_ENV_CPU_INTEL

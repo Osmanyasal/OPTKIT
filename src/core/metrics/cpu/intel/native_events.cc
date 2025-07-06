@@ -1,5 +1,6 @@
 #include "core/metrics/cpu/intel/native_events.hh"
 
+#if OPTKIT_ENV_CPU_INTEL
 namespace optkit::core::metrics::cpu::intel
 {
 
@@ -70,3 +71,4 @@ namespace optkit::core::metrics::cpu::intel
         return os << to_string(event);
     }
 }
+#endif // OPTKIT_ENV_CPU_INTEL

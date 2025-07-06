@@ -1,5 +1,6 @@
 #pragma once
-
+#include "utils/deployment/deployment_config.hh"
+#if OPTKIT_ENV_CPU_ARM
 #include <string>
 namespace optkit::core::metrics::cpu::arm
 {
@@ -29,3 +30,4 @@ namespace optkit::core::metrics::cpu::arm
         std::ostream &operator<<(std::ostream &os, NativeEvents event);
 
 }
+#endif // OPTKIT_ENV_CPU_ARM

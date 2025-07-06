@@ -812,4 +812,4 @@ namespace optkit::core::metrics::cpu
         }
     };
 }
-#endif
+#endif // OPTKIT_ENV_CPU_ARM

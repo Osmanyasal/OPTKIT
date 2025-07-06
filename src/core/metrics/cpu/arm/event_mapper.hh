@@ -9,7 +9,7 @@
 
 /**
  * @brief metrics are mapped based on the manual:
- * 
+ *
  *
  */
 namespace optkit::core::metrics::cpu::arm
@@ -45,8 +45,8 @@ namespace optkit::core::metrics::cpu::arm
     private:
         EventMapper() {}
         ~EventMapper() {}
-        static const std::unordered_map<cpu::CoreEvents, std::vector<uint64_t>> core_event_map;     // coreEvent - even nums to monitor.
+        static const std::unordered_map<cpu::CoreEvents, std::vector<uint64_t>> core_event_map;          // coreEvent - even nums to monitor.
         static const std::unordered_map<cpu::arm::NativeEvents, std::vector<uint64_t>> native_event_map; // coreEvent - even nums to monitor.
     };
 };
-#endif
+#endif // OPTKIT_ENV_CPU_ARM

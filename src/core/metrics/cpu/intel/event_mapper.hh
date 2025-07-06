@@ -45,4 +45,4 @@ namespace optkit::core::metrics::cpu::intel
         static const std::unordered_map<cpu::intel::NativeEvents, std::vector<uint64_t>> native_event_map; // coreEvent - even nums to monitor.
     };
 };
-#endif
+#endif // OPTKIT_ENV_CPU_INTEL
