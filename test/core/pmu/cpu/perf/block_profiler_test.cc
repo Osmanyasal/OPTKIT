@@ -64,9 +64,9 @@ TEST(CPUPerfEventsTest, RetiredFlopAny1M)
     size_t expected_result = 1'000'000;
     MetricBuilder mb{false};
 #if OPTKIT_ENV_CPU_AMD
-    mb.add(to_string(cpu::core_events::RETIRED_SSE_AVX_FLOPS_ANY), cpu::event_mapper::get(cpu::core_events::RETIRED_SSE_AVX_FLOPS_ANY))
-        .build(to_string(cpu::core_events::RETIRED_SSE_AVX_FLOPS_ANY), [](const auto &map) -> double
-               { return get_event_count(map, to_string(cpu::core_events::RETIRED_SSE_AVX_FLOPS_ANY)) / (double)REPEAT; });
+    mb.add(to_string(cpu::core_events::RETIRED_VECTOR), cpu::event_mapper::get(cpu::core_events::RETIRED_VECTOR))
+        .build(to_string(cpu::core_events::RETIRED_VECTOR), [](const auto &map) -> double
+               { return get_event_count(map, to_string(cpu::core_events::RETIRED_VECTOR)) / (double)REPEAT; });
 #else // OPTKIT_ENV_CPU_INTEL
     mb.add(to_string(cpu::native_events::FP_ARITH_INST_RETIRED_SCALAR), cpu::event_mapper::get(cpu::native_events::FP_ARITH_INST_RETIRED_SCALAR))
         .build(to_string(cpu::native_events::FP_ARITH_INST_RETIRED_SCALAR), [](const auto &map) -> double
@@ -89,7 +89,7 @@ TEST(CPUPerfEventsTest, RetiredFlopAny1M)
     }
     auto aggregated_results = var83.aggregate();
 #if OPTKIT_ENV_CPU_AMD
-    auto result = aggregated_results.at(to_string(cpu::core_events::RETIRED_SSE_AVX_FLOPS_ANY)) / (double)REPEAT;
+    auto result = aggregated_results.at(to_string(cpu::core_events::RETIRED_VECTOR)) / (double)REPEAT;
 #else
     auto result = aggregated_results.at(to_string(cpu::native_events::FP_ARITH_INST_RETIRED_SCALAR)) / (double)REPEAT;
 #endif
