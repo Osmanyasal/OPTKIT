@@ -33,9 +33,6 @@ namespace optkit::core::metrics::cpu::amd
         case NativeEvents::L2_CACHE_ACCESSES:
             return "L2_CACHE_ACCESSES";
 
-
-
-
         default:
             return "UNKNOWN_CORE_EVENT";
         }
