@@ -58,21 +58,21 @@ namespace optkit::core::metrics::cpu
         // Native Metric implementations (not included in CoreMetrics)
         static MetricBuilder L2HitRatio()
         {
-            std::string l2_cache_accesses_name = to_string(amd::NativeEvents::L2_CACHE_ACCESSES);
+            std::string l2_misses_name = to_string(CoreEvents::L2_MISSES);
             std::string l2_hits_name = to_string(CoreEvents::L2_HITS);
             return MetricBuilder{}
-                .add(l2_cache_accesses_name, amd::EventMapper::get(amd::NativeEvents::L2_CACHE_ACCESSES))
+                .add(l2_misses_name, amd::EventMapper::get(CoreEvents::L2_MISSES))
                 .add(l2_hits_name, amd::EventMapper::get(CoreEvents::L2_HITS))
                 .build("L2HitRatio__%",
-                       [l2_hits_name, l2_cache_accesses_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                       [l2_hits_name, l2_misses_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
                            uint64_t l2_hits = get_event_count(counts, l2_hits_name);
-                           uint64_t l2_cache_accesses = get_event_count(counts, l2_cache_accesses_name);
-
+                           uint64_t l2_misses = get_event_count(counts, l2_misses_name);
+                           uint64_t total_l2 = l2_hits + l2_misses;
                            // Avoid div by zero
-                           if (l2_cache_accesses == 0)
+                           if (total_l2 == 0)
                                return std::numeric_limits<double>::quiet_NaN();
-                           return 100 * (static_cast<double>(l2_hits) / static_cast<double>(l2_cache_accesses));
+                           return 100 * (static_cast<double>(l2_hits) / static_cast<double>(total_l2));
                        });
         }
 
