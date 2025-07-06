@@ -19,27 +19,6 @@ def get_system_topology():
             continue
     return topology
 
-def compact_cpu_groups(cpu_str):
-    """
-    Convert CPU list string like "0,12,1,13" or ranges "0-7,16-23"
-    into groups like (0 12) (1 13) ...
-    """
-    cpus = []
-    parts = cpu_str.strip().split(',')
-    for part in parts:
-        if '-' in part:
-            start, end = map(int, part.split('-'))
-            cpus.extend(range(start, end + 1))
-        else:
-            cpus.append(int(part))
-    cpus = sorted(set(cpus))
-
-    groups = []
-    for i in range(0, len(cpus), 2):
-        pair = cpus[i:i+2]
-        groups.append("(" + " ".join(str(p) for p in pair) + ")")
-    return " ".join(groups)
-
 def get_cache_hierarchy():
     """
     Returns:
@@ -82,7 +61,9 @@ def get_cache_hierarchy():
                     size = f.read().strip()
                 with open(f'{base_path}/shared_cpu_list') as f:
                     shared_cpus = f.read().strip()
-
+                    # if '-' in shared_cpus:
+                        # shared_cpus = ','.join(str(i) for i in range(int(shared_cpus.split('-')[0]), int(shared_cpus.split('-')[1]) + 1))
+                
                 # Size conversion to KiB int
                 if 'K' in size:
                     size_kb = int(size.replace('K', ''))
@@ -215,7 +196,7 @@ def print_cache_topology_for_socket_compact(socket_id, socket_caches):
                 inclusive_flag = read_cache_attribute(base_path, "inclusive")
                 cache_type_desc = "Inclusive" if inclusive_flag == "1" else "Non Inclusive"
                 shared_cpus = inst['shared_cpus']
-
+                
                 # Count CPUs sharing cache
                 cpus_set = set()
                 parts = shared_cpus.split(',')
@@ -231,14 +212,14 @@ def print_cache_topology_for_socket_compact(socket_id, socket_caches):
                 size_str = f"{size_kb // 1024} MB" if size_kb >= 1024 else f"{size_kb} kB"
 
                 key = (level, cache_type, associativity, number_of_sets, line_size, cache_type_desc, size_str, shared_threads)
-                groups[key]['shared_cpus_list'].append(shared_cpus)
+                groups[key]['shared_cpus_list'].append(",".join(str(i) for i in cpus_set))
                 groups[key]['shared_threads'] = shared_threads
                 groups[key]['count'] += 1
 
     # Now print grouped info
     for key, data in sorted(groups.items()):
         level, cache_type, associativity, number_of_sets, line_size, cache_type_desc, size_str, shared_threads = key
-        shared_cpus_group_str = " ".join(compact_cpu_groups(s) for s in data['shared_cpus_list'])
+        shared_cpus_group_str = " ".join("(" + s + ")" for s in data['shared_cpus_list'])
 
         print(f"Level:\t\t\t{level}")
         print(f"Size:\t\t\t{size_str}")
