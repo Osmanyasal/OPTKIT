@@ -14,10 +14,6 @@ namespace optkit::core::metrics::cpu::arm
         L2_CACHE_ACCESSES,
         L3_CACHE_ACCESSES,
 
-        STALL_FRONTEND, // No operation has been sent for execution
-        STALL_BACKEND,  // No operation has been sent for execution due to the backend
-        STALL_SLOT,     // No operation has been sent for execution due to the slot
-
 #if !OPTKIT_ENV_CPU_ARM_N1
         STALL_SLOT_FRONTEND,
         STALL_SLOT_BACKEND,
