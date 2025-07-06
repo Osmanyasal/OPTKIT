@@ -96,7 +96,10 @@ namespace optkit::core::metrics::cpu
         static MetricBuilder AllBranchMetrics() { return {}; }
 
         static MetricBuilder TopdownL1() { return {}; }
-        static MetricBuilder TopdownL2() { return {}; }
+        static MetricBuilder TopdownL2_FE() { return {}; }
+        static MetricBuilder TopdownL2_BE() { return {}; }
+        static MetricBuilder TopdownL2_Retiring() { return {}; }
+        static MetricBuilder TopdownL2_BadSpec() { return {}; }
         static MetricBuilder AllTopdown() { return {}; }
 
         static MetricBuilder AllMetrics() { return {}; }

@@ -68,7 +68,7 @@ TEST(PipelineUtilization, L1RandomAccessParallelVectorSum)
 TEST(PipelineUtilization, TopdownL2SerialAccessVectorSum)
 {
     sleep(1);
-    OPTKIT_CPU_EVENTS("TopdownL2SerialAccessVectorSum", cpu::core_metrics::TopdownL2());
+    OPTKIT_CPU_EVENTS("TopdownL2SerialAccessVectorSum", cpu::core_metrics::TopdownL2_BE());
     GTEST_LOG_(INFO) << std::fixed << "Result->" << serial_access<int64_t>(generate_vector<int64_t>()) << " Expected->" << 499999500000.0;
     GTEST_LOG_(INFO) << std::fixed << "Results need to be evaluated by the user. In case of inconsistency, open a ticket at: https://github.com/Osmanyasal/OPTKIT/issues\n";
 }
@@ -76,7 +76,7 @@ TEST(PipelineUtilization, TopdownL2SerialAccessVectorSum)
 TEST(PipelineUtilization, TopdownL2RandomAccessVectorSum)
 {
     sleep(1);
-    OPTKIT_CPU_EVENTS("TopdownL2RandomAccessVectorSum", cpu::core_metrics::TopdownL2());
+    OPTKIT_CPU_EVENTS("TopdownL2RandomAccessVectorSum", cpu::core_metrics::TopdownL2_BE());
     GTEST_LOG_(INFO) << std::fixed << "Result->" << random_access<int64_t>(generate_vector<int64_t>(), generate_shuffled_indices()) << " Expected->" << 499999500000.0;
     GTEST_LOG_(INFO) << "Results need to be evaluated by the user. In case of inconsistency, open a ticket at: https://github.com/Osmanyasal/OPTKIT/issues\n";
 }
@@ -84,7 +84,7 @@ TEST(PipelineUtilization, TopdownL2RandomAccessVectorSum)
 TEST(PipelineUtilization, TopdownL2RandomAccessParallelVectorSum)
 {
     sleep(1);
-    OPTKIT_CPU_EVENTS("TopdownL2RandomAccessParallelVectorSum", cpu::core_metrics::TopdownL2());
+    OPTKIT_CPU_EVENTS("TopdownL2RandomAccessParallelVectorSum", cpu::core_metrics::TopdownL2_BE());
     GTEST_LOG_(INFO) << std::fixed << "Result->" << random_access_parallel<int64_t>(generate_vector<int64_t>(), generate_shuffled_indices()) << " Expected->" << 499999500000.0;
     GTEST_LOG_(INFO) << "Results need to be evaluated by the user. In case of inconsistency, open a ticket at: https://github.com/Osmanyasal/OPTKIT/issues\n";
 }

@@ -684,27 +684,43 @@ namespace optkit::core::metrics::cpu
             mb.add(SMTContention());
             return mb;
         }
-        static MetricBuilder TopdownL2()
-        {
+        
+        static MetricBuilder TopdownL2_FE() { 
             MetricBuilder mb{};
             mb.add(FrontendBound_Latency());
             mb.add(FrontendBound_BW());
-            mb.add(BadSpeculation_Mispredicts());
-            mb.add(BadSpeculation_PipelineRestarts());
+            return mb;
+         }
+        static MetricBuilder TopdownL2_BE() { 
+            MetricBuilder mb{};
             mb.add(BackendEndbound_Memory());
             mb.add(BackendEndbound_CPU());
+            return mb;
+         }
+        static MetricBuilder TopdownL2_Retiring() { 
+            MetricBuilder mb{};
             mb.add(Retiring_Fastpath());
             mb.add(Retiring_Microcode());
             return mb;
-        }
+         }
+        static MetricBuilder TopdownL2_BadSpec() { 
+            MetricBuilder mb{};
+            mb.add(BadSpeculation_Mispredicts());
+            mb.add(BadSpeculation_PipelineRestarts());
+            return mb;
+         } 
 
         static MetricBuilder AllTopdown()
         {
             MetricBuilder mb;
             mb.add(TopdownL1());
-            mb.add(TopdownL2());
+            mb.add(TopdownL2_FE());
+            mb.add(TopdownL2_BE());
+            mb.add(TopdownL2_Retiring());
+            mb.add(TopdownL2_BadSpec());
             return mb;
         }
+ 
         // Aggregate all cache miss metrics
         static MetricBuilder AllMPKI()
         {
