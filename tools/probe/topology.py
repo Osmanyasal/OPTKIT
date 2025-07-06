@@ -1,5 +1,6 @@
 import os
 import re
+import subprocess
 from collections import defaultdict
 
 def get_system_topology():
@@ -179,9 +180,10 @@ def draw_dynamic_socket_layout(socket_id, core_groups, cache_hierarchy):
         print(" ".join(padded_columns[j][i].ljust(column_widths[j]) for j in range(len(padded_columns))))
 
 def print_cache_topology_for_socket_compact(socket_id, socket_caches):
-    print("\n" + "*" * 80)
+    print()
+    print("=" * 60)
     print(f"Cache Topology Summary for Socket {socket_id}")
-    print("*" * 80)
+    print("=" * 60)
     
     # We'll group instances by cache properties (level, type, associativity, sets, line_size, inclusive)
     groups = defaultdict(lambda: {'shared_cpus_list': [], 'shared_threads': 0, 'count': 0})
@@ -238,7 +240,7 @@ def print_cache_summary(cache_hierarchy):
     print("{:<8} {:<15} {:<15} {:<12} {:<15}".format(
         "Level", "Type", "Unit Size", "Instances", "Total Size"
     ))
-    print("-" * 60)
+    print("=" * 60)
 
     summary = defaultdict(lambda: defaultdict(lambda: [0, 0]))  # level -> type -> [unit_kb, count]
 
@@ -265,10 +267,57 @@ def print_cache_summary(cache_hierarchy):
     for socket in sorted(cache_hierarchy.keys()):
         print_cache_topology_for_socket_compact(socket, cache_hierarchy[socket])
 
+def get_gpu_type(card_path):
+    device_link = os.path.realpath(os.path.join(card_path, 'device'))
+    vendor_file = os.path.join(device_link, 'vendor')
+    try:
+        with open(vendor_file) as f:
+            vendor_id = f.read().strip()
+            if vendor_id == '0x10de':
+                return 'nvidia'
+            elif vendor_id == '0x1002':
+                return 'amd'
+            elif vendor_id == '0x8086':
+                return 'intel'
+            else:
+                return 'unknown'
+    except Exception:
+        return 'unknown'
+
+def call_gpu_info_tools():
+    print()
+    print("=" * 60)
+    print("Detailed GPU Info")
+    print("=" * 60)
+
+    for entry in os.listdir('/sys/class/drm'):
+        if not entry.startswith('card') or '-' in entry:
+            continue
+        card_path = os.path.join('/sys/class/drm', entry)
+        gpu_type = get_gpu_type(card_path)
+
+        print(f"\nGPU Card: {entry} | Type: {gpu_type.upper()}")
+
+        try:
+            if gpu_type == 'nvidia':
+                output = subprocess.check_output(['nvidia-smi'], encoding='utf-8', stderr=subprocess.DEVNULL)
+                print(output)
+            elif gpu_type == 'amd':
+                output = subprocess.check_output(['rocm-smi'], encoding='utf-8', stderr=subprocess.DEVNULL)
+                print(output)
+            elif gpu_type == 'intel':
+                print("Intel GPU detected. Use `intel_gpu_top` or check /sys/class/drm for stats.")
+            else:
+                print("Unknown GPU type. Manual inspection required.")
+        except FileNotFoundError:
+            print(f"{gpu_type.upper()} tool not found. Please install it.")
+        except subprocess.CalledProcessError:
+            print(f"Error running tool for {gpu_type.upper()}.")
+
 def main():
-    print("********************************************************************************")
+    print("=" * 60)
     print("CPU Topology and Cache Information")
-    print("********************************************************************************")
+    print("=" * 60)
 
     topology = get_system_topology()
     cache_hierarchy = get_cache_hierarchy()
@@ -284,6 +333,7 @@ def main():
         draw_dynamic_socket_layout(socket, core_groups, cache_hierarchy[socket])
 
     print_cache_summary(cache_hierarchy)
+    call_gpu_info_tools()
 
 if __name__ == "__main__":
     main()
