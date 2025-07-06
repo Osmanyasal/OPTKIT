@@ -52,7 +52,7 @@ namespace optkit::core::metrics::cpu
 
         // FP/Vector
         RETIRED_FLOPS_ANY,     // single FP ops (ie. adding of flop variables)
-        RETIRED_SSE_AVX_FLOPS_ANY, // total FP operations caused by see_avx vector instruction
+        RETIRED_VECTOR, // total FP operations caused by see_avx vector instruction
 
         END,
     };

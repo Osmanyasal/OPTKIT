@@ -39,9 +39,9 @@ namespace optkit::core::metrics::cpu::amd
         // {cpu::CoreEvents::L3_HITS, {}},  -- do L3_CACHE_ACCESSES - L3_MISSES
 
         // Memory Events
-        {cpu::CoreEvents::MEM_INST_RETIRED, {0x0729}},  // ls_dispatch, ldopst: single op that performs both load and store. purest: single op performs pure store. pureld: single op performs pure load.
-        {cpu::CoreEvents::MEM_LOAD_RETIRED, {0x0129}},  // ls_dispatch, pureld: single op only performs load (ldopst is disregarded.)
-        {cpu::CoreEvents::MEM_STORE_RETIRED, {0x0229}}, // ls_dispatch purest: signle op only performs store (ldopst is disregarded)
+        {cpu::CoreEvents::MEM_INST_RETIRED, {0x0729}},  // LS_DISPATCH, ldopst: single op that performs both load and store. purest: single op performs pure store. pureld: single op performs pure load.
+        {cpu::CoreEvents::MEM_LOAD_RETIRED, {0x0129}},  // LS_DISPATCH, pureld: single op only performs load (ldopst is disregarded.)
+        {cpu::CoreEvents::MEM_STORE_RETIRED, {0x0229}}, // LS_DISPATCH purest: signle op only performs store (ldopst is disregarded)
 
 #if OPTKIT_ENV_CPU_MICROARCH_ZEN3 || OPTKIT_ENV_CPU_MICROARCH_ZEN4 || OPTKIT_ENV_CPU_MICROARCH_ZEN5
         {cpu::CoreEvents::ITLB_MISSES, {0x0084, 0x0f85}},        // L1 ITLB misses (hits l2 or goes for page walk)
@@ -58,19 +58,19 @@ namespace optkit::core::metrics::cpu::amd
     // FP/Vector
     // {cpu::CoreEvents::FP_ARITH_INST_RETIRED, 0x0},   // amd doesn't distinquish
 #if OPTKIT_ENV_CPU_MICROARCH_ZEN || OPTKIT_ENV_CPU_MICROARCH_ZEN2 || OPTKIT_ENV_CPU_MICROARCH_ZEN3
-        {cpu::CoreEvents::RETIRED_SSE_AVX_FLOPS_ANY, {0xff03}}, // sse_avx
+        {cpu::CoreEvents::RETIRED_VECTOR, {0xff03}}, // sse_avx
         {cpu::CoreEvents::RETIRED_FLOPS_ANY, {0xff03}},         // sse_avx
 
 #elif OPTKIT_ENV_CPU_MICROARCH_ZEN4
-        {cpu::CoreEvents::RETIRED_SSE_AVX_FLOPS_ANY, {0x1f03}}, // sse_avx
+        {cpu::CoreEvents::RETIRED_VECTOR, {0x1f03}}, // sse_avx
         {cpu::CoreEvents::RETIRED_FLOPS_ANY, {0x1f03}},         // sse_avx
 
 #elif OPTKIT_ENV_CPU_MICROARCH_ZEN5
-        {cpu::CoreEvents::RETIRED_SSE_AVX_FLOPS_ANY, {0x0f03}}, // sse_avx
+        {cpu::CoreEvents::RETIRED_VECTOR, {0x0f03}}, // sse_avx
         {cpu::CoreEvents::RETIRED_FLOPS_ANY, {0x0f03}},         // sse_avx
 #else
         // Default case (zen5) for newer architectures or if not defined
-        {cpu::CoreEvents::RETIRED_SSE_AVX_FLOPS_ANY, {0x0f03}}, // sse_avx
+        {cpu::CoreEvents::RETIRED_VECTOR, {0x0f03}}, // sse_avx
         {cpu::CoreEvents::RETIRED_FLOPS_ANY, {0x0f03}},         // sse_avx
 #endif
     };

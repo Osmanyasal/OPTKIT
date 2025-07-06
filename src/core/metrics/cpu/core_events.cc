@@ -74,8 +74,8 @@ namespace optkit::core::metrics::cpu
         // FP/Vector
         case CoreEvents::RETIRED_FLOPS_ANY:
             return "RETIRED_FLOPS_ANY";
-        case CoreEvents::RETIRED_SSE_AVX_FLOPS_ANY:
-            return "RETIRED_SSE_AVX_FLOPS_ANY";
+        case CoreEvents::RETIRED_VECTOR:
+            return "RETIRED_VECTOR";
 
         default:
             return "UNKNOWN_CORE_EVENT";

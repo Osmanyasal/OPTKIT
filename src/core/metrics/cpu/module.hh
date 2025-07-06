@@ -28,6 +28,15 @@ namespace optkit::core::metrics::cpu
     using native_events = amd::NativeEvents;
 }
 #elif OPTKIT_ENV_CPU_ARM
+#include "core/metrics/cpu/arm/core_metrics.hh"
+#include "core/metrics/cpu/arm/event_mapper.hh"
+namespace optkit::core::metrics::cpu
+{
+    using core_metrics = CoreMetrics<ARMMetricsImpl>;
+    using event_mapper = arm::EventMapper;
+    using core_events = CoreEvents;
+    using native_events = arm::NativeEvents;
+}
 #elif OPTKIT_ENV_CPU_RISCV
 #elif OPTKIT_ENV_CPU_MIPS
 #elif OPTKIT_ENV_CPU_POWERPC

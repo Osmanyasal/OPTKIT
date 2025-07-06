@@ -190,7 +190,7 @@ namespace optkit::core::metrics::cpu::intel
 
             // FP/Vector
             // {cpu::CoreEvents::FP_ARITH_INST_RETIRED, 0x0},
-            //     {cpu::CoreEvents::RETIRED_SSE_AVX_FLOPS_ANY, {}}, // check native events.
+            //     {cpu::CoreEvents::RETIRED_VECTOR, {}}, // check native events.
             //     {cpu::CoreEvents::RETIRED_FLOPS_ANY, {}},         // check native events.
         };
 

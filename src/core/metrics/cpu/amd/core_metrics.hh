@@ -32,6 +32,8 @@
  * https://www.amd.com/content/dam/amd/en/documents/epyc-technical-docs/programmer-references/58550-0.01.pdf
  *
  * Perf imlementation:
+ * 
+ * below is zen4, likewise can change to other architectures.
  * https://github.com/torvalds/linux/blob/master/tools/perf/pmu-events/arch/x86/amdzen4/pipeline.json
  * https://github.com/torvalds/linux/blob/master/tools/perf/pmu-events/arch/x86/amdzen4/other.json
  * https://github.com/torvalds/linux/blob/master/tools/perf/pmu-events/arch/x86/amdzen4/core.json
@@ -383,10 +385,10 @@ namespace optkit::core::metrics::cpu
         static MetricBuilder IpAVXAnyFlop()
         {
             std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
-            std::string retired_sse_avx_flops_any_name = to_string(CoreEvents::RETIRED_SSE_AVX_FLOPS_ANY);
+            std::string retired_sse_avx_flops_any_name = to_string(CoreEvents::RETIRED_VECTOR);
             return MetricBuilder{}
                 .add(inst_retired_name, amd::EventMapper::get(CoreEvents::INST_RETIRED))
-                .add(retired_sse_avx_flops_any_name, amd::EventMapper::get(CoreEvents::RETIRED_SSE_AVX_FLOPS_ANY))
+                .add(retired_sse_avx_flops_any_name, amd::EventMapper::get(CoreEvents::RETIRED_VECTOR))
                 .build("IpAVXAnyFlop",
                        [retired_sse_avx_flops_any_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                        {
@@ -461,7 +463,6 @@ namespace optkit::core::metrics::cpu
                        });
         }
 
-#if OPTKIT_ENV_CPU_MICROARCH_ZEN4 || OPTKIT_ENV_CPU_MICROARCH_ZEN5
         // Topdown (Pipeline Utilisation) Analysis L1
         static MetricBuilder FrontendBound()
         {
@@ -779,26 +780,7 @@ namespace optkit::core::metrics::cpu
                            return 100 * retiring * retired_microcode_ops / retired_ops;
                        });
         }
-
-#else
-        // Topdown (Pipeline Utilisation) Analysis L1
-        static MetricBuilder FrontendBound() { return {}; }
-
-        static MetricBuilder BadSpeculation() { return {}; }
-        static MetricBuilder BackendBound() { return {}; }
-        static MetricBuilder Retiring() { return {}; }
-        static MetricBuilder SMTContention() { return {}; }
-
-        // Topdown (Pipeline Utilisation) Analysis L1
-        static MetricBuilder FrontendBound_Latency() { return {}; }
-        static MetricBuilder FrontendBound_BW() { return {}; }
-        static MetricBuilder BadSpeculation_Mispredicts() { return {}; }
-        static MetricBuilder BadSpeculation_PipelineRestarts() { return {}; }
-        static MetricBuilder BackendEndbound_Memory() { return {}; }
-        static MetricBuilder BackendEndbound_CPU() { return {}; }
-        static MetricBuilder Retiring_Fastpath() { return {}; }
-        static MetricBuilder Retiring_Microcode() { return {}; }
-#endif
+ 
         // Aggregated Metrics
 
         static MetricBuilder TopdownL1()
