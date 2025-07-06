@@ -9,14 +9,14 @@ namespace optkit::core::metrics::cpu::intel
         {
         case NativeEvents::BR_INST_RETIRED_NEAR_CALL:
             return "BR_INST_RETIRED_NEAR_CALL";
-        case NativeEvents::RESOURCE_STALLS_SB:
-            return "RESOURCE_STALLS_SB";
-        case NativeEvents::UOPS_CORE_CYCLES_GE_1:
-            return "UOPS_CORE_CYCLES_GE_1";
-        case NativeEvents::UOPS_CORE_CYCLES_THREAD:
-            return "UOPS_CORE_CYCLES_THREAD";
         case NativeEvents::L2_DEMAND_REFERENCES:
             return "L2_DEMAND_REFERENCES";
+        case NativeEvents::RESOURCE_STALLS_SB:
+            return "RESOURCE_STALLS_SB";
+        case NativeEvents::UOPS_CORE_CYCLES_THREAD:
+            return "UOPS_CORE_CYCLES_THREAD";
+        case NativeEvents::UOPS_CORE_CYCLES_GE_1:
+            return "UOPS_CORE_CYCLES_GE_1";
         case NativeEvents::L3_DEMAND_REFERENCES:
             return "L3_DEMAND_REFERENCES";
         case NativeEvents::UOPS_ISSUED:

@@ -32,7 +32,7 @@
  * https://www.amd.com/content/dam/amd/en/documents/epyc-technical-docs/programmer-references/58550-0.01.pdf
  *
  * Perf imlementation:
- * 
+ *
  * below is zen4, likewise can change to other architectures.
  * https://github.com/torvalds/linux/blob/master/tools/perf/pmu-events/arch/x86/amdzen4/pipeline.json
  * https://github.com/torvalds/linux/blob/master/tools/perf/pmu-events/arch/x86/amdzen4/other.json
@@ -780,7 +780,7 @@ namespace optkit::core::metrics::cpu
                            return 100 * retiring * retired_microcode_ops / retired_ops;
                        });
         }
- 
+
         // Aggregated Metrics
 
         static MetricBuilder TopdownL1()
@@ -793,40 +793,50 @@ namespace optkit::core::metrics::cpu
             mb.add(SMTContention());
             return mb;
         }
+        static MetricBuilder TopdownL2()
+        {
+            MetricBuilder mb{};
+            mb.add(TopdownL2_FE());
+            mb.add(TopdownL2_BE());
+            mb.add(TopdownL2_Retiring());
+            mb.add(TopdownL2_BadSpec());
+            return mb;
+        }
 
-        static MetricBuilder TopdownL2_FE() { 
+        static MetricBuilder TopdownL2_FE()
+        {
             MetricBuilder mb{};
             mb.add(FrontendBound_Latency());
             mb.add(FrontendBound_BW());
             return mb;
-         }
-        static MetricBuilder TopdownL2_BE() { 
+        }
+        static MetricBuilder TopdownL2_BE()
+        {
             MetricBuilder mb{};
             mb.add(BackendEndbound_Memory());
             mb.add(BackendEndbound_CPU());
             return mb;
-         }
-        static MetricBuilder TopdownL2_Retiring() { 
+        }
+        static MetricBuilder TopdownL2_Retiring()
+        {
             MetricBuilder mb{};
             mb.add(Retiring_Fastpath());
             mb.add(Retiring_Microcode());
             return mb;
-         }
-        static MetricBuilder TopdownL2_BadSpec() { 
+        }
+        static MetricBuilder TopdownL2_BadSpec()
+        {
             MetricBuilder mb{};
             mb.add(BadSpeculation_Mispredicts());
             mb.add(BadSpeculation_PipelineRestarts());
             return mb;
-         } 
+        }
 
         static MetricBuilder AllTopdown()
         {
             MetricBuilder mb;
             mb.add(TopdownL1());
-            mb.add(TopdownL2_FE());
-            mb.add(TopdownL2_BE());
-            mb.add(TopdownL2_Retiring());
-            mb.add(TopdownL2_BadSpec());
+            mb.add(TopdownL2());
             return mb;
         }
         // Aggregate all cache miss metrics
@@ -879,6 +889,7 @@ namespace optkit::core::metrics::cpu
         static MetricBuilder AllIpMetrics()
         {
             MetricBuilder mb;
+            mb.add(IpC());
             mb.add(IpCall());
             mb.add(IpBranch());
             mb.add(IpMemLoad());
@@ -914,4 +925,4 @@ namespace optkit::core::metrics::cpu
         }
     };
 }
-#endif  // close OPTKIT_ENV_CPU_AMD
+#endif // close OPTKIT_ENV_CPU_AMD

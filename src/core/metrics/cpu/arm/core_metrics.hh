@@ -685,6 +685,15 @@ namespace optkit::core::metrics::cpu
             return mb;
         }
         
+        static MetricBuilder TopdownL2()
+        {
+            MetricBuilder mb{};
+            mb.add(TopdownL2_FE());
+            mb.add(TopdownL2_BE());
+            mb.add(TopdownL2_Retiring());
+            mb.add(TopdownL2_BadSpec());
+            return mb;
+        }
         static MetricBuilder TopdownL2_FE() { 
             MetricBuilder mb{};
             mb.add(FrontendBound_Latency());
@@ -714,10 +723,7 @@ namespace optkit::core::metrics::cpu
         {
             MetricBuilder mb;
             mb.add(TopdownL1());
-            mb.add(TopdownL2_FE());
-            mb.add(TopdownL2_BE());
-            mb.add(TopdownL2_Retiring());
-            mb.add(TopdownL2_BadSpec());
+            mb.add(TopdownL2());
             return mb;
         }
  

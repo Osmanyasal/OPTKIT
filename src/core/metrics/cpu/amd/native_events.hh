@@ -10,7 +10,6 @@ namespace optkit::core::metrics::cpu::amd
     enum class NativeEvents
     {
         BEGIN = 0,
-        
         RETIRED_OPS,
         RETIRED_MICROCODE_OPS,
         DISPATCH_STALLS_1,
@@ -21,7 +20,6 @@ namespace optkit::core::metrics::cpu::amd
         RESYNCS,
         CYCLES_NO_RETIRE_NOT_COMPLETE,
         CYCLES_NO_RETIRE_LOAD_NOT_COMPLETE,
-
         L3_CACHE_ACCESSES,
         L2_CACHE_ACCESSES,
         END,

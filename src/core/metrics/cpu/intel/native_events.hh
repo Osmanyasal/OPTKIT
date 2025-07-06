@@ -11,10 +11,10 @@ namespace optkit::core::metrics::cpu::intel
     {
         BEGIN = 0,
         BR_INST_RETIRED_NEAR_CALL,
-        UOPS_CORE_CYCLES_GE_1,
-        UOPS_CORE_CYCLES_THREAD,
-        RESOURCE_STALLS_SB,
         L2_DEMAND_REFERENCES,
+        RESOURCE_STALLS_SB,
+        UOPS_CORE_CYCLES_THREAD,
+        UOPS_CORE_CYCLES_GE_1,
         L3_DEMAND_REFERENCES,
         UOPS_ISSUED,
         UOPS_EXECUTED,
@@ -42,5 +42,4 @@ namespace optkit::core::metrics::cpu::intel
 
     std::string to_string(NativeEvents event);
     std::ostream &operator<<(std::ostream &os, NativeEvents event);
-
 }

@@ -769,7 +769,6 @@ namespace optkit::core::metrics::cpu
                        });
         }
 
-        // #if !OPTKIT_ENV_CPU_MICROARCH_NHM && !OPTKIT_ENV_CPU_MICROARCH_WSM && !OPTKIT_ENV_CPU_MICROARCH_KNL
         // Topdown (Pipeline Utilisation) Analysis L1
         static MetricBuilder FrontendBound()
         {
@@ -790,17 +789,7 @@ namespace optkit::core::metrics::cpu
                            return 100 * static_cast<double>(no_ops_from_frontend) / (static_cast<double>(dispatch_slots));
                        });
         }
-        // #else
-        //         static MetricBuilder FrontendBound() { return {}; }
-        // #endif
-
-        // #if OPTKIT_ENV_CPU_MICROARCH_SPR || \
-//     OPTKIT_ENV_CPU_MICROARCH_SKL || \
-//     OPTKIT_ENV_CPU_MICROARCH_ICL || \
-//     OPTKIT_ENV_CPU_MICROARCH_HSV || \
-//     OPTKIT_ENV_CPU_MICROARCH_BDW || \
-//     OPTKIT_ENV_CPU_MICROARCH_SNB || \
-//     OPTKIT_ENV_CPU_MICROARCH_IVB
+ 
         static MetricBuilder BadSpeculation()
         {
             std::string dispatch_slots_name = to_string(CoreEvents::UNHALTED_CORE_CYCLES);
@@ -873,14 +862,6 @@ namespace optkit::core::metrics::cpu
             //            });
             return {};
         }
-
-        // #if (OPTKIT_ENV_CPU_MICROARCH_SPR || \
-//      OPTKIT_ENV_CPU_MICROARCH_SKL || \
-//      OPTKIT_ENV_CPU_MICROARCH_ICL || \
-//      OPTKIT_ENV_CPU_MICROARCH_HSV || \
-//      OPTKIT_ENV_CPU_MICROARCH_BDW || \
-//      OPTKIT_ENV_CPU_MICROARCH_SNB || \
-//      OPTKIT_ENV_CPU_MICROARCH_IVB)
 
         static MetricBuilder BackendBound()
         {
@@ -1028,19 +1009,7 @@ namespace optkit::core::metrics::cpu
                            return 100 * bad_speculation - (bad_speculation * (static_cast<double>(branch_misp_retired / (branch_misp_retired + machine_clears_count))));
                        });
         }
-
-        // #else
-        //         static MetricBuilder BackendBound() { return {}; }
-        //         static MetricBuilder FrontendBound_Latency() { return {}; }
-        //         static MetricBuilder FrontendBound_BW() { return {}; }
-        //         static MetricBuilder BadSpeculation_Mispredicts() { return {}; }
-        //         static MetricBuilder BadSpeculation_PipelineRestarts() { return {}; }
-
-        // #endif
-
-        // #if !OPTKIT_ENV_CPU_MICROARCH_WSM && \
-//     !OPTKIT_ENV_CPU_MICROARCH_SNB && \
-//     !OPTKIT_ENV_CPU_MICROARCH_KNL
+ 
         static MetricBuilder BackendEndbound_Memory()
         {
             std::string unhalted_cycles_name = to_string(CoreEvents::UNHALTED_CORE_CYCLES);
@@ -1163,17 +1132,10 @@ namespace optkit::core::metrics::cpu
                        });
         }
 
-        // #else
-        //         static MetricBuilder BackendEndbound_Memory() { return {}; }
-        //         static MetricBuilder BackendEndbound_CPU() { return {}; }
-        //         static MetricBuilder Retiring_Fastpath() { return {}; }
-        //         static MetricBuilder Retiring_Microcode() { return {}; }
-        // #endif
-
-        // Topdown (Pipeline Utilisation) Analysis L1
-
+        
         // Aggregated Metrics
-
+        
+        // Topdown (Pipeline Utilisation) Analysis L1
         static MetricBuilder TopdownL1()
         {
             MetricBuilder mb{};
@@ -1185,6 +1147,16 @@ namespace optkit::core::metrics::cpu
             return mb;
         }
 
+        static MetricBuilder TopdownL2()
+        {
+            MetricBuilder mb{};
+            mb.add(TopdownL2_FE());
+            mb.add(TopdownL2_BE());
+            mb.add(TopdownL2_Retiring());
+            mb.add(TopdownL2_BadSpec());
+            return mb;
+        }
+        
         static MetricBuilder TopdownL2_FE()
         {
             MetricBuilder mb{};
@@ -1216,12 +1188,9 @@ namespace optkit::core::metrics::cpu
 
         static MetricBuilder AllTopdown()
         {
-            MetricBuilder mb;
+            MetricBuilder mb{};
             mb.add(TopdownL1());
-            mb.add(TopdownL2_FE());
-            mb.add(TopdownL2_BE());
-            mb.add(TopdownL2_Retiring());
-            mb.add(TopdownL2_BadSpec());
+            mb.add(TopdownL2());
             return mb;
         }
         // Aggregate all cache miss metrics
@@ -1273,7 +1242,8 @@ namespace optkit::core::metrics::cpu
         // Aggregate all instruction-per-event metrics
         static MetricBuilder AllIpMetrics()
         {
-            MetricBuilder mb;
+            MetricBuilder mb; 
+            mb.add(IpC()); 
             mb.add(IpCall());
             mb.add(IpAVXAnyFLOP());
             mb.add(IpArithScalarSP());
