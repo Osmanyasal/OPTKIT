@@ -1,8 +1,6 @@
 #pragma once
 
 #include "core/metrics/cpu/core_metrics.hh"
-#include "core/metrics/cpu/tma_metrics.hh"
-#include "core/metrics/cpu/tmanalysis.hh"
 #include "utils/deployment/deployment_config.hh"
 
 #if OPTKIT_CONF_PMU_MACROS_ENABLED

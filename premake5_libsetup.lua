@@ -6,98 +6,100 @@ function base_project_setup()
     cppdialect "C++11"
     targetdir "bin/%{cfg.buildcfg}"
     objdir "bin/obj"
-
     includedirs {
         "./src/",
         LIB_PFM_PATH .. "/include",
         LIB_SPD_PATH .. "/include"
     }
-
     files {
         "./src/**.cc",
         "./src/**.hh"
     }
-
-    removefiles
-    {
+    removefiles {
         "./src/core/**/*_governor.cc",
         "./src/core/**/*_governor.hh",
     }
-
     -- Always needed
     links { "pthread", "dl" }
     linkoptions { "-fopenmp" }
-
     -- Always link static spdlog manually
     linkoptions { LIB_SPD_PATH .. "/build/libspdlog.a" }
-
+    
+    -- Get architecture using uname -m
+    local handle = io.popen("uname -m")
+    local arch = handle and handle:read("*l") or nil
+    if handle then
+        handle:close()
+    end
+    
+    local vectorisation_flag = "-msse"  -- default for x86/x64
+    if arch and (arch == "aarch64" or arch == "arm64" or arch == "armv7l" or arch == "armv8l" or 
+                 arch == "riscv64" or arch == "riscv32") then
+        vectorisation_flag = "-fdse"
+    end
+    
     -- Compiler options
     filter "configurations:Debug"
-    symbols "On"
-    defines { "OPTKIT_MODE_DEBUG" }
-    buildoptions {
-        "-Wall",
-        "-O0",
-        "-g",
-        "-fopenmp",
-        "-fPIC",
-        "-DCONF_LOG_PRINT_GUID_LENGTH=10",
-        "-DCONF_LOG_DISABLE_DEBUG=0",
-        "-DCONF_LOG_DISABLE_TRACE=0",
-        "-DCONF_LOG_DISABLE_INFO=0",
-        "-DCONF_LOG_DISABLE_WARN=0",
-        "-DCONF_LOG_DISABLE_ERROR=0"
-
-        --TODO: DOPTKIT_TESTING set this for testing
-    }
+        symbols "On"
+        defines { "OPTKIT_MODE_DEBUG" }
+        buildoptions {
+            "-Wall",
+            "-O0",
+            "-g",
+            "-fopenmp",
+            "-fPIC",
+            "-DCONF_LOG_PRINT_GUID_LENGTH=10",
+            "-DCONF_LOG_DISABLE_DEBUG=0",
+            "-DCONF_LOG_DISABLE_TRACE=0",
+            "-DCONF_LOG_DISABLE_INFO=0",
+            "-DCONF_LOG_DISABLE_WARN=0",
+            "-DCONF_LOG_DISABLE_ERROR=0"
+            --TODO: DOPTKIT_TESTING set this for testing
+        }
     filter {} -- stop filtering
-
+    
     filter "configurations:Release"
-    optimize "On"
-    symbols "Off"
-    defines { "OPTKIT_MODE_NDEBUG" }
-    buildoptions {
-        "-Wall",
-        "-O2",
-        "-fopenmp",
-        "-fPIC",
-        "-march=native",
-        "-DCONF_LOG_PRINT_GUID_LENGTH=10",
-        "-DCONF_LOG_DISABLE_DEBUG=1",
-        "-DCONF_LOG_DISABLE_TRACE=1",
-        "-DCONF_LOG_DISABLE_INFO=0",
-        "-DCONF_LOG_DISABLE_WARN=0",
-        "-DCONF_LOG_DISABLE_ERROR=0" }
-    filter { "configurations:Release", "architecture:ARM or architecture:ARM64" }
-    buildoptions { "-fdse" }
-    filter { "configurations:Release", "not architecture:ARM and not architecture:ARM64" }
-    buildoptions { "-msse" }
+        optimize "On"
+        symbols "Off"
+        defines { "OPTKIT_MODE_NDEBUG" }
+        buildoptions {
+            "-Wall",
+            "-O2",
+            "-fopenmp",
+            "-fPIC",
+            "-march=native",
+            "-DCONF_LOG_PRINT_GUID_LENGTH=10",
+            "-DCONF_LOG_DISABLE_DEBUG=1",
+            "-DCONF_LOG_DISABLE_TRACE=1",
+            "-DCONF_LOG_DISABLE_INFO=0",
+            "-DCONF_LOG_DISABLE_WARN=0",
+            "-DCONF_LOG_DISABLE_ERROR=0",
+            vectorisation_flag
+        }
     filter {} -- stop filtering
-
-
+    
     filter "configurations:Test"
-    optimize "On"
-    symbols "Off"
-    defines { "OPTKIT_MODE_NDEBUG" }
-    buildoptions {
-        "-Wall",
-        "-O2",
-        "-fopenmp",
-        "-fPIC",
-        "-march=native",
-        "-DCONF_LOG_PRINT_GUID_LENGTH=10",
-        "-DCONF_LOG_DISABLE_DEBUG=1",
-        "-DCONF_LOG_DISABLE_TRACE=1",
-        "-DCONF_LOG_DISABLE_INFO=0",
-        "-DCONF_LOG_DISABLE_WARN=0",
-        "-DCONF_LOG_DISABLE_ERROR=0",
-        "-DOPTKIT_TESTING=1" }
-    filter { "configurations:Test", "architecture:ARM or architecture:ARM64" }
-    buildoptions { "-fdse" }
-    filter { "configurations:Test", "not architecture:ARM and not architecture:ARM64" }
-    buildoptions { "-msse" }
+        optimize "On"
+        symbols "Off"
+        defines { "OPTKIT_MODE_NDEBUG" }
+        buildoptions {
+            "-Wall",
+            "-O2",
+            "-fopenmp",
+            "-fPIC",
+            "-march=native",
+            "-DCONF_LOG_PRINT_GUID_LENGTH=10",
+            "-DCONF_LOG_DISABLE_DEBUG=1",
+            "-DCONF_LOG_DISABLE_TRACE=1",
+            "-DCONF_LOG_DISABLE_INFO=0",
+            "-DCONF_LOG_DISABLE_WARN=0",
+            "-DCONF_LOG_DISABLE_ERROR=0",
+            "-DOPTKIT_TESTING=1",
+            vectorisation_flag
+        }
     filter {} -- stop filtering
 end
+
 
 function test_project_setup()
     language "C++"
