@@ -61,7 +61,6 @@ function base_project_setup()
         "-O2",
         "-fopenmp",
         "-fPIC",
-        "-msse",
         "-march=native",
         "-DCONF_LOG_PRINT_GUID_LENGTH=10",
         "-DCONF_LOG_DISABLE_DEBUG=1",
@@ -69,6 +68,10 @@ function base_project_setup()
         "-DCONF_LOG_DISABLE_INFO=0",
         "-DCONF_LOG_DISABLE_WARN=0",
         "-DCONF_LOG_DISABLE_ERROR=0" }
+    filter { "configurations:Release", "architecture:ARM or architecture:ARM64" }
+    buildoptions { "-fdse" }
+    filter { "configurations:Release", "not architecture:ARM and not architecture:ARM64" }
+    buildoptions { "-msse" }
     filter {} -- stop filtering
 
 
@@ -81,7 +84,6 @@ function base_project_setup()
         "-O2",
         "-fopenmp",
         "-fPIC",
-        "-msse",
         "-march=native",
         "-DCONF_LOG_PRINT_GUID_LENGTH=10",
         "-DCONF_LOG_DISABLE_DEBUG=1",
@@ -90,6 +92,10 @@ function base_project_setup()
         "-DCONF_LOG_DISABLE_WARN=0",
         "-DCONF_LOG_DISABLE_ERROR=0",
         "-DOPTKIT_TESTING=1" }
+    filter { "configurations:Test", "architecture:ARM or architecture:ARM64" }
+    buildoptions { "-fdse" }
+    filter { "configurations:Test", "not architecture:ARM and not architecture:ARM64" }
+    buildoptions { "-msse" }
     filter {} -- stop filtering
 end
 
@@ -135,10 +141,10 @@ function test_project_setup()
     symbols "Off"
     defines { "OPTKIT_MODE_NDEBUG" }
     buildoptions {
-        "-Wall",        -- Enable all warnings
-        "-O0",          -- Explicitly no optimization
-        "-fopenmp",     -- Enable OpenMP if needed
-        "-fPIC",        -- Position-independent code,
+        "-Wall",    -- Enable all warnings
+        "-O0",      -- Explicitly no optimization
+        "-fopenmp", -- Enable OpenMP if needed
+        "-fPIC",    -- Position-independent code,
         "-DOPTKIT_TESTING=1"
     }
 end
