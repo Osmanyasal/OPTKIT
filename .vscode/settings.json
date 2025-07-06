@@ -78,7 +78,10 @@
         "__nullptr": "cpp",
         "*.inc": "cpp",
         "filesystem": "cpp",
-        "instructions_testcode.h": "c"
+        "instructions_testcode.h": "c",
+        "__locale": "cpp",
+        "__tuple": "cpp",
+        "locale": "cpp"
     },
     "Lua.diagnostics.globals": [
         "ld_has_library"
