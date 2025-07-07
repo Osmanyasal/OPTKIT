@@ -54,137 +54,169 @@ namespace optkit::core::metrics::cpu
     {
     public:
         // Native Metric implementations (not included in CoreMetrics)
-        static MetricBuilder L2HitRatio()
+        static const MetricBuilder &L2HitRatio()
         {
-            std::string l2_cache_accesses_name = to_string(arm::NativeEvents::L2_CACHE_ACCESSES);
-            std::string l2_misses_name = to_string(CoreEvents::L2_MISSES);
-            return MetricBuilder{}
-                .add(l2_cache_accesses_name, arm::EventMapper::get(arm::NativeEvents::L2_CACHE_ACCESSES))
-                .add(l2_misses_name, arm::EventMapper::get(CoreEvents::L2_MISSES))
-                .build("L2HitRatio__%",
-                       [l2_misses_name, l2_cache_accesses_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
-                       {
-                           uint64_t l2_misses = get_event_count(counts, l2_misses_name);
-                           uint64_t l2_cache_accesses = get_event_count(counts, l2_cache_accesses_name);
+            static const MetricBuilder metric = []
+            {
+                std::string l2_cache_accesses_name = to_string(arm::NativeEvents::L2_CACHE_ACCESSES);
+                std::string l2_misses_name = to_string(CoreEvents::L2_MISSES);
+                return MetricBuilder{}
+                    .add(l2_cache_accesses_name, arm::EventMapper::get(arm::NativeEvents::L2_CACHE_ACCESSES))
+                    .add(l2_misses_name, arm::EventMapper::get(CoreEvents::L2_MISSES))
+                    .build("L2HitRatio__%",
+                           [l2_misses_name, l2_cache_accesses_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                           {
+                               uint64_t l2_misses = get_event_count(counts, l2_misses_name);
+                               uint64_t l2_cache_accesses = get_event_count(counts, l2_cache_accesses_name);
 
-                           // Avoid div by zero
-                           if (l2_cache_accesses == 0)
-                               return std::numeric_limits<double>::quiet_NaN();
-                           return 100 * (static_cast<double>(l2_cache_accesses - l2_misses) / static_cast<double>(l2_cache_accesses));
-                       });
+                               // Avoid div by zero
+                               if (l2_cache_accesses == 0)
+                                   return std::numeric_limits<double>::quiet_NaN();
+                               return 100 * (static_cast<double>(l2_cache_accesses - l2_misses) / static_cast<double>(l2_cache_accesses));
+                           });
+            }();
+            return metric;
         }
 
-        static MetricBuilder L3HitRatio()
+        static const MetricBuilder &L3HitRatio()
         {
-            std::string l3_cache_accesses_name = to_string(arm::NativeEvents::L3_CACHE_ACCESSES);
-            std::string l3_misses_name = to_string(CoreEvents::L3_MISSES);
-            return MetricBuilder{}
-                .add(l3_cache_accesses_name, arm::EventMapper::get(arm::NativeEvents::L3_CACHE_ACCESSES))
-                .add(l3_misses_name, arm::EventMapper::get(CoreEvents::L3_MISSES))
-                .build("L3HitRatio__%",
-                       [l3_misses_name, l3_cache_accesses_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
-                       {
-                           uint64_t l3_misses = get_event_count(counts, l3_misses_name);
-                           uint64_t l3_accesses = get_event_count(counts, l3_cache_accesses_name);
 
-                           // Avoid div by zero
-                           if (l3_accesses == 0)
-                               return std::numeric_limits<double>::quiet_NaN();
-                           return 100 * (static_cast<double>(l3_accesses - l3_misses) / static_cast<double>(l3_accesses));
-                       });
+            static const MetricBuilder metric = []
+            {
+                std::string l3_cache_accesses_name = to_string(arm::NativeEvents::L3_CACHE_ACCESSES);
+                std::string l3_misses_name = to_string(CoreEvents::L3_MISSES);
+                return MetricBuilder{}
+                    .add(l3_cache_accesses_name, arm::EventMapper::get(arm::NativeEvents::L3_CACHE_ACCESSES))
+                    .add(l3_misses_name, arm::EventMapper::get(CoreEvents::L3_MISSES))
+                    .build("L3HitRatio__%",
+                           [l3_misses_name, l3_cache_accesses_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                           {
+                               uint64_t l3_misses = get_event_count(counts, l3_misses_name);
+                               uint64_t l3_accesses = get_event_count(counts, l3_cache_accesses_name);
+
+                               // Avoid div by zero
+                               if (l3_accesses == 0)
+                                   return std::numeric_limits<double>::quiet_NaN();
+                               return 100 * (static_cast<double>(l3_accesses - l3_misses) / static_cast<double>(l3_accesses));
+                           });
+            }();
+            return metric;
         }
 
     public:
         // CoreMetrics Implementation
 
         // Cache miss per kilo instruction (MPKI)
-        static MetricBuilder L1MPKI()
+        static const MetricBuilder &L1MPKI()
         {
-            std::string l1_misses_name = to_string(CoreEvents::L1_MISSES);
-            std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
-            return MetricBuilder{}
-                .add(l1_misses_name, arm::EventMapper::get(CoreEvents::L1_MISSES))
-                .add(inst_retired_name, arm::EventMapper::get(CoreEvents::INST_RETIRED))
-                .build("L1MPKI",
-                       [l1_misses_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
-                       {
-                           uint64_t l1_misses = get_event_count(counts, l1_misses_name);
-                           uint64_t inst_retired = get_event_count(counts, inst_retired_name);
 
-                           // Avoid div by zero
-                           if (inst_retired == 0)
-                               return std::numeric_limits<double>::quiet_NaN();
-                           return 1000.0 * static_cast<double>(l1_misses) / static_cast<double>(inst_retired);
-                       });
+            static const MetricBuilder metric = []
+            {
+                std::string l1_misses_name = to_string(CoreEvents::L1_MISSES);
+                std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
+                return MetricBuilder{}
+                    .add(l1_misses_name, arm::EventMapper::get(CoreEvents::L1_MISSES))
+                    .add(inst_retired_name, arm::EventMapper::get(CoreEvents::INST_RETIRED))
+                    .build("L1MPKI",
+                           [l1_misses_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                           {
+                               uint64_t l1_misses = get_event_count(counts, l1_misses_name);
+                               uint64_t inst_retired = get_event_count(counts, inst_retired_name);
+
+                               // Avoid div by zero
+                               if (inst_retired == 0)
+                                   return std::numeric_limits<double>::quiet_NaN();
+                               return 1000.0 * static_cast<double>(l1_misses) / static_cast<double>(inst_retired);
+                           });
+            }();
+            return metric;
         }
 
-        static MetricBuilder L2MPKI()
+        static const MetricBuilder &L2MPKI()
         {
-            std::string l2_misses_name = to_string(CoreEvents::L2_MISSES);
-            std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
 
-            return MetricBuilder{}
-                .add(l2_misses_name, arm::EventMapper::get(CoreEvents::L2_MISSES))
-                .add(inst_retired_name, arm::EventMapper::get(CoreEvents::INST_RETIRED))
-                .build("L2MPKI",
-                       [l2_misses_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
-                       {
-                           uint64_t l2_misses = get_event_count(counts, l2_misses_name);
-                           uint64_t inst_retired = get_event_count(counts, inst_retired_name);
+            static const MetricBuilder metric = []
+            {
+                std::string l2_misses_name = to_string(CoreEvents::L2_MISSES);
+                std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
 
-                           // Avoid div by zero
-                           if (inst_retired == 0)
-                               return std::numeric_limits<double>::quiet_NaN();
-                           return 1000.0 * static_cast<double>(l2_misses) / static_cast<double>(inst_retired);
-                       });
+                return MetricBuilder{}
+                    .add(l2_misses_name, arm::EventMapper::get(CoreEvents::L2_MISSES))
+                    .add(inst_retired_name, arm::EventMapper::get(CoreEvents::INST_RETIRED))
+                    .build("L2MPKI",
+                           [l2_misses_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                           {
+                               uint64_t l2_misses = get_event_count(counts, l2_misses_name);
+                               uint64_t inst_retired = get_event_count(counts, inst_retired_name);
+
+                               // Avoid div by zero
+                               if (inst_retired == 0)
+                                   return std::numeric_limits<double>::quiet_NaN();
+                               return 1000.0 * static_cast<double>(l2_misses) / static_cast<double>(inst_retired);
+                           });
+            }();
+            return metric;
         }
 
-        static MetricBuilder L3MPKI()
+        static const MetricBuilder &L3MPKI()
         {
-            std::string l3_misses_name = to_string(CoreEvents::L3_MISSES);
-            std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
 
-            return MetricBuilder{}
-                .add(l3_misses_name, arm::EventMapper::get(CoreEvents::L3_MISSES))
-                .add(inst_retired_name, arm::EventMapper::get(CoreEvents::INST_RETIRED))
-                .build("L3MPKI",
-                       [l3_misses_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
-                       {
-                           uint64_t l3_misses = get_event_count(counts, l3_misses_name);
-                           uint64_t inst_retired = get_event_count(counts, inst_retired_name);
+            static const MetricBuilder metric = []
+            {
+                std::string l3_misses_name = to_string(CoreEvents::L3_MISSES);
+                std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
 
-                           // Avoid div by zero
-                           if (inst_retired == 0)
-                               return std::numeric_limits<double>::quiet_NaN();
-                           return 1000.0 * static_cast<double>(l3_misses) / static_cast<double>(inst_retired);
-                       });
+                return MetricBuilder{}
+                    .add(l3_misses_name, arm::EventMapper::get(CoreEvents::L3_MISSES))
+                    .add(inst_retired_name, arm::EventMapper::get(CoreEvents::INST_RETIRED))
+                    .build("L3MPKI",
+                           [l3_misses_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                           {
+                               uint64_t l3_misses = get_event_count(counts, l3_misses_name);
+                               uint64_t inst_retired = get_event_count(counts, inst_retired_name);
+
+                               // Avoid div by zero
+                               if (inst_retired == 0)
+                                   return std::numeric_limits<double>::quiet_NaN();
+                               return 1000.0 * static_cast<double>(l3_misses) / static_cast<double>(inst_retired);
+                           });
+            }();
+            return metric;
         }
 
         // Branch
-        static MetricBuilder BranchMisprRatio()
+        static const MetricBuilder &BranchMisprRatio()
         {
-            std::string branch_inst_retired_name = to_string(CoreEvents::BRANCH_INST_RETIRED);
-            std::string branch_misp_retired_name = to_string(CoreEvents::BRANCH_MISP_RETIRED);
 
-            return MetricBuilder{}
-                .add(branch_inst_retired_name, arm::EventMapper::get(CoreEvents::BRANCH_INST_RETIRED))
-                .add(branch_misp_retired_name, arm::EventMapper::get(CoreEvents::BRANCH_MISP_RETIRED))
-                .build("BranchMisprRatio",
-                       [branch_misp_retired_name, branch_inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
-                       {
-                           uint64_t branch_misp = get_event_count(counts, branch_misp_retired_name);
-                           uint64_t branch_inst = get_event_count(counts, branch_inst_retired_name);
+            static const MetricBuilder metric = []
+            {
+                std::string branch_inst_retired_name = to_string(CoreEvents::BRANCH_INST_RETIRED);
+                std::string branch_misp_retired_name = to_string(CoreEvents::BRANCH_MISP_RETIRED);
 
-                           // Avoid div by zero
-                           if (branch_inst == 0)
-                               return std::numeric_limits<double>::quiet_NaN();
-                           return static_cast<double>(branch_misp) / static_cast<double>(branch_inst);
-                       });
+                return MetricBuilder{}
+                    .add(branch_inst_retired_name, arm::EventMapper::get(CoreEvents::BRANCH_INST_RETIRED))
+                    .add(branch_misp_retired_name, arm::EventMapper::get(CoreEvents::BRANCH_MISP_RETIRED))
+                    .build("BranchMisprRatio",
+                           [branch_misp_retired_name, branch_inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                           {
+                               uint64_t branch_misp = get_event_count(counts, branch_misp_retired_name);
+                               uint64_t branch_inst = get_event_count(counts, branch_inst_retired_name);
+
+                               // Avoid div by zero
+                               if (branch_inst == 0)
+                                   return std::numeric_limits<double>::quiet_NaN();
+                               return static_cast<double>(branch_misp) / static_cast<double>(branch_inst);
+                           });
+            }();
+            return metric;
         }
 
         // ITLB MPKI metrics
-        static MetricBuilder ITLBMPKI()
+        static const MetricBuilder &ITLBMPKI()
         {
+
+            static const MetricBuilder metric = []
+            {
             std::string itlb_misses_name = to_string(CoreEvents::ITLB_MISSES);
             std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
 
@@ -200,335 +232,413 @@ namespace optkit::core::metrics::cpu
                            if (inst_retired == 0)
                                return std::numeric_limits<double>::quiet_NaN();
                            return 1000.0 * static_cast<double>(itlb_misses) / static_cast<double>(inst_retired);
-                       });
+                       }); }();
+            return metric;
         }
 
         // DTLB MPKI metrics
-        static MetricBuilder DTLBMPKI()
+        static const MetricBuilder &DTLBMPKI()
         {
-            std::string dtlb_misses_name = to_string(CoreEvents::DTLB_MISSES);
-            std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
 
-            return MetricBuilder{}
-                .add(dtlb_misses_name, arm::EventMapper::get(CoreEvents::DTLB_MISSES))
-                .add(inst_retired_name, arm::EventMapper::get(CoreEvents::INST_RETIRED))
-                .build("DTLBMPKI",
-                       [dtlb_misses_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
-                       {
-                           uint64_t itlb_misses = get_event_count(counts, dtlb_misses_name);
-                           uint64_t inst_retired = get_event_count(counts, inst_retired_name);
+            static const MetricBuilder metric = []
+            {
+                std::string dtlb_misses_name = to_string(CoreEvents::DTLB_MISSES);
+                std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
 
-                           if (inst_retired == 0)
-                               return std::numeric_limits<double>::quiet_NaN();
-                           return 1000.0 * static_cast<double>(itlb_misses) / static_cast<double>(inst_retired);
-                       });
+                return MetricBuilder{}
+                    .add(dtlb_misses_name, arm::EventMapper::get(CoreEvents::DTLB_MISSES))
+                    .add(inst_retired_name, arm::EventMapper::get(CoreEvents::INST_RETIRED))
+                    .build("DTLBMPKI",
+                           [dtlb_misses_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                           {
+                               uint64_t itlb_misses = get_event_count(counts, dtlb_misses_name);
+                               uint64_t inst_retired = get_event_count(counts, inst_retired_name);
+
+                               if (inst_retired == 0)
+                                   return std::numeric_limits<double>::quiet_NaN();
+                               return 1000.0 * static_cast<double>(itlb_misses) / static_cast<double>(inst_retired);
+                           });
+            }();
+            return metric;
         }
 
         // TLB MPKI metrics
-        static MetricBuilder TLBMPKI()
+        static const MetricBuilder &TLBMPKI()
         {
-            std::string dtlb_misses_name = to_string(CoreEvents::DTLB_MISSES);
-            std::string itlb_misses_name = to_string(CoreEvents::ITLB_MISSES);
-            std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
 
-            return MetricBuilder{}
-                .add(itlb_misses_name, arm::EventMapper::get(CoreEvents::DTLB_MISSES))
-                .add(dtlb_misses_name, arm::EventMapper::get(CoreEvents::ITLB_MISSES))
-                .add(inst_retired_name, arm::EventMapper::get(CoreEvents::INST_RETIRED))
-                .build("TLBMPKI",
-                       [itlb_misses_name, dtlb_misses_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
-                       {
-                           uint64_t itlb_misses = get_event_count(counts, itlb_misses_name);
-                           uint64_t dtlb_misses = get_event_count(counts, dtlb_misses_name);
-                           uint64_t inst_retired = get_event_count(counts, inst_retired_name);
+            static const MetricBuilder metric = []
+            {
+                std::string dtlb_misses_name = to_string(CoreEvents::DTLB_MISSES);
+                std::string itlb_misses_name = to_string(CoreEvents::ITLB_MISSES);
+                std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
 
-                           if (inst_retired == 0)
-                               return std::numeric_limits<double>::quiet_NaN();
-                           return 1000.0 * (static_cast<double>(dtlb_misses) + static_cast<double>(itlb_misses)) / static_cast<double>(inst_retired);
-                       });
+                return MetricBuilder{}
+                    .add(itlb_misses_name, arm::EventMapper::get(CoreEvents::DTLB_MISSES))
+                    .add(dtlb_misses_name, arm::EventMapper::get(CoreEvents::ITLB_MISSES))
+                    .add(inst_retired_name, arm::EventMapper::get(CoreEvents::INST_RETIRED))
+                    .build("TLBMPKI",
+                           [itlb_misses_name, dtlb_misses_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                           {
+                               uint64_t itlb_misses = get_event_count(counts, itlb_misses_name);
+                               uint64_t dtlb_misses = get_event_count(counts, dtlb_misses_name);
+                               uint64_t inst_retired = get_event_count(counts, inst_retired_name);
+
+                               if (inst_retired == 0)
+                                   return std::numeric_limits<double>::quiet_NaN();
+                               return 1000.0 * (static_cast<double>(dtlb_misses) + static_cast<double>(itlb_misses)) / static_cast<double>(inst_retired);
+                           });
+            }();
+            return metric;
         }
 
         // Latency and parallelism metrics
-        static MetricBuilder LoadMissLatency()
+        static const MetricBuilder &LoadMissLatency()
         {
-            return {};
+            static const MetricBuilder empty{};
+            return empty;
         }
 
-        static MetricBuilder IpC()
+        static const MetricBuilder &IpC()
         {
-            std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
-            std::string unhalted_core_cycles_name = to_string(CoreEvents::UNHALTED_CORE_CYCLES);
 
-            return MetricBuilder{}
-                .add(inst_retired_name, arm::EventMapper::get(CoreEvents::INST_RETIRED))
-                .add(unhalted_core_cycles_name, arm::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
-                .build("IpC", [inst_retired_name, unhalted_core_cycles_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
-                       {
+            static const MetricBuilder metric = []
+            {
+                std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
+                std::string unhalted_core_cycles_name = to_string(CoreEvents::UNHALTED_CORE_CYCLES);
+
+                return MetricBuilder{}
+                    .add(inst_retired_name, arm::EventMapper::get(CoreEvents::INST_RETIRED))
+                    .add(unhalted_core_cycles_name, arm::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
+                    .build("IpC", [inst_retired_name, unhalted_core_cycles_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                           {
                            uint64_t inst_retired = get_event_count(counts,inst_retired_name);
                            uint64_t unhalted_core_cycles = get_event_count(counts,unhalted_core_cycles_name);
 
                            if (unhalted_core_cycles == 0)
-                               return -1;
+                                   return std::numeric_limits<double>::quiet_NaN();
                             return static_cast<double>(inst_retired) / static_cast<double>(unhalted_core_cycles); });
+            }();
+            return metric;
         }
 
-        static MetricBuilder ILP()
+        static const MetricBuilder &ILP()
         {
-            return {};
+            static const MetricBuilder empty{};
+            return empty;
         }
 
-        static MetricBuilder MLP()
+        static const MetricBuilder &MLP()
         {
-            return {};
+            static const MetricBuilder empty{};
+            return empty;
         }
 
         // DRAM bandwidth
-        static MetricBuilder DRAMBandwidthGBs()
+        static const MetricBuilder &DRAMBandwidthGBs()
         {
-            return {};
+            static const MetricBuilder empty{};
+            return empty;
         }
 
         // Instruction per event
-        static MetricBuilder IpCall()
+        static const MetricBuilder &IpCall()
         {
-            return {};
+            static const MetricBuilder empty{};
+            return empty;
         }
 
-        static MetricBuilder IpBranch()
+        static const MetricBuilder &IpBranch()
         {
-            std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
-            std::string branch_inst_retired_name = to_string(CoreEvents::BRANCH_INST_RETIRED);
-            return MetricBuilder{}
-                .add(inst_retired_name, arm::EventMapper::get(CoreEvents::INST_RETIRED))
-                .add(branch_inst_retired_name, arm::EventMapper::get(CoreEvents::BRANCH_INST_RETIRED))
-                .build("IpBranch",
-                       [branch_inst_retired_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
-                       {
-                           uint64_t inst_retired = get_event_count(counts, inst_retired_name);
-                           uint64_t branch_inst_retired = get_event_count(counts, branch_inst_retired_name);
 
-                           // Avoid div by zero
-                           if (branch_inst_retired == 0)
-                               return std::numeric_limits<double>::quiet_NaN();
-                           return static_cast<double>(inst_retired) / static_cast<double>(branch_inst_retired);
-                       });
+            static const MetricBuilder metric = []
+            {
+                std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
+                std::string branch_inst_retired_name = to_string(CoreEvents::BRANCH_INST_RETIRED);
+                return MetricBuilder{}
+                    .add(inst_retired_name, arm::EventMapper::get(CoreEvents::INST_RETIRED))
+                    .add(branch_inst_retired_name, arm::EventMapper::get(CoreEvents::BRANCH_INST_RETIRED))
+                    .build("IpBranch",
+                           [branch_inst_retired_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                           {
+                               uint64_t inst_retired = get_event_count(counts, inst_retired_name);
+                               uint64_t branch_inst_retired = get_event_count(counts, branch_inst_retired_name);
+
+                               // Avoid div by zero
+                               if (branch_inst_retired == 0)
+                                   return std::numeric_limits<double>::quiet_NaN();
+                               return static_cast<double>(inst_retired) / static_cast<double>(branch_inst_retired);
+                           });
+            }();
+            return metric;
         }
 
-        static MetricBuilder IpMemLoad()
+        static const MetricBuilder &IpMemLoad()
         {
-            std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
-            std::string mem_load_retired_name = to_string(CoreEvents::MEM_LOAD_RETIRED);
-            return MetricBuilder{}
-                .add(inst_retired_name, arm::EventMapper::get(CoreEvents::INST_RETIRED))
-                .add(mem_load_retired_name, arm::EventMapper::get(CoreEvents::MEM_LOAD_RETIRED))
-                .build("IpLoad",
-                       [mem_load_retired_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
-                       {
-                           uint64_t inst_retired = get_event_count(counts, inst_retired_name);
-                           uint64_t mem_load_retired = get_event_count(counts, mem_load_retired_name);
 
-                           // Avoid div by zero
-                           if (mem_load_retired == 0)
-                               return std::numeric_limits<double>::quiet_NaN();
-                           return static_cast<double>(inst_retired) / static_cast<double>(mem_load_retired);
-                       });
+            static const MetricBuilder metric = []
+            {
+                std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
+                std::string mem_load_retired_name = to_string(CoreEvents::MEM_LOAD_RETIRED);
+                return MetricBuilder{}
+                    .add(inst_retired_name, arm::EventMapper::get(CoreEvents::INST_RETIRED))
+                    .add(mem_load_retired_name, arm::EventMapper::get(CoreEvents::MEM_LOAD_RETIRED))
+                    .build("IpLoad",
+                           [mem_load_retired_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                           {
+                               uint64_t inst_retired = get_event_count(counts, inst_retired_name);
+                               uint64_t mem_load_retired = get_event_count(counts, mem_load_retired_name);
+
+                               // Avoid div by zero
+                               if (mem_load_retired == 0)
+                                   return std::numeric_limits<double>::quiet_NaN();
+                               return static_cast<double>(inst_retired) / static_cast<double>(mem_load_retired);
+                           });
+            }();
+            return metric;
         }
 
-        static MetricBuilder IpMemStore()
+        static const MetricBuilder &IpMemStore()
         {
-            std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
-            std::string mem_store_retired_name = to_string(CoreEvents::MEM_STORE_RETIRED);
-            return MetricBuilder{}
-                .add(inst_retired_name, arm::EventMapper::get(CoreEvents::INST_RETIRED))
-                .add(mem_store_retired_name, arm::EventMapper::get(CoreEvents::MEM_STORE_RETIRED))
-                .build("IpStore",
-                       [mem_store_retired_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
-                       {
-                           uint64_t inst_retired = get_event_count(counts, inst_retired_name);
-                           uint64_t mem_store_retired = get_event_count(counts, mem_store_retired_name);
 
-                           // Avoid div by zero
-                           if (mem_store_retired == 0)
-                               return std::numeric_limits<double>::quiet_NaN();
-                           return static_cast<double>(inst_retired) / static_cast<double>(mem_store_retired);
-                       });
+            static const MetricBuilder metric = []
+            {
+                std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
+                std::string mem_store_retired_name = to_string(CoreEvents::MEM_STORE_RETIRED);
+                return MetricBuilder{}
+                    .add(inst_retired_name, arm::EventMapper::get(CoreEvents::INST_RETIRED))
+                    .add(mem_store_retired_name, arm::EventMapper::get(CoreEvents::MEM_STORE_RETIRED))
+                    .build("IpStore",
+                           [mem_store_retired_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                           {
+                               uint64_t inst_retired = get_event_count(counts, inst_retired_name);
+                               uint64_t mem_store_retired = get_event_count(counts, mem_store_retired_name);
+
+                               // Avoid div by zero
+                               if (mem_store_retired == 0)
+                                   return std::numeric_limits<double>::quiet_NaN();
+                               return static_cast<double>(inst_retired) / static_cast<double>(mem_store_retired);
+                           });
+            }();
+            return metric;
         }
 
-        static MetricBuilder IpMispredict()
+        static const MetricBuilder &IpMispredict()
         {
-            std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
-            std::string branch_misp_retired_name = to_string(CoreEvents::BRANCH_MISP_RETIRED);
-            return MetricBuilder{}
-                .add(inst_retired_name, arm::EventMapper::get(CoreEvents::INST_RETIRED))
-                .add(branch_misp_retired_name, arm::EventMapper::get(CoreEvents::BRANCH_MISP_RETIRED))
-                .build("IpMispredict",
-                       [branch_misp_retired_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
-                       {
-                           uint64_t inst_retired = get_event_count(counts, inst_retired_name);
-                           uint64_t branch_misp_retired = get_event_count(counts, branch_misp_retired_name);
 
-                           // Avoid div by zero
-                           if (branch_misp_retired == 0)
-                               return std::numeric_limits<double>::quiet_NaN();
-                           return static_cast<double>(inst_retired) / static_cast<double>(branch_misp_retired);
-                       });
+            static const MetricBuilder metric = []
+            {
+                std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
+                std::string branch_misp_retired_name = to_string(CoreEvents::BRANCH_MISP_RETIRED);
+                return MetricBuilder{}
+                    .add(inst_retired_name, arm::EventMapper::get(CoreEvents::INST_RETIRED))
+                    .add(branch_misp_retired_name, arm::EventMapper::get(CoreEvents::BRANCH_MISP_RETIRED))
+                    .build("IpMispredict",
+                           [branch_misp_retired_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                           {
+                               uint64_t inst_retired = get_event_count(counts, inst_retired_name);
+                               uint64_t branch_misp_retired = get_event_count(counts, branch_misp_retired_name);
+
+                               // Avoid div by zero
+                               if (branch_misp_retired == 0)
+                                   return std::numeric_limits<double>::quiet_NaN();
+                               return static_cast<double>(inst_retired) / static_cast<double>(branch_misp_retired);
+                           });
+            }();
+            return metric;
         }
 
         // Floating-point operation metrics
-        static MetricBuilder IpFLOP()
+        static const MetricBuilder &IpFLOP()
         {
-            return {};
+            static const MetricBuilder empty{};
+            return empty;
         }
 
-        static MetricBuilder IpAVXAnyFlop()
+        static const MetricBuilder &IpAVXAnyFlop()
         {
-            std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
-            std::string retired_sse_avx_flops_any_name = to_string(CoreEvents::RETIRED_VECTOR);
-            return MetricBuilder{}
-                .add(inst_retired_name, arm::EventMapper::get(CoreEvents::INST_RETIRED))
-                .add(retired_sse_avx_flops_any_name, arm::EventMapper::get(CoreEvents::RETIRED_VECTOR))
-                .build("IpAVXAnyFlop",
-                       [retired_sse_avx_flops_any_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
-                       {
-                           uint64_t inst_retired = get_event_count(counts, inst_retired_name);
-                           uint64_t retired_sse_avx_flops_any = get_event_count(counts, retired_sse_avx_flops_any_name);
 
-                           // Avoid div by zero
-                           if (retired_sse_avx_flops_any == 0)
-                               return std::numeric_limits<double>::quiet_NaN();
-                           return static_cast<double>(inst_retired) / static_cast<double>(retired_sse_avx_flops_any);
-                       });
+            static const MetricBuilder metric = []
+            {
+                std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
+                std::string retired_sse_avx_flops_any_name = to_string(CoreEvents::RETIRED_VECTOR);
+                return MetricBuilder{}
+                    .add(inst_retired_name, arm::EventMapper::get(CoreEvents::INST_RETIRED))
+                    .add(retired_sse_avx_flops_any_name, arm::EventMapper::get(CoreEvents::RETIRED_VECTOR))
+                    .build("IpAVXAnyFlop",
+                           [retired_sse_avx_flops_any_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                           {
+                               uint64_t inst_retired = get_event_count(counts, inst_retired_name);
+                               uint64_t retired_sse_avx_flops_any = get_event_count(counts, retired_sse_avx_flops_any_name);
+
+                               // Avoid div by zero
+                               if (retired_sse_avx_flops_any == 0)
+                                   return std::numeric_limits<double>::quiet_NaN();
+                               return static_cast<double>(inst_retired) / static_cast<double>(retired_sse_avx_flops_any);
+                           });
+            }();
+            return metric;
         }
 
-        static MetricBuilder IpArith()
+        static const MetricBuilder &IpArith()
         {
-            return {};
+            static const MetricBuilder empty{};
+            return empty;
         }
 
-        static MetricBuilder IpArithScalarSP()
+        static const MetricBuilder &IpArithScalarSP()
         {
-            return {};
+            static const MetricBuilder empty{};
+            return empty;
         }
 
-        static MetricBuilder IpArithScalarDP()
+        static const MetricBuilder &IpArithScalarDP()
         {
-            return {};
+            static const MetricBuilder empty{};
+            return empty;
         }
 
-        static MetricBuilder IpArithAVX128()
+        static const MetricBuilder &IpArithAVX128()
         {
-            return {};
+            static const MetricBuilder empty{};
+            return empty;
         }
 
-        static MetricBuilder IpArithAVX256()
+        static const MetricBuilder &IpArithAVX256()
         {
-            return {};
+            static const MetricBuilder empty{};
+            return empty;
         }
 
-        static MetricBuilder IpArithAVX512()
+        static const MetricBuilder &IpArithAVX512()
         {
-            return {};
+            static const MetricBuilder empty{};
+            return empty;
         }
 
-        static MetricBuilder IpArithVectorAny()
+        static const MetricBuilder &IpArithVectorAny()
         {
-            return {};
+            static const MetricBuilder empty{};
+            return empty;
         }
 
-        static MetricBuilder ScalarpArithVector()
+        static const MetricBuilder &ScalarpArithVector()
         {
-            return {};
+            static const MetricBuilder empty{};
+            return empty;
         }
 
         // Software prefetch
-        static MetricBuilder IpSWPF()
+        static const MetricBuilder &IpSWPF()
         {
-            return {};
+            static const MetricBuilder empty{};
+            return empty;
         }
 
         // Topdown (Pipeline Utilisation) Analysis L1
 
 #if OPTKIT_ENV_CPU_MICROARCH_NEOVERSE_V3 || OPTKIT_ENV_CPU_MICROARCH_NEOVERSE_N3
-        static MetricBuilder FrontendBound()
+        static const MetricBuilder &FrontendBound()
         {
-            std::string stall_slot_fe_name = to_string(arm::NativeEvents::STALL_SLOT_FRONTEND);
-            std::string unhalted_cycles_name = to_string(CoreEvents::UNHALTED_CORE_CYCLES);
-            std::string stall_frontend_flush_name = to_string(arm::NativeEvents::STALL_FRONTEND_FLUSH);
-            return MetricBuilder{}
-                .add(stall_slot_fe_name, arm::EventMapper::get(arm::NativeEvents::STALL_SLOT_FRONTEND))
-                .add(unhalted_cycles_name, arm::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
-                .add(stall_frontend_flush_name, arm::EventMapper::get(arm::NativeEvents::STALL_FRONTEND_FLUSH))
-                .build("FrontendBound__%",
-                       [stall_slot_fe_name, unhalted_cycles_name, stall_frontend_flush_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
-                       {
-                           uint64_t cycles = get_event_count(counts, unhalted_cycles_name);
-                           uint64_t slots = SUPERSCALAR_WIDE * cycles;
-                           uint64_t stall_slot_fe = get_event_count(counts, stall_slot_fe_name);
-                           uint64_t stall_frontend_flush = get_event_count(counts, stall_frontend_flush_name);
 
-                           return 100 * ((static_cast<double>(stall_slot_fe) / (static_cast<double>(slots))) - (static_cast<double>(stall_frontend_flush) / static_cast<double>(cycles)));
-                       });
+            static const MetricBuilder metric = []
+            {
+                std::string stall_slot_fe_name = to_string(arm::NativeEvents::STALL_SLOT_FRONTEND);
+                std::string unhalted_cycles_name = to_string(CoreEvents::UNHALTED_CORE_CYCLES);
+                std::string stall_frontend_flush_name = to_string(arm::NativeEvents::STALL_FRONTEND_FLUSH);
+                return MetricBuilder{}
+                    .add(stall_slot_fe_name, arm::EventMapper::get(arm::NativeEvents::STALL_SLOT_FRONTEND))
+                    .add(unhalted_cycles_name, arm::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
+                    .add(stall_frontend_flush_name, arm::EventMapper::get(arm::NativeEvents::STALL_FRONTEND_FLUSH))
+                    .build("FrontendBound__%",
+                           [stall_slot_fe_name, unhalted_cycles_name, stall_frontend_flush_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                           {
+                               uint64_t cycles = get_event_count(counts, unhalted_cycles_name);
+                               uint64_t slots = SUPERSCALAR_WIDE * cycles;
+                               uint64_t stall_slot_fe = get_event_count(counts, stall_slot_fe_name);
+                               uint64_t stall_frontend_flush = get_event_count(counts, stall_frontend_flush_name);
+
+                               return 100 * ((static_cast<double>(stall_slot_fe) / (static_cast<double>(slots))) - (static_cast<double>(stall_frontend_flush) / static_cast<double>(cycles)));
+                           });
+            }();
+            return metric;
         }
 
 #elif OPTKIT_ENV_CPU_MICROARCH_NEOVERSE_N1 || OPTKIT_ENV_CPU_MICROARCH_NEOVERSE_V1 || OPTKIT_ENV_CPU_MICROARCH_NEOVERSE_N2 || OPTKIT_ENV_CPU_MICROARCH_NEOVERSE_V2
-        static MetricBuilder FrontendBound()
+        static const MetricBuilder &FrontendBound()
         {
-            std::string stall_slot_fe_name = to_string(arm::NativeEvents::STALL_SLOT_FRONTEND);
-            std::string unhalted_cycles_name = to_string(CoreEvents::UNHALTED_CORE_CYCLES);
-            std::string branch_misp_name = to_string(CoreEvents::BRANCH_MISP_RETIRED);
-            return MetricBuilder{}
-                .add(stall_slot_fe_name, arm::EventMapper::get(arm::NativeEvents::STALL_SLOT_FRONTEND))
-                .add(unhalted_cycles_name, arm::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
-                .add(branch_misp_name, arm::EventMapper::get(CoreEvents::BRANCH_MISP_RETIRED))
-                .build("FrontendBound__%",
-                       [stall_slot_fe_name, unhalted_cycles_name, branch_misp_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
-                       {
-                           uint64_t cycles = get_event_count(counts, unhalted_cycles_name);
-                           uint64_t slots = SUPERSCALAR_WIDE * cycles;
-                           uint64_t stall_slot_fe = get_event_count(counts, stall_slot_fe_name);
-                           uint64_t branch_misp = get_event_count(counts, branch_misp_name);
 
-                           return 100 * ((static_cast<double>(stall_slot_fe) / (static_cast<double>(slots))) - (static_cast<double>(branch_misp) / static_cast<double>(cycles)));
-                       });
+            static const MetricBuilder metric = []
+            {
+                std::string stall_slot_fe_name = to_string(arm::NativeEvents::STALL_SLOT_FRONTEND);
+                std::string unhalted_cycles_name = to_string(CoreEvents::UNHALTED_CORE_CYCLES);
+                std::string branch_misp_name = to_string(CoreEvents::BRANCH_MISP_RETIRED);
+                return MetricBuilder{}
+                    .add(stall_slot_fe_name, arm::EventMapper::get(arm::NativeEvents::STALL_SLOT_FRONTEND))
+                    .add(unhalted_cycles_name, arm::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
+                    .add(branch_misp_name, arm::EventMapper::get(CoreEvents::BRANCH_MISP_RETIRED))
+                    .build("FrontendBound__%",
+                           [stall_slot_fe_name, unhalted_cycles_name, branch_misp_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                           {
+                               uint64_t cycles = get_event_count(counts, unhalted_cycles_name);
+                               uint64_t slots = SUPERSCALAR_WIDE * cycles;
+                               uint64_t stall_slot_fe = get_event_count(counts, stall_slot_fe_name);
+                               uint64_t branch_misp = get_event_count(counts, branch_misp_name);
+
+                               return 100 * ((static_cast<double>(stall_slot_fe) / (static_cast<double>(slots))) - (static_cast<double>(branch_misp) / static_cast<double>(cycles)));
+                           });
+            }();
+            return metric;
+        }
 
 #else
-        static MetricBuilder FrontendBound() { return {}; }
+        static const MetricBuilder &FrontendBound()
+        {
+            static const MetricBuilder empty{};
+            return empty;
+        }
 #endif
 
 #if OPTKIT_ENV_CPU_MICROARCH_NEOVERSE_V3 || OPTKIT_ENV_CPU_MICROARCH_NEOVERSE_N3
-        static MetricBuilder BadSpeculation()
+        static const MetricBuilder &BadSpeculation()
         {
-            std::string stall_slots_name = to_string(arm::NativeEvents::STALL_SLOT);
-            std::string unhalted_cycles_name = to_string(CoreEvents::UNHALTED_CORE_CYCLES);
-            std::string retired_ops_name = to_string(arm::NativeEvents::RETIRED_OPS);
-            std::string op_spec_name = to_string(arm::NativeEvents::OP_SPEC);
-            std::string stall_flush_name = to_string(arm::NativeEvents::STALL_FRONTEND_FLUSH);
 
-            return MetricBuilder{}
-                .add(stall_slots_name, arm::EventMapper::get(arm::NativeEvents::STALL_SLOT))
-                .add(unhalted_cycles_name, arm::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
-                .add(retired_ops_name, arm::EventMapper::get(arm::NativeEvents::RETIRED_OPS))
-                .add(op_spec_name, arm::EventMapper::get(arm::NativeEvents::OP_SPEC))
-                .add(stall_flush_name, arm::EventMapper::get(arm::NativeEvents::STALL_FRONTEND_FLUSH))
-                .build("BadSpeculation__%",
-                       [stall_slots_name, unhalted_cycles_name, retired_ops_name, op_spec_name, stall_flush_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
-                       {
-                           uint64_t cycles = get_event_count(counts, unhalted_cycles_name);
-                           uint64_t stall_slots = get_event_count(counts, stall_slots_name);
-                           uint64_t retired_ops = get_event_count(counts, retired_ops_name);
-                           uint64_t op_spec = get_event_count(counts, op_spec_name);
-                           uint64_t stall_flush = get_event_count(counts, stall_flush_name);
+            static const MetricBuilder metric = []
+            {
+                std::string stall_slots_name = to_string(arm::NativeEvents::STALL_SLOT);
+                std::string unhalted_cycles_name = to_string(CoreEvents::UNHALTED_CORE_CYCLES);
+                std::string retired_ops_name = to_string(arm::NativeEvents::RETIRED_OPS);
+                std::string op_spec_name = to_string(arm::NativeEvents::OP_SPEC);
+                std::string stall_flush_name = to_string(arm::NativeEvents::STALL_FRONTEND_FLUSH);
 
-                           // Calculate components
-                           double slot_utilization = 1.0 - (static_cast<double>(stall_slots) / (SUPERSCALAR_WIDE * cycles));
-                           double spec_efficiency = 1.0 - (static_cast<double>(retired_ops) / op_spec);
-                           double flush_penalty = static_cast<double>(stall_flush) / cycles;
+                return MetricBuilder{}
+                    .add(stall_slots_name, arm::EventMapper::get(arm::NativeEvents::STALL_SLOT))
+                    .add(unhalted_cycles_name, arm::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
+                    .add(retired_ops_name, arm::EventMapper::get(arm::NativeEvents::RETIRED_OPS))
+                    .add(op_spec_name, arm::EventMapper::get(arm::NativeEvents::OP_SPEC))
+                    .add(stall_flush_name, arm::EventMapper::get(arm::NativeEvents::STALL_FRONTEND_FLUSH))
+                    .build("BadSpeculation__%",
+                           [stall_slots_name, unhalted_cycles_name, retired_ops_name, op_spec_name, stall_flush_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                           {
+                               uint64_t cycles = get_event_count(counts, unhalted_cycles_name);
+                               uint64_t stall_slots = get_event_count(counts, stall_slots_name);
+                               uint64_t retired_ops = get_event_count(counts, retired_ops_name);
+                               uint64_t op_spec = get_event_count(counts, op_spec_name);
+                               uint64_t stall_flush = get_event_count(counts, stall_flush_name);
 
-                           return (slot_utilization * spec_efficiency * 100.0) + (flush_penalty * 100.0);
-                       });
+                               // Calculate components
+                               double slot_utilization = 1.0 - (static_cast<double>(stall_slots) / (SUPERSCALAR_WIDE * cycles));
+                               double spec_efficiency = 1.0 - (static_cast<double>(retired_ops) / op_spec);
+                               double flush_penalty = static_cast<double>(stall_flush) / cycles;
+
+                               return (slot_utilization * spec_efficiency * 100.0) + (flush_penalty * 100.0);
+                           });
+            }();
+            return metric;
         }
 #elif OPTKIT_ENV_CPU_MICROARCH_NEOVERSE_N2 || OPTKIT_ENV_CPU_MICROARCH_NEOVERSE_V2
-            static MetricBuilder BadSpeculation()
+        static const MetricBuilder &BadSpeculation()
+        {
+            static const MetricBuilder metric = []
             {
                 std::string stall_slots_name = to_string(arm::NativeEvents::STALL_SLOT);
                 std::string unhalted_cycles_name = to_string(CoreEvents::UNHALTED_CORE_CYCLES);
@@ -561,254 +671,379 @@ namespace optkit::core::metrics::cpu
                                double spec_efficiency = 1.0 - (static_cast<double>(retired_ops) / op_spec);
                                double mispred_penalty = (br_mispred * 4.0) / cycles;
                                return 100.0 * (spec_efficiency * slot_utilization) + mispred_penalty;
-                           });
-            }
+                           }); }();
+            return metric;
+        }
 #elif OPTKIT_ENV_CPU_MICROARCH_NEOVERSE_V1
-        static MetricBuilder BadSpeculation()
+        static const MetricBuilder &BadSpeculation()
         {
-            std::string stall_slots_name = to_string(arm::NativeEvents::STALL_SLOT);
-            std::string unhalted_cycles_name = to_string(CoreEvents::UNHALTED_CORE_CYCLES);
-            std::string retired_ops_name = to_string(arm::NativeEvents::OP_RETIRED);
-            std::string op_spec_name = to_string(arm::NativeEvents::OP_SPEC);
 
-            return MetricBuilder{}
-                .add(stall_slots_name, arm::EventMapper::get(arm::NativeEvents::STALL_SLOT))
-                .add(unhalted_cycles_name, arm::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
-                .add(retired_ops_name, arm::EventMapper::get(arm::NativeEvents::OP_RETIRED))
-                .add(op_spec_name, arm::EventMapper::get(arm::NativeEvents::OP_SPEC))
-                .build("BadSpeculation__%",
-                       [stall_slots_name, unhalted_cycles_name, retired_ops_name, op_spec_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
-                       {
-                           uint64_t cycles = get_event_count(counts, unhalted_cycles_name);
-                           if (cycles == 0)
-                               return std::numeric_limits<double>::quiet_NaN();
+            static const MetricBuilder metric = []
+            {
+                std::string stall_slots_name = to_string(arm::NativeEvents::STALL_SLOT);
+                std::string unhalted_cycles_name = to_string(CoreEvents::UNHALTED_CORE_CYCLES);
+                std::string retired_ops_name = to_string(arm::NativeEvents::OP_RETIRED);
+                std::string op_spec_name = to_string(arm::NativeEvents::OP_SPEC);
 
-                           uint64_t stall_slots = get_event_count(counts, stall_slots_name);
-                           uint64_t retired_ops = get_event_count(counts, retired_ops_name);
-                           uint64_t op_spec = get_event_count(counts, op_spec_name);
+                return MetricBuilder{}
+                    .add(stall_slots_name, arm::EventMapper::get(arm::NativeEvents::STALL_SLOT))
+                    .add(unhalted_cycles_name, arm::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
+                    .add(retired_ops_name, arm::EventMapper::get(arm::NativeEvents::OP_RETIRED))
+                    .add(op_spec_name, arm::EventMapper::get(arm::NativeEvents::OP_SPEC))
+                    .build("BadSpeculation__%",
+                           [stall_slots_name, unhalted_cycles_name, retired_ops_name, op_spec_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                           {
+                               uint64_t cycles = get_event_count(counts, unhalted_cycles_name);
+                               if (cycles == 0)
+                                   return std::numeric_limits<double>::quiet_NaN();
 
-                           // Calculate components
-                           double slot_utilization = 1.0 - (static_cast<double>(stall_slots) /
-                                                            (cycles * SUPERSCALAR_WIDE));
-                           double spec_efficiency = 1.0 - (static_cast<double>(retired_ops) / op_spec);
-                           return 100.0 * (spec_efficiency * slot_utilization);
-                       });
+                               uint64_t stall_slots = get_event_count(counts, stall_slots_name);
+                               uint64_t retired_ops = get_event_count(counts, retired_ops_name);
+                               uint64_t op_spec = get_event_count(counts, op_spec_name);
+
+                               // Calculate components
+                               double slot_utilization = 1.0 - (static_cast<double>(stall_slots) /
+                                                                (cycles * SUPERSCALAR_WIDE));
+                               double spec_efficiency = 1.0 - (static_cast<double>(retired_ops) / op_spec);
+                               return 100.0 * (spec_efficiency * slot_utilization);
+                           });
+            }();
+            return metric;
         }
 #else
-        static MetricBuilder BadSpeculation() { return {}; }
+        static const MetricBuilder &BadSpeculation()
+        {
+            static const MetricBuilder empty{};
+            return empty;
+        }
 #endif
 
 #if !OPTKIT_ENV_CPU_MICROARCH_NEOVERSE_N1
-        static MetricBuilder Retiring()
+        static const MetricBuilder &Retiring()
         {
-            std::string stall_slots_name = to_string(arm::NativeEvents::STALL_SLOT);
-            std::string unhalted_cycles_name = to_string(CoreEvents::UNHALTED_CORE_CYCLES);
-            std::string retired_ops_name = to_string(arm::NativeEvents::OP_RETIRED);
-            std::string op_spec_name = to_string(arm::NativeEvents::OP_SPEC);
 
-            return MetricBuilder{}
-                .add(stall_slots_name, arm::EventMapper::get(arm::NativeEvents::STALL_SLOT))
-                .add(unhalted_cycles_name, arm::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
-                .add(retired_ops_name, arm::EventMapper::get(arm::NativeEvents::OP_RETIRED))
-                .add(op_spec_name, arm::EventMapper::get(arm::NativeEvents::OP_SPEC))
-                .build("Retiring__%",
-                       [stall_slots_name, unhalted_cycles_name, retired_ops_name, op_spec_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
-                       {
-                           uint64_t cycles = get_event_count(counts, unhalted_cycles_name);
-                           if (cycles == 0)
-                               return std::numeric_limits<double>::quiet_NaN();
+            static const MetricBuilder metric = []
+            {
+                std::string stall_slots_name = to_string(arm::NativeEvents::STALL_SLOT);
+                std::string unhalted_cycles_name = to_string(CoreEvents::UNHALTED_CORE_CYCLES);
+                std::string retired_ops_name = to_string(arm::NativeEvents::OP_RETIRED);
+                std::string op_spec_name = to_string(arm::NativeEvents::OP_SPEC);
 
-                           uint64_t stall_slots = get_event_count(counts, stall_slots_name);
-                           uint64_t retired_ops = get_event_count(counts, retired_ops_name);
-                           uint64_t op_spec = get_event_count(counts, op_spec_name);
+                return MetricBuilder{}
+                    .add(stall_slots_name, arm::EventMapper::get(arm::NativeEvents::STALL_SLOT))
+                    .add(unhalted_cycles_name, arm::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
+                    .add(retired_ops_name, arm::EventMapper::get(arm::NativeEvents::OP_RETIRED))
+                    .add(op_spec_name, arm::EventMapper::get(arm::NativeEvents::OP_SPEC))
+                    .build("Retiring__%",
+                           [stall_slots_name, unhalted_cycles_name, retired_ops_name, op_spec_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                           {
+                               uint64_t cycles = get_event_count(counts, unhalted_cycles_name);
+                               if (cycles == 0)
+                                   return std::numeric_limits<double>::quiet_NaN();
 
-                           // Architecture-specific stall slot adjustment
-                           double slot_utilization = 1.0 - (static_cast<double>((stall_slots - cycles)) /
-                                                            (cycles * SUPERSCALAR_WIDE));
-                           double retirement_ratio = static_cast<double>(retired_ops) / op_spec;
-                           return 100.0 * (retirement_ratio * slot_utilization);
-                       });
+                               uint64_t stall_slots = get_event_count(counts, stall_slots_name);
+                               uint64_t retired_ops = get_event_count(counts, retired_ops_name);
+                               uint64_t op_spec = get_event_count(counts, op_spec_name);
+
+                               // Architecture-specific stall slot adjustment
+                               double slot_utilization = 1.0 - (static_cast<double>((stall_slots - cycles)) /
+                                                                (cycles * SUPERSCALAR_WIDE));
+                               double retirement_ratio = static_cast<double>(retired_ops) / op_spec;
+                               return 100.0 * (retirement_ratio * slot_utilization);
+                           });
+            }();
+            return metric;
         }
 #else
-            static MetricBuilder Retiring() { return {}; }
+        static const MetricBuilder &Retiring()
+        {
+            static const MetricBuilder empty{};
+            return empty;
+        }
 #endif
 
 #if !OPTKIT_ENV_CPU_MICROARCH_NEOVERSE_N1
-        static MetricBuilder BackendBound()
+        static const MetricBuilder &BackendBound()
         {
-            std::string stall_slot_backend_name = to_string(arm::NativeEvents::STALL_SLOT_BACKEND);
-            std::string unhalted_cycles_name = to_string(CoreEvents::UNHALTED_CORE_CYCLES);
 
-            return MetricBuilder{}
-                .add(stall_slot_backend_name, arm::EventMapper::get(arm::NativeEvents::STALL_SLOT_BACKEND))
-                .add(unhalted_cycles_name, arm::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
-                .build("BackendBound__%",
-                       [stall_slot_backend_name, unhalted_cycles_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
-                       {
-                           uint64_t cycles = get_event_count(counts, unhalted_cycles_name);
-                           if (cycles == 0)
-                               return std::numeric_limits<double>::quiet_NaN();
+            static const MetricBuilder metric = []
+            {
+                std::string stall_slot_backend_name = to_string(arm::NativeEvents::STALL_SLOT_BACKEND);
+                std::string unhalted_cycles_name = to_string(CoreEvents::UNHALTED_CORE_CYCLES);
 
-                           uint64_t stall_slot_backend = get_event_count(counts, stall_slot_backend_name);
-                           double total_slots = cycles * SUPERSCALAR_WIDE;
+                return MetricBuilder{}
+                    .add(stall_slot_backend_name, arm::EventMapper::get(arm::NativeEvents::STALL_SLOT_BACKEND))
+                    .add(unhalted_cycles_name, arm::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
+                    .build("BackendBound__%",
+                           [stall_slot_backend_name, unhalted_cycles_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                           {
+                               uint64_t cycles = get_event_count(counts, unhalted_cycles_name);
+                               if (cycles == 0)
+                                   return std::numeric_limits<double>::quiet_NaN();
 
-                           return 100.0 * (static_cast<double>(stall_slot_backend) / total_slots);
-                       });
+                               uint64_t stall_slot_backend = get_event_count(counts, stall_slot_backend_name);
+                               double total_slots = cycles * SUPERSCALAR_WIDE;
+
+                               return 100.0 * (static_cast<double>(stall_slot_backend) / total_slots);
+                           });
+            }();
+            return metric;
         }
 #else
-            static MetricBuilder BackendBound() { return {}; }
+        static const MetricBuilder &BackendBound()
+        {
+            static const MetricBuilder empty{};
+            return empty;
+        }
 #endif
 
-        static MetricBuilder SMTContention(){ return {}; }
-
+        static const MetricBuilder &SMTContention()
+        {
+            static const MetricBuilder empty{};
+            return empty;
+        }
 
         // Topdown (Pipeline Utilisation) Analysis L1
-        static MetricBuilder FrontendBound_Latency() { return {}; }
-        static MetricBuilder FrontendBound_BW() { return {}; }
-        static MetricBuilder BadSpeculation_Mispredicts() { return {}; }
-        static MetricBuilder BadSpeculation_PipelineRestarts() { return {}; }
-        static MetricBuilder BackendEndbound_Memory() { return {}; }
-        static MetricBuilder BackendEndbound_CPU() { return {}; }
-        static MetricBuilder Retiring_Fastpath() { return {}; }
-        static MetricBuilder Retiring_Microcode() { return {}; }
+        static const MetricBuilder &FrontendBound_Latency()
+        {
+            static const MetricBuilder empty{};
+            return empty;
+        }
+        static const MetricBuilder &FrontendBound_BW()
+        {
+            static const MetricBuilder empty{};
+            return empty;
+        }
+        static const MetricBuilder &BadSpeculation_Mispredicts()
+        {
+            static const MetricBuilder empty{};
+            return empty;
+        }
+        static const MetricBuilder &BadSpeculation_PipelineRestarts()
+        {
+            static const MetricBuilder empty{};
+            return empty;
+        }
+        static const MetricBuilder &BackendEndbound_Memory()
+        {
+            static const MetricBuilder empty{};
+            return empty;
+        }
+        static const MetricBuilder &BackendEndbound_CPU()
+        {
+            static const MetricBuilder empty{};
+            return empty;
+        }
+        static const MetricBuilder &Retiring_Fastpath()
+        {
+            static const MetricBuilder empty{};
+            return empty;
+        }
+        static const MetricBuilder &Retiring_Microcode()
+        {
+            static const MetricBuilder empty{};
+            return empty;
+        }
 
         // Aggregated Metrics
 
-        static MetricBuilder TopdownL1()
+        static const MetricBuilder &TopdownL1()
         {
-            MetricBuilder mb{};
-            mb.add(FrontendBound());
-            mb.add(BackendBound());
-            mb.add(Retiring());
-            mb.add(BadSpeculation());
-            mb.add(SMTContention());
-            return mb;
-        }
-        
-        static MetricBuilder TopdownL2()
-        {
-            MetricBuilder mb{};
-            mb.add(TopdownL2_FE());
-            mb.add(TopdownL2_BE());
-            mb.add(TopdownL2_Retiring());
-            mb.add(TopdownL2_BadSpec());
-            return mb;
-        }
-        static MetricBuilder TopdownL2_FE() { 
-            MetricBuilder mb{};
-            mb.add(FrontendBound_Latency());
-            mb.add(FrontendBound_BW());
-            return mb;
-         }
-        static MetricBuilder TopdownL2_BE() { 
-            MetricBuilder mb{};
-            mb.add(BackendEndbound_Memory());
-            mb.add(BackendEndbound_CPU());
-            return mb;
-         }
-        static MetricBuilder TopdownL2_Retiring() { 
-            MetricBuilder mb{};
-            mb.add(Retiring_Fastpath());
-            mb.add(Retiring_Microcode());
-            return mb;
-         }
-        static MetricBuilder TopdownL2_BadSpec() { 
-            MetricBuilder mb{};
-            mb.add(BadSpeculation_Mispredicts());
-            mb.add(BadSpeculation_PipelineRestarts());
-            return mb;
-         } 
-
-        static MetricBuilder AllTopdown()
-        {
-            MetricBuilder mb;
-            mb.add(TopdownL1());
-            mb.add(TopdownL2());
-            return mb;
-        }
- 
-        // Aggregate all cache miss metrics
-        static MetricBuilder AllMPKI()
-        {
-            MetricBuilder mb;
-            mb.add(L1MPKI());
-            mb.add(L2MPKI());
-            mb.add(L3MPKI());
+            static const MetricBuilder mb = []
+            {
+                MetricBuilder mb{};
+                mb.add(FrontendBound());
+                mb.add(BackendBound());
+                mb.add(Retiring());
+                mb.add(BadSpeculation());
+                mb.add(SMTContention());
+                return mb;
+            }();
             return mb;
         }
 
-        static MetricBuilder AllCacheHitRatio()
+        static const MetricBuilder &TopdownL2()
         {
-            MetricBuilder mb;
-            mb.add(L2HitRatio());
-            mb.add(L3HitRatio());
+            static const MetricBuilder mb = []
+            {
+                MetricBuilder mb{};
+                mb.add(TopdownL2_FE());
+                mb.add(TopdownL2_BE());
+                mb.add(TopdownL2_Retiring());
+                mb.add(TopdownL2_BadSpec());
+                return mb;
+            }();
             return mb;
         }
 
-        // Aggregate all STLB MPKI metrics
-        static MetricBuilder AllSTLBMPKI()
+        static const MetricBuilder &TopdownL2_FE()
         {
-            MetricBuilder mb;
-            mb.add(TLBMPKI());
-            mb.add(ITLBMPKI());
-            mb.add(DTLBMPKI());
+            static const MetricBuilder mb = []
+            {
+                MetricBuilder mb{};
+                mb.add(FrontendBound_Latency());
+                mb.add(FrontendBound_BW());
+                return mb;
+            }();
             return mb;
         }
 
-        // Aggregate all latency and parallelism metrics
-        static MetricBuilder AllLatencyAndParallelism()
+        static const MetricBuilder &TopdownL2_BE()
         {
-            MetricBuilder mb;
-            mb.add(LoadMissLatency());
-            mb.add(ILP());
-            mb.add(MLP());
+            static const MetricBuilder mb = []
+            {
+                MetricBuilder mb{};
+                mb.add(BackendEndbound_Memory());
+                mb.add(BackendEndbound_CPU());
+                return mb;
+            }();
             return mb;
         }
 
-        // Aggregate all DRAM bandwidth metrics
-        static MetricBuilder AllDRAMBandwidth()
+        static const MetricBuilder &TopdownL2_Retiring()
         {
-            MetricBuilder mb;
-            mb.add(DRAMBandwidthGBs());
+            static const MetricBuilder mb = []
+            {
+                MetricBuilder mb{};
+                mb.add(Retiring_Fastpath());
+                mb.add(Retiring_Microcode());
+                return mb;
+            }();
             return mb;
         }
 
-        // Aggregate all instruction-per-event metrics
-        static MetricBuilder AllIpMetrics()
+        static const MetricBuilder &TopdownL2_BadSpec()
         {
-            MetricBuilder mb;
-            mb.add(IpCall());
-            mb.add(IpBranch());
-            mb.add(IpMemLoad());
-            mb.add(IpMemStore());
-            mb.add(IpMispredict());
-            mb.add(IpFLOP());
-            mb.add(IpArith());
-            mb.add(IpArithScalarSP());
-            mb.add(IpArithScalarDP());
-            mb.add(IpSWPF());
+            static const MetricBuilder mb = []
+            {
+                MetricBuilder mb{};
+                mb.add(BadSpeculation_Mispredicts());
+                mb.add(BadSpeculation_PipelineRestarts());
+                return mb;
+            }();
             return mb;
         }
 
-        // Aggregate all branch-related metrics
-        static MetricBuilder AllBranchMetrics()
+        static const MetricBuilder &AllTopdown()
         {
-            MetricBuilder mb;
-            mb.add(BranchMisprRatio());
+            static const MetricBuilder mb = []
+            {
+                MetricBuilder mb{};
+                mb.add(TopdownL1());
+                mb.add(TopdownL2());
+                return mb;
+            }();
             return mb;
         }
 
-        static MetricBuilder AllMetrics()
+        static const MetricBuilder &AllMPKI()
         {
-            MetricBuilder all;
-            all.add(AllMPKI());
-            all.add(AllSTLBMPKI());
-            all.add(AllLatencyAndParallelism());
-            all.add(AllDRAMBandwidth());
-            all.add(AllIpMetrics());
-            all.add(AllBranchMetrics());
-            all.add(AllTopdown());
-            return all;
+            static const MetricBuilder mb = []
+            {
+                MetricBuilder mb{};
+                mb.add(L1MPKI());
+                mb.add(L2MPKI());
+                mb.add(L3MPKI());
+                return mb;
+            }();
+            return mb;
+        }
+
+        static const MetricBuilder &AllCacheHitRatio()
+        {
+            static const MetricBuilder mb = []
+            {
+                MetricBuilder mb{};
+                mb.add(L2HitRatio());
+                mb.add(L3HitRatio());
+                return mb;
+            }();
+            return mb;
+        }
+
+        static const MetricBuilder &AllSTLBMPKI()
+        {
+            static const MetricBuilder mb = []
+            {
+                MetricBuilder mb{};
+                mb.add(TLBMPKI());
+                mb.add(ITLBMPKI());
+                mb.add(DTLBMPKI());
+                return mb;
+            }();
+            return mb;
+        }
+
+        static const MetricBuilder &AllLatencyAndParallelism()
+        {
+            static const MetricBuilder mb = []
+            {
+                MetricBuilder mb{};
+                mb.add(LoadMissLatency());
+                mb.add(ILP());
+                mb.add(MLP());
+                return mb;
+            }();
+            return mb;
+        }
+
+        static const MetricBuilder &AllDRAMBandwidth()
+        {
+            static const MetricBuilder mb = []
+            {
+                MetricBuilder mb{};
+                mb.add(DRAMBandwidthGBs());
+                return mb;
+            }();
+            return mb;
+        }
+
+        static const MetricBuilder &AllIpMetrics()
+        {
+            static const MetricBuilder mb = []
+            {
+                MetricBuilder mb{};
+                mb.add(IpCall());
+                mb.add(IpBranch());
+                mb.add(IpMemLoad());
+                mb.add(IpMemStore());
+                mb.add(IpMispredict());
+                mb.add(IpFLOP());
+                mb.add(IpArith());
+                mb.add(IpArithScalarSP());
+                mb.add(IpArithScalarDP());
+                mb.add(IpSWPF());
+                return mb;
+            }();
+            return mb;
+        }
+
+        static const MetricBuilder &AllBranchMetrics()
+        {
+            static const MetricBuilder mb = []
+            {
+                MetricBuilder mb{};
+                mb.add(BranchMisprRatio());
+                return mb;
+            }();
+            return mb;
+        }
+
+        static const MetricBuilder &AllMetrics()
+        {
+            static const MetricBuilder mb = []
+            {
+                MetricBuilder mb{};
+                mb.add(AllMPKI());
+                mb.add(AllSTLBMPKI());
+                mb.add(AllLatencyAndParallelism());
+                mb.add(AllDRAMBandwidth());
+                mb.add(AllIpMetrics());
+                mb.add(AllBranchMetrics());
+                mb.add(AllTopdown());
+                return mb;
+            }();
+            return mb;
         }
     };
 }

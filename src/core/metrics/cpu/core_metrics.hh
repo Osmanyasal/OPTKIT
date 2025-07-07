@@ -13,13 +13,31 @@ namespace optkit::core::metrics::cpu
 {
     /**
      * @class Metrics
-     * @brief Interface for retrieving CPU performance metrics. Each metric method returns a MetricBuilder containing events and metrics derived from them.
+     * @brief Interface for accessing CPU performance metrics. Each method returns a MetricBuilder instance that defines a metric and its associated events.
      *
-     * Implementation should take place in cpu vendors not here. The reason these are not fully abstract is that it is possible metric is generic but not exist in a cpu and to access directly by the class since instaces would not make-sense.
-     * So it returns empty list.
+     * The actual implementation should reside in CPU vendor-specific modules, not in this interface. These methods are not purely abstract because a metric might be defined generically but not supported on a particular CPU. In such cases, the method may return an empty list.
      *
-     * Documentation formulations are pseudo formulas. Actual event names migh be (likely is) different than that take place here.
+     * The metric formulas described in this documentation are pseudocode representations. The actual event names used in implementations may differ from those shown here.
+     *
+     * @note It is recommended to use the MetricBuilder class to construct metrics, as it offers a flexible and architecture-agnostic way to define and compute metrics.
+     * @note For performance reasons, implementations return references to `static const` MetricBuilder instances, usually defined through static lambdas.
+     * An example is shown below: This way, the metric is only built once and can be reused without reinitialization.
+     *
+     * static const MetricBuilder& MyMetric()
+     * {
+     *     static const MetricBuilder metric = [] {
+     *         return MetricBuilder{}
+     *             .add("event_name", event_id)
+     *             .build("MyMetric",
+     *                    [](const std::unordered_map<std::string, uint64_t>& counts) -> double {
+     *                        // Compute the metric value from event counts
+     *                        return 0.0;
+     *                    });
+     *     }();
+     *     return metric;
+     * }
      */
+
     template <typename T>
     class CoreMetrics
     {
