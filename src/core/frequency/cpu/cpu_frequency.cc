@@ -14,9 +14,65 @@ namespace optkit::core::frequency
     else                                                 \
         for (int32_t __cpu : package_info.at(socket))
 
+    int64_t CPUFrequency::convert_frequency_with_unit(const std::string& freq_str, Unit target_unit)
+    {
+        size_t i = 0;
+        while (i < freq_str.size() && (std::isdigit(freq_str[i]) || freq_str[i] == '.'))
+            ++i;
+
+        if (i == 0)
+            throw std::invalid_argument("No numeric value in frequency string: " + std::string(freq_str));
+
+        double number = std::stod(std::string(freq_str.substr(0, i)));
+
+        std::string unit_str;
+        for (char c : freq_str.substr(i))
+            if (!std::isspace(c))
+                unit_str += static_cast<char>(std::tolower(c));
+
+        // Normalize for comparison (to_string returns capitalized, so lower it)
+        auto lower = [](const std::string &s)
+        {
+            std::string r;
+            for (char c : s)
+                r += std::tolower(c);
+            return r;
+        };
+
+        static const std::string u_hz = lower(to_string(Unit::Hz));
+        static const std::string u_khz = lower(to_string(Unit::KHz));
+        static const std::string u_mhz = lower(to_string(Unit::MHz));
+        static const std::string u_ghz = lower(to_string(Unit::GHz));
+
+        double base_hz = 0;
+        if (unit_str.empty() || unit_str == u_hz)
+            base_hz = number;
+        else if (unit_str == u_khz)
+            base_hz = number * 1e3;
+        else if (unit_str == u_mhz)
+            base_hz = number * 1e6;
+        else if (unit_str == u_ghz)
+            base_hz = number * 1e9;
+        else
+            throw std::invalid_argument("Unknown frequency unit: " + unit_str);
+
+        switch (target_unit)
+        {
+        case Unit::Hz:
+            return static_cast<int64_t>(base_hz);
+        case Unit::KHz:
+            return static_cast<int64_t>(base_hz / 1e3);
+        case Unit::MHz:
+            return static_cast<int64_t>(base_hz / 1e6);
+        case Unit::GHz:
+            return static_cast<int64_t>(base_hz / 1e9);
+        default:
+            throw std::invalid_argument("Unknown target unit: " + to_string(target_unit));
+        }
+    }
+
     void CPUFrequency::set_core_frequency(int64_t frequency, int16_t socket)
     {
-        EXEC_IF_ROOT;
         frequency = frequency / 1000;
         try
         {
@@ -36,7 +92,6 @@ namespace optkit::core::frequency
 
     void CPUFrequency::set_core_frequency(int64_t frequency, int16_t cpu, int16_t socket)
     {
-        EXEC_IF_ROOT;
         frequency = frequency / 1000;
         if (cpu >= 0 && cpu < Query::num_logical_cores)
         {
@@ -64,7 +119,6 @@ namespace optkit::core::frequency
 
     void CPUFrequency::set_core_frequency(int64_t frequency, int16_t cpu_start, int16_t cpu_end, int16_t socket)
     {
-        EXEC_IF_ROOT;
         frequency = frequency / 1000;
         if (cpu_start >= 0 && cpu_end < Query::num_logical_cores && cpu_start <= cpu_end)
         {
@@ -92,7 +146,6 @@ namespace optkit::core::frequency
 
     void CPUFrequency::set_core_frequency(int64_t frequency, std::vector<int16_t> cpu_list)
     {
-        EXEC_IF_ROOT;
         frequency = frequency / 1000;
         try
         {
@@ -110,7 +163,6 @@ namespace optkit::core::frequency
 
     int64_t CPUFrequency::get_core_frequency(int16_t cpu)
     {
-        EXEC_IF_ROOT_RETURN(-1);
         try
         {
             if (cpu >= 0 && cpu < Query::num_logical_cores)
@@ -132,7 +184,6 @@ namespace optkit::core::frequency
 
     std::vector<int64_t> CPUFrequency::get_core_frequencies(int16_t socket)
     {
-        EXEC_IF_ROOT_RETURN({});
         std::vector<int64_t> core_frequencies;
         try
         {
@@ -150,7 +201,6 @@ namespace optkit::core::frequency
 
     std::vector<int64_t> CPUFrequency::get_core_frequency(int16_t cpu_start, int16_t cpu_end, int16_t socket)
     {
-        EXEC_IF_ROOT_RETURN({});
         if (cpu_start < 0 || cpu_end < cpu_start || cpu_end >= Query::num_logical_cores)
         {
             OPTKIT_CORE_WARN("Invalid range cpu_start={} cpu_end={}", cpu_start, cpu_end);
@@ -178,8 +228,6 @@ namespace optkit::core::frequency
 
     int64_t CPUFrequency::get_uncore_frequency(int16_t socket)
     {
-
-        EXEC_IF_ROOT_RETURN(-1);
         uint64_t MSR_UNCORE_RATIO_LIMIT_bits = 0;
         optkit::utils::read_msr(package_info.at(socket)[0], MSR_UNCORE_RATIO_LIMIT, &MSR_UNCORE_RATIO_LIMIT_bits);
 
@@ -189,11 +237,7 @@ namespace optkit::core::frequency
 
     std::pair<int64_t, int64_t> CPUFrequency::get_uncore_min_max(int16_t socket)
     {
-        EXEC_IF_ROOT_RETURN({});
-        static std::pair<int64_t, int64_t> result{0, 0};
-
-        if (OPT_LIKELY(result.first != 0))
-            return result;
+        std::pair<int64_t, int64_t> result{0, 0};
 
         uint64_t MSR_UNCORE_RATIO_LIMIT_bits = 0;
         optkit::utils::read_msr(package_info.at(socket)[0], MSR_UNCORE_RATIO_LIMIT, &MSR_UNCORE_RATIO_LIMIT_bits);
@@ -208,7 +252,6 @@ namespace optkit::core::frequency
     }
     void CPUFrequency::reset_uncore_frequency(int16_t socket)
     {
-        EXEC_IF_ROOT;
         std::pair<int64_t, int64_t> default_uncore = get_uncore_min_max(socket);
         uint64_t MSR_UNCORE_RATIO_LIMIT_bits = ((default_uncore.first / 100000000) << MSR_UNCORE_RATIO_LIMIT_min_shift) + default_uncore.second / 100000000;
         optkit::utils::write_msr(socket, MSR_UNCORE_RATIO_LIMIT, MSR_UNCORE_RATIO_LIMIT_bits);
@@ -216,22 +259,19 @@ namespace optkit::core::frequency
 
     void CPUFrequency::set_uncore_frequency(int64_t frequency, int16_t socket)
     {
-        EXEC_IF_ROOT;
         uint64_t MSR_UNCORE_RATIO_LIMIT_bits = ((frequency / 100000000) << MSR_UNCORE_RATIO_LIMIT_min_shift) + frequency / 100000000;
         optkit::utils::write_msr(socket, MSR_UNCORE_RATIO_LIMIT, MSR_UNCORE_RATIO_LIMIT_bits);
     }
 
     void CPUFrequency::reset_core_frequency(int16_t socket)
     {
-        EXEC_IF_ROOT;
         try
         {
             // Set core frequency for all cores
             TRAVERSE_CORES(socket)
             {
-
-                optkit::utils::write_file("/sys/devices/system/cpu/cpu" + std::to_string(__cpu) + "/cpufreq/scaling_max_freq", std::to_string(QueryCPUFrequency::get_cpuinfo_max_freq(socket)));
-                optkit::utils::write_file("/sys/devices/system/cpu/cpu" + std::to_string(__cpu) + "/cpufreq/scaling_min_freq", std::to_string(QueryCPUFrequency::get_cpuinfo_min_freq(socket)));
+                optkit::utils::write_file("/sys/devices/system/cpu/cpu" + std::to_string(__cpu) + "/cpufreq/scaling_max_freq", std::to_string(QueryCPUFrequency::get_cpuinfo_max_freq(__cpu)));
+                optkit::utils::write_file("/sys/devices/system/cpu/cpu" + std::to_string(__cpu) + "/cpufreq/scaling_min_freq", std::to_string(QueryCPUFrequency::get_cpuinfo_min_freq(__cpu)));
             }
         }
         catch (const std::runtime_error &err)
@@ -249,6 +289,23 @@ namespace optkit::core::frequency
     {
         os << "(" << pair.first << ", " << pair.second << ")";
         return os;
+    }
+    std::string to_string(CPUFrequency::Unit unit)
+    {
+        using Unit = CPUFrequency::Unit;
+        switch (unit)
+        {
+        case Unit::Hz:
+            return "Hz";
+        case Unit::KHz:
+            return "KHz";
+        case Unit::MHz:
+            return "MHz";
+        case Unit::GHz:
+            return "GHz";
+        default:
+            return "Unknown";
+        }
     }
 
 #undef TRAVERSE_CORES

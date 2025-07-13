@@ -19,6 +19,16 @@ namespace optkit::core::frequency
     class CPUFrequency final
     {
     public:
+        enum class Unit
+        {
+            Hz,
+            KHz,
+            MHz,
+            GHz
+        };
+
+    public:
+        static int64_t convert_frequency_with_unit(const std::string &freq_str, Unit target_unit = Unit::Hz);
         static void set_core_frequency(int64_t frequency, int16_t socket);
         static void set_core_frequency(int64_t frequency, int16_t cpu, int16_t socket);
         static void set_core_frequency(int64_t frequency, int16_t cpu_start, int16_t cpu_end, int16_t socket);
@@ -43,6 +53,7 @@ namespace optkit::core::frequency
     };
 
     std::string to_string(const std::pair<int64_t, int64_t> &pair);
+    std::string to_string(CPUFrequency::Unit unit);
     std::ostream &operator<<(std::ostream &os, const std::pair<int64_t, int64_t> &pair);
 }
 
