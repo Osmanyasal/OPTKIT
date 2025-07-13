@@ -110,7 +110,7 @@ namespace optkit::core::frequency
         {
             std::string path = "/sys/devices/system/cpu/cpu" + std::to_string(core) + "/cpufreq/cpuinfo_max_freq";
             std::string content = optkit::utils::read_file(path);
-            return std::stol(content) * 1000;   // from khz to hz
+            return std::stol(content);
         }
         catch (const std::exception &e)
         {
@@ -125,7 +125,7 @@ namespace optkit::core::frequency
         {
             std::string path = "/sys/devices/system/cpu/cpu" + std::to_string(core) + "/cpufreq/cpuinfo_min_freq";
             std::string content = optkit::utils::read_file(path);
-            return std::stol(content) * 1000;   // from khz to hz
+            return std::stol(content);
         }
         catch (const std::exception &e)
         {
