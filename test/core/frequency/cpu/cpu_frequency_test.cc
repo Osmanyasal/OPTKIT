@@ -5,6 +5,7 @@
 #include <regex>
 
 #include "core/frequency/cpu/cpu_frequency.hh"
+#include "core/query.hh"
 using namespace optkit::core::frequency;
 
 class CPUFrequencyRealTest : public ::testing::Test
@@ -112,56 +113,75 @@ TEST_F(CPUFrequencyRealTest, GetUncoreMinMax_ShouldReturnValidValues)
         GTEST_SKIP() << "MSR uncore limit not readable on this system";
     }
 }
-TEST_F(CPUFrequencyRealTest, SetAndResetCoreFrequencySweep)
+TEST_F(CPUFrequencyRealTest, SetAndResetCoreFrequencySweepAllSockets)
 {
     if (!exists("scaling_cur_freq"))
         GTEST_SKIP() << "cpufreq not available";
 
-    int64_t original = CPUFrequency::get_core_frequency(cpu);
-    ASSERT_GT(original, 0);
+    const int64_t step = 200'000;                            // 0.2 GHz in KHz
+    const auto wait_time = std::chrono::milliseconds(1000); // 1 second
 
-    int64_t min_freq = QueryCPUFrequency::get_cpuinfo_min_freq(cpu); // in KHz
-    int64_t max_freq = QueryCPUFrequency::get_cpuinfo_max_freq(cpu); // in KHz
-    if (min_freq <= 0 || max_freq <= 0 || min_freq >= max_freq)
-        GTEST_SKIP() << "Invalid CPU frequency range: min=" << min_freq << " max=" << max_freq;
-
-    const int64_t step = 200'000;                           // 0.2 GHz in KHz
-    const auto wait_time = std::chrono::milliseconds(1000); // 1 second wait
-
-    // Round up min_freq to nearest step
-    int64_t start_freq = ((min_freq + step - 1) / step) * step;
-    std::cout << "start_freq = " << start_freq / 1.0e6 << " GHz\n";
-
-    for (int64_t freq = start_freq; freq <= max_freq; freq += step)
+    for (const auto &[socket, cores] : optkit::core::Query::detect_cpu_packages())
     {
-        std::cout << "\tSetting CPU " << cpu << " to " << freq / 1.0e6 << " GHz\n";
-        CPUFrequency::set_core_frequency(freq, cpu, socket);
+        if (cores.empty())
+            continue;
 
+        int64_t min_freq = QueryCPUFrequency::get_cpuinfo_min_freq(cores.front());
+        int64_t max_freq = QueryCPUFrequency::get_cpuinfo_max_freq(cores.front());
+
+        if (min_freq <= 0 || max_freq <= 0 || min_freq >= max_freq)
+        {
+            std::cout << "Invalid frequency range on socket " << socket
+                      << ": min=" << min_freq << " max=" << max_freq << "\n";
+            continue;
+        }
+
+        int64_t start_freq = ((min_freq + step - 1) / step) * step;
+        std::cout << "[Socket " << socket << "] Sweep start: " << start_freq / 1.0e6 << " GHz\n";
+
+        for (int64_t freq = start_freq; freq <= max_freq; freq += step)
+        {
+            std::cout << "\tSetting all cores on socket " << socket << " to " << freq / 1.0e6 << " GHz\n";
+            CPUFrequency::set_core_frequency(freq, socket);
+            std::this_thread::sleep_for(wait_time);
+
+            auto read_freqs = CPUFrequency::get_core_frequencies(socket);
+            int64_t sum_freq = 0;
+            for (size_t i = 0; i < read_freqs.size(); ++i)
+            {
+                std::cout << "\t\tCore " << cores[i] << " read: " << read_freqs[i] / 1.0e6 << " GHz\n";
+                sum_freq += read_freqs[i];
+            }
+
+            double avg_freq = static_cast<double>(sum_freq) / static_cast<int64_t>(read_freqs.size());
+            std::cout << "\t\t[Socket " << socket << "] Avg read freq: " << avg_freq / 1.0e6 << " GHz\n";
+            EXPECT_NEAR(avg_freq, freq, 100'000); // ±0.1 GHz in KHz
+        }
+
+        // Reset all core frequencies for socket
+        CPUFrequency::reset_core_frequency(socket);
         std::this_thread::sleep_for(wait_time);
 
-        int64_t read_freq = CPUFrequency::get_core_frequency(cpu);
-        std::cout << "\tRead back: " << read_freq / 1.0e6 << " GHz\n";
-        EXPECT_NEAR(read_freq, freq, 100'000); // ±0.1 GHz in KHz
+        std::cout << "[Socket " << socket << "] Verifying reset...\n";
+
+        int64_t total_min = 0, total_max = 0;
+        for (int32_t cpu : cores)
+        {
+            total_min += QueryCPUFrequency::get_scaling_min_limit(cpu);
+            total_max += QueryCPUFrequency::get_scaling_max_limit(cpu);
+        }
+
+        double avg_min = static_cast<double>(total_min) / static_cast<int64_t>(cores.size());
+        double avg_max = static_cast<double>(total_max) / static_cast<int64_t>(cores.size());
+
+        std::cout << "\tAvg scaling_min = " << avg_min / 1.0e6 << " GHz, expected = " << min_freq / 1.0e6 << " GHz\n";
+        std::cout << "\tAvg scaling_max = " << avg_max / 1.0e6 << " GHz, expected = " << max_freq / 1.0e6 << " GHz\n";
+
+        EXPECT_NEAR(avg_min, min_freq, 100'000); // ±0.1 GHz in KHz
+        EXPECT_NEAR(avg_max, max_freq, 100'000);
     }
-
-    // Reset
-    CPUFrequency::reset_core_frequency(socket);
-    std::this_thread::sleep_for(wait_time);
-
-    int64_t reset_freq = CPUFrequency::get_core_frequency(cpu);
-    std::cout << "Reset core frequency to: " << reset_freq / 1.0e6 << " GHz\n";
-    EXPECT_GT(reset_freq, 0);
-
-    std::string base_path = "/sys/devices/system/cpu/cpu" + std::to_string(cpu) + "/cpufreq/";
-    int64_t scaling_min = QueryCPUFrequency::get_scaling_min_limit(cpu);
-    int64_t scaling_max = QueryCPUFrequency::get_scaling_max_limit(cpu);
-
-    std::cout << "Post-reset: scaling_min = " << scaling_min / 1.0e6 << " GHz, expected = " << min_freq / 1.0e6 << " GHz\n";
-    std::cout << "Post-reset: scaling_max = " << scaling_max / 1.0e6 << " GHz, expected = " << max_freq / 1.0e6 << " GHz\n";
-
-    EXPECT_EQ(scaling_min, min_freq);
-    EXPECT_EQ(scaling_max, max_freq);
 }
+
 
 TEST_F(CPUFrequencyRealTest, DISABLED_SetAndResetUncoreFrequency)
 {

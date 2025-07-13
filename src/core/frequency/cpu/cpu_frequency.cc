@@ -4,6 +4,8 @@ namespace optkit::core::frequency
 {
     // Define static member variables
 
+    // Socket id - cpus belonging to that socket 
+    // e.g. {0: [0, 1, 2, 3], 1: [8, 9, 10, 11]} means socket 0 has cores 0-3 and socket 1 has cores 4-7
     const std::map<int32_t, std::vector<int32_t>> &CPUFrequency::package_info = core::Query::detect_cpu_packages();
 
 #define TRAVERSE_CORES(socket)                           \
