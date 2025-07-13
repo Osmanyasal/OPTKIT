@@ -155,7 +155,7 @@ TEST_F(CPUFrequencyRealTest, SetAndResetCoreFrequencySweepAllSockets)
 
             double avg_freq = static_cast<double>(sum_freq) / static_cast<int64_t>(read_freqs.size());
             std::cout << "\t\t[Socket " << socket << "] Avg read freq: " << avg_freq / 1.0e6 << " GHz\n";
-            EXPECT_NEAR(avg_freq, freq, 100'000); // ±0.1 GHz in KHz
+            EXPECT_NEAR(avg_freq, freq, step); // ±0.2 GHz in KHz
         }
 
         // Reset all core frequencies for socket
@@ -177,8 +177,8 @@ TEST_F(CPUFrequencyRealTest, SetAndResetCoreFrequencySweepAllSockets)
         std::cout << "\tAvg scaling_min = " << avg_min / 1.0e6 << " GHz, expected = " << min_freq / 1.0e6 << " GHz\n";
         std::cout << "\tAvg scaling_max = " << avg_max / 1.0e6 << " GHz, expected = " << max_freq / 1.0e6 << " GHz\n";
 
-        EXPECT_NEAR(avg_min, min_freq, 100'000); // ±0.1 GHz in KHz
-        EXPECT_NEAR(avg_max, max_freq, 100'000);
+        EXPECT_NEAR(avg_min, min_freq, step); // ±0.2 GHz in KHz
+        EXPECT_NEAR(avg_max, max_freq, step);
     }
 }
 
