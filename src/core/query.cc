@@ -28,7 +28,7 @@ namespace optkit::core
     const std::map<int32_t, std::vector<int32_t>> &Query::detect_cpu_packages()
     {
         static std::map<int32_t, std::vector<int32_t>> result;
-
+        
         if (result.size() == 0)
         {
             int32_t core_id = 0;

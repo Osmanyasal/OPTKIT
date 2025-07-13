@@ -13,14 +13,30 @@ namespace optkit::core::frequency
 {
 
     /**
-     * @brief All frequency values are in kilohertz (kHz), consistent with Linux cpufreq interface.
+     * @class CPUFrequency
+     * @brief Provides low-level control and querying of core and uncore CPU frequencies.
      *
-     * Users must provide and interpret frequencies in kHz.
+     * This class interfaces with the Linux `cpufreq` subsystem and Model-Specific Registers (MSRs)
+     * to query and control both core and uncore frequencies on a per-core and per-socket basis.
      *
-     * Examples:
-     *   800000   -> 800 MHz   (0.8 GHz)
-     *  1200000   -> 1200 MHz  (1.2 GHz)
-     *  4600000   -> 4600 MHz  (4.6 GHz)
+     * @details
+     * - All frequency values are expressed in **kilohertz (kHz)** for consistency with the Linux cpufreq interface.
+     * - Core frequencies are managed via sysfs: /sys/devices/system/cpu/cpu*\/cpufreq
+     * - Uncore frequencies are managed via MSR registers Intel Only (e.g., `MSR_UNCORE_RATIO_LIMIT`).
+     *
+     * ### Features:
+     * - Query available core frequencies, scaling governors, and BIOS limits.
+     * - Set core frequency ranges and scaling governors per core or socket.
+     * - Read and modify uncore frequency ratios via MSR for a specific socket.
+     * - Convert frequency units (Hz ↔ kHz ↔ MHz ↔ GHz).
+     * - Restore default uncore frequency limits.
+     *
+     * ### Example Frequencies:
+     * - 800000 kHz → 800 MHz (0.8 GHz)
+     * - 2400000 kHz → 2400 MHz (2.4 GHz)
+     * - 4600000 kHz → 4600 MHz (4.6 GHz)
+     *
+     * @note Most operations require elevated privileges (e.g., root) to access sysfs or MSR interfaces.
      */
 
     class CPUFrequency final
@@ -43,16 +59,14 @@ namespace optkit::core::frequency
         static int64_t get_core_frequency(int16_t cpu);
         static std::vector<int64_t> get_core_frequencies(int16_t socket);
         static std::vector<int64_t> get_core_frequency(int16_t cpu_start, int16_t cpu_end, int16_t socket);
-        static std::pair<int64_t, int64_t> get_uncore_min_max(int16_t socket);
 
+#if OPTKIT_ENV_CPU_INTEL
+        static std::pair<int64_t, int64_t> get_uncore_min_max(int16_t socket);
         static int64_t get_uncore_frequency(int16_t socket);
         static void set_uncore_frequency(int64_t frequency, int16_t socket);
-
-        static void reset_core_frequency(int16_t socket);
         static void reset_uncore_frequency(int16_t socket);
-
-    private:
-        static const std::map<int32_t, std::vector<int32_t>> &package_info;
+#endif
+        static void reset_core_frequency(int16_t socket);
 
     private:
         CPUFrequency() = delete;

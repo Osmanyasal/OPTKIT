@@ -24,6 +24,8 @@ namespace optkit::core::frequency
         static int64_t get_bios_limit(int32_t core = 0);
         static std::string get_scaling_driver(int32_t core = 0);
         static std::string get_scaling_governor(int32_t core = 0);
+        static void set_scaling_governor(const std::string &governor, int32_t socket = 0);
+        static void set_scaling_governor_percore(const std::string &governor, int32_t core = 0);
         static std::vector<std::string> get_available_governors(int32_t core = 0);
 
         static int64_t get_scaling_max_limit(int32_t core = 0);

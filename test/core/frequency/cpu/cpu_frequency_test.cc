@@ -149,6 +149,7 @@ TEST_F(CPUFrequencyRealTest, SetAndResetCoreFrequencySweepAllSockets)
         {
             std::cout << "\tSetting all cores on socket " << socket << " to " << freq / 1.0e6 << " GHz\n";
             CPUFrequency::set_core_frequency(freq, socket);
+            
             std::this_thread::sleep_for(wait_time);
 
             auto read_freqs = CPUFrequency::get_core_frequencies(socket);

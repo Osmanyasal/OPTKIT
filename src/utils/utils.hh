@@ -152,7 +152,7 @@ namespace optkit::utils
         if (OPT_UNLIKELY(!file.is_open()))
             throw std::runtime_error("Failed to open the file for writing: " + location);
 
-        file << text << "\n";
+        file << text;
         file.close();
 
         if (is_verbose)
