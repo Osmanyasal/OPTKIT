@@ -7,6 +7,16 @@
 namespace optkit::core::frequency
 {
 
+    /**
+     * @brief All frequency values are in kilohertz (kHz), consistent with Linux cpufreq interface.
+     *
+     * Users must provide and interpret frequencies in kHz.
+     *
+     * Examples:
+     *   800000   -> 800 MHz   (0.8 GHz)
+     *  1200000   -> 1200 MHz  (1.2 GHz)
+     *  4600000   -> 4600 MHz  (4.6 GHz)
+     */
     class QueryCPUFrequency final
     {
     public:

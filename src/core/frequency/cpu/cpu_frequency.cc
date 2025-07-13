@@ -73,7 +73,6 @@ namespace optkit::core::frequency
 
     void CPUFrequency::set_core_frequency(int64_t frequency, int16_t socket)
     {
-        frequency = frequency / 1000;
         try
         {
             // Set core frequency for all cores
@@ -92,7 +91,6 @@ namespace optkit::core::frequency
 
     void CPUFrequency::set_core_frequency(int64_t frequency, int16_t cpu, int16_t socket)
     {
-        frequency = frequency / 1000;
         if (cpu >= 0 && cpu < Query::num_logical_cores)
         {
             try
@@ -119,7 +117,6 @@ namespace optkit::core::frequency
 
     void CPUFrequency::set_core_frequency(int64_t frequency, int16_t cpu_start, int16_t cpu_end, int16_t socket)
     {
-        frequency = frequency / 1000;
         if (cpu_start >= 0 && cpu_end < Query::num_logical_cores && cpu_start <= cpu_end)
         {
             try
@@ -146,7 +143,6 @@ namespace optkit::core::frequency
 
     void CPUFrequency::set_core_frequency(int64_t frequency, std::vector<int16_t> cpu_list)
     {
-        frequency = frequency / 1000;
         try
         {
             for (int16_t &__cpu : cpu_list)
@@ -167,7 +163,7 @@ namespace optkit::core::frequency
         {
             if (cpu >= 0 && cpu < Query::num_logical_cores)
             {
-                return 1000 * std::atol(optkit::utils::read_file("/sys/devices/system/cpu/cpu" + std::to_string(cpu) + "/cpufreq/scaling_cur_freq").c_str());
+                return std::atol(optkit::utils::read_file("/sys/devices/system/cpu/cpu" + std::to_string(cpu) + "/cpufreq/scaling_cur_freq").c_str());
             }
             else
             {
@@ -189,7 +185,7 @@ namespace optkit::core::frequency
         {
             TRAVERSE_CORES(socket)
             {
-                core_frequencies.push_back(1000 * std::atol(optkit::utils::read_file("/sys/devices/system/cpu/cpu" + std::to_string(__cpu) + "/cpufreq/scaling_cur_freq").c_str()));
+                core_frequencies.push_back(std::atol(optkit::utils::read_file("/sys/devices/system/cpu/cpu" + std::to_string(__cpu) + "/cpufreq/scaling_cur_freq").c_str()));
             }
         }
         catch (const std::runtime_error &err)
@@ -216,7 +212,7 @@ namespace optkit::core::frequency
                 if (__cpu < cpu_start || __cpu > cpu_end)
                     continue;
 
-                core_frequencies.push_back(1000 * std::atol(optkit::utils::read_file("/sys/devices/system/cpu/cpu" + std::to_string(__cpu) + "/cpufreq/scaling_cur_freq").c_str()));
+                core_frequencies.push_back(std::atol(optkit::utils::read_file("/sys/devices/system/cpu/cpu" + std::to_string(__cpu) + "/cpufreq/scaling_cur_freq").c_str()));
             }
         }
         catch (const std::runtime_error &err)
@@ -270,8 +266,8 @@ namespace optkit::core::frequency
             // Set core frequency for all cores
             TRAVERSE_CORES(socket)
             {
-                optkit::utils::write_file("/sys/devices/system/cpu/cpu" + std::to_string(__cpu) + "/cpufreq/scaling_max_freq", std::to_string(QueryCPUFrequency::get_cpuinfo_max_freq(__cpu) / 1000.0));
-                optkit::utils::write_file("/sys/devices/system/cpu/cpu" + std::to_string(__cpu) + "/cpufreq/scaling_min_freq", std::to_string(QueryCPUFrequency::get_cpuinfo_min_freq(__cpu) / 1000.0));
+                optkit::utils::write_file("/sys/devices/system/cpu/cpu" + std::to_string(__cpu) + "/cpufreq/scaling_max_freq", std::to_string(QueryCPUFrequency::get_cpuinfo_max_freq(__cpu)));
+                optkit::utils::write_file("/sys/devices/system/cpu/cpu" + std::to_string(__cpu) + "/cpufreq/scaling_min_freq", std::to_string(QueryCPUFrequency::get_cpuinfo_min_freq(__cpu)));
             }
         }
         catch (const std::runtime_error &err)

@@ -11,7 +11,7 @@ namespace optkit::core::frequency
         int64_t freq;
         while (iss >> freq)
         {
-            frequencies.push_back(freq * 1000);
+            frequencies.push_back(freq);
         }
         return frequencies;
     }
@@ -22,7 +22,7 @@ namespace optkit::core::frequency
         {
             std::string path = "/sys/devices/system/cpu/cpu" + std::to_string(core) + "/cpufreq/bios_limit";
             std::string file_content = optkit::utils::read_file(path);
-            return std::stol(file_content) * 1000;
+            return std::stol(file_content);
         }
         catch (const std::exception &e)
         {
@@ -80,7 +80,7 @@ namespace optkit::core::frequency
         {
             std::string path = "/sys/devices/system/cpu/cpu" + std::to_string(core) + "/cpufreq/scaling_max_freq";
             std::string content = optkit::utils::read_file(path);
-            return std::stol(content) * 1000;
+            return std::stol(content);
         }
         catch (const std::exception &e)
         {
@@ -95,7 +95,7 @@ namespace optkit::core::frequency
         {
             std::string path = "/sys/devices/system/cpu/cpu" + std::to_string(core) + "/cpufreq/scaling_min_freq";
             std::string content = optkit::utils::read_file(path);
-            return std::stol(content) * 1000;
+            return std::stol(content);
         }
         catch (const std::exception &e)
         {
@@ -110,7 +110,7 @@ namespace optkit::core::frequency
         {
             std::string path = "/sys/devices/system/cpu/cpu" + std::to_string(core) + "/cpufreq/cpuinfo_max_freq";
             std::string content = optkit::utils::read_file(path);
-            return std::stol(content) * 1000;
+            return std::stol(content);
         }
         catch (const std::exception &e)
         {
@@ -125,7 +125,7 @@ namespace optkit::core::frequency
         {
             std::string path = "/sys/devices/system/cpu/cpu" + std::to_string(core) + "/cpufreq/cpuinfo_min_freq";
             std::string content = optkit::utils::read_file(path);
-            return std::stol(content) * 1000;
+            return std::stol(content);
         }
         catch (const std::exception &e)
         {
