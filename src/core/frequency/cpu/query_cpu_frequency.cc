@@ -20,7 +20,7 @@ namespace optkit::core::frequency
     {
         try
         {
-            static std::string path = "/sys/devices/system/cpu/cpu" + std::to_string(core) + "/cpufreq/bios_limit";
+            std::string path = "/sys/devices/system/cpu/cpu" + std::to_string(core) + "/cpufreq/bios_limit";
             std::string file_content = optkit::utils::read_file(path);
             return std::stol(file_content) * 1000;
         }
@@ -35,7 +35,7 @@ namespace optkit::core::frequency
     {
         try
         {
-            static std::string path = "/sys/devices/system/cpu/cpu" + std::to_string(core) + "/cpufreq/scaling_driver";
+            std::string path = "/sys/devices/system/cpu/cpu" + std::to_string(core) + "/cpufreq/scaling_driver";
             return optkit::utils::read_file(path);
         }
         catch (const std::exception &e)
@@ -49,7 +49,7 @@ namespace optkit::core::frequency
     {
         try
         {
-            static std::string path = "/sys/devices/system/cpu/cpu" + std::to_string(core) + "/cpufreq/scaling_governor";
+            std::string path = "/sys/devices/system/cpu/cpu" + std::to_string(core) + "/cpufreq/scaling_governor";
             return optkit::utils::read_file(path);
         }
         catch (const std::exception &e)
@@ -63,7 +63,7 @@ namespace optkit::core::frequency
     {
         try
         {
-            static std::string path = "/sys/devices/system/cpu/cpu" + std::to_string(core) + "/cpufreq/scaling_available_governors";
+            std::string path = "/sys/devices/system/cpu/cpu" + std::to_string(core) + "/cpufreq/scaling_available_governors";
             std::string available_governors = optkit::utils::read_file(path);
             return optkit::utils::str_split(available_governors, " ");
         }
@@ -78,7 +78,7 @@ namespace optkit::core::frequency
     {
         try
         {
-            static std::string path = "/sys/devices/system/cpu/cpu" + std::to_string(core) + "/cpufreq/scaling_max_freq";
+            std::string path = "/sys/devices/system/cpu/cpu" + std::to_string(core) + "/cpufreq/scaling_max_freq";
             std::string content = optkit::utils::read_file(path);
             return std::stol(content) * 1000;
         }
@@ -93,7 +93,7 @@ namespace optkit::core::frequency
     {
         try
         {
-            static std::string path = "/sys/devices/system/cpu/cpu" + std::to_string(core) + "/cpufreq/scaling_min_freq";
+            std::string path = "/sys/devices/system/cpu/cpu" + std::to_string(core) + "/cpufreq/scaling_min_freq";
             std::string content = optkit::utils::read_file(path);
             return std::stol(content) * 1000;
         }
@@ -108,9 +108,9 @@ namespace optkit::core::frequency
     {
         try
         {
-            static std::string path = "/sys/devices/system/cpu/cpu" + std::to_string(core) + "/cpufreq/cpuinfo_max_freq";
+            std::string path = "/sys/devices/system/cpu/cpu" + std::to_string(core) + "/cpufreq/cpuinfo_max_freq";
             std::string content = optkit::utils::read_file(path);
-            return std::stol(content) * 1000;
+            return std::stol(content) * 1000;   // from khz to hz
         }
         catch (const std::exception &e)
         {
@@ -123,9 +123,9 @@ namespace optkit::core::frequency
     {
         try
         {
-            static std::string path = "/sys/devices/system/cpu/cpu" + std::to_string(core) + "/cpufreq/cpuinfo_min_freq";
+            std::string path = "/sys/devices/system/cpu/cpu" + std::to_string(core) + "/cpufreq/cpuinfo_min_freq";
             std::string content = optkit::utils::read_file(path);
-            return std::stol(content) * 1000;
+            return std::stol(content) * 1000;   // from khz to hz
         }
         catch (const std::exception &e)
         {

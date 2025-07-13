@@ -163,7 +163,6 @@ namespace optkit::utils
 
     OPT_FORCE_INLINE void read_msr(int32_t cpuid, off_t MSR_REGISTER_address, uint64_t *MSR_REGISTER_bits)
     {
-        EXEC_IF_ROOT;
         char msr_file_name[64];
         sprintf(msr_file_name, "/dev/cpu/%d/msr_safe", cpuid);
         int32_t fd = open(msr_file_name, O_RDONLY);
@@ -183,7 +182,6 @@ namespace optkit::utils
 
     OPT_FORCE_INLINE void write_msr(int32_t cpuid, off_t MSR_REGISTER_address, uint64_t MSR_REGISTER_bits)
     {
-        EXEC_IF_ROOT;
         char msr_file_name[64];
         sprintf(msr_file_name, "/dev/cpu/%d/msr_safe", cpuid);
         int32_t fd = open(msr_file_name, O_WRONLY);
