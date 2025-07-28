@@ -55,17 +55,16 @@ namespace optkit::core::frequency
         static void set_core_frequency(int64_t frequency, int16_t socket);
         static void set_core_frequency(int64_t frequency, int16_t cpu, int16_t socket);
         static void set_core_frequency(int64_t frequency, int16_t cpu_start, int16_t cpu_end, int16_t socket);
-        static void set_core_frequency(int64_t frequency, std::vector<int16_t> cpu_list);
         static int64_t get_core_frequency(int16_t cpu);
         static std::vector<int64_t> get_core_frequencies(int16_t socket);
         static std::vector<int64_t> get_core_frequency(int16_t cpu_start, int16_t cpu_end, int16_t socket);
 
-#if OPTKIT_ENV_CPU_INTEL
+        // #if OPTKIT_ENV_CPU_INTEL
         static std::pair<int64_t, int64_t> get_uncore_min_max(int16_t socket);
         static int64_t get_uncore_frequency(int16_t socket);
         static void set_uncore_frequency(int64_t frequency, int16_t socket);
         static void reset_uncore_frequency(int16_t socket);
-#endif
+        // #endif
         static void reset_core_frequency(int16_t socket);
 
     private:

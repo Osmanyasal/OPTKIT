@@ -102,6 +102,8 @@ namespace optkit::core::frequency
             // Read available governors
             std::string gov_path = "/sys/devices/system/cpu/cpu" + std::to_string(sample_core) + "/cpufreq/scaling_available_governors";
             std::string available_raw = optkit::utils::read_file(gov_path);
+            if (!available_raw.empty() && available_raw.back() == '\n')
+                available_raw.pop_back();
             auto available_governors = optkit::utils::str_split(available_raw, " ");
 
             if (std::find(available_governors.begin(), available_governors.end(), governor) == available_governors.end())
@@ -143,7 +145,7 @@ namespace optkit::core::frequency
             // Trim trailing newline
             if (!available_raw.empty() && available_raw.back() == '\n')
                 available_raw.pop_back();
-                
+
             auto available_governors = optkit::utils::str_split(available_raw, " ");
 
             if (std::find(available_governors.begin(), available_governors.end(), governor) == available_governors.end())

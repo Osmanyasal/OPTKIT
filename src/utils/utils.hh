@@ -35,7 +35,6 @@
 #define CONCAT(a, b) a##b
 #define EXPAND_AND_CONCAT(a, b) CONCAT(a, b)
 
-
 #define BLOCK_TIMER(block_name) \
     optkit::utils::BlockTimer block_timer { block_name }
 
@@ -51,7 +50,7 @@
         OPTKIT_CORE_WARN("Root priv is required for the execution of method '{}' in file '{}'", __func__, __FILE__); \
         return ret_value;                                                                                            \
     }
-    
+
 /*  USAGE EXPLANATION
     Following works like this class structure..
 
@@ -85,7 +84,6 @@
 #define INSTANCEOF(CLASS, objREF) (dynamic_cast<CLASS *>(&objREF) != nullptr)
 #define INSTANCEOF_PTR(CLASS, objPTR) (dynamic_cast<CLASS *>(objPTR) != nullptr)
 
-
 namespace optkit::utils
 {
     class BlockTimer
@@ -115,8 +113,8 @@ namespace optkit::utils
     std::string get_date(const std::string &format = "%d_%m_%Y");
     std::string get_time(const std::string &format = "%H_%M_%S");
     std::vector<std::string> get_all_files(const std::string &directory_name);
-    std::vector<std::string> str_split(const std::string& s, const std::string& delimiter);
-    nlohmann::json to_json(double duration, const char *metric_name, const std::vector<std::pair<std::string, uint64_t>> &results, const std::vector<std::pair<std::string, double>>& metric_results, int32_t socket_number = -1);
+    std::vector<std::string> str_split(const std::string &s, const std::string &delimiter);
+    nlohmann::json to_json(double duration, const char *metric_name, const std::vector<std::pair<std::string, uint64_t>> &results, const std::vector<std::pair<std::string, double>> &metric_results, int32_t socket_number = -1);
 
     OPT_FORCE_INLINE bool is_path_exists(const std::string &location)
     {
@@ -196,5 +194,5 @@ namespace optkit::utils
             OPTKIT_CORE_WARN("read msr error -- cannot read register {}", MSR_REGISTER_address);
         }
     }
-    
+
 }

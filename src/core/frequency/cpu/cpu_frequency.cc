@@ -77,10 +77,20 @@ namespace optkit::core::frequency
     {
         try
         {
+            // Static variables for caching frequency limits - queried once per method call
+            static int64_t min_freq = QueryCPUFrequency::get_cpuinfo_min_freq(package_info.at(socket)[0]);
+            static int64_t max_freq = QueryCPUFrequency::get_cpuinfo_max_freq(package_info.at(socket)[0]);
+
+            // Validate frequency range
+            if (frequency < min_freq || frequency > max_freq)
+            {
+                OPTKIT_CORE_WARN("Frequency {} is outside valid range [{} - {}] KHz for socket {}", frequency, min_freq, max_freq, socket);
+                return;
+            }
+
             // Set core frequency for all cores
             TRAVERSE_CORES(socket)
             {
-
                 optkit::utils::write_file("/sys/devices/system/cpu/cpu" + std::to_string(__cpu) + "/cpufreq/scaling_max_freq", std::to_string(frequency));
                 optkit::utils::write_file("/sys/devices/system/cpu/cpu" + std::to_string(__cpu) + "/cpufreq/scaling_min_freq", std::to_string(frequency));
             }
@@ -97,6 +107,18 @@ namespace optkit::core::frequency
         {
             try
             {
+                // Get frequency limits directly for this CPU
+                static int64_t min_freq = QueryCPUFrequency::get_cpuinfo_min_freq(cpu);
+                static int64_t max_freq = QueryCPUFrequency::get_cpuinfo_max_freq(cpu);
+
+                // Validate frequency range
+                if (frequency < min_freq || frequency > max_freq)
+                {
+
+                    OPTKIT_CORE_WARN("Frequency {} is outside valid range [{} - {}] KHz for CPU {}", frequency, min_freq, max_freq, cpu);
+                    return;
+                }
+
                 TRAVERSE_CORES(socket)
                 {
                     if (cpu == __cpu)
@@ -119,36 +141,28 @@ namespace optkit::core::frequency
 
     void CPUFrequency::set_core_frequency(int64_t frequency, int16_t cpu_start, int16_t cpu_end, int16_t socket)
     {
-        if (cpu_start >= 0 && cpu_end < Query::num_logical_cores && cpu_start <= cpu_end)
-        {
-            try
-            {
-                TRAVERSE_CORES(socket)
-                {
-                    if (__cpu < cpu_start || __cpu > cpu_end)
-                        continue;
-
-                    optkit::utils::write_file("/sys/devices/system/cpu/cpu" + std::to_string(__cpu) + "/cpufreq/scaling_max_freq", std::to_string(frequency));
-                    optkit::utils::write_file("/sys/devices/system/cpu/cpu" + std::to_string(__cpu) + "/cpufreq/scaling_min_freq", std::to_string(frequency));
-                }
-            }
-            catch (const std::runtime_error &err)
-            {
-                OPTKIT_CORE_ERROR(err.what());
-            }
-        }
-        else
+        if (cpu_start < 0 || cpu_end >= Query::num_logical_cores || cpu_start > cpu_end)
         {
             OPTKIT_CORE_WARN("Invalid range cpu_start={} cpu_end={}", cpu_start, cpu_end);
+            return;
         }
-    }
 
-    void CPUFrequency::set_core_frequency(int64_t frequency, std::vector<int16_t> cpu_list)
-    {
         try
         {
-            for (int16_t &__cpu : cpu_list)
+            static int64_t min_freq = QueryCPUFrequency::get_cpuinfo_min_freq(cpu_start);
+            static int64_t max_freq = QueryCPUFrequency::get_cpuinfo_max_freq(cpu_start);
+
+            if (frequency < min_freq || frequency > max_freq)
             {
+                OPTKIT_CORE_WARN("Frequency {} is outside valid range [{} - {}] KHz for CPU {}", frequency, min_freq, max_freq, cpu_start);
+                return;
+            }
+
+            TRAVERSE_CORES(socket)
+            {
+                if (__cpu < cpu_start || __cpu > cpu_end)
+                    continue;
+
                 optkit::utils::write_file("/sys/devices/system/cpu/cpu" + std::to_string(__cpu) + "/cpufreq/scaling_max_freq", std::to_string(frequency));
                 optkit::utils::write_file("/sys/devices/system/cpu/cpu" + std::to_string(__cpu) + "/cpufreq/scaling_min_freq", std::to_string(frequency));
             }
@@ -261,7 +275,11 @@ namespace optkit::core::frequency
         uint64_t MSR_UNCORE_RATIO_LIMIT_bits = ((frequency / 100000) << MSR_UNCORE_RATIO_LIMIT_min_shift) + frequency / 100000;
         optkit::utils::write_msr(socket, MSR_UNCORE_RATIO_LIMIT, MSR_UNCORE_RATIO_LIMIT_bits);
     }
-
+#else
+    int64_t CPUFrequency::get_uncore_frequency(int16_t socket) {};
+    std::pair<int64_t, int64_t> CPUFrequency::get_uncore_min_max(int16_t socket) {};
+    void CPUFrequency::reset_uncore_frequency(int16_t socket) {};
+    void CPUFrequency::set_uncore_frequency(int64_t frequency, int16_t socket) {};
 #endif
     void CPUFrequency::reset_core_frequency(int16_t socket)
     {
