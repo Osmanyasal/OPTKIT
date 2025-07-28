@@ -11,7 +11,7 @@
 #include "utils/utils.hh"
 using namespace optkit::core::frequency;
 
-class CPUFrequencyRealTest : public ::testing::Test
+class CPUFrequencyTest : public ::testing::Test
 {
 protected:
     int16_t socket = 0;
@@ -27,7 +27,7 @@ protected:
 // Unit conversion tests
 //
 
-TEST_F(CPUFrequencyRealTest, ConvertFrequencyWithUnit_ShouldWorkCorrectly)
+TEST_F(CPUFrequencyTest, ConvertFrequencyWithUnit_ShouldWorkCorrectly)
 {
     EXPECT_EQ(CPUFrequency::convert_frequency_with_unit("3.5GHz"), 3500000000);
     EXPECT_EQ(CPUFrequency::convert_frequency_with_unit("3500MHz"), 3500000000);
@@ -35,17 +35,57 @@ TEST_F(CPUFrequencyRealTest, ConvertFrequencyWithUnit_ShouldWorkCorrectly)
     EXPECT_EQ(CPUFrequency::convert_frequency_with_unit("3500000000"), 3500000000);
 }
 
-TEST_F(CPUFrequencyRealTest, ConvertFrequencyWithInvalidUnit_ShouldThrow)
+TEST_F(CPUFrequencyTest, ConvertFrequencyWithInvalidUnit_ShouldThrow)
 {
     EXPECT_THROW(CPUFrequency::convert_frequency_with_unit("3.5abc"), std::invalid_argument);
     EXPECT_THROW(CPUFrequency::convert_frequency_with_unit("abc"), std::invalid_argument);
+}
+
+TEST_F(CPUFrequencyTest, FrequencyChangeLatency_LessThan10ms)
+{
+    // Measure how long frequency changes take
+    auto start = std::chrono::high_resolution_clock::now();
+    for (size_t i = 0; i < OPTKIT_ENV_CPU_NUM_SOCKETS; i++)
+    {
+        CPUFrequency::set_core_frequency(QueryCPUFrequency::get_cpuinfo_max_freq(0), i);
+    }
+    auto end = std::chrono::high_resolution_clock::now();
+
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    std::cout << "Frequency change for all sockets took: " << duration.count() << " ms\n";
+
+    for (size_t i = 0; i < OPTKIT_ENV_CPU_NUM_SOCKETS; i++)
+    {
+        CPUFrequency::reset_core_frequency(i);
+    }
+    EXPECT_LT(duration.count(), 10); // Should be < 10ms
+}
+
+TEST_F(CPUFrequencyTest, InvalidSocketNumbers)
+{
+    // Test with socket = -1, 999, etc.
+    EXPECT_EQ(CPUFrequency::get_core_frequency(-1), -1);
+    CPUFrequency::set_core_frequency(QueryCPUFrequency::get_cpuinfo_max_freq(0), -1); // Expect OPTKIT ERROR
+}
+
+TEST_F(CPUFrequencyTest, InvalidCPUNumbers)
+{
+    // Test with cpu = -1, 9999, offline cores
+    EXPECT_EQ(CPUFrequency::get_core_frequency(-1), -1);
+}
+
+TEST_F(CPUFrequencyTest, FrequencyOutOfRange)
+{
+    // Test frequencies way below min or above max
+    CPUFrequency::set_core_frequency(1, socket);
+    CPUFrequency::set_core_frequency(999999999999, socket);
 }
 
 //
 // Read-only core frequency queries
 //
 
-TEST_F(CPUFrequencyRealTest, GetCoreFrequency_ShouldReturnPositiveIfAvailable)
+TEST_F(CPUFrequencyTest, GetCoreFrequency_ShouldReturnPositiveIfAvailable)
 {
     if (!exists("scaling_cur_freq"))
         GTEST_SKIP() << "scaling_cur_freq not available";
@@ -55,7 +95,7 @@ TEST_F(CPUFrequencyRealTest, GetCoreFrequency_ShouldReturnPositiveIfAvailable)
     EXPECT_GT(freq, 0);
 }
 
-TEST_F(CPUFrequencyRealTest, GetCoreFrequencies_ShouldReturnListIfAvailable)
+TEST_F(CPUFrequencyTest, GetCoreFrequencies_ShouldReturnListIfAvailable)
 {
     if (!exists("scaling_cur_freq"))
         GTEST_SKIP() << "cpufreq not available";
@@ -69,7 +109,7 @@ TEST_F(CPUFrequencyRealTest, GetCoreFrequencies_ShouldReturnListIfAvailable)
     }
 }
 
-TEST_F(CPUFrequencyRealTest, GetCoreFrequencyRange_ShouldBeValidIfAvailable)
+TEST_F(CPUFrequencyTest, GetCoreFrequencyRange_ShouldBeValidIfAvailable)
 {
     if (!exists("scaling_cur_freq"))
         GTEST_SKIP() << "cpufreq not available";
@@ -83,40 +123,7 @@ TEST_F(CPUFrequencyRealTest, GetCoreFrequencyRange_ShouldBeValidIfAvailable)
     }
 }
 
-//
-// Uncore MSR-based queries
-//
-
-TEST_F(CPUFrequencyRealTest, GetUncoreFrequency_ShouldReturnPositiveIfMSRAvailable)
-{
-    try
-    {
-        int64_t freq = CPUFrequency::get_uncore_frequency(socket);
-        std::cout << "Uncore frequency: " << freq << " KHz\n";
-        EXPECT_GT(freq, 0);
-    }
-    catch (...)
-    {
-        GTEST_SKIP() << "MSR read not supported on this system";
-    }
-}
-
-TEST_F(CPUFrequencyRealTest, GetUncoreMinMax_ShouldReturnValidValues)
-{
-    try
-    {
-        auto [min, max] = CPUFrequency::get_uncore_min_max(socket);
-        std::cout << "Uncore min: " << min << " KHz, max: " << max << " KHz\n";
-        EXPECT_GE(min, 0);
-        EXPECT_GE(max, 0);
-        EXPECT_LE(min, max);
-    }
-    catch (...)
-    {
-        GTEST_SKIP() << "MSR uncore limit not readable on this system";
-    }
-}
-TEST_F(CPUFrequencyRealTest, SetAndResetCoreFrequencySweepAllSockets)
+TEST_F(CPUFrequencyTest, SetAndResetCoreFrequencySweepAllSockets)
 {
     if (!exists("scaling_cur_freq"))
         GTEST_SKIP() << "cpufreq not available";
@@ -149,7 +156,7 @@ TEST_F(CPUFrequencyRealTest, SetAndResetCoreFrequencySweepAllSockets)
         {
             std::cout << "\tSetting all cores on socket " << socket << " to " << freq / 1.0e6 << " GHz\n";
             CPUFrequency::set_core_frequency(freq, socket);
-            
+
             std::this_thread::sleep_for(wait_time);
 
             auto read_freqs = CPUFrequency::get_core_frequencies(socket);
@@ -203,7 +210,42 @@ TEST_F(CPUFrequencyRealTest, SetAndResetCoreFrequencySweepAllSockets)
     }
 }
 
-TEST_F(CPUFrequencyRealTest, DISABLED_SetAndResetUncoreFrequency)
+#if OPTKIT_ENV_CPU_INTEL
+//
+// Uncore MSR-based queries
+//
+
+TEST_F(CPUFrequencyTest, GetUncoreFrequency_ShouldReturnPositiveIfMSRAvailable)
+{
+    try
+    {
+        int64_t freq = CPUFrequency::get_uncore_frequency(socket);
+        std::cout << "Uncore frequency: " << freq << " KHz\n";
+        EXPECT_GT(freq, 0);
+    }
+    catch (...)
+    {
+        GTEST_SKIP() << "MSR read not supported on this system";
+    }
+}
+
+TEST_F(CPUFrequencyTest, GetUncoreMinMax_ShouldReturnValidValues)
+{
+    try
+    {
+        auto [min, max] = CPUFrequency::get_uncore_min_max(socket);
+        std::cout << "Uncore min: " << min << " KHz, max: " << max << " KHz\n";
+        EXPECT_GE(min, 0);
+        EXPECT_GE(max, 0);
+        EXPECT_LE(min, max);
+    }
+    catch (...)
+    {
+        GTEST_SKIP() << "MSR uncore limit not readable on this system";
+    }
+}
+
+TEST_F(CPUFrequencyTest, DISABLED_SetAndResetUncoreFrequency)
 {
     try
     {
@@ -226,3 +268,5 @@ TEST_F(CPUFrequencyRealTest, DISABLED_SetAndResetUncoreFrequency)
         GTEST_SKIP() << "MSR write not supported";
     }
 }
+
+#endif
