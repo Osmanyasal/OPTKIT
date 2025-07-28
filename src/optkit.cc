@@ -14,8 +14,8 @@ namespace optkit::core
 
     OPTKIT::OPTKIT(const OPTKIT_CONFIG config) : config{config}
     {
-        optkit::utils::logger::BaseLogger::init();  // logger init
-        optkit::core::pmu::cpu::QueryPMU::init();   // pmf init
+        optkit::utils::logger::BaseLogger::init(); // logger init
+        optkit::core::pmu::cpu::QueryPMU::init();  // pmf init
         int32_t paranoid = optkit::core::Query::paranoid();
         if (OPT_UNLIKELY(paranoid > 0))
         {
@@ -42,6 +42,29 @@ namespace optkit::core
             }
 
             process_env_variables();
+
+            // reverse the scaling governor to the default one
+            if (OPT_LIKELY(config.init_cpu_frequency))
+            {
+                // set cpufreq governor based on the available drivers. if it is new, set it to performance and warn the user.
+                for (int i = 0; i < OPTKIT_ENV_CPU_NUM_SOCKETS; i++)
+                {
+                    std::string driver = frequency::QueryCPUFrequency::get_scaling_driver(i);
+                    // if driver is old like acpi-cpufreq, then set governor to userspace else set governor to performance
+                    if (driver == "acpi-cpufreq")
+                    {
+                        OPTKIT_CORE_INFO("Detected old cpufreq driver '{}' for socket {}. Setting governor to userspace", driver, i);
+                        frequency::QueryCPUFrequency::set_scaling_governor("userspace", i);
+                        OPTKIT_CORE_INFO("Current cpufreq governor for socket {}: {}", i, frequency::QueryCPUFrequency::get_scaling_governor(i));
+                    }
+                    else
+                    {
+                        OPTKIT_CORE_INFO("Detected new cpufreq driver '{}' for socket {}. Setting governor to performance", driver, i);
+                        frequency::QueryCPUFrequency::set_scaling_governor("performance", i);
+                        OPTKIT_CORE_INFO("Current cpufreq governor for socket {}: {}", i, frequency::QueryCPUFrequency::get_scaling_governor(i));
+                    }
+                }
+            }
         }
     }
 
@@ -79,9 +102,12 @@ namespace optkit::core
 
                 if (socket0__uncore_freq != nullptr)
                 {
+
+#if OPTKIT_ENV_CPU_INTEL
                     Query::OPTKIT_SOCKET0__UNCORE_FREQ = std::atol(socket0__uncore_freq);
                     core::frequency::CPUFrequency::set_uncore_frequency(Query::OPTKIT_SOCKET0__UNCORE_FREQ, 0);
                     OPTKIT_CORE_INFO("---env read--- OPTKIT_SOCKET0__UNCORE_FREQ:{} ", Query::OPTKIT_SOCKET0__UNCORE_FREQ);
+#endif
                 }
                 else
                 {
@@ -110,9 +136,12 @@ namespace optkit::core
 
                 if (socket1__uncore_freq != nullptr)
                 {
+
+#if OPTKIT_ENV_CPU_INTEL
                     Query::OPTKIT_SOCKET1__UNCORE_FREQ = std::atol(socket1__uncore_freq);
                     core::frequency::CPUFrequency::set_uncore_frequency(Query::OPTKIT_SOCKET1__UNCORE_FREQ, 1);
                     OPTKIT_CORE_INFO("---env read--- OPTKIT_SOCKET1__UNCORE_FREQ:{} ", Query::OPTKIT_SOCKET1__UNCORE_FREQ);
+#endif
                 }
                 else
                 {
@@ -164,6 +193,34 @@ namespace optkit::core
      */
     OPTKIT::~OPTKIT()
     {
+        // reverse the scaling governor to the default one
+        if (OPT_LIKELY(config.init_cpu_frequency))
+        {
+            for (int i = 0; i < OPTKIT_ENV_CPU_NUM_SOCKETS; i++)
+            {
+                std::string driver = frequency::QueryCPUFrequency::get_scaling_driver(i);
+                if (driver == "acpi-cpufreq")
+                {
+                    OPTKIT_CORE_INFO("Reverting cpufreq driver '{}' for socket {} to ondemand", driver, i);
+                    frequency::QueryCPUFrequency::set_scaling_governor("ondemand", i);
+                    OPTKIT_CORE_INFO("Current cpufreq governor for socket {}: {}", i, frequency::QueryCPUFrequency::get_scaling_governor(i));
+
+                    OPTKIT_CORE_INFO("Resetting CPU core and uncore frequencies for socket {}", i);
+                    frequency::CPUFrequency::reset_core_frequency(i);
+                    frequency::CPUFrequency::reset_uncore_frequency(i);
+                }
+                else
+                {
+                    OPTKIT_CORE_INFO("Reverting cpufreq driver '{}' for socket {} to powersave", driver, i);
+                    frequency::QueryCPUFrequency::set_scaling_governor("powersave", i);
+                    OPTKIT_CORE_INFO("Current cpufreq governor for socket {}: {}", i, frequency::QueryCPUFrequency::get_scaling_governor(i));
+
+                    OPTKIT_CORE_INFO("Resetting CPU core and uncore frequencies for socket {}", i);
+                    frequency::CPUFrequency::reset_core_frequency(i);
+                    frequency::CPUFrequency::reset_uncore_frequency(i);
+                }
+            }
+        }
         optkit::core::pmu::cpu::QueryPMU::destroy();
     }
 
