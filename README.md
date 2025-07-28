@@ -22,6 +22,15 @@ make -j$(nproc) config=release optkit_dynamic  # for dynamic
 make -j$(nproc) config=test optkit_static
 make -j$(nproc) config=debug optkit_test
 ./bin/Debug/optkit_test
+
+## 🔍 List All Available Tests
+./bin/Debug/optkit_test --gtest_list_tests
+
+## ▶️ Run Specific Test(s)
+./bin/Debug/optkit_test --gtest_filter=MyTestSuite.MyTestCase
+./bin/Debug/optkit_test --gtest_filter="CPUFreqTest.*"
+./bin/Debug/optkit_test --gtest_filter="*Freq*:MemoryTest.*"
+
 ```
 
 ## CLI Tools
