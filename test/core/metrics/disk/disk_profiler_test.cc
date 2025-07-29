@@ -49,23 +49,23 @@ TEST_F(DiskProfiler, Write82KCharsDivided)
     mb.add(core_metrics::AllMetrics());
 
     OPTKIT_DISK_EVENTS("Write82KCharsDivided", mb);
-    
+
     optkit::utils::write_file(write_path, std::string(WRITE_SIZE, 'A'));
     optkit::utils::write_file(write_path, std::string(WRITE_SIZE, 'B'));
-    
+
     var51.read_and_store();
     const auto &result = var51.aggregate();
     EXPECT_NEAR(result.at(to_string(disk::core_events::WCHAR)), WRITE_SIZE * 2, WRITE_SIZE * 2 * ERROR_RATE);
 }
 
-TEST_F(DiskProfiler, Read82KChars)
+TEST_F(DiskProfiler, Read41KChars)
 {
     optkit::utils::write_file(read_path, std::string(WRITE_SIZE, 'X'));
 
     MetricBuilder mb{};
     mb.add(core_metrics::AllMetrics());
 
-    OPTKIT_DISK_EVENTS("Read82KChars", mb);
+    OPTKIT_DISK_EVENTS("Read41KChars", mb);
     {
         std::string data = optkit::utils::read_file(read_path);
         ASSERT_FALSE(data.empty());

@@ -9,7 +9,7 @@
 #include <unordered_map>
 #include "utils/utils.hh"
 #include "utils/base_profiler.hh"
-#include "utils/metric_builder.hh" 
+#include "utils/metric_builder.hh"
 
 namespace optkit::core::disk
 {

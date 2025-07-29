@@ -51,9 +51,9 @@ namespace optkit::core::disk
                 delta = curr_val; // wrapped around, treat as new value
 
             // std::cout << "\t" << "cur_val:" << curr_val << " - " << "prev_val:" << prev_val << " delta:" << delta << "\n";
-            
+
             // Update last snapshot with current one.
-            last_snapshot.at(key) = curr_val; 
+            last_snapshot.at(key) = curr_val;
             result.push_back(delta); // store the delta
         }
         return result;
@@ -120,10 +120,7 @@ namespace optkit::core::disk
                 continue;
 
             std::string val_str = line.substr(pos + 1);
-            std::istringstream val_iss(val_str);
-            uint64_t val = 0;
-            val_iss >> val;
-            results[key] = val;
+            results[key] = std::stoull(val_str);
         }
 
         return results;
