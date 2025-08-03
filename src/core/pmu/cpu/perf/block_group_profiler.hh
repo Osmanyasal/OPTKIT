@@ -22,6 +22,10 @@ namespace optkit::core::pmu::cpu::perf
      *        Note that block profiler DOES group raw_events!
      *
      *        for more information about grouping @see https://man7.org/linux/man-pages/man2/perf_event_open.2.html
+     *
+     * @note In what order the event names and codes are added is IMPORTANT! it is read as it is added.
+     *       If you add event1, event2, event3 then the read buffer will contain the values in the same order.
+     *       Given the reason, we used vectors and pairs to store the data in metric Builder.
      */
     class BlockGroupProfiler : public BaseProfiler<std::vector<uint64_t>>
     {
@@ -59,14 +63,14 @@ namespace optkit::core::pmu::cpu::perf
          * @return std::vector<uint64_t> contains each raw_events' pmu data.
          */
         virtual std::vector<uint64_t> read() override;
- 
+
         int32_t get_group_leader()
         {
             return this->group_leader;
         }
 
         virtual std::unordered_map<std::string, uint64_t> aggregate() override;
-        
+
 #if !OPTKIT_TESTING // if not testing (in prod) then make those private, in testin make those public
     private:
 #endif
@@ -74,10 +78,10 @@ namespace optkit::core::pmu::cpu::perf
         bool is_configured;
         PerfProfilerConfig profiler_config;
         int32_t group_leader;
- 
+
         std::vector<std::pair<std::string, double>> metric_results;
         core::metrics::MetricBuilder metric_builder;
-        
+
         struct read_format
         {
             uint64_t nr;

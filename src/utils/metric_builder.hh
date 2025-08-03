@@ -62,6 +62,11 @@ namespace optkit::core::metrics
      * It helps cleanly organize both raw events and derived metrics using a simple declarative API.
      *
      * @param print_events tells profiler to print the events (note that metrics are always printed.)
+     *
+     *
+     * @note In what order the event names and codes are added is IMPORTANT! it is read as it is added.
+     *       If you add event1, event2, event3 then the read buffer will contain the values in the same order.
+     *       Given the reason, we used vectors and pairs to store the data in metric Builder.
      */
 
     class MetricBuilder
@@ -69,7 +74,7 @@ namespace optkit::core::metrics
     public:
         using CalculationFunc = std::function<double(const std::unordered_map<std::string, uint64_t> &)>;
 
-        MetricBuilder(bool print_events = true) : print_events{print_events}, ill_formed{false} {};
+        MetricBuilder(bool print_events = true, bool allow_duplicates = false) : print_events{print_events}, allow_duplicates{allow_duplicates}, ill_formed{false} {};
 
         // Add event codes with a name (no change here)
         MetricBuilder &add(const std::string &name, const std::vector<uint64_t> &event_codes)
@@ -80,7 +85,7 @@ namespace optkit::core::metrics
             for (uint64_t code : event_codes)
             {
                 std::string key = name + "_" + std::to_string(code);
-                if (added_keys_.insert(key).second)
+                if (OPT_LIKELY(allow_duplicates || added_keys_.insert(key).second))
                 {
                     metric_events.emplace_back(name, code);
                 }
@@ -96,7 +101,7 @@ namespace optkit::core::metrics
             for (const auto &pair : events)
             {
                 std::string key = pair.first + "_" + std::to_string(pair.second);
-                if (added_keys_.insert(key).second)
+                if (OPT_LIKELY(allow_duplicates || added_keys_.insert(key).second))
                 {
                     metric_events.emplace_back(pair.first, pair.second);
                 }
@@ -178,6 +183,7 @@ namespace optkit::core::metrics
     public:
         std::vector<std::pair<std::string, uint64_t>> metric_events;
         bool print_events;
+        bool allow_duplicates; // if true, allows adding duplicate events (name, code) pairs
 
     private:
         std::unordered_set<std::string> added_keys_;

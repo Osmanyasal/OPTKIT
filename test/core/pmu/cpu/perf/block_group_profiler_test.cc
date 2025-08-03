@@ -14,7 +14,7 @@ TEST(CPUPerfGroupEventsTest, Instructions_1M)
         .build(to_string(cpu::core_events::INST_RETIRED), [](const auto &map) -> double
                { return get_event_count(map, to_string(cpu::core_events::INST_RETIRED)) / (double)REPEAT; });
 
-    OPTKIT_CPU_GROUP_EVENTS_REPEAT("Instructions_1M", mb, REPEAT)
+    OPTKIT_CPU_GROUP_EVENTS_REPEAT("Instructions_1M_Group", mb, REPEAT)
     {
         instructions_million();
     }
@@ -31,7 +31,7 @@ TEST(CPUPerfGroupEventsTest, BranchInst1500K)
         .build(to_string(cpu::core_events::BRANCH_INST_RETIRED), [](const auto &map) -> double
                { return get_event_count(map, to_string(cpu::core_events::BRANCH_INST_RETIRED)) / (double)REPEAT; });
 
-    OPTKIT_CPU_GROUP_EVENTS_REPEAT("BranchInst1500K", mb, REPEAT)
+    OPTKIT_CPU_GROUP_EVENTS_REPEAT("BranchInst1500K_Group", mb, REPEAT)
     {
         branches();
     }
@@ -49,7 +49,7 @@ TEST(CPUPerfGroupEventsTest, BranchMisp250K)
         .build(to_string(cpu::core_events::BRANCH_MISP_RETIRED), [](const auto &map) -> double
                { return get_event_count(map, to_string(cpu::core_events::BRANCH_MISP_RETIRED)) / (double)REPEAT; });
 
-    OPTKIT_CPU_GROUP_EVENTS_REPEAT("BranchMisp250K", mb, REPEAT)
+    OPTKIT_CPU_GROUP_EVENTS_REPEAT("BranchMisp250K_Group", mb, REPEAT)
     {
         random_branches(500'000, true);
     }
@@ -81,7 +81,7 @@ TEST(CPUPerfGroupEventsTest, RetiredFlopAny1M)
     size_t size = A.size();
     C.resize(size);
 
-    OPTKIT_CPU_GROUP_EVENTS_REPEAT("RetiredFlopAny1M", mb, REPEAT)
+    OPTKIT_CPU_GROUP_EVENTS_REPEAT("RetiredFlopAny1M_Group", mb, REPEAT)
     {
         for (size_t i = 0; i < size; ++i)
         {
@@ -105,7 +105,7 @@ TEST(CPUPerfGroupEventsTest, ReadsAndAccumulatesEventData)
         .build(to_string(cpu::core_events::INST_RETIRED), [](const auto &map) -> double
                { return get_event_count(map, to_string(cpu::core_events::INST_RETIRED)) / (double)REPEAT; });
     double total = 0;
-    OPTKIT_CPU_GROUP_EVENTS_REPEAT("ReadsAndAccumulatesEventData", mb, REPEAT)
+    OPTKIT_CPU_GROUP_EVENTS_REPEAT("ReadsAndAccumulatesEventData_Group", mb, REPEAT)
     {
         instructions_million();
         // Note: *REPEAT already reads_and_store each iteration automatically.
@@ -126,7 +126,7 @@ TEST(CPUPerfGroupEventsTest, EnableDisableEventCounting)
                { return get_event_count(map, to_string(cpu::core_events::INST_RETIRED)) / (double)REPEAT; });
 
     bool is_enabled = true;
-    OPTKIT_CPU_GROUP_EVENTS_REPEAT("EnableDisableEventCounting", mb, REPEAT)
+    OPTKIT_CPU_GROUP_EVENTS_REPEAT("EnableDisableEventCounting_Group", mb, REPEAT)
     {
         if (is_enabled)
             PMUEventManager::enable_all_events();
@@ -153,7 +153,7 @@ TEST(CPUPerfGroupEventsTest, AddMoreEventsThanGroupLimitTest)
     for (int i = 1; i < PMUEventManager::pmu_num_cntrs(); i++)
         mb.metric_events.push_back(event);
 
-    OPTKIT_CPU_GROUP_EVENTS_REPEAT("EnableDisableEventCounting", mb, REPEAT)
+    OPTKIT_CPU_GROUP_EVENTS_REPEAT("EnableDisableEventCounting_Group", mb, REPEAT)
     {
         instructions_million();
     }

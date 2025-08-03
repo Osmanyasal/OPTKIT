@@ -24,6 +24,10 @@ namespace optkit::core::pmu::cpu::perf
      *        In cases where CPU performs multiplexing and since each event treated seperately, you cannot gurantee that <br>
      *        events E1 and E2 will record the same instructions.<br>
      *        for more information about grouping @see https://man7.org/linux/man-pages/man2/perf_event_open.2.html
+     *
+     * @note In what order the event names and codes are added is IMPORTANT! it is read as it is added.
+     *       If you add event1, event2, event3 then the read buffer will contain the values in the same order.
+     *       Given the reason, we used vectors and pairs to store the data in metric Builder.
      */
     class BlockProfiler : public BaseProfiler<std::vector<uint64_t>>
     {
@@ -60,7 +64,7 @@ namespace optkit::core::pmu::cpu::perf
          * @return std::vector<uint64_t> contains each raw_events' pmu data.
          */
         virtual std::vector<uint64_t> read() override;
- 
+
         virtual std::unordered_map<std::string, uint64_t> aggregate() override;
 
 #if !OPTKIT_TESTING // if not testing (in prod) then make those private, in testin make those public

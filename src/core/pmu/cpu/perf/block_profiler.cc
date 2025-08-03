@@ -127,8 +127,10 @@ namespace optkit::core::pmu::cpu::perf
 
             const std::vector<uint64_t> &values = entry.second;
 
+            // std::cout << "read buffer:";
             for (size_t j = 0; j < values.size(); ++j)
             {
+                // std::cout << event_names[j] << ":" << values[j] << "\n";
                 aggregated_events[event_names[j]] += values[j];
             }
         }
