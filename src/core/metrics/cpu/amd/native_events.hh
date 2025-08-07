@@ -24,6 +24,11 @@ namespace optkit::core::metrics::cpu::amd
         CYCLES_NO_RETIRE_LOAD_NOT_COMPLETE,
         L3_CACHE_ACCESSES,
         L2_CACHE_ACCESSES,
+
+        SCALAR_SINGLE_FLOPS,
+        PACKED_SINGLE_FLOPS,
+        SCALAR_DOUBLE_FLOPS,
+        PACKED_DOUBLE_FLOPS,
         END,
     };
 

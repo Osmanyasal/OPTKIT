@@ -96,6 +96,13 @@ namespace optkit::core::metrics::cpu::amd
             {cpu::amd::NativeEvents::L2_CACHE_ACCESSES, {0xf960, 0xff70, 0xff71, 0xff72}},
 #endif
 
+#if OPTKIT_ENV_CPU_MICROARCH_ZEN5
+            {cpu::amd::NativeEvents::SCALAR_SINGLE_FLOPS, {0x4003}}, // fp_ret_sse_avx_ops.scalar_single -- Retired SSE and AVX scalar single-precision floating-point ops.
+            {cpu::amd::NativeEvents::PACKED_SINGLE_FLOPS, {0x6003}}, // fp_ret_sse_avx_ops.packed_scalar -- Retired SSE and AVX packed scalar floating-point ops.
+            {cpu::amd::NativeEvents::SCALAR_DOUBLE_FLOPS, {0x8003}}, // fp_ret_sse_avx_ops.scalar_double -- Retired SSE and AVX scalar double-precision floating-point ops.
+            {cpu::amd::NativeEvents::PACKED_DOUBLE_FLOPS, {0xa003}}, // fp_ret_sse_avx_ops.packed_double -- Retired SSE and AVX packed double-precision floating-point ops.
+#endif
+
         };
 }
 #endif // OPTKIT_ENV_CPU_AMD

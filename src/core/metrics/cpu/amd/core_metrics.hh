@@ -516,6 +516,50 @@ namespace optkit::core::metrics::cpu
 
         static const MetricBuilder &AI()
         {
+#if OPTKIT_ENV_CPU_MICROARCH_ZEN5
+            static const MetricBuilder metric = []
+            {
+                std::string scalar_single_name = to_string(amd::NativeEvents::SCALAR_SINGLE_FLOPS);
+                std::string packed_single_name = to_string(amd::NativeEvents::PACKED_SINGLE_FLOPS);
+                std::string scalar_double_name = to_string(amd::NativeEvents::SCALAR_DOUBLE_FLOPS);
+                std::string packed_double_name = to_string(amd::NativeEvents::PACKED_DOUBLE_FLOPS);
+                std::string mem_inst_retired_name = to_string(CoreEvents::MEM_INST_RETIRED);
+                return MetricBuilder{}
+                    .add(scalar_single_name, amd::EventMapper::get(amd::NativeEvents::SCALAR_SINGLE_FLOPS))
+                    .add(packed_single_name, amd::EventMapper::get(amd::NativeEvents::PACKED_SINGLE_FLOPS))
+                    .add(scalar_double_name, amd::EventMapper::get(amd::NativeEvents::SCALAR_DOUBLE_FLOPS))
+                    .add(packed_double_name, amd::EventMapper::get(amd::NativeEvents::PACKED_DOUBLE_FLOPS))
+                    .add(mem_inst_retired_name, amd::EventMapper::get(CoreEvents::MEM_INST_RETIRED))
+                    .build("AI",
+                           [packed_double_name, scalar_double_name, packed_single_name, scalar_single_name, mem_inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                           {
+                               uint64_t scalar_single = get_event_count(counts, scalar_single_name);
+                               uint64_t packed_single = get_event_count(counts, packed_single_name);
+                               uint64_t scalar_double = get_event_count(counts, scalar_double_name);
+                               uint64_t packed_double = get_event_count(counts, packed_double_name);
+                               uint64_t mem_inst_retired = get_event_count(counts, mem_inst_retired_name);
+
+                               double retired_flops_any = scalar_single + packed_single + scalar_double + packed_double;
+
+                               // Avoid div by zero
+                               if (retired_flops_any == 0)
+                                   return std::numeric_limits<double>::quiet_NaN();
+
+                               double single_ratio = (scalar_single + packed_single) / retired_flops_any;
+                               double double_ratio = (scalar_double + packed_double) / retired_flops_any;
+
+                               // Estimate bytes transferred: weighted average of 4 bytes (SP) and 8 bytes (DP)
+                               double avg_bytes_per_mem_op = (4.0 * single_ratio + 8.0 * double_ratio);
+                               double mem_bytes = mem_inst_retired * avg_bytes_per_mem_op;
+
+                               // Avoid div by zero
+                               if (mem_bytes == 0)
+                                   return std::numeric_limits<double>::quiet_NaN();
+                               return static_cast<double>(retired_flops_any) / mem_bytes;
+                           });
+            }();
+            return metric;
+#else
             static const MetricBuilder metric = []
             {
                 std::string retired_flops_any_name = to_string(CoreEvents::RETIRED_FLOPS_ANY);
@@ -536,6 +580,7 @@ namespace optkit::core::metrics::cpu
                            });
             }();
             return metric;
+#endif
         }
 
         static const MetricBuilder &IpArith()
@@ -596,8 +641,7 @@ namespace optkit::core::metrics::cpu
                 return MetricBuilder{}
                     .add(inst_retired_name, amd::EventMapper::get(CoreEvents::INST_RETIRED))
                     .add(sw_load_prefetch_name, amd::EventMapper::get(CoreEvents::SW_LOAD_PREFETCH_ACCESS))
-                    .build("IpSWPF",
-                           [sw_load_prefetch_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                    .build("IpSWPF", [sw_load_prefetch_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
                                uint64_t inst_retired = get_event_count(counts, inst_retired_name);
                                uint64_t sw_load_prefetch = get_event_count(counts, sw_load_prefetch_name);
@@ -605,8 +649,7 @@ namespace optkit::core::metrics::cpu
                                // Avoid div by zero
                                if (sw_load_prefetch == 0)
                                    return std::numeric_limits<double>::quiet_NaN();
-                               return static_cast<double>(inst_retired) / static_cast<double>(sw_load_prefetch);
-                           });
+                               return static_cast<double>(inst_retired) / static_cast<double>(sw_load_prefetch); });
             }();
             return metric;
         }
@@ -621,8 +664,7 @@ namespace optkit::core::metrics::cpu
                 return MetricBuilder{}
                     .add(no_ops_from_frontend_name, amd::EventMapper::get(cpu::amd::NativeEvents::DISPATCH_STALLS_1))
                     .add(dispatch_slots_name, amd::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
-                    .build("FrontendBound__%",
-                           [dispatch_slots_name, no_ops_from_frontend_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                    .build("FrontendBound__%", [dispatch_slots_name, no_ops_from_frontend_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
                                uint64_t no_ops_from_frontend = get_event_count(counts, no_ops_from_frontend_name);
                                uint64_t dispatch_slots = SUPERSCALAR_WIDE * get_event_count(counts, dispatch_slots_name);
@@ -630,8 +672,7 @@ namespace optkit::core::metrics::cpu
                                // Avoid div by zero
                                if (dispatch_slots == 0)
                                    return std::numeric_limits<double>::quiet_NaN();
-                               return 100 * static_cast<double>(no_ops_from_frontend) / (static_cast<double>(dispatch_slots));
-                           });
+                               return 100 * static_cast<double>(no_ops_from_frontend) / (static_cast<double>(dispatch_slots)); });
             }();
             return metric;
         }
@@ -648,8 +689,7 @@ namespace optkit::core::metrics::cpu
                     .add(dispatch_slots_name, amd::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
                     .add(retired_ops_name, amd::EventMapper::get(cpu::amd::NativeEvents::RETIRED_OPS))
                     .add(ops_source_dispatched_from_decoder_name, amd::EventMapper::get(cpu::amd::NativeEvents::OPS_SOURCE_DISPATCHED_FROM_DECODER))
-                    .build("BadSpeculation__%",
-                           [dispatch_slots_name, retired_ops_name, ops_source_dispatched_from_decoder_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                    .build("BadSpeculation__%", [dispatch_slots_name, retired_ops_name, ops_source_dispatched_from_decoder_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
                                uint64_t dispatch_slots = SUPERSCALAR_WIDE * get_event_count(counts, dispatch_slots_name);
                                uint64_t retired_ops = get_event_count(counts, retired_ops_name);
@@ -658,8 +698,7 @@ namespace optkit::core::metrics::cpu
                                // Avoid div by zero
                                if (dispatch_slots == 0)
                                    return std::numeric_limits<double>::quiet_NaN();
-                               return 100 * (static_cast<double>(ops_source_dispatched_from_decoder) - static_cast<double>(retired_ops)) / (static_cast<double>(dispatch_slots));
-                           });
+                               return 100 * (static_cast<double>(ops_source_dispatched_from_decoder) - static_cast<double>(retired_ops)) / (static_cast<double>(dispatch_slots)); });
             }();
             return metric;
         }
@@ -673,8 +712,7 @@ namespace optkit::core::metrics::cpu
                 return MetricBuilder{}
                     .add(backend_stalls_name, amd::EventMapper::get(cpu::amd::NativeEvents::BACKEND_STALLS_1))
                     .add(dispatch_slots_name, amd::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
-                    .build("BackendBound__%",
-                           [dispatch_slots_name, backend_stalls_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                    .build("BackendBound__%", [dispatch_slots_name, backend_stalls_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
                                uint64_t backend_stalls = get_event_count(counts, backend_stalls_name);
                                uint64_t dispatch_slots = SUPERSCALAR_WIDE * get_event_count(counts, dispatch_slots_name);
@@ -682,8 +720,7 @@ namespace optkit::core::metrics::cpu
                                // Avoid div by zero
                                if (dispatch_slots == 0)
                                    return std::numeric_limits<double>::quiet_NaN();
-                               return 100 * static_cast<double>(backend_stalls) / (static_cast<double>(dispatch_slots));
-                           });
+                               return 100 * static_cast<double>(backend_stalls) / (static_cast<double>(dispatch_slots)); });
             }();
             return metric;
         }
@@ -697,8 +734,7 @@ namespace optkit::core::metrics::cpu
                 return MetricBuilder{}
                     .add(dispatch_slots_name, amd::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
                     .add(retired_ops_name, amd::EventMapper::get(cpu::amd::NativeEvents::RETIRED_OPS))
-                    .build("Retiring__%",
-                           [dispatch_slots_name, retired_ops_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                    .build("Retiring__%", [dispatch_slots_name, retired_ops_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
                                uint64_t dispatch_slots = SUPERSCALAR_WIDE * get_event_count(counts, dispatch_slots_name);
                                uint64_t retired_ops = get_event_count(counts, retired_ops_name);
@@ -706,8 +742,7 @@ namespace optkit::core::metrics::cpu
                                // Avoid div by zero
                                if (dispatch_slots == 0)
                                    return std::numeric_limits<double>::quiet_NaN();
-                               return 100 * (static_cast<double>(retired_ops)) / (static_cast<double>(dispatch_slots));
-                           });
+                               return 100 * (static_cast<double>(retired_ops)) / (static_cast<double>(dispatch_slots)); });
             }();
             return metric;
         }
@@ -721,8 +756,7 @@ namespace optkit::core::metrics::cpu
                 return MetricBuilder{}
                     .add(smt_stalls_name, amd::EventMapper::get(cpu::amd::NativeEvents::SMT_STALLS_1))
                     .add(dispatch_slots_name, amd::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
-                    .build("SMTContention__%",
-                           [dispatch_slots_name, smt_stalls_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                    .build("SMTContention__%", [dispatch_slots_name, smt_stalls_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
                                uint64_t smt_stalls = get_event_count(counts, smt_stalls_name);
                                uint64_t dispatch_slots = SUPERSCALAR_WIDE * get_event_count(counts, dispatch_slots_name);
@@ -730,8 +764,7 @@ namespace optkit::core::metrics::cpu
                                // Avoid div by zero
                                if (dispatch_slots == 0)
                                    return std::numeric_limits<double>::quiet_NaN();
-                               return 100 * static_cast<double>(smt_stalls) / (static_cast<double>(dispatch_slots));
-                           });
+                               return 100 * static_cast<double>(smt_stalls) / (static_cast<double>(dispatch_slots)); });
             }();
             return metric;
         }
@@ -747,8 +780,7 @@ namespace optkit::core::metrics::cpu
                 return MetricBuilder{}
                     .add(no_ops_from_frontend_0x6flag_name, amd::EventMapper::get(cpu::amd::NativeEvents::DISPATCH_STALLS_1_0x6))
                     .add(dispatch_slots_name, amd::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
-                    .build("FrontendBound_Latency__%",
-                           [dispatch_slots_name, no_ops_from_frontend_0x6flag_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                    .build("FrontendBound_Latency__%", [dispatch_slots_name, no_ops_from_frontend_0x6flag_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
                                uint64_t no_ops_from_frontend_0x6flag = SUPERSCALAR_WIDE * get_event_count(counts, no_ops_from_frontend_0x6flag_name); // this is latency specific. it is dispatch_stalls/dispatch_slots no multiply with cpu wide.
                                uint64_t dispatch_slots = SUPERSCALAR_WIDE * get_event_count(counts, dispatch_slots_name);
@@ -756,8 +788,7 @@ namespace optkit::core::metrics::cpu
                                // Avoid div by zero
                                if (dispatch_slots == 0)
                                    return std::numeric_limits<double>::quiet_NaN();
-                               return 100 * static_cast<double>(no_ops_from_frontend_0x6flag) / (static_cast<double>(dispatch_slots));
-                           });
+                               return 100 * static_cast<double>(no_ops_from_frontend_0x6flag) / (static_cast<double>(dispatch_slots)); });
             }();
             return metric;
         }
@@ -774,8 +805,7 @@ namespace optkit::core::metrics::cpu
                     .add(no_ops_from_frontend_name, amd::EventMapper::get(cpu::amd::NativeEvents::DISPATCH_STALLS_1))
                     .add(no_ops_from_frontend_0x6flag_name, amd::EventMapper::get(cpu::amd::NativeEvents::DISPATCH_STALLS_1_0x6))
                     .add(dispatch_slots_name, amd::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
-                    .build("FrontendBound_BW__%",
-                           [dispatch_slots_name, no_ops_from_frontend_name, no_ops_from_frontend_0x6flag_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                    .build("FrontendBound_BW__%", [dispatch_slots_name, no_ops_from_frontend_name, no_ops_from_frontend_0x6flag_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
                                uint64_t no_ops_from_frontend = get_event_count(counts, no_ops_from_frontend_name); // this is latency specific. it is backend_stalls/dispatch_slots no multiply with cpu wide.
                                uint64_t no_ops_from_frontend_0x6flag = SUPERSCALAR_WIDE * get_event_count(counts, no_ops_from_frontend_0x6flag_name);
@@ -784,8 +814,7 @@ namespace optkit::core::metrics::cpu
                                // Avoid div by zero
                                if (dispatch_slots == 0)
                                    return std::numeric_limits<double>::quiet_NaN();
-                               return 100 * (static_cast<double>(no_ops_from_frontend) - static_cast<double>(no_ops_from_frontend_0x6flag)) / (static_cast<double>(dispatch_slots));
-                           });
+                               return 100 * (static_cast<double>(no_ops_from_frontend) - static_cast<double>(no_ops_from_frontend_0x6flag)) / (static_cast<double>(dispatch_slots)); });
             }();
             return metric;
         }
@@ -806,8 +835,7 @@ namespace optkit::core::metrics::cpu
                     .add(resyncs_name, amd::EventMapper::get(amd::NativeEvents::RESYNCS))
                     .add(retired_ops_name, amd::EventMapper::get(cpu::amd::NativeEvents::RETIRED_OPS))
                     .add(ops_source_dispatched_from_decoder_name, amd::EventMapper::get(cpu::amd::NativeEvents::OPS_SOURCE_DISPATCHED_FROM_DECODER))
-                    .build("BadSpeculation_Mispredicts__%",
-                           [branch_misp_retired_name, dispatch_slots_name, resyncs_name, retired_ops_name, ops_source_dispatched_from_decoder_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                    .build("BadSpeculation_Mispredicts__%", [branch_misp_retired_name, dispatch_slots_name, resyncs_name, retired_ops_name, ops_source_dispatched_from_decoder_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
                                uint64_t branch_misp_retired = get_event_count(counts, branch_misp_retired_name);
                                uint64_t dispatch_slots = SUPERSCALAR_WIDE * get_event_count(counts, dispatch_slots_name);
@@ -820,8 +848,7 @@ namespace optkit::core::metrics::cpu
                                    return std::numeric_limits<double>::quiet_NaN();
 
                                double bad_speculation = (static_cast<double>(ops_source_dispatched_from_decoder) - static_cast<double>(retired_ops)) / (static_cast<double>(dispatch_slots));
-                               return 100 * (bad_speculation * branch_misp_retired) / (branch_misp_retired + resyncs);
-                           });
+                               return 100 * (bad_speculation * branch_misp_retired) / (branch_misp_retired + resyncs); });
             }();
             return metric;
         }
@@ -842,8 +869,7 @@ namespace optkit::core::metrics::cpu
                     .add(resyncs_name, amd::EventMapper::get(amd::NativeEvents::RESYNCS))
                     .add(retired_ops_name, amd::EventMapper::get(cpu::amd::NativeEvents::RETIRED_OPS))
                     .add(ops_source_dispatched_from_decoder_name, amd::EventMapper::get(cpu::amd::NativeEvents::OPS_SOURCE_DISPATCHED_FROM_DECODER))
-                    .build("BadSpeculation_PipelineRestarts__%",
-                           [branch_misp_retired_name, dispatch_slots_name, resyncs_name, retired_ops_name, ops_source_dispatched_from_decoder_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                    .build("BadSpeculation_PipelineRestarts__%", [branch_misp_retired_name, dispatch_slots_name, resyncs_name, retired_ops_name, ops_source_dispatched_from_decoder_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
                                uint64_t branch_misp_retired = get_event_count(counts, branch_misp_retired_name);
                                uint64_t dispatch_slots = SUPERSCALAR_WIDE * get_event_count(counts, dispatch_slots_name);
@@ -856,8 +882,7 @@ namespace optkit::core::metrics::cpu
                                    return std::numeric_limits<double>::quiet_NaN();
 
                                double bad_speculation = (static_cast<double>(ops_source_dispatched_from_decoder) - static_cast<double>(retired_ops)) / (static_cast<double>(dispatch_slots));
-                               return 100 * (bad_speculation * resyncs) / (branch_misp_retired + resyncs);
-                           });
+                               return 100 * (bad_speculation * resyncs) / (branch_misp_retired + resyncs); });
             }();
             return metric;
         }
@@ -876,8 +901,7 @@ namespace optkit::core::metrics::cpu
                     .add(dispatch_slots_name, amd::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
                     .add(cycles_no_retire_not_complete_name, amd::EventMapper::get(cpu::amd::NativeEvents::CYCLES_NO_RETIRE_NOT_COMPLETE))
                     .add(cycles_no_retire_load_not_complete_name, amd::EventMapper::get(cpu::amd::NativeEvents::CYCLES_NO_RETIRE_LOAD_NOT_COMPLETE))
-                    .build("BackendEndbound_Memory__%",
-                           [dispatch_slots_name, backend_stalls_name, cycles_no_retire_not_complete_name, cycles_no_retire_load_not_complete_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                    .build("BackendEndbound_Memory__%", [dispatch_slots_name, backend_stalls_name, cycles_no_retire_not_complete_name, cycles_no_retire_load_not_complete_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
                                uint64_t backend_stalls = get_event_count(counts, backend_stalls_name);
                                uint64_t dispatch_slots = SUPERSCALAR_WIDE * get_event_count(counts, dispatch_slots_name);
@@ -888,8 +912,7 @@ namespace optkit::core::metrics::cpu
                                if (dispatch_slots == 0 || cycles_no_retire_load_not_complete == 0)
                                    return std::numeric_limits<double>::quiet_NaN();
                                double backend_bound = static_cast<double>(backend_stalls) / (static_cast<double>(dispatch_slots));
-                               return 100 * backend_bound * (static_cast<double>(cycles_no_retire_not_complete) / static_cast<double>(cycles_no_retire_load_not_complete));
-                           });
+                               return 100 * backend_bound * (static_cast<double>(cycles_no_retire_not_complete) / static_cast<double>(cycles_no_retire_load_not_complete)); });
             }();
             return metric;
         }
@@ -908,8 +931,7 @@ namespace optkit::core::metrics::cpu
                     .add(dispatch_slots_name, amd::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
                     .add(cycles_no_retire_not_complete_name, amd::EventMapper::get(cpu::amd::NativeEvents::CYCLES_NO_RETIRE_NOT_COMPLETE))
                     .add(cycles_no_retire_load_not_complete_name, amd::EventMapper::get(cpu::amd::NativeEvents::CYCLES_NO_RETIRE_LOAD_NOT_COMPLETE))
-                    .build("BackendEndbound_CPU__%",
-                           [dispatch_slots_name, backend_stalls_name, cycles_no_retire_not_complete_name, cycles_no_retire_load_not_complete_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                    .build("BackendEndbound_CPU__%", [dispatch_slots_name, backend_stalls_name, cycles_no_retire_not_complete_name, cycles_no_retire_load_not_complete_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
                                uint64_t backend_stalls = get_event_count(counts, backend_stalls_name);
                                uint64_t dispatch_slots = SUPERSCALAR_WIDE * get_event_count(counts, dispatch_slots_name);
@@ -920,8 +942,7 @@ namespace optkit::core::metrics::cpu
                                if (dispatch_slots == 0 || cycles_no_retire_load_not_complete == 0)
                                    return std::numeric_limits<double>::quiet_NaN();
                                double backend_bound = static_cast<double>(backend_stalls) / (static_cast<double>(dispatch_slots));
-                               return 100 * backend_bound * (1.0 - (static_cast<double>(cycles_no_retire_not_complete) / static_cast<double>(cycles_no_retire_load_not_complete)));
-                           });
+                               return 100 * backend_bound * (1.0 - (static_cast<double>(cycles_no_retire_not_complete) / static_cast<double>(cycles_no_retire_load_not_complete))); });
             }();
             return metric;
         }
@@ -937,8 +958,7 @@ namespace optkit::core::metrics::cpu
                     .add(dispatch_slots_name, amd::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
                     .add(retired_microcode_ops_name, amd::EventMapper::get(amd::NativeEvents::RETIRED_MICROCODE_OPS))
                     .add(retired_ops_name, amd::EventMapper::get(cpu::amd::NativeEvents::RETIRED_OPS))
-                    .build("Retiring_Fastpath__%",
-                           [dispatch_slots_name, retired_microcode_ops_name, retired_ops_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                    .build("Retiring_Fastpath__%", [dispatch_slots_name, retired_microcode_ops_name, retired_ops_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
                                uint64_t dispatch_slots = SUPERSCALAR_WIDE * get_event_count(counts, dispatch_slots_name);
                                uint64_t retired_ops = get_event_count(counts, retired_ops_name);
@@ -949,8 +969,7 @@ namespace optkit::core::metrics::cpu
                                    return std::numeric_limits<double>::quiet_NaN();
                                double retiring = (static_cast<double>(retired_ops)) / (static_cast<double>(dispatch_slots));
 
-                               return 100 * retiring * (retired_ops - retired_microcode_ops) / retired_ops;
-                           });
+                               return 100 * retiring * (retired_ops - retired_microcode_ops) / retired_ops; });
             }();
             return metric;
         }
@@ -966,8 +985,7 @@ namespace optkit::core::metrics::cpu
                     .add(dispatch_slots_name, amd::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
                     .add(retired_microcode_ops_name, amd::EventMapper::get(amd::NativeEvents::RETIRED_MICROCODE_OPS))
                     .add(retired_ops_name, amd::EventMapper::get(cpu::amd::NativeEvents::RETIRED_OPS))
-                    .build("Retiring_Microcode__%",
-                           [dispatch_slots_name, retired_microcode_ops_name, retired_ops_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                    .build("Retiring_Microcode__%", [dispatch_slots_name, retired_microcode_ops_name, retired_ops_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
                                uint64_t dispatch_slots = SUPERSCALAR_WIDE * get_event_count(counts, dispatch_slots_name);
                                uint64_t retired_ops = get_event_count(counts, retired_ops_name);
@@ -978,8 +996,7 @@ namespace optkit::core::metrics::cpu
                                    return std::numeric_limits<double>::quiet_NaN();
                                double retiring = (static_cast<double>(retired_ops)) / (static_cast<double>(dispatch_slots));
 
-                               return 100 * retiring * retired_microcode_ops / retired_ops;
-                           });
+                               return 100 * retiring * retired_microcode_ops / retired_ops; });
             }();
             return metric;
         }

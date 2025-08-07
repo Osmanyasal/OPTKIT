@@ -32,6 +32,14 @@ namespace optkit::core::metrics::cpu::amd
             return "L3_CACHE_ACCESSES";
         case NativeEvents::L2_CACHE_ACCESSES:
             return "L2_CACHE_ACCESSES";
+        case NativeEvents::SCALAR_SINGLE_FLOPS:
+            return "SCALAR_SINGLE_FLOPS";
+        case NativeEvents::PACKED_SINGLE_FLOPS:
+            return "PACKED_SINGLE_FLOPS";
+        case NativeEvents::SCALAR_DOUBLE_FLOPS:
+            return "SCALAR_DOUBLE_FLOPS";
+        case NativeEvents::PACKED_DOUBLE_FLOPS:
+            return "PACKED_DOUBLE_FLOPS";
 
         default:
             return "UNKNOWN_CORE_EVENT";
