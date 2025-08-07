@@ -584,7 +584,7 @@ namespace optkit::core::metrics::cpu
             return metric;
         }
 
-        static const MetricBuilder &FLOPs()
+        static const MetricBuilder &GFLOPs()
         {
 
             static const MetricBuilder metric = []
@@ -607,14 +607,13 @@ namespace optkit::core::metrics::cpu
                     .add(inst_packed_256_single_name, intel::EventMapper::get(intel::NativeEvents::FP_ARITH_INST_RETIRED_256B_PACKED_SINGLE))
                     .add(inst_packed_512_double_name, intel::EventMapper::get(intel::NativeEvents::FP_ARITH_INST_RETIRED_512B_PACKED_DOUBLE))
                     .add(inst_packed_512_single_name, intel::EventMapper::get(intel::NativeEvents::FP_ARITH_INST_RETIRED_512B_PACKED_SINGLE))
-                    .build("IpFLOP",
+                    .build("GFLOPs",
                            [retired_scalar_sp_any_name, retired_scalar_dp_any_name,
                             inst_packed_128_double_name, inst_packed_128_single_name,
                             inst_packed_256_double_name, inst_packed_256_single_name,
                             inst_packed_512_double_name, inst_packed_512_single_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
                                double duration_sec = get_event_count(counts, "duration_microsec") / 1.0e6;
-                               uint64_t inst_retired = get_event_count(counts, inst_retired_name);
                                uint64_t retired_scalar_sp_any = get_event_count(counts, retired_scalar_sp_any_name);
                                uint64_t retired_scalar_dp_any = get_event_count(counts, retired_scalar_dp_any_name);
                                uint64_t inst_packed_128_double = get_event_count(counts, inst_packed_128_double_name);
@@ -637,7 +636,7 @@ namespace optkit::core::metrics::cpu
                                // Avoid div by zero
                                if (duration_sec == 0)
                                    return std::numeric_limits<double>::quiet_NaN();
-                               return static_cast<double>(total_flops) / duration_sec;
+                               return static_cast<double>(total_flops) / duration_sec / 1.0e9;
                            });
             }();
             return metric;
@@ -659,7 +658,7 @@ namespace optkit::core::metrics::cpu
                 std::string inst_packed_512_single_name = to_string(intel::NativeEvents::FP_ARITH_INST_RETIRED_512B_PACKED_SINGLE);
 
                 return MetricBuilder{}
-                    .add(mem_inst_retired_name, amd::EventMapper::get(CoreEvents::MEM_INST_RETIRED))
+                    .add(mem_inst_retired_name, intel::EventMapper::get(CoreEvents::MEM_INST_RETIRED))
                     .add(retired_scalar_sp_any_name, intel::EventMapper::get(intel::NativeEvents::FP_ARITH_INST_RETIRED_SCALAR_SINGLE))
                     .add(retired_scalar_dp_any_name, intel::EventMapper::get(intel::NativeEvents::FP_ARITH_INST_RETIRED_SCALAR_DOUBLE))
                     .add(inst_packed_128_double_name, intel::EventMapper::get(intel::NativeEvents::FP_ARITH_INST_RETIRED_128B_PACKED_DOUBLE))
@@ -669,34 +668,35 @@ namespace optkit::core::metrics::cpu
                     .add(inst_packed_512_double_name, intel::EventMapper::get(intel::NativeEvents::FP_ARITH_INST_RETIRED_512B_PACKED_DOUBLE))
                     .add(inst_packed_512_single_name, intel::EventMapper::get(intel::NativeEvents::FP_ARITH_INST_RETIRED_512B_PACKED_SINGLE))
                     .build("AI",
-                           [retired_scalar_sp_any_name, retired_scalar_dp_any_name,
+                           [mem_inst_retired_name, retired_scalar_sp_any_name, retired_scalar_dp_any_name,
                             inst_packed_128_double_name, inst_packed_128_single_name,
                             inst_packed_256_double_name, inst_packed_256_single_name,
                             inst_packed_512_double_name, inst_packed_512_single_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
-                               double duration_sec = get_event_count(counts, "duration_microsec") / 1.0e6;
-                               uint64_t inst_retired = get_event_count(counts, inst_retired_name);
-                               uint64_t retired_scalar_sp_any = get_event_count(counts, retired_scalar_sp_any_name);
-                               uint64_t retired_scalar_dp_any = get_event_count(counts, retired_scalar_dp_any_name);
-                               uint64_t inst_packed_128_double = get_event_count(counts, inst_packed_128_double_name);
-                               uint64_t inst_packed_128_single = get_event_count(counts, inst_packed_128_single_name);
-                               uint64_t inst_packed_256_double = get_event_count(counts, inst_packed_256_double_name);
-                               uint64_t inst_packed_256_single = get_event_count(counts, inst_packed_256_single_name);
-                               uint64_t inst_packed_512_double = get_event_count(counts, inst_packed_512_double_name);
-                               uint64_t inst_packed_512_single = get_event_count(counts, inst_packed_512_single_name);
+                               uint64_t mem_inst_retired = get_event_count(counts, mem_inst_retired_name);
+                               uint64_t retired_scalar_sp_any = 1 * get_event_count(counts, retired_scalar_sp_any_name);
+                               uint64_t retired_scalar_dp_any = 1 * get_event_count(counts, retired_scalar_dp_any_name);
+                               uint64_t inst_packed_128_double = 2 * get_event_count(counts, inst_packed_128_double_name);
+                               uint64_t inst_packed_128_single = 4 * get_event_count(counts, inst_packed_128_single_name);
+                               uint64_t inst_packed_256_double = 4 * get_event_count(counts, inst_packed_256_double_name);
+                               uint64_t inst_packed_256_single = 8 * get_event_count(counts, inst_packed_256_single_name);
+                               uint64_t inst_packed_512_double = 8 * get_event_count(counts, inst_packed_512_double_name);
+                               uint64_t inst_packed_512_single = 16 * get_event_count(counts, inst_packed_512_single_name);
 
                                uint64_t total_flops =
-                                   (retired_scalar_sp_any * 1) +
-                                   (retired_scalar_dp_any * 1) +
-                                   (inst_packed_128_double * 2) +
-                                   (inst_packed_128_single * 4) +
-                                   (inst_packed_256_double * 4) +
-                                   (inst_packed_256_single * 8) +
-                                   (inst_packed_512_double * 8) +
-                                   (inst_packed_512_single * 16);
+                                   retired_scalar_sp_any +
+                                   retired_scalar_dp_any +
+                                   inst_packed_128_double +
+                                   inst_packed_128_single +
+                                   inst_packed_256_double +
+                                   inst_packed_256_single +
+                                   inst_packed_512_double +
+                                   inst_packed_512_single;
 
                                double mem_bytes = mem_inst_retired * (4 * (retired_scalar_sp_any + inst_packed_128_single + inst_packed_256_single + inst_packed_512_single) +
                                                                       8 * (retired_scalar_dp_any + inst_packed_128_double + inst_packed_256_double + inst_packed_512_double));
+                               std::cout << "total_flops:" << total_flops << "\n";
+                               std::cout << "mem bytes:" << mem_bytes << "\n";
                                // Avoid div by zero
                                if (mem_bytes == 0)
                                    return std::numeric_limits<double>::quiet_NaN();

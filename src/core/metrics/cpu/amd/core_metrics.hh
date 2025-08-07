@@ -492,14 +492,14 @@ namespace optkit::core::metrics::cpu
             return metric;
         }
 
-        static const MetricBuilder &FLOPs()
+        static const MetricBuilder &GFLOPs()
         {
             static const MetricBuilder metric = []
             {
                 std::string retired_flops_any_name = to_string(CoreEvents::RETIRED_FLOPS_ANY);
                 return MetricBuilder{}
                     .add(retired_flops_any_name, amd::EventMapper::get(CoreEvents::RETIRED_FLOPS_ANY))
-                    .build("FLOPs",
+                    .build("GFLOPs",
                            [retired_flops_any_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
                                double duration_sec = get_event_count(counts, "duration_microsec") / 1.0e6;
@@ -508,7 +508,7 @@ namespace optkit::core::metrics::cpu
                                // Avoid div by zero
                                if (duration_sec == 0)
                                    return std::numeric_limits<double>::quiet_NaN();
-                               return static_cast<double>(retired_flops_any) / duration_sec;
+                               return static_cast<double>(retired_flops_any) / duration_sec / 1.0e9;
                            });
             }();
             return metric;
