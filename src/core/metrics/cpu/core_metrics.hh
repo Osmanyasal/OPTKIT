@@ -74,6 +74,8 @@ namespace optkit::core::metrics::cpu
         // Floating-point operation metrics
         static MetricBuilder IpFLOP() { return {}; }       ///< Instructions per FP operation  -- Instructions per floating point operations
         static MetricBuilder IpAVXAnyFLOP() { return {}; } ///< INST_RETIRED / (RETIRED_SSE_AVX_FLOPS_ANY)  -- Instructions per vector floating point operations (not vector instructions, actual fp computation count)
+        static MetricBuilder FLOPs() { return {}; }        ///< FLOP/seconds (Performance) -- Floating point operations per second (FLOP/s)
+        static MetricBuilder AI() { return {}; }           ///< FLOP/Byte   (Arithmetic Intensity) -- Ratio of floating point operations to memory bandwidth
 
         // static MetricBuilder IpArith() { return {}; }            ///< INST_RETIRED / (FP_ARITH_INST_RETIRED_SCALAR + FP_ARITH_INST_RETIRED_VECTOR)  -- Instructions per Scalar Float FP instructions (equals the scalar fp count)
         static MetricBuilder IpArithScalarSP() { return {}; }    ///< INST_RETIRED / FP_ARITH_INST.SCALAR_SINGLE  -- Instructions per Scalar Double FP instructions (equals the scalar fp count)

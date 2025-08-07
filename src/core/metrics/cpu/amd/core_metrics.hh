@@ -311,8 +311,7 @@ namespace optkit::core::metrics::cpu
 
                            if (unhalted_core_cycles == 0)
                                    return std::numeric_limits<double>::quiet_NaN();
-                            return static_cast<double>(inst_retired) / static_cast<double>(unhalted_core_cycles);
-                        });
+                            return static_cast<double>(inst_retired) / static_cast<double>(unhalted_core_cycles); });
             }();
             return metric;
         }
@@ -444,10 +443,29 @@ namespace optkit::core::metrics::cpu
         }
 
         // Floating-point operation metrics
+
         static const MetricBuilder &IpFLOP()
         {
-            static const MetricBuilder empty{};
-            return empty;
+            static const MetricBuilder metric = []
+            {
+                std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
+                std::string retired_flops_any_name = to_string(CoreEvents::RETIRED_FLOPS_ANY);
+                return MetricBuilder{}
+                    .add(inst_retired_name, amd::EventMapper::get(CoreEvents::INST_RETIRED))
+                    .add(retired_flops_any_name, amd::EventMapper::get(CoreEvents::RETIRED_FLOPS_ANY))
+                    .build("IpFLOP",
+                           [retired_flops_any_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                           {
+                               uint64_t inst_retired = get_event_count(counts, inst_retired_name);
+                               uint64_t retired_flops_any = get_event_count(counts, retired_flops_any_name);
+
+                               // Avoid div by zero
+                               if (retired_flops_any == 0)
+                                   return std::numeric_limits<double>::quiet_NaN();
+                               return static_cast<double>(inst_retired) / static_cast<double>(retired_flops_any);
+                           });
+            }();
+            return metric;
         }
 
         static const MetricBuilder &IpAVXAnyFlop()
@@ -469,6 +487,52 @@ namespace optkit::core::metrics::cpu
                                if (retired_sse_avx_flops_any == 0)
                                    return std::numeric_limits<double>::quiet_NaN();
                                return static_cast<double>(inst_retired) / static_cast<double>(retired_sse_avx_flops_any);
+                           });
+            }();
+            return metric;
+        }
+
+        static const MetricBuilder &FLOPs()
+        {
+            static const MetricBuilder metric = []
+            {
+                std::string retired_flops_any_name = to_string(CoreEvents::RETIRED_FLOPS_ANY);
+                return MetricBuilder{}
+                    .add(retired_flops_any_name, amd::EventMapper::get(CoreEvents::RETIRED_FLOPS_ANY))
+                    .build("FLOPs",
+                           [retired_flops_any_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                           {
+                               double duration_sec = get_event_count(counts, "duration_microsec") / 1.0e6;
+                               uint64_t retired_flops_any = get_event_count(counts, retired_flops_any_name);
+
+                               // Avoid div by zero
+                               if (duration_sec == 0)
+                                   return std::numeric_limits<double>::quiet_NaN();
+                               return static_cast<double>(retired_flops_any) / duration_sec;
+                           });
+            }();
+            return metric;
+        }
+
+        static const MetricBuilder &AI()
+        {
+            static const MetricBuilder metric = []
+            {
+                std::string retired_flops_any_name = to_string(CoreEvents::RETIRED_FLOPS_ANY);
+                std::string mem_inst_retired_name = to_string(CoreEvents::MEM_INST_RETIRED);
+                return MetricBuilder{}
+                    .add(retired_flops_any_name, amd::EventMapper::get(CoreEvents::RETIRED_FLOPS_ANY))
+                    .add(mem_inst_retired_name, amd::EventMapper::get(CoreEvents::MEM_INST_RETIRED))
+                    .build("AI",
+                           [retired_flops_any_name, mem_inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                           {
+                               uint64_t retired_flops_any = get_event_count(counts, retired_flops_any_name);
+                               uint64_t mem_inst_retired = get_event_count(counts, mem_inst_retired_name);
+                               double mem_bytes = mem_inst_retired * 8.0;
+                               // Avoid div by zero
+                               if (mem_bytes == 0)
+                                   return std::numeric_limits<double>::quiet_NaN();
+                               return static_cast<double>(retired_flops_any) / mem_bytes;
                            });
             }();
             return metric;

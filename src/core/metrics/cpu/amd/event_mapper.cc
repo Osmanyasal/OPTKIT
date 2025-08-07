@@ -59,19 +59,19 @@ namespace optkit::core::metrics::cpu::amd
         // {cpu::CoreEvents::FP_ARITH_INST_RETIRED, 0x0},   // amd doesn't distinquish
 #if OPTKIT_ENV_CPU_MICROARCH_ZEN || OPTKIT_ENV_CPU_MICROARCH_ZEN2 || OPTKIT_ENV_CPU_MICROARCH_ZEN3
             {cpu::CoreEvents::RETIRED_VECTOR, {0xff03}},    // sse_avx
-            {cpu::CoreEvents::RETIRED_FLOPS_ANY, {0xff03}}, // sse_avx
+            {cpu::CoreEvents::RETIRED_FLOPS_ANY, {0xff03}}, // fp_ret_sse_avx_ops.all -- Retired SSE and AVX floating-point ops of all types, counts packed and scalar ops.
 
 #elif OPTKIT_ENV_CPU_MICROARCH_ZEN4
-            {cpu::CoreEvents::RETIRED_VECTOR, {0x1f03}},    // sse_avx
-            {cpu::CoreEvents::RETIRED_FLOPS_ANY, {0x1f03}}, // sse_avx
+            {cpu::CoreEvents::RETIRED_VECTOR, {0x1f03}},    // TODO: fix this, you need to seperate like intel to get all vector ops. fp_pack_ops_retired.all -- Retired packed floating-point ops of all types.
+            {cpu::CoreEvents::RETIRED_FLOPS_ANY, {0x1f03}}, // fp_ret_sse_avx_ops.all -- Retired SSE and AVX floating-point ops of all types, counts packed and scalar ops.
 
 #elif OPTKIT_ENV_CPU_MICROARCH_ZEN5
             {cpu::CoreEvents::RETIRED_VECTOR, {0x0f03}},    // sse_avx
-            {cpu::CoreEvents::RETIRED_FLOPS_ANY, {0x0f03}}, // sse_avx
+            {cpu::CoreEvents::RETIRED_FLOPS_ANY, {0x0f03}}, // fp_ret_sse_avx_ops.all -- Retired SSE and AVX floating-point ops of all types, counts packed and scalar ops.
 #else
             // Default case (zen5) for newer architectures or if not defined
             {cpu::CoreEvents::RETIRED_VECTOR, {0x0f03}},    // sse_avx
-            {cpu::CoreEvents::RETIRED_FLOPS_ANY, {0x0f03}}, // sse_avx
+            {cpu::CoreEvents::RETIRED_FLOPS_ANY, {0x0f03}}, // fp_ret_sse_avx_ops.all -- Retired SSE and AVX floating-point ops of all types, counts packed and scalar ops.
 #endif
         };
 

@@ -140,6 +140,7 @@ namespace optkit::core::pmu::cpu::perf
         this->event_results = event_value;
         this->total_duration_ms = total_duration;
 
+        aggregated_events["duration_microsec"] = this->total_duration_ms * 1000.0; // convert to microseconds
         return aggregated_events;
     }
 
