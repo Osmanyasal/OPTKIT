@@ -692,11 +692,11 @@ namespace optkit::core::metrics::cpu
                                    inst_packed_256_single +
                                    inst_packed_512_double +
                                    inst_packed_512_single;
-
-                               double mem_bytes = mem_inst_retired * (4 * (retired_scalar_sp_any + inst_packed_128_single + inst_packed_256_single + inst_packed_512_single) +
-                                                                      8 * (retired_scalar_dp_any + inst_packed_128_double + inst_packed_256_double + inst_packed_512_double));
-                               std::cout << "total_flops:" << total_flops << "\n";
-                               std::cout << "mem bytes:" << mem_bytes << "\n";
+                               double sp_ratio = (retired_scalar_sp_any + inst_packed_128_single + inst_packed_256_single + inst_packed_512_single) / total_flops;
+                               double dp_ratio = (retired_scalar_dp_any + inst_packed_128_double + inst_packed_256_double + inst_packed_512_double) / total_flops;
+                               double mem_bytes = mem_inst_retired * (4 * sp_ratio + 8 * dp_ratio);
+                               //    std::cout << "total_flops:" << total_flops << "\n";
+                               //    std::cout << "mem bytes:" << mem_bytes << "\n";
                                // Avoid div by zero
                                if (mem_bytes == 0)
                                    return std::numeric_limits<double>::quiet_NaN();

@@ -528,7 +528,7 @@ namespace optkit::core::metrics::cpu
                            {
                                uint64_t retired_flops_any = get_event_count(counts, retired_flops_any_name);
                                uint64_t mem_inst_retired = get_event_count(counts, mem_inst_retired_name);
-                               double mem_bytes = mem_inst_retired * 8.0;
+                               double mem_bytes = mem_inst_retired * 8.0; // Assuming 8 bytes per memory instruction
                                // Avoid div by zero
                                if (mem_bytes == 0)
                                    return std::numeric_limits<double>::quiet_NaN();
