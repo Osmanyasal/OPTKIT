@@ -116,6 +116,30 @@ namespace optkit::core::temperature
         return false;
     }
 
+    static std::string get_temp_label_or_num(const std::string &hwmon_path, const std::string &temp_num_str)
+    {
+        std::string label_path = hwmon_path + "/temp" + temp_num_str + "_label";
+        if (optkit::utils::is_path_exists(label_path))
+        {
+            try
+            {
+                std::string label = optkit::utils::read_file(label_path);
+                label.erase(label.find_last_not_of(" \n\r\t") + 1);
+                if (!label.empty())
+                {
+                    // Replace spaces with underscores for consistency
+                    std::replace(label.begin(), label.end(), ' ', '_');
+                    return label;
+                }
+            }
+            catch (...)
+            {
+                // ignore and fall back
+            }
+        }
+        return "TEMP_" + temp_num_str;
+    }
+
     std::string TemperatureProfiler::build_sensor_name(const std::string &hwmon_name,
                                                        const std::string &temp_num_str)
     {
@@ -204,6 +228,8 @@ namespace optkit::core::temperature
             while ((temp_entry = readdir(temp_dir)) != nullptr)
             {
                 std::string filename = temp_entry->d_name;
+
+                // to filter "tempX_input", it is 11 lengths long have temp and ensures it ends with _input.
                 if (filename.size() >= 11 &&
                     filename.substr(0, 4) == "temp" &&
                     filename.substr(filename.size() - 6) == "_input")
@@ -213,8 +239,11 @@ namespace optkit::core::temperature
                     if (!optkit::utils::is_path_exists(full_temp_path))
                         continue;
 
-                    std::string temp_num_str = filename.substr(4, 1);
-                    std::string sensor_name = build_sensor_name(hwmon_name, temp_num_str);
+                    // Extract the number between "temp" and "_input"
+                    std::cout << "** FileName:" << full_temp_path << "\n";
+                    std::string temp_num_str = filename.substr(4, filename.size() - 10); // handles temp10+
+                    std::string label_or_num = get_temp_label_or_num(hwmon_path, temp_num_str);
+                    std::string sensor_name = build_sensor_name(hwmon_name, label_or_num);
 
                     // Handle duplicates
                     if (sensors.count(sensor_name))
