@@ -145,8 +145,8 @@ namespace optkit::core::temperature
     {
         // Group patterns
         static const std::vector<std::pair<std::vector<std::string>, std::string>> categories = {
-            {{"coretemp"}, "CPU_PACKAGE_TEMP"},
-            {{"k10temp", "zenpower"}, "CPU_PACKAGE_TEMP"},
+            {{"coretemp"}, "CPU_PACKAGE_TEMP_"},
+            {{"k10temp", "zenpower"}, "CPU_PACKAGE_TEMP_"},
             {{"nvme"}, "NVME_TEMP_"},
             {{"amdgpu"}, "AMDGPU_TEMP_"},
             {{"nvidia", "nouveau"}, "NVIDIA_GPU_TEMP_"},
@@ -164,10 +164,7 @@ namespace optkit::core::temperature
         {
             if (match_any(hwmon_name, cat.first))
             {
-                // If the mapping is complete name, don't append number
-                if (cat.second.find("_TEMP_") != std::string::npos)
-                    return cat.second + temp_num_str;
-                return cat.second; // For fixed-name categories
+                return cat.second + temp_num_str;
             }
         }
 
