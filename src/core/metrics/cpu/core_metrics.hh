@@ -115,6 +115,7 @@ namespace optkit::core::metrics::cpu
         static MetricBuilder AllIpMetrics() { return {}; }
         static MetricBuilder AllBranchMetrics() { return {}; }
 
+        static MetricBuilder CARM() { return {}; }
         static MetricBuilder TopdownL1() { return {}; }
         static MetricBuilder TopdownL2_FE() { return {}; }
         static MetricBuilder TopdownL2_BE() { return {}; }

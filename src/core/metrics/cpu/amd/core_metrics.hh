@@ -1003,6 +1003,19 @@ namespace optkit::core::metrics::cpu
 
         // Aggregated Metrics
 
+        // Roofline model metrics
+        static const MetricBuilder &CARM()
+        {
+            static const MetricBuilder mb = []
+            {
+                MetricBuilder mb{};
+                mb.add(AI());
+                mb.add(GFLOPs());
+                return mb;
+            }();
+            return mb;
+        }
+
         static const MetricBuilder &TopdownL1()
         {
             static const MetricBuilder mb = []

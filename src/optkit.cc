@@ -15,7 +15,6 @@ namespace optkit::core
     OPTKIT::OPTKIT(const OPTKIT_CONFIG config) : config{config}
     {
         optkit::utils::logger::BaseLogger::init(); // logger init
-        optkit::core::pmu::cpu::QueryPMU::init();  // pmf init
         int32_t paranoid = optkit::core::Query::paranoid();
         if (OPT_UNLIKELY(paranoid > 0))
         {
@@ -27,6 +26,9 @@ namespace optkit::core
         }
         else
         {
+            optkit::core::pmu::cpu::QueryPMU::init();               // pmf init
+            optkit::core::temperature::TemperatureProfiler::init(); // discover hwmon temperatures.
+
             Query::create_folder = config.create_folder;
             if (OPT_LIKELY(Query::create_folder))
             {

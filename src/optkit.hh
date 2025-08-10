@@ -14,6 +14,7 @@
 #include "core/energy/cpu/rapl/module.hh"
 #include "core/frequency/module.hh"
 #include "core/disk/module.hh"
+#include "core/temperature/module.hh"
 #include "core/metrics/module.hh"
 
 namespace optkit::core
