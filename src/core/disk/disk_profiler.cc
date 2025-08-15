@@ -2,8 +2,8 @@
 
 namespace optkit::core::disk
 {
-    IoDiskProfiler::IoDiskProfiler(const char *block_name, const core::metrics::MetricBuilder &mb, bool verbose)
-        : BaseProfiler<std::vector<uint64_t>>(block_name, "disk_io", verbose), metric_builder(mb)
+    IoDiskProfiler::IoDiskProfiler(const char *block_name, const core::metrics::MetricBuilder<uint64_t> &mb, bool verbose)
+        : BaseProfiler(block_name, "disk_io", verbose), metric_builder(mb)
     {
         last_snapshot = read_selected_io_counters(metric_builder.event_names());
     }
@@ -44,11 +44,7 @@ namespace optkit::core::disk
             uint64_t prev_val = last_snapshot.at(key);
 
             // Calculate delta, careful with possible counter reset (wraparound)
-            uint64_t delta = 0;
-            if (curr_val >= prev_val)
-                delta = curr_val - prev_val;
-            else
-                delta = curr_val; // wrapped around, treat as new value
+            uint64_t delta = curr_val - prev_val;
 
             // std::cout << "\t" << "cur_val:" << curr_val << " - " << "prev_val:" << prev_val << " delta:" << delta << "\n";
 
@@ -89,7 +85,7 @@ namespace optkit::core::disk
     {
         std::stringstream ss;
         ss << "[\n";
-        ss << utils::to_json(this->total_duration_ms, this->measurement_type, this->event_results, this->metric_results);
+        ss << utils::to_json<uint64_t>(this->total_duration_ms, this->measurement_type, this->event_results, this->metric_results);
         ss << "]\n";
         return ss.str();
     }

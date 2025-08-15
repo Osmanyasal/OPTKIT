@@ -31,7 +31,7 @@ namespace optkit::core::metrics
      *
      * ✅ Example:
      * @code
-     * MetricBuilder builder;
+     * MetricBuilder<uint64_t> builder;
      * builder.add("inst_retired", {0x00c0})
      *        .add("cpu_cycles", {0x003c})
      *        .add("cache_misses", {0x412e})
@@ -62,6 +62,7 @@ namespace optkit::core::metrics
      * It helps cleanly organize both raw events and derived metrics using a simple declarative API.
      *
      * @param print_events tells profiler to print the events (note that metrics are always printed.)
+     * @param allow_duplicates if true, allows adding duplicate (name, code) pairs.
      *
      *
      * @note In what order the event names and codes are added is IMPORTANT! it is read as it is added.
@@ -69,10 +70,11 @@ namespace optkit::core::metrics
      *       Given the reason, we used vectors and pairs to store the data in metric Builder.
      */
 
+    template <typename eventT>
     class MetricBuilder
     {
     public:
-        using CalculationFunc = std::function<double(const std::unordered_map<std::string, uint64_t> &)>;
+        using CalculationFunc = std::function<double(const std::unordered_map<std::string, eventT> &)>;
 
         MetricBuilder(bool print_events = true, bool allow_duplicates = false) : print_events{print_events}, allow_duplicates{allow_duplicates}, ill_formed{false} {};
 
@@ -117,13 +119,12 @@ namespace optkit::core::metrics
             this->add(mb.metric_events);
 
             // Add calculation functions (overwrites if names collide)
-            for (std::unordered_map<std::string, CalculationFunc>::const_iterator it = mb.calculation_funcs.begin(); it != mb.calculation_funcs.end(); ++it)
+            for (const auto &pair : mb.calculation_funcs)
             {
-                const std::string &name = it->first;
-                const CalculationFunc &func = it->second;
+                const std::string &name = pair.first;
+                const CalculationFunc &func = pair.second;
                 this->calculation_funcs[name] = func;
             }
-
             return *this;
         }
 
@@ -134,16 +135,16 @@ namespace optkit::core::metrics
         }
 
         // Pass event results and calculate all metrics defined then return the result
-        std::vector<std::pair<std::string, double>> calculate(const std::unordered_map<std::string, uint64_t> &results) const
+        std::vector<std::pair<std::string, double>> calculate(const std::unordered_map<std::string, eventT> &results) const
         {
             if (calculation_funcs.empty())
                 return {};
 
             std::vector<std::pair<std::string, double>> computed_metrics;
-            for (auto it = calculation_funcs.begin(); it != calculation_funcs.end(); ++it)
+            for (const auto &pair : calculation_funcs)
             {
-                const std::string &name = it->first;
-                const CalculationFunc &func = it->second;
+                const std::string &name = pair.first;
+                const CalculationFunc &func = pair.second;
                 computed_metrics.push_back(std::make_pair(name, func(results)));
             }
 
@@ -153,9 +154,9 @@ namespace optkit::core::metrics
         std::vector<std::string> metric_names() const
         {
             std::vector<std::string> names;
-            for (std::unordered_map<std::string, CalculationFunc>::const_iterator it = calculation_funcs.begin(); it != calculation_funcs.end(); ++it)
+            for (const auto &pair : calculation_funcs)
             {
-                names.push_back(it->first);
+                names.push_back(pair.first);
             }
             return names;
         }
@@ -163,9 +164,9 @@ namespace optkit::core::metrics
         std::vector<std::string> event_names() const
         {
             std::vector<std::string> names;
-            for (auto it = metric_events.begin(); it != metric_events.end(); ++it)
+            for (const auto &pair : metric_events)
             {
-                names.push_back(it->first);
+                names.push_back(pair.first);
             }
             return names;
         }
@@ -192,13 +193,44 @@ namespace optkit::core::metrics
         bool ill_formed; // if true, the MetricBuilder is not well formed, i.e. no events or no calculations.
     };
 
-    OPT_FORCE_INLINE uint64_t get_event_count(const std::unordered_map<std::string, uint64_t> &counts, const std::string &name)
+    template <typename eventT>
+    OPT_FORCE_INLINE eventT get_event_count(const std::unordered_map<std::string, eventT> &counts, const std::string &name, const eventT &default_value = eventT{})
     {
         auto it = counts.find(name);
-        return (it != counts.end()) ? it->second : 0;
+        return (it != counts.end()) ? it->second : default_value;
     }
-    std::string to_string(const MetricBuilder &mb);
-    std::ostream &operator<<(std::ostream &os, const MetricBuilder &mb);
+
+    template <typename eventT>
+    std::string to_string(const MetricBuilder<eventT> &mb)
+    {
+        std::ostringstream oss;
+
+        // Header summary
+        oss << "MetricBuilder Summary:\n";
+        oss << "  Total Events: " << mb.metric_events.size() << "\n";
+        oss << "  Defined Metrics: " << mb.metric_names().size() << "\n\n";
+
+        // List metric names
+        oss << "Metrics:\n";
+        for (const auto &name : mb.metric_names())
+        {
+            oss << "  - " << name << "\n";
+        }
+
+        // List event codes
+        oss << "\nEvents:\n";
+        for (const auto &pair : mb.metric_events)
+        {
+            oss << "  " << pair.first << " = 0x" << std::hex << pair.second << std::dec << "\n";
+        }
+
+        return oss.str();
+    }
+    template <typename eventT>
+    std::ostream &operator<<(std::ostream &os, const MetricBuilder<eventT> &mb)
+    {
+        return os << to_string(mb);
+    }
 
 } // namespace optkit::core::metrics
 

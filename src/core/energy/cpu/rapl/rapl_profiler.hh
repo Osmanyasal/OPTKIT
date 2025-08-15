@@ -14,7 +14,7 @@
 namespace optkit::core::energy::rapl
 {
 
-    class RaplProfiler : public BaseProfiler<std::map<int32_t, std::map<RaplDomain, double>>>
+    class RaplProfiler : public BaseProfiler<std::map<int32_t, std::map<RaplDomain, double>>, double>
     {
     public:
         RaplProfiler(const char *block_name, const char *measurement_type = "cpu_energy", const RaplConfig &config = RaplConfig{});
@@ -43,7 +43,7 @@ namespace optkit::core::energy::rapl
          */
         virtual std::map<int32_t, std::map<RaplDomain, double>> read() override;
 
-        virtual std::unordered_map<std::string, uint64_t> aggregate() override { return {};}
+        virtual std::unordered_map<std::string, double> aggregate() override { return {}; }
 
     private:
         std::unique_ptr<optkit::core::energy::rapl::RaplPerfReader> rapl_reader;

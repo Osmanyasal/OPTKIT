@@ -54,13 +54,13 @@ namespace optkit::core::metrics::cpu
     {
     public:
         // Native Metric implementations (not included in CoreMetrics)
-        static const MetricBuilder &L2HitRatio()
+        static const MetricBuilder<uint64_t> &L2HitRatio()
         {
-            static const MetricBuilder metric = []
+            static const MetricBuilder<uint64_t> metric = []
             {
                 std::string l2_cache_accesses_name = to_string(arm::NativeEvents::L2_CACHE_ACCESSES);
                 std::string l2_misses_name = to_string(CoreEvents::L2_MISSES);
-                return MetricBuilder{}
+                return MetricBuilder<uint64_t>{}
                     .add(l2_cache_accesses_name, arm::EventMapper::get(arm::NativeEvents::L2_CACHE_ACCESSES))
                     .add(l2_misses_name, arm::EventMapper::get(CoreEvents::L2_MISSES))
                     .build("L2HitRatio__%",
@@ -78,14 +78,14 @@ namespace optkit::core::metrics::cpu
             return metric;
         }
 
-        static const MetricBuilder &L3HitRatio()
+        static const MetricBuilder<uint64_t> &L3HitRatio()
         {
 
-            static const MetricBuilder metric = []
+            static const MetricBuilder<uint64_t> metric = []
             {
                 std::string l3_cache_accesses_name = to_string(arm::NativeEvents::L3_CACHE_ACCESSES);
                 std::string l3_misses_name = to_string(CoreEvents::L3_MISSES);
-                return MetricBuilder{}
+                return MetricBuilder<uint64_t>{}
                     .add(l3_cache_accesses_name, arm::EventMapper::get(arm::NativeEvents::L3_CACHE_ACCESSES))
                     .add(l3_misses_name, arm::EventMapper::get(CoreEvents::L3_MISSES))
                     .build("L3HitRatio__%",
@@ -107,14 +107,14 @@ namespace optkit::core::metrics::cpu
         // CoreMetrics Implementation
 
         // Cache miss per kilo instruction (MPKI)
-        static const MetricBuilder &L1MPKI()
+        static const MetricBuilder<uint64_t> &L1MPKI()
         {
 
-            static const MetricBuilder metric = []
+            static const MetricBuilder<uint64_t> metric = []
             {
                 std::string l1_misses_name = to_string(CoreEvents::L1_MISSES);
                 std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
-                return MetricBuilder{}
+                return MetricBuilder<uint64_t>{}
                     .add(l1_misses_name, arm::EventMapper::get(CoreEvents::L1_MISSES))
                     .add(inst_retired_name, arm::EventMapper::get(CoreEvents::INST_RETIRED))
                     .build("L1MPKI",
@@ -132,15 +132,15 @@ namespace optkit::core::metrics::cpu
             return metric;
         }
 
-        static const MetricBuilder &L2MPKI()
+        static const MetricBuilder<uint64_t> &L2MPKI()
         {
 
-            static const MetricBuilder metric = []
+            static const MetricBuilder<uint64_t> metric = []
             {
                 std::string l2_misses_name = to_string(CoreEvents::L2_MISSES);
                 std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
 
-                return MetricBuilder{}
+                return MetricBuilder<uint64_t>{}
                     .add(l2_misses_name, arm::EventMapper::get(CoreEvents::L2_MISSES))
                     .add(inst_retired_name, arm::EventMapper::get(CoreEvents::INST_RETIRED))
                     .build("L2MPKI",
@@ -158,15 +158,15 @@ namespace optkit::core::metrics::cpu
             return metric;
         }
 
-        static const MetricBuilder &L3MPKI()
+        static const MetricBuilder<uint64_t> &L3MPKI()
         {
 
-            static const MetricBuilder metric = []
+            static const MetricBuilder<uint64_t> metric = []
             {
                 std::string l3_misses_name = to_string(CoreEvents::L3_MISSES);
                 std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
 
-                return MetricBuilder{}
+                return MetricBuilder<uint64_t>{}
                     .add(l3_misses_name, arm::EventMapper::get(CoreEvents::L3_MISSES))
                     .add(inst_retired_name, arm::EventMapper::get(CoreEvents::INST_RETIRED))
                     .build("L3MPKI",
@@ -185,15 +185,15 @@ namespace optkit::core::metrics::cpu
         }
 
         // Branch
-        static const MetricBuilder &BranchMisprRatio()
+        static const MetricBuilder<uint64_t> &BranchMisprRatio()
         {
 
-            static const MetricBuilder metric = []
+            static const MetricBuilder<uint64_t> metric = []
             {
                 std::string branch_inst_retired_name = to_string(CoreEvents::BRANCH_INST_RETIRED);
                 std::string branch_misp_retired_name = to_string(CoreEvents::BRANCH_MISP_RETIRED);
 
-                return MetricBuilder{}
+                return MetricBuilder<uint64_t>{}
                     .add(branch_inst_retired_name, arm::EventMapper::get(CoreEvents::BRANCH_INST_RETIRED))
                     .add(branch_misp_retired_name, arm::EventMapper::get(CoreEvents::BRANCH_MISP_RETIRED))
                     .build("BranchMisprRatio",
@@ -212,15 +212,15 @@ namespace optkit::core::metrics::cpu
         }
 
         // ITLB MPKI metrics
-        static const MetricBuilder &ITLBMPKI()
+        static const MetricBuilder<uint64_t> &ITLBMPKI()
         {
 
-            static const MetricBuilder metric = []
+            static const MetricBuilder<uint64_t> metric = []
             {
             std::string itlb_misses_name = to_string(CoreEvents::ITLB_MISSES);
             std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
 
-            return MetricBuilder{}
+            return MetricBuilder<uint64_t>{}
                 .add(itlb_misses_name, arm::EventMapper::get(CoreEvents::ITLB_MISSES))
                 .add(inst_retired_name, arm::EventMapper::get(CoreEvents::INST_RETIRED))
                 .build("ITLBMPKI",
@@ -237,15 +237,15 @@ namespace optkit::core::metrics::cpu
         }
 
         // DTLB MPKI metrics
-        static const MetricBuilder &DTLBMPKI()
+        static const MetricBuilder<uint64_t> &DTLBMPKI()
         {
 
-            static const MetricBuilder metric = []
+            static const MetricBuilder<uint64_t> metric = []
             {
                 std::string dtlb_misses_name = to_string(CoreEvents::DTLB_MISSES);
                 std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
 
-                return MetricBuilder{}
+                return MetricBuilder<uint64_t>{}
                     .add(dtlb_misses_name, arm::EventMapper::get(CoreEvents::DTLB_MISSES))
                     .add(inst_retired_name, arm::EventMapper::get(CoreEvents::INST_RETIRED))
                     .build("DTLBMPKI",
@@ -263,16 +263,16 @@ namespace optkit::core::metrics::cpu
         }
 
         // TLB MPKI metrics
-        static const MetricBuilder &TLBMPKI()
+        static const MetricBuilder<uint64_t> &TLBMPKI()
         {
 
-            static const MetricBuilder metric = []
+            static const MetricBuilder<uint64_t> metric = []
             {
                 std::string dtlb_misses_name = to_string(CoreEvents::DTLB_MISSES);
                 std::string itlb_misses_name = to_string(CoreEvents::ITLB_MISSES);
                 std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
 
-                return MetricBuilder{}
+                return MetricBuilder<uint64_t>{}
                     .add(itlb_misses_name, arm::EventMapper::get(CoreEvents::DTLB_MISSES))
                     .add(dtlb_misses_name, arm::EventMapper::get(CoreEvents::ITLB_MISSES))
                     .add(inst_retired_name, arm::EventMapper::get(CoreEvents::INST_RETIRED))
@@ -292,21 +292,21 @@ namespace optkit::core::metrics::cpu
         }
 
         // Latency and parallelism metrics
-        static const MetricBuilder &LoadMissLatency()
+        static const MetricBuilder<uint64_t> &LoadMissLatency()
         {
-            static const MetricBuilder empty{};
+            static const MetricBuilder<uint64_t> empty{};
             return empty;
         }
 
-        static const MetricBuilder &IpC()
+        static const MetricBuilder<uint64_t> &IpC()
         {
 
-            static const MetricBuilder metric = []
+            static const MetricBuilder<uint64_t> metric = []
             {
                 std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
                 std::string unhalted_core_cycles_name = to_string(CoreEvents::UNHALTED_CORE_CYCLES);
 
-                return MetricBuilder{}
+                return MetricBuilder<uint64_t>{}
                     .add(inst_retired_name, arm::EventMapper::get(CoreEvents::INST_RETIRED))
                     .add(unhalted_core_cycles_name, arm::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
                     .build("IpC", [inst_retired_name, unhalted_core_cycles_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
@@ -321,40 +321,40 @@ namespace optkit::core::metrics::cpu
             return metric;
         }
 
-        static const MetricBuilder &ILP()
+        static const MetricBuilder<uint64_t> &ILP()
         {
-            static const MetricBuilder empty{};
+            static const MetricBuilder<uint64_t> empty{};
             return empty;
         }
 
-        static const MetricBuilder &MLP()
+        static const MetricBuilder<uint64_t> &MLP()
         {
-            static const MetricBuilder empty{};
+            static const MetricBuilder<uint64_t> empty{};
             return empty;
         }
 
         // DRAM bandwidth
-        static const MetricBuilder &DRAMBandwidthGBs()
+        static const MetricBuilder<uint64_t> &DRAMBandwidthGBs()
         {
-            static const MetricBuilder empty{};
+            static const MetricBuilder<uint64_t> empty{};
             return empty;
         }
 
         // Instruction per event
-        static const MetricBuilder &IpCall()
+        static const MetricBuilder<uint64_t> &IpCall()
         {
-            static const MetricBuilder empty{};
+            static const MetricBuilder<uint64_t> empty{};
             return empty;
         }
 
-        static const MetricBuilder &IpBranch()
+        static const MetricBuilder<uint64_t> &IpBranch()
         {
 
-            static const MetricBuilder metric = []
+            static const MetricBuilder<uint64_t> metric = []
             {
                 std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
                 std::string branch_inst_retired_name = to_string(CoreEvents::BRANCH_INST_RETIRED);
-                return MetricBuilder{}
+                return MetricBuilder<uint64_t>{}
                     .add(inst_retired_name, arm::EventMapper::get(CoreEvents::INST_RETIRED))
                     .add(branch_inst_retired_name, arm::EventMapper::get(CoreEvents::BRANCH_INST_RETIRED))
                     .build("IpBranch",
@@ -372,14 +372,14 @@ namespace optkit::core::metrics::cpu
             return metric;
         }
 
-        static const MetricBuilder &IpMemLoad()
+        static const MetricBuilder<uint64_t> &IpMemLoad()
         {
 
-            static const MetricBuilder metric = []
+            static const MetricBuilder<uint64_t> metric = []
             {
                 std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
                 std::string mem_load_retired_name = to_string(CoreEvents::MEM_LOAD_RETIRED);
-                return MetricBuilder{}
+                return MetricBuilder<uint64_t>{}
                     .add(inst_retired_name, arm::EventMapper::get(CoreEvents::INST_RETIRED))
                     .add(mem_load_retired_name, arm::EventMapper::get(CoreEvents::MEM_LOAD_RETIRED))
                     .build("IpLoad",
@@ -397,14 +397,14 @@ namespace optkit::core::metrics::cpu
             return metric;
         }
 
-        static const MetricBuilder &IpMemStore()
+        static const MetricBuilder<uint64_t> &IpMemStore()
         {
 
-            static const MetricBuilder metric = []
+            static const MetricBuilder<uint64_t> metric = []
             {
                 std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
                 std::string mem_store_retired_name = to_string(CoreEvents::MEM_STORE_RETIRED);
-                return MetricBuilder{}
+                return MetricBuilder<uint64_t>{}
                     .add(inst_retired_name, arm::EventMapper::get(CoreEvents::INST_RETIRED))
                     .add(mem_store_retired_name, arm::EventMapper::get(CoreEvents::MEM_STORE_RETIRED))
                     .build("IpStore",
@@ -422,14 +422,14 @@ namespace optkit::core::metrics::cpu
             return metric;
         }
 
-        static const MetricBuilder &IpMispredict()
+        static const MetricBuilder<uint64_t> &IpMispredict()
         {
 
-            static const MetricBuilder metric = []
+            static const MetricBuilder<uint64_t> metric = []
             {
                 std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
                 std::string branch_misp_retired_name = to_string(CoreEvents::BRANCH_MISP_RETIRED);
-                return MetricBuilder{}
+                return MetricBuilder<uint64_t>{}
                     .add(inst_retired_name, arm::EventMapper::get(CoreEvents::INST_RETIRED))
                     .add(branch_misp_retired_name, arm::EventMapper::get(CoreEvents::BRANCH_MISP_RETIRED))
                     .build("IpMispredict",
@@ -448,20 +448,20 @@ namespace optkit::core::metrics::cpu
         }
 
         // Floating-point operation metrics
-        static const MetricBuilder &IpFLOP()
+        static const MetricBuilder<uint64_t> &IpFLOP()
         {
-            static const MetricBuilder empty{};
+            static const MetricBuilder<uint64_t> empty{};
             return empty;
         }
 
-        static const MetricBuilder &IpAVXAnyFlop()
+        static const MetricBuilder<uint64_t> &IpAVXAnyFlop()
         {
 
-            static const MetricBuilder metric = []
+            static const MetricBuilder<uint64_t> metric = []
             {
                 std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
                 std::string retired_sse_avx_flops_any_name = to_string(CoreEvents::RETIRED_VECTOR);
-                return MetricBuilder{}
+                return MetricBuilder<uint64_t>{}
                     .add(inst_retired_name, arm::EventMapper::get(CoreEvents::INST_RETIRED))
                     .add(retired_sse_avx_flops_any_name, arm::EventMapper::get(CoreEvents::RETIRED_VECTOR))
                     .build("IpAVXAnyFlop",
@@ -479,73 +479,73 @@ namespace optkit::core::metrics::cpu
             return metric;
         }
 
-        static const MetricBuilder &IpArith()
+        static const MetricBuilder<uint64_t> &IpArith()
         {
-            static const MetricBuilder empty{};
+            static const MetricBuilder<uint64_t> empty{};
             return empty;
         }
 
-        static const MetricBuilder &IpArithScalarSP()
+        static const MetricBuilder<uint64_t> &IpArithScalarSP()
         {
-            static const MetricBuilder empty{};
+            static const MetricBuilder<uint64_t> empty{};
             return empty;
         }
 
-        static const MetricBuilder &IpArithScalarDP()
+        static const MetricBuilder<uint64_t> &IpArithScalarDP()
         {
-            static const MetricBuilder empty{};
+            static const MetricBuilder<uint64_t> empty{};
             return empty;
         }
 
-        static const MetricBuilder &IpArithAVX128()
+        static const MetricBuilder<uint64_t> &IpArithAVX128()
         {
-            static const MetricBuilder empty{};
+            static const MetricBuilder<uint64_t> empty{};
             return empty;
         }
 
-        static const MetricBuilder &IpArithAVX256()
+        static const MetricBuilder<uint64_t> &IpArithAVX256()
         {
-            static const MetricBuilder empty{};
+            static const MetricBuilder<uint64_t> empty{};
             return empty;
         }
 
-        static const MetricBuilder &IpArithAVX512()
+        static const MetricBuilder<uint64_t> &IpArithAVX512()
         {
-            static const MetricBuilder empty{};
+            static const MetricBuilder<uint64_t> empty{};
             return empty;
         }
 
-        static const MetricBuilder &IpArithVectorAny()
+        static const MetricBuilder<uint64_t> &IpArithVectorAny()
         {
-            static const MetricBuilder empty{};
+            static const MetricBuilder<uint64_t> empty{};
             return empty;
         }
 
-        static const MetricBuilder &ScalarpArithVector()
+        static const MetricBuilder<uint64_t> &ScalarpArithVector()
         {
-            static const MetricBuilder empty{};
+            static const MetricBuilder<uint64_t> empty{};
             return empty;
         }
 
         // Software prefetch
-        static const MetricBuilder &IpSWPF()
+        static const MetricBuilder<uint64_t> &IpSWPF()
         {
-            static const MetricBuilder empty{};
+            static const MetricBuilder<uint64_t> empty{};
             return empty;
         }
 
         // Topdown (Pipeline Utilisation) Analysis L1
 
 #if OPTKIT_ENV_CPU_MICROARCH_NEOVERSE_V3 || OPTKIT_ENV_CPU_MICROARCH_NEOVERSE_N3
-        static const MetricBuilder &FrontendBound()
+        static const MetricBuilder<uint64_t> &FrontendBound()
         {
 
-            static const MetricBuilder metric = []
+            static const MetricBuilder<uint64_t> metric = []
             {
                 std::string stall_slot_fe_name = to_string(arm::NativeEvents::STALL_SLOT_FRONTEND);
                 std::string unhalted_cycles_name = to_string(CoreEvents::UNHALTED_CORE_CYCLES);
                 std::string stall_frontend_flush_name = to_string(arm::NativeEvents::STALL_FRONTEND_FLUSH);
-                return MetricBuilder{}
+                return MetricBuilder<uint64_t>{}
                     .add(stall_slot_fe_name, arm::EventMapper::get(arm::NativeEvents::STALL_SLOT_FRONTEND))
                     .add(unhalted_cycles_name, arm::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
                     .add(stall_frontend_flush_name, arm::EventMapper::get(arm::NativeEvents::STALL_FRONTEND_FLUSH))
@@ -564,15 +564,15 @@ namespace optkit::core::metrics::cpu
         }
 
 #elif OPTKIT_ENV_CPU_MICROARCH_NEOVERSE_N1 || OPTKIT_ENV_CPU_MICROARCH_NEOVERSE_V1 || OPTKIT_ENV_CPU_MICROARCH_NEOVERSE_N2 || OPTKIT_ENV_CPU_MICROARCH_NEOVERSE_V2
-        static const MetricBuilder &FrontendBound()
+        static const MetricBuilder<uint64_t> &FrontendBound()
         {
 
-            static const MetricBuilder metric = []
+            static const MetricBuilder<uint64_t> metric = []
             {
                 std::string stall_slot_fe_name = to_string(arm::NativeEvents::STALL_SLOT_FRONTEND);
                 std::string unhalted_cycles_name = to_string(CoreEvents::UNHALTED_CORE_CYCLES);
                 std::string branch_misp_name = to_string(CoreEvents::BRANCH_MISP_RETIRED);
-                return MetricBuilder{}
+                return MetricBuilder<uint64_t>{}
                     .add(stall_slot_fe_name, arm::EventMapper::get(arm::NativeEvents::STALL_SLOT_FRONTEND))
                     .add(unhalted_cycles_name, arm::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
                     .add(branch_misp_name, arm::EventMapper::get(CoreEvents::BRANCH_MISP_RETIRED))
@@ -591,18 +591,18 @@ namespace optkit::core::metrics::cpu
         }
 
 #else
-        static const MetricBuilder &FrontendBound()
+        static const MetricBuilder<uint64_t> &FrontendBound()
         {
-            static const MetricBuilder empty{};
+            static const MetricBuilder<uint64_t> empty{};
             return empty;
         }
 #endif
 
 #if OPTKIT_ENV_CPU_MICROARCH_NEOVERSE_V3 || OPTKIT_ENV_CPU_MICROARCH_NEOVERSE_N3
-        static const MetricBuilder &BadSpeculation()
+        static const MetricBuilder<uint64_t> &BadSpeculation()
         {
 
-            static const MetricBuilder metric = []
+            static const MetricBuilder<uint64_t> metric = []
             {
                 std::string stall_slots_name = to_string(arm::NativeEvents::STALL_SLOT);
                 std::string unhalted_cycles_name = to_string(CoreEvents::UNHALTED_CORE_CYCLES);
@@ -610,7 +610,7 @@ namespace optkit::core::metrics::cpu
                 std::string op_spec_name = to_string(arm::NativeEvents::OP_SPEC);
                 std::string stall_flush_name = to_string(arm::NativeEvents::STALL_FRONTEND_FLUSH);
 
-                return MetricBuilder{}
+                return MetricBuilder<uint64_t>{}
                     .add(stall_slots_name, arm::EventMapper::get(arm::NativeEvents::STALL_SLOT))
                     .add(unhalted_cycles_name, arm::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
                     .add(retired_ops_name, arm::EventMapper::get(arm::NativeEvents::RETIRED_OPS))
@@ -636,9 +636,9 @@ namespace optkit::core::metrics::cpu
             return metric;
         }
 #elif OPTKIT_ENV_CPU_MICROARCH_NEOVERSE_N2 || OPTKIT_ENV_CPU_MICROARCH_NEOVERSE_V2
-        static const MetricBuilder &BadSpeculation()
+        static const MetricBuilder<uint64_t> &BadSpeculation()
         {
-            static const MetricBuilder metric = []
+            static const MetricBuilder<uint64_t> metric = []
             {
                 std::string stall_slots_name = to_string(arm::NativeEvents::STALL_SLOT);
                 std::string unhalted_cycles_name = to_string(CoreEvents::UNHALTED_CORE_CYCLES);
@@ -646,7 +646,7 @@ namespace optkit::core::metrics::cpu
                 std::string op_spec_name = to_string(arm::NativeEvents::OP_SPEC);
                 std::string br_mispred_name = to_string(CoreEvents::BRANCH_MISP_RETIRED);
 
-                return MetricBuilder{}
+                return MetricBuilder<uint64_t>{}
                     .add(stall_slots_name, arm::EventMapper::get(arm::NativeEvents::STALL_SLOT))
                     .add(unhalted_cycles_name, arm::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
                     .add(retired_ops_name, arm::EventMapper::get(arm::NativeEvents::OP_RETIRED))
@@ -675,17 +675,17 @@ namespace optkit::core::metrics::cpu
             return metric;
         }
 #elif OPTKIT_ENV_CPU_MICROARCH_NEOVERSE_V1
-        static const MetricBuilder &BadSpeculation()
+        static const MetricBuilder<uint64_t> &BadSpeculation()
         {
 
-            static const MetricBuilder metric = []
+            static const MetricBuilder<uint64_t> metric = []
             {
                 std::string stall_slots_name = to_string(arm::NativeEvents::STALL_SLOT);
                 std::string unhalted_cycles_name = to_string(CoreEvents::UNHALTED_CORE_CYCLES);
                 std::string retired_ops_name = to_string(arm::NativeEvents::OP_RETIRED);
                 std::string op_spec_name = to_string(arm::NativeEvents::OP_SPEC);
 
-                return MetricBuilder{}
+                return MetricBuilder<uint64_t>{}
                     .add(stall_slots_name, arm::EventMapper::get(arm::NativeEvents::STALL_SLOT))
                     .add(unhalted_cycles_name, arm::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
                     .add(retired_ops_name, arm::EventMapper::get(arm::NativeEvents::OP_RETIRED))
@@ -711,25 +711,25 @@ namespace optkit::core::metrics::cpu
             return metric;
         }
 #else
-        static const MetricBuilder &BadSpeculation()
+        static const MetricBuilder<uint64_t> &BadSpeculation()
         {
-            static const MetricBuilder empty{};
+            static const MetricBuilder<uint64_t> empty{};
             return empty;
         }
 #endif
 
 #if !OPTKIT_ENV_CPU_MICROARCH_NEOVERSE_N1
-        static const MetricBuilder &Retiring()
+        static const MetricBuilder<uint64_t> &Retiring()
         {
 
-            static const MetricBuilder metric = []
+            static const MetricBuilder<uint64_t> metric = []
             {
                 std::string stall_slots_name = to_string(arm::NativeEvents::STALL_SLOT);
                 std::string unhalted_cycles_name = to_string(CoreEvents::UNHALTED_CORE_CYCLES);
                 std::string retired_ops_name = to_string(arm::NativeEvents::OP_RETIRED);
                 std::string op_spec_name = to_string(arm::NativeEvents::OP_SPEC);
 
-                return MetricBuilder{}
+                return MetricBuilder<uint64_t>{}
                     .add(stall_slots_name, arm::EventMapper::get(arm::NativeEvents::STALL_SLOT))
                     .add(unhalted_cycles_name, arm::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
                     .add(retired_ops_name, arm::EventMapper::get(arm::NativeEvents::OP_RETIRED))
@@ -755,23 +755,23 @@ namespace optkit::core::metrics::cpu
             return metric;
         }
 #else
-        static const MetricBuilder &Retiring()
+        static const MetricBuilder<uint64_t> &Retiring()
         {
-            static const MetricBuilder empty{};
+            static const MetricBuilder<uint64_t> empty{};
             return empty;
         }
 #endif
 
 #if !OPTKIT_ENV_CPU_MICROARCH_NEOVERSE_N1
-        static const MetricBuilder &BackendBound()
+        static const MetricBuilder<uint64_t> &BackendBound()
         {
 
-            static const MetricBuilder metric = []
+            static const MetricBuilder<uint64_t> metric = []
             {
                 std::string stall_slot_backend_name = to_string(arm::NativeEvents::STALL_SLOT_BACKEND);
                 std::string unhalted_cycles_name = to_string(CoreEvents::UNHALTED_CORE_CYCLES);
 
-                return MetricBuilder{}
+                return MetricBuilder<uint64_t>{}
                     .add(stall_slot_backend_name, arm::EventMapper::get(arm::NativeEvents::STALL_SLOT_BACKEND))
                     .add(unhalted_cycles_name, arm::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
                     .build("BackendBound__%",
@@ -790,68 +790,68 @@ namespace optkit::core::metrics::cpu
             return metric;
         }
 #else
-        static const MetricBuilder &BackendBound()
+        static const MetricBuilder<uint64_t> &BackendBound()
         {
-            static const MetricBuilder empty{};
+            static const MetricBuilder<uint64_t> empty{};
             return empty;
         }
 #endif
 
-        static const MetricBuilder &SMTContention()
+        static const MetricBuilder<uint64_t> &SMTContention()
         {
-            static const MetricBuilder empty{};
+            static const MetricBuilder<uint64_t> empty{};
             return empty;
         }
 
         // Topdown (Pipeline Utilisation) Analysis L1
-        static const MetricBuilder &FrontendBound_Latency()
+        static const MetricBuilder<uint64_t> &FrontendBound_Latency()
         {
-            static const MetricBuilder empty{};
+            static const MetricBuilder<uint64_t> empty{};
             return empty;
         }
-        static const MetricBuilder &FrontendBound_BW()
+        static const MetricBuilder<uint64_t> &FrontendBound_BW()
         {
-            static const MetricBuilder empty{};
+            static const MetricBuilder<uint64_t> empty{};
             return empty;
         }
-        static const MetricBuilder &BadSpeculation_Mispredicts()
+        static const MetricBuilder<uint64_t> &BadSpeculation_Mispredicts()
         {
-            static const MetricBuilder empty{};
+            static const MetricBuilder<uint64_t> empty{};
             return empty;
         }
-        static const MetricBuilder &BadSpeculation_PipelineRestarts()
+        static const MetricBuilder<uint64_t> &BadSpeculation_PipelineRestarts()
         {
-            static const MetricBuilder empty{};
+            static const MetricBuilder<uint64_t> empty{};
             return empty;
         }
-        static const MetricBuilder &BackendEndbound_Memory()
+        static const MetricBuilder<uint64_t> &BackendEndbound_Memory()
         {
-            static const MetricBuilder empty{};
+            static const MetricBuilder<uint64_t> empty{};
             return empty;
         }
-        static const MetricBuilder &BackendEndbound_CPU()
+        static const MetricBuilder<uint64_t> &BackendEndbound_CPU()
         {
-            static const MetricBuilder empty{};
+            static const MetricBuilder<uint64_t> empty{};
             return empty;
         }
-        static const MetricBuilder &Retiring_Fastpath()
+        static const MetricBuilder<uint64_t> &Retiring_Fastpath()
         {
-            static const MetricBuilder empty{};
+            static const MetricBuilder<uint64_t> empty{};
             return empty;
         }
-        static const MetricBuilder &Retiring_Microcode()
+        static const MetricBuilder<uint64_t> &Retiring_Microcode()
         {
-            static const MetricBuilder empty{};
+            static const MetricBuilder<uint64_t> empty{};
             return empty;
         }
 
         // Aggregated Metrics
 
-        static const MetricBuilder &TopdownL1()
+        static const MetricBuilder<uint64_t> &TopdownL1()
         {
-            static const MetricBuilder mb = []
+            static const MetricBuilder<uint64_t> mb = []
             {
-                MetricBuilder mb{};
+                MetricBuilder<uint64_t> mb{};
                 mb.add(FrontendBound());
                 mb.add(BackendBound());
                 mb.add(Retiring());
@@ -862,11 +862,11 @@ namespace optkit::core::metrics::cpu
             return mb;
         }
 
-        static const MetricBuilder &TopdownL2()
+        static const MetricBuilder<uint64_t> &TopdownL2()
         {
-            static const MetricBuilder mb = []
+            static const MetricBuilder<uint64_t> mb = []
             {
-                MetricBuilder mb{};
+                MetricBuilder<uint64_t> mb{};
                 mb.add(TopdownL2_FE());
                 mb.add(TopdownL2_BE());
                 mb.add(TopdownL2_Retiring());
@@ -876,11 +876,11 @@ namespace optkit::core::metrics::cpu
             return mb;
         }
 
-        static const MetricBuilder &TopdownL2_FE()
+        static const MetricBuilder<uint64_t> &TopdownL2_FE()
         {
-            static const MetricBuilder mb = []
+            static const MetricBuilder<uint64_t> mb = []
             {
-                MetricBuilder mb{};
+                MetricBuilder<uint64_t> mb{};
                 mb.add(FrontendBound_Latency());
                 mb.add(FrontendBound_BW());
                 return mb;
@@ -888,11 +888,11 @@ namespace optkit::core::metrics::cpu
             return mb;
         }
 
-        static const MetricBuilder &TopdownL2_BE()
+        static const MetricBuilder<uint64_t> &TopdownL2_BE()
         {
-            static const MetricBuilder mb = []
+            static const MetricBuilder<uint64_t> mb = []
             {
-                MetricBuilder mb{};
+                MetricBuilder<uint64_t> mb{};
                 mb.add(BackendEndbound_Memory());
                 mb.add(BackendEndbound_CPU());
                 return mb;
@@ -900,11 +900,11 @@ namespace optkit::core::metrics::cpu
             return mb;
         }
 
-        static const MetricBuilder &TopdownL2_Retiring()
+        static const MetricBuilder<uint64_t> &TopdownL2_Retiring()
         {
-            static const MetricBuilder mb = []
+            static const MetricBuilder<uint64_t> mb = []
             {
-                MetricBuilder mb{};
+                MetricBuilder<uint64_t> mb{};
                 mb.add(Retiring_Fastpath());
                 mb.add(Retiring_Microcode());
                 return mb;
@@ -912,11 +912,11 @@ namespace optkit::core::metrics::cpu
             return mb;
         }
 
-        static const MetricBuilder &TopdownL2_BadSpec()
+        static const MetricBuilder<uint64_t> &TopdownL2_BadSpec()
         {
-            static const MetricBuilder mb = []
+            static const MetricBuilder<uint64_t> mb = []
             {
-                MetricBuilder mb{};
+                MetricBuilder<uint64_t> mb{};
                 mb.add(BadSpeculation_Mispredicts());
                 mb.add(BadSpeculation_PipelineRestarts());
                 return mb;
@@ -924,11 +924,11 @@ namespace optkit::core::metrics::cpu
             return mb;
         }
 
-        static const MetricBuilder &AllTopdown()
+        static const MetricBuilder<uint64_t> &AllTopdown()
         {
-            static const MetricBuilder mb = []
+            static const MetricBuilder<uint64_t> mb = []
             {
-                MetricBuilder mb{};
+                MetricBuilder<uint64_t> mb{};
                 mb.add(TopdownL1());
                 mb.add(TopdownL2());
                 return mb;
@@ -936,11 +936,11 @@ namespace optkit::core::metrics::cpu
             return mb;
         }
 
-        static const MetricBuilder &AllMPKI()
+        static const MetricBuilder<uint64_t> &AllMPKI()
         {
-            static const MetricBuilder mb = []
+            static const MetricBuilder<uint64_t> mb = []
             {
-                MetricBuilder mb{};
+                MetricBuilder<uint64_t> mb{};
                 mb.add(L1MPKI());
                 mb.add(L2MPKI());
                 mb.add(L3MPKI());
@@ -949,11 +949,11 @@ namespace optkit::core::metrics::cpu
             return mb;
         }
 
-        static const MetricBuilder &AllCacheHitRatio()
+        static const MetricBuilder<uint64_t> &AllCacheHitRatio()
         {
-            static const MetricBuilder mb = []
+            static const MetricBuilder<uint64_t> mb = []
             {
-                MetricBuilder mb{};
+                MetricBuilder<uint64_t> mb{};
                 mb.add(L2HitRatio());
                 mb.add(L3HitRatio());
                 return mb;
@@ -961,11 +961,11 @@ namespace optkit::core::metrics::cpu
             return mb;
         }
 
-        static const MetricBuilder &AllSTLBMPKI()
+        static const MetricBuilder<uint64_t> &AllSTLBMPKI()
         {
-            static const MetricBuilder mb = []
+            static const MetricBuilder<uint64_t> mb = []
             {
-                MetricBuilder mb{};
+                MetricBuilder<uint64_t> mb{};
                 mb.add(TLBMPKI());
                 mb.add(ITLBMPKI());
                 mb.add(DTLBMPKI());
@@ -974,11 +974,11 @@ namespace optkit::core::metrics::cpu
             return mb;
         }
 
-        static const MetricBuilder &AllLatencyAndParallelism()
+        static const MetricBuilder<uint64_t> &AllLatencyAndParallelism()
         {
-            static const MetricBuilder mb = []
+            static const MetricBuilder<uint64_t> mb = []
             {
-                MetricBuilder mb{};
+                MetricBuilder<uint64_t> mb{};
                 mb.add(LoadMissLatency());
                 mb.add(ILP());
                 mb.add(MLP());
@@ -987,22 +987,22 @@ namespace optkit::core::metrics::cpu
             return mb;
         }
 
-        static const MetricBuilder &AllDRAMBandwidth()
+        static const MetricBuilder<uint64_t> &AllDRAMBandwidth()
         {
-            static const MetricBuilder mb = []
+            static const MetricBuilder<uint64_t> mb = []
             {
-                MetricBuilder mb{};
+                MetricBuilder<uint64_t> mb{};
                 mb.add(DRAMBandwidthGBs());
                 return mb;
             }();
             return mb;
         }
 
-        static const MetricBuilder &AllIpMetrics()
+        static const MetricBuilder<uint64_t> &AllIpMetrics()
         {
-            static const MetricBuilder mb = []
+            static const MetricBuilder<uint64_t> mb = []
             {
-                MetricBuilder mb{};
+                MetricBuilder<uint64_t> mb{};
                 mb.add(IpCall());
                 mb.add(IpBranch());
                 mb.add(IpMemLoad());
@@ -1018,22 +1018,22 @@ namespace optkit::core::metrics::cpu
             return mb;
         }
 
-        static const MetricBuilder &AllBranchMetrics()
+        static const MetricBuilder<uint64_t> &AllBranchMetrics()
         {
-            static const MetricBuilder mb = []
+            static const MetricBuilder<uint64_t> mb = []
             {
-                MetricBuilder mb{};
+                MetricBuilder<uint64_t> mb{};
                 mb.add(BranchMisprRatio());
                 return mb;
             }();
             return mb;
         }
 
-        static const MetricBuilder &AllMetrics()
+        static const MetricBuilder<uint64_t> &AllMetrics()
         {
-            static const MetricBuilder mb = []
+            static const MetricBuilder<uint64_t> mb = []
             {
-                MetricBuilder mb{};
+                MetricBuilder<uint64_t> mb{};
                 mb.add(AllMPKI());
                 mb.add(AllSTLBMPKI());
                 mb.add(AllLatencyAndParallelism());

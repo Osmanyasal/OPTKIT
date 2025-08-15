@@ -28,11 +28,14 @@ namespace optkit::core::pmu::cpu::perf
      * @note In what order the event names and codes are added is IMPORTANT! it is read as it is added.
      *       If you add event1, event2, event3 then the read buffer will contain the values in the same order.
      *       Given the reason, we used vectors and pairs to store the data in metric Builder.
+     *
+     * @note Data type is chosen as uint64_t to match the syscall returns. Architectures usually have 48bits or 64 bits wide pmu counters.
+     *       uint64_t is used to comprehend all of them. https://www.man7.org/linux/man-pages/man2/perf_event_open.2.html#EXAMPLES
      */
-    class BlockProfiler : public BaseProfiler<std::vector<uint64_t>>
+    class BlockProfiler : public BaseProfiler<std::vector<uint64_t>, uint64_t>
     {
     public:
-        BlockProfiler(const char *block_name, const core::metrics::MetricBuilder &mb, bool verbose = !Query::create_folder, const PerfProfilerConfig &config = {});
+        BlockProfiler(const char *block_name, const core::metrics::MetricBuilder<uint64_t> &mb, bool verbose = !Query::create_folder, const PerfProfilerConfig &config = {});
         virtual ~BlockProfiler();
         /**
          * @brief Disables this block profiler and associated events
@@ -78,7 +81,7 @@ namespace optkit::core::pmu::cpu::perf
         PerfProfilerConfig profiler_config;
 
         std::vector<std::pair<std::string, double>> metric_results;
-        core::metrics::MetricBuilder metric_builder;
+        core::metrics::MetricBuilder<uint64_t> metric_builder;
     };
 
 } // namespace optkit::core::pmu::cpu::perf

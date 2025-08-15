@@ -114,7 +114,78 @@ namespace optkit::utils
     std::string get_time(const std::string &format = "%H_%M_%S");
     std::vector<std::string> get_all_files(const std::string &directory_name);
     std::vector<std::string> str_split(const std::string &s, const std::string &delimiter);
-    nlohmann::json to_json(double duration, const char *metric_name, const std::vector<std::pair<std::string, uint64_t>> &results, const std::vector<std::pair<std::string, double>> &metric_results, int32_t socket_number = -1);
+
+    template <typename resultT>
+    nlohmann::json to_json(double duration, const char *metric_name,
+                           const std::vector<std::pair<std::string, resultT>> &results,
+                           const std::vector<std::pair<std::string, double>> &metric_results,
+                           int32_t socket_number = -1)
+    {
+        nlohmann::json result;
+        nlohmann::json packageJson;
+        packageJson["duration"] = duration;
+        packageJson["duration_unit"] = "ms";
+        packageJson["socket_number"] = socket_number;
+        packageJson["measurement_type"] = metric_name;
+
+        // Helper for splitting name and unit
+        auto split_name_and_unit = [](const std::string &full_name) -> std::pair<std::string, std::string>
+        {
+            size_t pos = full_name.rfind("__");
+            if (pos != std::string::npos && pos + 2 < full_name.size())
+            {
+                return std::make_pair(full_name.substr(0, pos), full_name.substr(pos + 2));
+            }
+            return std::make_pair(full_name, "None");
+        };
+
+        for (size_t i = 0; i < results.size(); ++i)
+        {
+            const std::string &raw_name = results[i].first;
+            resultT value = results[i].second;
+
+            std::pair<std::string, std::string> parsed = split_name_and_unit(raw_name);
+            const std::string &name = parsed.first;
+            const std::string &unit = parsed.second;
+
+            std::ostringstream ss;
+            ss << std::fixed << value;
+
+            nlohmann::json entry;
+            entry["type"] = "event";
+            entry["name"] = name;
+            entry["value"] = ss.str();
+            entry["value_unit"] = unit;
+            entry["dtype"] = "uint64_t";
+
+            packageJson["measurements"].push_back(entry);
+        }
+
+        for (size_t i = 0; i < metric_results.size(); ++i)
+        {
+            const std::string &raw_name = metric_results[i].first;
+            double value = metric_results[i].second;
+
+            std::pair<std::string, std::string> parsed = split_name_and_unit(raw_name);
+            const std::string &name = parsed.first;
+            const std::string &unit = parsed.second;
+
+            std::ostringstream ss;
+            ss << std::fixed << value;
+
+            nlohmann::json entry;
+            entry["type"] = "metric";
+            entry["name"] = name;
+            entry["value"] = ss.str();
+            entry["value_unit"] = unit;
+            entry["dtype"] = "double";
+
+            packageJson["measurements"].push_back(entry);
+        }
+
+        result["readings"].push_back(packageJson);
+        return result;
+    }
 
     OPT_FORCE_INLINE bool is_path_exists(const std::string &location)
     {

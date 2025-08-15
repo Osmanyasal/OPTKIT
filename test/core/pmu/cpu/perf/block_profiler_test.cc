@@ -9,7 +9,7 @@ TEST(CPUPerfEventsTest, Instructions_1M)
 {
     int32_t expected_result = 1'000'000;
 
-    MetricBuilder mb{false};
+    MetricBuilder<uint64_t> mb{false};
     mb.add(to_string(cpu::core_events::INST_RETIRED), cpu::event_mapper::get(cpu::core_events::INST_RETIRED))
         .build(to_string(cpu::core_events::INST_RETIRED), [](const auto &map) -> double
                { return get_event_count(map, to_string(cpu::core_events::INST_RETIRED)) / (double)REPEAT; });
@@ -26,7 +26,7 @@ TEST(CPUPerfEventsTest, BranchInst1500K)
 {
     int32_t expected_result = 1'500'000;
 
-    MetricBuilder mb{false};
+    MetricBuilder<uint64_t> mb{false};
     mb.add(to_string(cpu::core_events::BRANCH_INST_RETIRED), cpu::event_mapper::get(cpu::core_events::BRANCH_INST_RETIRED))
         .build(to_string(cpu::core_events::BRANCH_INST_RETIRED), [](const auto &map) -> double
                { return get_event_count(map, to_string(cpu::core_events::BRANCH_INST_RETIRED)) / (double)REPEAT; });
@@ -44,7 +44,7 @@ TEST(CPUPerfEventsTest, BranchMisp250K)
 {
     int32_t expected_result = 250'000;
 
-    MetricBuilder mb{false};
+    MetricBuilder<uint64_t> mb{false};
     mb.add(to_string(cpu::core_events::BRANCH_MISP_RETIRED), cpu::event_mapper::get(cpu::core_events::BRANCH_MISP_RETIRED))
         .build(to_string(cpu::core_events::BRANCH_MISP_RETIRED), [](const auto &map) -> double
                { return get_event_count(map, to_string(cpu::core_events::BRANCH_MISP_RETIRED)) / (double)REPEAT; });
@@ -62,7 +62,7 @@ TEST(CPUPerfEventsTest, BranchMisp250K)
 TEST(CPUPerfEventsTest, RetiredFlopAny1M)
 {
     size_t expected_result = 1'000'000;
-    MetricBuilder mb{false};
+    MetricBuilder<uint64_t> mb{false};
 #if OPTKIT_ENV_CPU_AMD
     mb.add(to_string(cpu::core_events::RETIRED_VECTOR), cpu::event_mapper::get(cpu::core_events::RETIRED_VECTOR))
         .build(to_string(cpu::core_events::RETIRED_VECTOR), [](const auto &map) -> double
@@ -98,7 +98,7 @@ TEST(CPUPerfEventsTest, RetiredFlopAny1M)
 // note that accumulated result also contains elements below, not just the region.
 TEST(CPUPerfEventsTest, ReadsAndAccumulatesEventData)
 {
-    MetricBuilder mb{false};
+    MetricBuilder<uint64_t> mb{false};
     mb.add(to_string(cpu::core_events::INST_RETIRED), cpu::event_mapper::get(cpu::core_events::INST_RETIRED))
         .build(to_string(cpu::core_events::INST_RETIRED), [](const auto &map) -> double
                { return get_event_count(map, to_string(cpu::core_events::INST_RETIRED)) / (double)REPEAT; });
@@ -118,7 +118,7 @@ TEST(CPUPerfEventsTest, ReadsAndAccumulatesEventData)
 TEST(CPUPerfEventsTest, EnableDisableEventCounting)
 {
     size_t expected_result = 500'000; // apprx
-    MetricBuilder mb{false};
+    MetricBuilder<uint64_t> mb{false};
     mb.add(to_string(cpu::core_events::INST_RETIRED), cpu::event_mapper::get(cpu::core_events::INST_RETIRED))
         .build(to_string(cpu::core_events::INST_RETIRED), [](const auto &map) -> double
                { return get_event_count(map, to_string(cpu::core_events::INST_RETIRED)) / (double)REPEAT; });

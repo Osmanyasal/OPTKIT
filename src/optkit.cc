@@ -26,8 +26,8 @@ namespace optkit::core
         }
         else
         {
-            optkit::core::pmu::cpu::QueryPMU::init();               // pmf init
-            optkit::core::temperature::TemperatureProfiler::init(); // discover hwmon temperatures.
+            optkit::core::pmu::cpu::QueryPMU::init();                  // pmf init
+            optkit::core::temperature::CPUTemperatureProfiler::init(); // discover hwmon temperatures.
 
             Query::create_folder = config.create_folder;
             if (OPT_LIKELY(Query::create_folder))

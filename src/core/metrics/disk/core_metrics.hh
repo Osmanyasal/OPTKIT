@@ -35,12 +35,12 @@ namespace optkit::core::metrics::disk
          * Indicates read efficiency - larger values suggest better batching.
          * Values < 4KB may indicate inefficient small reads.
          */
-        static optkit::core::metrics::MetricBuilder LogicalReadPerSyscall()
+        static optkit::core::metrics::MetricBuilder<uint64_t> LogicalReadPerSyscall()
         {
             std::string rchar = to_string(CoreEvents::RCHAR);
             std::string syscr = to_string(CoreEvents::SYSCR);
 
-            return optkit::core::metrics::MetricBuilder{}
+            return optkit::core::metrics::MetricBuilder<uint64_t>{}
                 .add(rchar, {0x0})
                 .add(syscr, {0x0})
                 .build("LogicalReadPerSyscall",
@@ -63,12 +63,12 @@ namespace optkit::core::metrics::disk
          * Indicates write efficiency - larger values suggest better batching.
          * Values < 4KB may indicate inefficient small writes.
          */
-        static optkit::core::metrics::MetricBuilder LogicalWritePerSyscall()
+        static optkit::core::metrics::MetricBuilder<uint64_t> LogicalWritePerSyscall()
         {
             std::string wchar = to_string(CoreEvents::WCHAR);
             std::string syscw = to_string(CoreEvents::SYSCW);
 
-            return optkit::core::metrics::MetricBuilder{}
+            return optkit::core::metrics::MetricBuilder<uint64_t>{}
                 .add(wchar, {0x0})
                 .add(syscw, {0x0})
                 .build("LogicalWritePerSyscall",
@@ -91,12 +91,12 @@ namespace optkit::core::metrics::disk
          * 100% = all reads from cache, 0% = all reads from disk
          * Higher values indicate better cache utilization.
          */
-        static optkit::core::metrics::MetricBuilder PhysicalReadCacheHitRate()
+        static optkit::core::metrics::MetricBuilder<uint64_t> PhysicalReadCacheHitRate()
         {
             std::string rchar = to_string(CoreEvents::RCHAR);
             std::string read_bytes = to_string(CoreEvents::READ_BYTES);
 
-            return optkit::core::metrics::MetricBuilder{}
+            return optkit::core::metrics::MetricBuilder<uint64_t>{}
                 .add(rchar, {0x0})
                 .add(read_bytes, {0x0})
                 .build("PhysicalReadCacheHitRate__%",
@@ -119,11 +119,11 @@ namespace optkit::core::metrics::disk
          * 100% = all writes cached/buffered, 0% = all writes go directly to disk
          * Higher values indicate better write caching/buffering.
          */
-        static optkit::core::metrics::MetricBuilder PhysicalWriteCacheHitRate()
+        static optkit::core::metrics::MetricBuilder<uint64_t> PhysicalWriteCacheHitRate()
         {
             std::string wchar = to_string(CoreEvents::WCHAR);
             std::string write_bytes = to_string(CoreEvents::WRITE_BYTES);
-            return optkit::core::metrics::MetricBuilder{}
+            return optkit::core::metrics::MetricBuilder<uint64_t>{}
                 .add(wchar, {0x0})
                 .add(write_bytes, {0x0})
                 .build("PhysicalWriteCacheHitRate__%",
@@ -146,14 +146,14 @@ namespace optkit::core::metrics::disk
          * Values < 1.0 indicate good caching (common case)
          * Values near 0 indicate mostly cached operations
          */
-        static optkit::core::metrics::MetricBuilder IOAmplificationFactor()
+        static optkit::core::metrics::MetricBuilder<uint64_t> IOAmplificationFactor()
         {
             std::string rchar = to_string(CoreEvents::RCHAR);
             std::string wchar = to_string(CoreEvents::WCHAR);
             std::string read_bytes = to_string(CoreEvents::READ_BYTES);
             std::string write_bytes = to_string(CoreEvents::WRITE_BYTES);
 
-            return optkit::core::metrics::MetricBuilder{}
+            return optkit::core::metrics::MetricBuilder<uint64_t>{}
                 .add(rchar, {0x0})
                 .add(wchar, {0x0})
                 .add(read_bytes, {0x0})
@@ -184,12 +184,12 @@ namespace optkit::core::metrics::disk
          * Values < 1.0 indicate caching effectiveness (most reads served from cache).
          * Values near 0 mean almost all reads are cached.
          */
-        static optkit::core::metrics::MetricBuilder ReadAmplificationFactor()
+        static optkit::core::metrics::MetricBuilder<uint64_t> ReadAmplificationFactor()
         {
             std::string rchar = to_string(CoreEvents::RCHAR);
             std::string read_bytes = to_string(CoreEvents::READ_BYTES);
 
-            return optkit::core::metrics::MetricBuilder{}
+            return optkit::core::metrics::MetricBuilder<uint64_t>{}
                 .add(rchar, {0x0})
                 .add(read_bytes, {0x0})
                 .build("ReadAmplificationFactor",
@@ -213,12 +213,12 @@ namespace optkit::core::metrics::disk
          * Values close to 1.0 indicate little amplification.
          * Values < 1.0 suggest write buffering or caching.
          */
-        static optkit::core::metrics::MetricBuilder WriteAmplificationFactor()
+        static optkit::core::metrics::MetricBuilder<uint64_t> WriteAmplificationFactor()
         {
             std::string wchar = to_string(CoreEvents::WCHAR);
             std::string write_bytes = to_string(CoreEvents::WRITE_BYTES);
 
-            return optkit::core::metrics::MetricBuilder{}
+            return optkit::core::metrics::MetricBuilder<uint64_t>{}
                 .add(wchar, {0x0})
                 .add(write_bytes, {0x0})
                 .build("WriteAmplificationFactor",
@@ -242,12 +242,12 @@ namespace optkit::core::metrics::disk
          * < 1.0 = Write-heavy workload
          * Helps characterize workload patterns
          */
-        static optkit::core::metrics::MetricBuilder LogicalReadPerWrite()
+        static optkit::core::metrics::MetricBuilder<uint64_t> LogicalReadPerWrite()
         {
             std::string rchar = to_string(CoreEvents::RCHAR);
             std::string wchar = to_string(CoreEvents::WCHAR);
 
-            return optkit::core::metrics::MetricBuilder{}
+            return optkit::core::metrics::MetricBuilder<uint64_t>{}
                 .add(rchar, {0x0})
                 .add(wchar, {0x0})
                 .build("LogicalReadPerWrite",
@@ -274,14 +274,14 @@ namespace optkit::core::metrics::disk
          * Values < 1KB suggest very inefficient syscall patterns.
          * Values > 64KB suggest good I/O batching.
          */
-        static optkit::core::metrics::MetricBuilder LogicalIOPerSyscall()
+        static optkit::core::metrics::MetricBuilder<uint64_t> LogicalIOPerSyscall()
         {
             std::string rchar = to_string(CoreEvents::RCHAR);
             std::string wchar = to_string(CoreEvents::WCHAR);
             std::string syscr = to_string(CoreEvents::SYSCR);
             std::string syscw = to_string(CoreEvents::SYSCW);
 
-            return optkit::core::metrics::MetricBuilder{}
+            return optkit::core::metrics::MetricBuilder<uint64_t>{}
                 .add(rchar, {0x0})
                 .add(wchar, {0x0})
                 .add(syscr, {0x0})
@@ -312,14 +312,14 @@ namespace optkit::core::metrics::disk
          * Lower values indicate better caching.
          * Values near 100% suggest poor cache utilization or sync I/O.
          */
-        static optkit::core::metrics::MetricBuilder DiskUtilizationRate()
+        static optkit::core::metrics::MetricBuilder<uint64_t> DiskUtilizationRate()
         {
             std::string rchar = to_string(CoreEvents::RCHAR);
             std::string wchar = to_string(CoreEvents::WCHAR);
             std::string read_bytes = to_string(CoreEvents::READ_BYTES);
             std::string write_bytes = to_string(CoreEvents::WRITE_BYTES);
 
-            return optkit::core::metrics::MetricBuilder{}
+            return optkit::core::metrics::MetricBuilder<uint64_t>{}
                 .add(rchar, {0x0})
                 .add(wchar, {0x0})
                 .add(read_bytes, {0x0})
@@ -341,9 +341,9 @@ namespace optkit::core::metrics::disk
                        });
         }
 
-        static optkit::core::metrics::MetricBuilder AllMetrics()
+        static optkit::core::metrics::MetricBuilder<uint64_t> AllMetrics()
         {
-            return optkit::core::metrics::MetricBuilder{}
+            return optkit::core::metrics::MetricBuilder<uint64_t>{}
                 .add(LogicalReadPerSyscall())
                 .add(LogicalWritePerSyscall())
                 .add(PhysicalReadCacheHitRate())

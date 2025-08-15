@@ -3,18 +3,18 @@
 
 using namespace optkit::core::metrics;
 
-// Note that, event numbers (hex format) are not important here, we do not measure any events we just test the behaviour of MetricBuilder.
+// Note that, event numbers (hex format) are not important here, we do not measure any events we just test the behaviour of MetricBuilder<uint64_t>.
 
 TEST(MetricBuilderTest, AddEmptySingleName)
 {
-    MetricBuilder builder;
+    MetricBuilder<uint64_t> builder;
     builder.add("cycles", {});
     ASSERT_TRUE(builder.metric_events.empty());
 }
 
 TEST(MetricBuilderTest, AddEmptyVectorOfEvents)
 {
-    MetricBuilder builder;
+    MetricBuilder<uint64_t> builder;
     std::vector<std::pair<std::string, uint64_t>> empty_events;
     builder.add(empty_events);
     ASSERT_TRUE(builder.metric_events.empty());
@@ -22,16 +22,16 @@ TEST(MetricBuilderTest, AddEmptyVectorOfEvents)
 
 TEST(MetricBuilderTest, AddEmptyNameButEventCode)
 {
-    MetricBuilder builder;
-    std::vector<std::pair<std::string, uint64_t>> empty_events{{"",333}};
+    MetricBuilder<uint64_t> builder;
+    std::vector<std::pair<std::string, uint64_t>> empty_events{{"", 333}};
     builder.add(empty_events);
     ASSERT_EQ(builder.metric_events.size(), 1);
 }
 
 TEST(MetricBuilderTest, AddEmptyBuilder)
 {
-    MetricBuilder builder;
-    MetricBuilder empty;
+    MetricBuilder<uint64_t> builder;
+    MetricBuilder<uint64_t> empty;
     builder.add(empty);
     ASSERT_TRUE(builder.metric_events.empty());
     ASSERT_TRUE(builder.metric_names().empty());
@@ -39,7 +39,7 @@ TEST(MetricBuilderTest, AddEmptyBuilder)
 
 TEST(MetricBuilderTest, AddSingleEventAvoidsDuplicates)
 {
-    MetricBuilder builder;
+    MetricBuilder<uint64_t> builder;
     builder.add("inst_retired", {0x00c0});
     builder.add("inst_retired", {0x00c0}); // Duplicate
 
@@ -50,7 +50,7 @@ TEST(MetricBuilderTest, AddSingleEventAvoidsDuplicates)
 
 TEST(MetricBuilderTest, AddMultipleEvents)
 {
-    MetricBuilder builder;
+    MetricBuilder<uint64_t> builder;
     builder.add("cache_misses", {0x412e, 0x412f});
 
     ASSERT_EQ(builder.metric_events.size(), 2);
@@ -62,12 +62,12 @@ TEST(MetricBuilderTest, AddMultipleEvents)
 
 TEST(MetricBuilderTest, AddFromOtherBuilder)
 {
-    MetricBuilder builder1;
+    MetricBuilder<uint64_t> builder1;
     builder1.add("inst_retired", {0x00c0});
     builder1.build("IPC", [](const auto &m)
                    { return m.at("inst_retired") / static_cast<double>(m.at("cpu_cycles")); });
 
-    MetricBuilder builder2;
+    MetricBuilder<uint64_t> builder2;
     builder2.add(builder1); // Inherit events + calculations
 
     ASSERT_EQ(builder2.metric_events.size(), 1);
@@ -81,7 +81,7 @@ TEST(MetricBuilderTest, AddFromOtherBuilder)
 
 TEST(MetricBuilderTest, BuildAndCalculateMetrics)
 {
-    MetricBuilder builder;
+    MetricBuilder<uint64_t> builder;
     builder.add("inst_retired", {0x00c0});
     builder.add("cpu_cycles", {0x003c});
     builder.build("IPC", [](const auto &m)
@@ -99,7 +99,7 @@ TEST(MetricBuilderTest, BuildAndCalculateMetrics)
 
 TEST(MetricBuilderTest, CalculateMultipleMetrics)
 {
-    MetricBuilder builder;
+    MetricBuilder<uint64_t> builder;
     builder.add("inst_retired", {0x00c0})
         .add("cpu_cycles", {0x003c})
         .add("cache_misses", {0x412e})
@@ -129,7 +129,7 @@ TEST(MetricBuilderTest, CalculateMultipleMetrics)
 
 TEST(MetricBuilderTest, MetricNamesList)
 {
-    MetricBuilder builder;
+    MetricBuilder<uint64_t> builder;
     builder.build("Metric1", [](const auto &)
                   { return 1.0; });
     builder.build("Metric2", [](const auto &)
@@ -143,7 +143,7 @@ TEST(MetricBuilderTest, MetricNamesList)
 
 TEST(MetricBuilderTest, GetCalculationFunctionByName)
 {
-    MetricBuilder builder;
+    MetricBuilder<uint64_t> builder;
     builder.build("TestMetric", [](const auto &m)
                   { return m.at("a") + m.at("b"); });
 
@@ -154,7 +154,7 @@ TEST(MetricBuilderTest, GetCalculationFunctionByName)
 
 TEST(MetricBuilderTest, PreventDuplicateAcrossBuilderMerge)
 {
-    MetricBuilder b1, b2;
+    MetricBuilder<uint64_t> b1, b2;
     b1.add("eventA", {0x1});
     b2.add("eventA", {0x1, 0x2});
 
@@ -169,7 +169,7 @@ TEST(MetricBuilderTest, PreventDuplicateAcrossBuilderMerge)
 
 TEST(MetricBuilderTest, MultipleMetricsShareEvents)
 {
-    MetricBuilder builder;
+    MetricBuilder<uint64_t> builder;
     builder.add("a", {0x1}).add("b", {0x2});
     builder.build("RatioAtoB", [](const auto &m)
                   { return static_cast<double>(m.at("a")) / m.at("b"); });
@@ -193,13 +193,13 @@ TEST(MetricBuilderTest, MultipleMetricsShareEvents)
 
 TEST(MetricBuilderTest, ThrowsOnMissingMetric)
 {
-    MetricBuilder builder;
+    MetricBuilder<uint64_t> builder;
     EXPECT_THROW({ builder.metric_calculation_func("nonexistent"); }, std::runtime_error);
 }
 
 TEST(MetricBuilderTest, MetricCalculationMissingInputKeyThrows)
 {
-    MetricBuilder builder;
+    MetricBuilder<uint64_t> builder;
     builder.build("NeedsX", [](const auto &m)
                   {
                       return m.at("x"); // Will throw
@@ -213,7 +213,7 @@ TEST(MetricBuilderTest, MetricCalculationMissingInputKeyThrows)
 
 TEST(MetricBuilderTest, IPCAndMPKIIntegration)
 {
-    MetricBuilder builder;
+    MetricBuilder<uint64_t> builder;
     builder.add("inst_retired", {0x00c0})
         .add("cpu_cycles", {0x003c})
         .add("cache_misses", {0x412e})

@@ -27,11 +27,11 @@ namespace optkit::core::pmu::cpu::perf
      *       If you add event1, event2, event3 then the read buffer will contain the values in the same order.
      *       Given the reason, we used vectors and pairs to store the data in metric Builder.
      */
-    class BlockGroupProfiler : public BaseProfiler<std::vector<uint64_t>>
+    class BlockGroupProfiler : public BaseProfiler<std::vector<uint64_t>, uint64_t>
     {
 
     public:
-        BlockGroupProfiler(const char *block_name, const core::metrics::MetricBuilder &mb, bool verbose = !Query::create_folder, const PerfProfilerConfig &config = PerfProfilerConfig{Query::create_folder, true, true, 0, -1});
+        BlockGroupProfiler(const char *block_name, const core::metrics::MetricBuilder<uint64_t> &mb, bool verbose = !Query::create_folder, const PerfProfilerConfig &config = PerfProfilerConfig{Query::create_folder, true, true, 0, -1});
         virtual ~BlockGroupProfiler();
         /**
          * @brief Disables this block profiler and associated events
@@ -80,7 +80,7 @@ namespace optkit::core::pmu::cpu::perf
         int32_t group_leader;
 
         std::vector<std::pair<std::string, double>> metric_results;
-        core::metrics::MetricBuilder metric_builder;
+        core::metrics::MetricBuilder<uint64_t> metric_builder;
 
         struct read_format
         {

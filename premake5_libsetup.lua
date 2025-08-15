@@ -143,9 +143,10 @@ function test_project_setup()
     defines { "OPTKIT_MODE_NDEBUG" }
     buildoptions {
         "-Wall", -- Enable all warnings
-        "-O3",   -- Explicitly no optimization
-        "-msse",
-        "-march=native -funroll-loops -ftree-vectorize -fopt-info-vec",
+        "-O0",   -- Explicitly no optimization
+        -- "-O3",   -- Explicitly no optimization
+        -- "-msse",
+        -- "-march=native -funroll-loops -ftree-vectorize -fopt-info-vec",
         "-fopenmp", -- Enable OpenMP if needed
         "-fPIC",    -- Position-independent code,
         "-DOPTKIT_TESTING=1"

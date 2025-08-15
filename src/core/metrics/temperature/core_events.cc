@@ -1,25 +1,47 @@
 #include "core/metrics/temperature/core_events.hh"
 
-namespace optkit::core::temperature
+namespace optkit::core::metrics::temperature
 {
     std::string to_string(CoreEvents event)
     {
         switch (event)
         {
-        case CoreEvents::ALL:
-            return "all";
         case CoreEvents::CPU:
-            return "cpu";
+            return "CPU";
         case CoreEvents::STORAGE:
-            return "storage";
+            return "STORAGE";
         case CoreEvents::CPUGPU:
-            return "cpugpu";
+            return "CPUGPU";
         case CoreEvents::GPU:
-            return "gpu";
-        case CoreEvents::MOTHERBOARD:
-            return "motherboard";
+            return "GPU";
         case CoreEvents::NETWORK:
-            return "network";
+            return "NETWORK";
+        case CoreEvents::MOTHERBOARD:
+            return "MOTHERBOARD";
+        case CoreEvents::MEMORY:
+            return "MEMORY";
+        case CoreEvents::USB:
+            return "USB";
+        case CoreEvents::AIO_COOLANT:
+            return "AIO_COOLANT";
+        case CoreEvents::PSU:
+            return "PSU";
+        case CoreEvents::BMC:
+            return "BMC";
+        case CoreEvents::FAN:
+            return "FAN";
+        case CoreEvents::BATTERY:
+            return "BATTERY";
+        case CoreEvents::ACPI_THERMAL:
+            return "ACPI_THERMAL";
+        case CoreEvents::GENERIC_I2C:
+            return "GENERIC_I2C";
+        case CoreEvents::SOC_PLATFORM:
+            return "SOC_PLATFORM";
+        case CoreEvents::ACCELERATOR:
+            return "ACCELERATOR";
+        case CoreEvents::UNKNOWN:
+            return "UNKNOWN";
         default:
             return "UNKNOWN_CORE_EVENT";
         }

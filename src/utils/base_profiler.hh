@@ -7,7 +7,23 @@
 
 namespace optkit::core
 {
-    template <typename T>
+    /**
+     * @brief Base class for profiling various metrics.
+     *
+     * This class provides a framework for measuring and storing performance metrics
+     * in a structured manner. It supports enabling/disabling profiling, reading values,
+     * and aggregating results. The class is designed to be extended for specific profiling
+     * implementations.
+     *
+     * @tparam readT return type of the read method, tipically it is vector<uint64_t> or uint64_t. or can be anything else.
+     * @tparam readvalT Type of the single value of the element. for vector<uint64_t> it is uint64_t.
+     *
+     * @note readValT must be big enough to store the value of accumulation of read_buffer.
+     * ie. your values are int32_t, but it is makesense to use int64_t as readvalT since acummulating many int32_t values can overflow int32_t.
+     *
+     * @note All PMU classes should use, and is using, uint64_t as readValT since it is the standard. https://www.man7.org/linux/man-pages/man2/perf_event_open.2.html#EXAMPLES
+     */
+    template <typename readT, typename readvalT>
     class BaseProfiler
     {
     public:
@@ -23,15 +39,15 @@ namespace optkit::core
         /**
          * @brief Reads the value and STORES it in a buffer for subsequent saving to a file.
          *        Read also store the duration time between start-end and re-set the start to end value afterwards
-         * @return  std::pair<double, T> where first is duration and second is the value.
+         * @return  std::pair<double, readT> where first is duration and second is the value.
          */
-        virtual std::pair<double, T> read_and_store() final
+        virtual std::pair<double, readT> read_and_store() final
         {
             // stop timer
             auto end = std::chrono::high_resolution_clock::now();
 
             // read value
-            const T &val = read();
+            const readT &val = read();
 
             // calculate duration in ms
             auto duration_ms = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000.0f;
@@ -48,9 +64,9 @@ namespace optkit::core
         /**
          * @brief read_val method that refrains from storing the value in a buffer for future writing.
          *        read_val should NOT! mess with time durations, only should read data and retrun it.
-         * @return T
+         * @return readT
          */
-        virtual T read() = 0;
+        virtual readT read() = 0;
 
         /**
          * @brief Convert buffer to json string as you wish.
@@ -59,7 +75,7 @@ namespace optkit::core
          */
         virtual std::string to_json() = 0;
 
-        // virtual const std::vector<std::pair<double, T>> &get_read_buffer() final
+        // virtual const std::vector<std::pair<double, readT>> &get_read_buffer() final
         // {
         //     return read_buffer;
         // }
@@ -77,7 +93,7 @@ namespace optkit::core
          *
          * @return unique event-value map.
          */
-        virtual std::unordered_map<std::string, uint64_t> aggregate() = 0;
+        virtual std::unordered_map<std::string, readvalT> aggregate() = 0;
 
     protected:
         /**
@@ -108,13 +124,13 @@ namespace optkit::core
          * Each timestamp represents the elapsed time at which the corresponding measurement was taken.
          *
          */
-        std::vector<std::pair<double, T>> read_buffer;
+        std::vector<std::pair<double, readT>> read_buffer;
 
         /**
          * @brief Aggregated view of the read_buffer, where each element
          *        represents an event name and its accumulated value. it is filled by aggregate() method.
          */
-        std::vector<std::pair<std::string, uint64_t>> event_results;
+        std::vector<std::pair<std::string, readvalT>> event_results;
     };
 
 } // namespace optkit::core

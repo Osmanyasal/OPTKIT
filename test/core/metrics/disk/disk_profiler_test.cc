@@ -31,7 +31,7 @@ protected:
 
 TEST_F(DiskProfiler, Write82KCharsAtOnce)
 {
-    MetricBuilder mb{};
+    MetricBuilder<uint64_t> mb{};
     mb.add(core_metrics::AllMetrics());
 
     OPTKIT_DISK_EVENTS("Write82KCharsAtOnce", mb);
@@ -45,7 +45,7 @@ TEST_F(DiskProfiler, Write82KCharsAtOnce)
 
 TEST_F(DiskProfiler, Write82KCharsDivided)
 {
-    MetricBuilder mb{};
+    MetricBuilder<uint64_t> mb{};
     mb.add(core_metrics::AllMetrics());
 
     OPTKIT_DISK_EVENTS("Write82KCharsDivided", mb);
@@ -62,7 +62,7 @@ TEST_F(DiskProfiler, Read41KChars)
 {
     optkit::utils::write_file(read_path, std::string(WRITE_SIZE, 'X'));
 
-    MetricBuilder mb{};
+    MetricBuilder<uint64_t> mb{};
     mb.add(core_metrics::AllMetrics());
 
     OPTKIT_DISK_EVENTS("Read41KChars", mb);

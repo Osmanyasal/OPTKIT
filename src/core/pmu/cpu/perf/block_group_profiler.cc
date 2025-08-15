@@ -5,7 +5,7 @@
 namespace optkit::core::pmu::cpu::perf
 {
 
-    BlockGroupProfiler::BlockGroupProfiler(const char *block_name, const core::metrics::MetricBuilder &mb, bool verbose, const PerfProfilerConfig &config) : BaseProfiler{block_name, "cpu_pmu", verbose}, group_leader{-1}, profiler_config{config}, metric_builder{mb}
+    BlockGroupProfiler::BlockGroupProfiler(const char *block_name, const core::metrics::MetricBuilder<uint64_t> &mb, bool verbose, const PerfProfilerConfig &config) : BaseProfiler{block_name, "cpu_pmu", verbose}, group_leader{-1}, profiler_config{config}, metric_builder{mb}
     {
         PMUEventManager::disable_all_events();
 
@@ -119,7 +119,7 @@ namespace optkit::core::pmu::cpu::perf
     {
         std::stringstream ss;
         ss << "[\n";
-        ss << utils::to_json(this->total_duration_ms, this->measurement_type, this->event_results, this->metric_results);
+        ss << utils::to_json<uint64_t>(this->total_duration_ms, this->measurement_type, this->event_results, this->metric_results);
         ss << "]\n";
         return ss.str();
     }
