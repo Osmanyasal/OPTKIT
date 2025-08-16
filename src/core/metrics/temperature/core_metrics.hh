@@ -23,9 +23,9 @@ namespace optkit::core::metrics::temperature
     class CoreMetrics
     {
     public:
-        static optkit::core::metrics::MetricBuilder<int64_t> AllMetrics()
+        static optkit::core::metrics::MetricBuilder<double> AllMetrics()
         {
-            return optkit::core::metrics::MetricBuilder<int64_t>{}
+            return optkit::core::metrics::MetricBuilder<double>{}
                 .add(to_string(CoreEvents::CPU), {0x0})
                 .add(to_string(CoreEvents::STORAGE), {0x0})
                 .add(to_string(CoreEvents::CPUGPU), {0x0})

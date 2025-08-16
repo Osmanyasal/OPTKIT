@@ -2,6 +2,7 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <cstring>
+#include <algorithm>
 
 namespace optkit::core::temperature
 {
@@ -21,11 +22,19 @@ namespace optkit::core::temperature
         }
     }
 
-    CPUTemperatureProfiler::CPUTemperatureProfiler(const char *block_name, const core::metrics::MetricBuilder<int64_t> &mb, bool verbose)
+    CPUTemperatureProfiler::CPUTemperatureProfiler(const char *block_name, const core::metrics::MetricBuilder<double> &mb, bool verbose)
         : BaseProfiler(block_name, "temperature", verbose), metric_builder(mb)
     {
         // Take initial snapshot
-        last_snapshot = read_selected_temperature_sensors(metric_builder.event_names());
+        last_snapshot = read_temperature_sensors(metric_builder.event_names());
+
+        // TODO: We disabled the grouping feature.
+        metric_builder = {};
+        for (auto &&i : last_snapshot)
+        {
+            metric_builder.add(i.first, {0x0});
+        }
+
         std::cout << "READ INITIAL SNAPSHOT: " << std::endl;
         // traverse snapshot and print
         for (const auto &i : last_snapshot)
@@ -48,27 +57,27 @@ namespace optkit::core::temperature
 
             if (OPT_UNLIKELY(this->metric_builder.print_events))
                 for (auto &&event : this->event_results)
-                    std::cout << std::fixed << "\t" << event.first << ": " << event.second / 1000.0 << "°C" << std::endl;
+                    std::cout << std::fixed << "\t" << event.first << ": " << event.second << "°C" << std::endl;
 
             for (auto &&metric : this->metric_results)
                 std::cout << std::fixed << "\t" << metric.first << ": " << metric.second << std::endl;
         }
     }
 
-    std::vector<int64_t> CPUTemperatureProfiler::read()
+    std::vector<double> CPUTemperatureProfiler::read()
     {
 
         const std::vector<std::string> &event_names = this->metric_builder.event_names();
-        auto current_snapshot = read_selected_temperature_sensors(event_names);
-        std::vector<int64_t> current_temps;
+        auto current_snapshot = read_temperature_sensors(event_names);
+        std::vector<double> current_temps;
 
         for (const auto &cs : current_snapshot)
         {
             std::cout << "Current snapshot: " << cs.first << " -> " << cs.second << std::endl;
-            int64_t curr_val = current_snapshot.at(cs.first);
-            int64_t prev_val = last_snapshot.at(cs.first);
+            double curr_val = current_snapshot.at(cs.first);
+            double prev_val = last_snapshot.at(cs.first);
 
-            int64_t delta = curr_val - prev_val;
+            double delta = curr_val - prev_val;
             last_snapshot.at(cs.first) = curr_val;
             current_temps.push_back(delta); // store the delta
         }
@@ -76,24 +85,24 @@ namespace optkit::core::temperature
         return current_temps;
     }
 
-    std::unordered_map<std::string, int64_t> CPUTemperatureProfiler::aggregate()
+    std::unordered_map<std::string, double> CPUTemperatureProfiler::aggregate()
     {
         double total_duration = 0.0;
-        std::unordered_map<std::string, int64_t> aggregated_events;
+        std::unordered_map<std::string, double> aggregated_events;
         const std::vector<std::string> &event_names = this->metric_builder.event_names();
 
         for (const auto &entry : read_buffer)
         {
             total_duration += entry.first;
 
-            const std::vector<int64_t> &values = entry.second;
+            const std::vector<double> &values = entry.second;
 
             for (size_t j = 0; j < values.size(); ++j)
             {
                 aggregated_events[event_names[j]] += values[j];
             }
         }
-        std::vector<std::pair<std::string, int64_t>> event_value(
+        std::vector<std::pair<std::string, double>> event_value(
             aggregated_events.begin(), aggregated_events.end());
 
         this->event_results = event_value;
@@ -106,17 +115,27 @@ namespace optkit::core::temperature
     {
         std::stringstream ss;
         ss << "[\n";
-        ss << utils::to_json<int64_t>(this->total_duration_ms, this->measurement_type, this->event_results, this->metric_results);
+        ss << utils::to_json<double>(this->total_duration_ms, this->measurement_type, this->event_results, this->metric_results);
         ss << "]\n";
         return ss.str();
     }
 
+    // PS: keep this here, this works different than "contains" method that you'd think.
     static bool match_any(const std::string &name, const std::vector<std::string> &patterns)
     {
-        for (auto &pat : patterns)
+        if (name.empty() || patterns.empty())
+            return false;
+
+        for (const auto &pat : patterns)
         {
-            if (name.find(pat) != std::string::npos)
+            // Use exact word matching or prefix matching to avoid false positives
+            if (name == pat ||
+                (name.length() > pat.length() &&
+                 name.substr(0, pat.length()) == pat &&
+                 (name[pat.length()] == '_' || name[pat.length()] == '-')))
+            {
                 return true;
+            }
         }
         return false;
     }
@@ -142,40 +161,50 @@ namespace optkit::core::temperature
                 // ignore and fall back
             }
         }
-        return "TEMP_" + temp_num_str;
+        return "_" + temp_num_str;
     }
 
     std::string CPUTemperatureProfiler::build_sensor_name(const std::string &hwmon_name,
                                                           const std::string &temp_num_str)
     {
-        // Group patterns
+        std::cout << "build_sensor_name:" << hwmon_name << " ---- " << temp_num_str << std::endl;
+        // Group patterns - ordered by specificity (most specific first)
         static const std::vector<std::pair<std::vector<std::string>, std::string>> categories = {
             // CPU package / CPU sensors
             {{"coretemp", "k10temp", "zenpower", "k8temp", "peci-cputemp", "fam15h_power", "amd_energy", "intel_powerclamp"}, "CPU_PACKAGE_TEMP_"},
 
-            // GPUs
+            // GPUs (specific GPU drivers first)
             {{"amdgpu", "radeon", "nvidia", "nouveau", "i915", "intel_xe", "intel_xe_gpu"}, "GPU_TEMP_"},
+
+            // GPU/accelerator (vendor specific) - moved up for specificity
+            {{"nv_host", "nvidia_gpu", "gpu_temp"}, "ACCELERATOR_TEMP_"},
 
             // NVMe / SSD / block device temps
             {{"nvme", "nvme_hwmon", "drivetemp", "ssd"}, "STORAGE_NVME_TEMP_"},
-            {{"drivetemp", "hddtemp", "ata-temp"}, "STORAGE_DRIVE_TEMP_"},
+            {{"hddtemp", "ata-temp"}, "STORAGE_DRIVE_TEMP_"},
+
+            // AIO / pump / vendor water-cooling drivers & controllers
+            {{"nzxt-kraken2", "nzxt-kraken3", "nzxt-smart2", "kraken", "gigabyte_waterforce", "corsair", "cm-psu"}, "AIO_COOLANT_TEMP_"},
+
+            // Fans / PWM controllers (moved up to avoid conflicts)
+            {{"pwm-fan", "pwm_fan", "gxp-fan-ctrl"}, "FAN_TEMP_"},
+
+            // Network adapters (removed mlxreg-fan - belongs to fans)
+            {{"r8169", "e1000", "igb", "ixgbe", "mlx", "lan966x-hwmon"}, "NETWORK_TEMP_"},
 
             // Motherboard / SuperIO chips (motherboard sensors & fans)
             {{"nct6775", "nct6683", "nct7363", "nct7802", "nct7904", "it87", "w83627ehf", "w83627hf",
               "f71805f", "f71882fg", "vt1211", "via686a", "pc87360", "pc87427", "adm1025", "adm1031"},
              "MOTHERBOARD_TEMP_"},
 
-            // AIO / pump / vendor water-cooling drivers & controllers
-            {{"nzxt-kraken2", "nzxt-kraken3", "nzxt-smart2", "kraken", "gigabyte_waterforce", "corsair", "cm-psu", "gigabyte_waterforce"}, "AIO_COOLANT_TEMP_"},
-
             // Memory / SPD / DIMM sensors
             {{"spd5118", "jc42", "ts3000", "peci-dimmtemp"}, "MEMORY_TEMP_"},
 
-            // Network adapters (rare, but sometimes NIC controllers expose temps)
-            {{"r8169", "e1000", "igb", "ixgbe", "mlx", "mlxreg-fan", "lan966x-hwmon"}, "NETWORK_TEMP_"},
-
             // Power supplies / PSU / Board power monitors
-            {{"seasonic", "evga", "ibm-cffps", "ibm-cffps", "power_meter", "pm6764tr"}, "PSU_TEMP_"},
+            {{"seasonic", "evga", "power_meter", "pm6764tr"}, "PSU_TEMP_"},
+
+            // BMC / server-baseboard sensors
+            {{"ibmaem", "menf21bmc_hwmon", "intel-m10-bmc-hwmon", "ibm-cffps", "ipmi"}, "BMC_TEMP_"},
 
             // ACPI / thermal zones
             {{"acpitz", "acpi_thermal", "thermal_zone", "acpi"}, "ACPI_THERMAL_TEMP_"},
@@ -183,14 +212,11 @@ namespace optkit::core::temperature
             // USB / Type-C / PD controllers and power-management ICs
             {{"usb", "thunderbolt", "typec", "tps40422", "tps25990", "tps53679", "tps23861"}, "USB_CONTROLLER_TEMP_"},
 
-            // BMC / server-baseboard sensors
-            {{"ibmaem", "menf21bmc_hwmon", "intel-m10-bmc-hwmon", "ibm-cffps", "ipmi"}, "BMC_TEMP_"},
-
-            // Fans / PWM controllers
-            {{"pwm-fan", "mlxreg-fan", "surface_fan", "gxp-fan-ctrl", "pwm_fan", "mps"}, "FAN_RPM_"},
-
             // Battery / UPS related
             {{"kbatt", "battery", "ups"}, "BATTERY_TEMP_"},
+
+            // Misc / SoC / platform-specific hwmon (removed surface_fan - belongs to fans)
+            {{"raspberrypi-hwmon", "vexpress", "occ-hwmon", "ampere-smpro", "intel_soc_dts_gen"}, "SOC_PLATFORM_TEMP_"},
 
             // Generic I2C / SPI temperature chips (lots of lm_* , tmp*, ltc*, max* chips)
             {{"lm75", "lm63", "lm70", "lm73", "lm77", "lm78", "lm80", "lm83", "lm85", "lm87", "lm90", "lm92", "lm93",
@@ -198,25 +224,22 @@ namespace optkit::core::temperature
               "ina3221", "isl28022", "isl68137", "adt7410", "ads7828", "emc2103", "emc2305", "mpq8785"},
              "GENERIC_I2C_TEMP_"},
 
-            // Misc / SoC / platform-specific hwmon
-            {{"raspberrypi-hwmon", "vexpress", "occ-hwmon", "surface_fan", "ampere-smpro", "intel_soc_dts_gen"}, "SOC_PLATFORM_TEMP_"},
-
-            // GPU/accelerator (vendor specific) or unknown vendor hwmon nodes
-            {{"nv_host", "nvidia_gpu", "gpu_temp"}, "ACCELERATOR_TEMP_"},
+            // Remaining fan controllers (moved to end to avoid conflicts)
+            {{"mlxreg-fan", "surface_fan", "mps"}, "FAN_TEMP_"},
 
             // Fallback / unknown - keep this last so it's used only if nothing else matches.
-            {{"composite", "unknown", "hwmon", "composite:0"}, "UNKNOWN_HWMON_"}};
+            {{"composite", "unknown", "hwmon"}, "UNKNOWN_HWMON_"}};
 
-        for (auto &cat : categories)
-        {
-            if (match_any(hwmon_name, cat.first))
-            {
-                return cat.second + temp_num_str;
-            }
-        }
+        // for (const auto &cat : categories)
+        // {
+        //     if (match_any(hwmon_name, cat.first))
+        //     {
+        //         return cat.second + temp_num_str;
+        //     }
+        // }
 
         // Generic fallback
-        return hwmon_name + "_TEMP_" + temp_num_str;
+        return hwmon_name + "_" + temp_num_str;
     }
 
     std::unordered_map<std::string, std::string> CPUTemperatureProfiler::discover_hwmon_sensors()
@@ -297,12 +320,12 @@ namespace optkit::core::temperature
         return sensors;
     }
 
-    int64_t CPUTemperatureProfiler::read_hwmon_temperature(const std::string &hwmon_path)
+    double CPUTemperatureProfiler::read_hwmon_temperature(const std::string &hwmon_path)
     {
         try
         {
             std::string content = optkit::utils::read_file(hwmon_path);
-            return std::stoull(content); // hwmon returns millidegrees Celsius
+            return std::stod(content) / 1000.0; // hwmon returns millidegrees Celsius
         }
         catch (...)
         {
@@ -310,25 +333,26 @@ namespace optkit::core::temperature
         }
     }
 
-    std::unordered_map<std::string, int64_t> CPUTemperatureProfiler::read_selected_temperature_sensors(const std::vector<std::string> &sensor_names)
+    std::unordered_map<std::string, double> CPUTemperatureProfiler::read_temperature_sensors(const std::vector<std::string> &sensor_names)
     {
-        std::unordered_map<std::string, int64_t> results;
+        std::unordered_map<std::string, double> results;
 
         for (auto it = sensor_paths.begin(); it != sensor_paths.end(); ++it)
         {
             const std::string &sensor_sysfs_name = it->first;
 
-            for (std::vector<std::string>::const_iterator name_it = sensor_names.begin();
-                 name_it != sensor_names.end(); ++name_it)
-            {
-                const std::string &name = *name_it;
+            // for (std::vector<std::string>::const_iterator name_it = sensor_names.begin();
+            //      name_it != sensor_names.end(); ++name_it)
+            // {
+            // const std::string &name = *name_it;
 
-                if (sensor_sysfs_name.size() >= name.size() &&
-                    sensor_sysfs_name.compare(0, name.size(), name) == 0)
-                {
-                    results[sensor_sysfs_name] = read_hwmon_temperature(it->second);
-                }
-            }
+            // if (match_any(sensor_sysfs_name, {name}))
+            // if (sensor_sysfs_name.size() >= name.size() &&
+            //     sensor_sysfs_name.compare(0, name.size(), name) == 0)
+            // {
+            results[sensor_sysfs_name] = read_hwmon_temperature(it->second);
+            // }
+            // }
         }
 
         return results;
