@@ -26,7 +26,7 @@ namespace optkit::core::temperature
         : BaseProfiler(block_name, "temperature", verbose), metric_builder(mb)
     {
         // Take initial snapshot
-        last_snapshot = read_temperature_sensors(metric_builder.event_names());
+        last_snapshot = read_temperature_sensors();
 
         // TODO: We disabled the grouping feature.
         metric_builder = {};
@@ -67,8 +67,7 @@ namespace optkit::core::temperature
     std::vector<double> CPUTemperatureProfiler::read()
     {
 
-        const std::vector<std::string> &event_names = this->metric_builder.event_names();
-        auto current_snapshot = read_temperature_sensors(event_names);
+        auto current_snapshot = read_temperature_sensors();
         std::vector<double> current_temps;
 
         for (const auto &cs : current_snapshot)
@@ -312,10 +311,10 @@ namespace optkit::core::temperature
         }
 
         // Debug output (remove for production)
-        for (auto &&i : sensors)
-        {
-            std::cout << i.first << " -> " << i.second << std::endl;
-        }
+        // for (auto &&i : sensors)
+        // {
+        //     std::cout << i.first << " -> " << i.second << std::endl;
+        // }
 
         return sensors;
     }
@@ -333,26 +332,13 @@ namespace optkit::core::temperature
         }
     }
 
-    std::unordered_map<std::string, double> CPUTemperatureProfiler::read_temperature_sensors(const std::vector<std::string> &sensor_names)
+    std::unordered_map<std::string, double> CPUTemperatureProfiler::read_temperature_sensors()
     {
         std::unordered_map<std::string, double> results;
 
         for (auto it = sensor_paths.begin(); it != sensor_paths.end(); ++it)
         {
-            const std::string &sensor_sysfs_name = it->first;
-
-            // for (std::vector<std::string>::const_iterator name_it = sensor_names.begin();
-            //      name_it != sensor_names.end(); ++name_it)
-            // {
-            // const std::string &name = *name_it;
-
-            // if (match_any(sensor_sysfs_name, {name}))
-            // if (sensor_sysfs_name.size() >= name.size() &&
-            //     sensor_sysfs_name.compare(0, name.size(), name) == 0)
-            // {
-            results[sensor_sysfs_name] = read_hwmon_temperature(it->second);
-            // }
-            // }
+            results[it->first] = read_hwmon_temperature(it->second);
         }
 
         return results;

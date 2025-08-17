@@ -47,18 +47,20 @@ namespace optkit::core::temperature
         virtual void disable() override {} // No-op
         virtual void reset() override {}   // No-op
 
+        // This read saves deltas, meaning, the change from the previous read. (current_val - prev_val)
+        // if you need current values, use the read_temperature_sensors() method directly.
         virtual std::vector<double> read() override;
         virtual std::string to_json() override;
         virtual std::unordered_map<std::string, double> aggregate() override;
 
-    private:
         /**
          * Reads selected temperature sensors from hwmon and GPU APIs.
          * @param sensor_names vector of sensor names to read
          * @return unordered_map from sensor_name -> temperature (millidegrees C)
          */
-        std::unordered_map<std::string, double> read_temperature_sensors(const std::vector<std::string> &sensor_names);
+        std::unordered_map<std::string, double> read_temperature_sensors();
 
+    private:
         /**
          * Read temperature from hwmon path
          */
