@@ -160,13 +160,13 @@ namespace optkit::core::temperature
                 // ignore and fall back
             }
         }
-        return "_" + temp_num_str;
+        return temp_num_str;
     }
 
     std::string CPUTemperatureProfiler::build_sensor_name(const std::string &hwmon_name,
                                                           const std::string &temp_num_str)
     {
-        std::cout << "build_sensor_name:" << hwmon_name << " ---- " << temp_num_str << std::endl;
+        // std::cout << "build_sensor_name:" << hwmon_name << " ---- " << temp_num_str << std::endl;
         // Group patterns - ordered by specificity (most specific first)
         static const std::vector<std::pair<std::vector<std::string>, std::string>> categories = {
             // CPU package / CPU sensors
@@ -298,12 +298,12 @@ namespace optkit::core::temperature
                     std::string sensor_name = build_sensor_name(hwmon_name, label_or_num);
 
                     // Handle duplicates by appending hwmon directory name
-                    if (sensors.count(sensor_name))
-                    {
-                        // Extract hwmon number (hwmon2 -> 2)
-                        std::string hwmon_num = hwmon_dir.substr(5); // Remove "hwmon" prefix
-                        sensor_name += "_" + hwmon_num;
-                    }
+                    // if (sensors.count(sensor_name))
+                    // {
+                    // Extract hwmon number (hwmon2 -> 2)
+                    std::string hwmon_num = hwmon_dir.substr(5); // Remove "hwmon" prefix
+                    sensor_name = "hwmon_" + hwmon_num + "__" + sensor_name;
+                    // }
 
                     sensors[sensor_name] = full_temp_path;
                 }
@@ -311,10 +311,10 @@ namespace optkit::core::temperature
         }
 
         // Debug output (remove for production)
-        // for (auto &&i : sensors)
-        // {
-        //     std::cout << i.first << " -> " << i.second << std::endl;
-        // }
+        for (auto &&i : sensors)
+        {
+            std::cout << i.first << " -> " << i.second << std::endl;
+        }
 
         return sensors;
     }
