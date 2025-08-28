@@ -75,3 +75,29 @@ TEST_F(DiskProfiler, Read41KChars)
 
     EXPECT_NEAR(result.at(to_string(disk::core_events::RCHAR)), READ_SIZE, READ_SIZE * ERROR_RATE);
 }
+
+TEST_F(DiskProfiler, SustainedWrite5Sec)
+{
+    MetricBuilder<uint64_t> mb{};
+    mb.add(core_metrics::AllMetrics());
+
+    OPTKIT_DISK_EVENTS("SustainedWrite5Sec", mb);
+
+    const std::string payload(WRITE_SIZE, 'Z');
+    auto start = std::chrono::steady_clock::now();
+
+    uint64_t calling_cntr = 0;
+    // Write repeatedly for about 5 seconds
+    while (std::chrono::steady_clock::now() - start < std::chrono::seconds(5))
+    {
+        optkit::utils::write_file(write_path, payload);
+        calling_cntr++;
+    }
+
+    var84.read_and_store();
+    const auto &result = var84.aggregate();
+
+    // At least one write must be recorded
+    EXPECT_GT(result.at(to_string(disk::core_events::WCHAR)), 0);
+    std::cout << "SustainedWrite5Sec called " << calling_cntr << " times.\n";
+}

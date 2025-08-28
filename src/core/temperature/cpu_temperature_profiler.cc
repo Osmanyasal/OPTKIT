@@ -35,10 +35,10 @@ namespace optkit::core::temperature
             metric_builder.add(i.first, {0x0});
         }
 
-        std::cout << "READ INITIAL SNAPSHOT: " << std::endl;
+        // std::cout << "READ INITIAL SNAPSHOT: " << std::endl;
         // traverse snapshot and print
-        for (const auto &i : last_snapshot)
-            std::cout << i.first << " -> " << i.second << std::endl;
+        // for (const auto &i : last_snapshot)
+        //     std::cout << i.first << " -> " << i.second << std::endl;
     }
 
     CPUTemperatureProfiler::~CPUTemperatureProfiler()
@@ -72,7 +72,7 @@ namespace optkit::core::temperature
 
         for (const auto &cs : current_snapshot)
         {
-            std::cout << "Current snapshot: " << cs.first << " -> " << cs.second << std::endl;
+            // std::cout << "Current snapshot: " << cs.first << " -> " << cs.second << std::endl;
             double curr_val = current_snapshot.at(cs.first);
             double prev_val = last_snapshot.at(cs.first);
 
@@ -311,10 +311,10 @@ namespace optkit::core::temperature
         }
 
         // Debug output (remove for production)
-        for (auto &&i : sensors)
-        {
-            std::cout << i.first << " -> " << i.second << std::endl;
-        }
+        // for (auto &&i : sensors)
+        // {
+        //     std::cout << i.first << " -> " << i.second << std::endl;
+        // }
 
         return sensors;
     }

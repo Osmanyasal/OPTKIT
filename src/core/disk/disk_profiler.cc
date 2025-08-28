@@ -5,7 +5,7 @@ namespace optkit::core::disk
     IoDiskProfiler::IoDiskProfiler(const char *block_name, const core::metrics::MetricBuilder<uint64_t> &mb, bool verbose)
         : BaseProfiler(block_name, "disk_io", verbose), metric_builder(mb)
     {
-        last_snapshot = read_selected_io_counters(metric_builder.event_names());
+        last_snapshot = read_selected_io_counters();
     }
 
     IoDiskProfiler::~IoDiskProfiler()
@@ -35,8 +35,8 @@ namespace optkit::core::disk
     std::vector<uint64_t> IoDiskProfiler::read()
     {
         std::vector<uint64_t> result;
+        auto curr_snapshot = read_selected_io_counters();
         const std::vector<std::string> &event_names = this->metric_builder.event_names();
-        auto curr_snapshot = read_selected_io_counters(event_names);
         for (const auto &key : event_names)
         {
             // std::cout << "key:" << key << "\n";
@@ -92,11 +92,11 @@ namespace optkit::core::disk
     }
 
     // Your keys of interest
-    std::unordered_map<std::string, uint64_t> IoDiskProfiler::read_selected_io_counters(const std::vector<std::string> &keys)
+    std::unordered_map<std::string, uint64_t> IoDiskProfiler::read_selected_io_counters()
     {
         std::unordered_map<std::string, uint64_t> results;
         std::unordered_map<std::string, bool> wanted;
-        for (const auto &k : keys)
+        for (const auto &k : this->metric_builder.event_names())
         {
             wanted[k] = true;
             results[k] = 0;

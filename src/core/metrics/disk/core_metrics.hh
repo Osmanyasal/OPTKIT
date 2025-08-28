@@ -346,14 +346,14 @@ namespace optkit::core::metrics::disk
          *
          * @return optkit::core::metrics::MetricBuilder<uint64_t>
          */
-        static optkit::core::metrics::MetricBuilder<uint64_t> IOPS()
+        static optkit::core::metrics::MetricBuilder<uint64_t> SyscallIOPS()
         {
             std::string syscr = to_string(CoreEvents::SYSCR);
             std::string syscw = to_string(CoreEvents::SYSCW);
             return optkit::core::metrics::MetricBuilder<uint64_t>{}
                 .add(syscr, {0x0})
                 .add(syscw, {0x0})
-                .build("IOPS",
+                .build("SyscallIOPS",
                        [syscr, syscw](const std::unordered_map<std::string, uint64_t> &m)
                        {
                            uint64_t val_syscr = m.at(syscr);
@@ -367,11 +367,68 @@ namespace optkit::core::metrics::disk
                            return static_cast<double>(total_logical) / duration_sec;
                        });
         }
+        /**
+         * @brief Logical IOPS (application-visible I/O requests per second)
+         *
+         * Computed from logical bytes transferred (RCHAR + WCHAR) divided
+         * by a default block size (4KB) per duration.
+         */
+        static optkit::core::metrics::MetricBuilder<uint64_t> LogicalIOPS(uint64_t block_size = 4096)
+        {
+            std::string rchar = to_string(CoreEvents::RCHAR);
+            std::string wchar = to_string(CoreEvents::WCHAR);
+            return optkit::core::metrics::MetricBuilder<uint64_t>{}
+                .add(rchar, {0x0})
+                .add(wchar, {0x0})
+                .build("LogicalIOPS",
+                       [rchar, wchar, block_size](const std::unordered_map<std::string, uint64_t> &m)
+                       {
+                           uint64_t val_rchar = m.at(rchar);
+                           uint64_t val_wchar = m.at(wchar);
+
+                           uint64_t logical_ops = (val_rchar + val_wchar) / block_size;
+                           double duration_sec = get_event_count(m, "duration_microsec") / 1.0e6;
+
+                           if (duration_sec == 0)
+                               return std::numeric_limits<double>::quiet_NaN();
+                           return static_cast<double>(logical_ops) / duration_sec;
+                       });
+        }
+
+        /**
+         * @brief Physical IOPS (block-device operations per second)
+         *
+         * Computed from physical bytes transferred (READ_BYTES + WRITE_BYTES)
+         * divided by a default block size (4KB) per duration.
+         */
+        static optkit::core::metrics::MetricBuilder<uint64_t> PhysicalIOPS(uint64_t block_size = 4096)
+        {
+            std::string read_bytes = to_string(CoreEvents::READ_BYTES);
+            std::string write_bytes = to_string(CoreEvents::WRITE_BYTES);
+            return optkit::core::metrics::MetricBuilder<uint64_t>{}
+                .add(read_bytes, {0x0})
+                .add(write_bytes, {0x0})
+                .build("PhysicalIOPS",
+                       [read_bytes, write_bytes, block_size](const std::unordered_map<std::string, uint64_t> &m)
+                       {
+                           uint64_t val_read = m.at(read_bytes);
+                           uint64_t val_write = m.at(write_bytes);
+
+                           uint64_t physical_ops = (val_read + val_write) / block_size;
+                           double duration_sec = get_event_count(m, "duration_microsec") / 1.0e6;
+
+                           if (duration_sec == 0)
+                               return std::numeric_limits<double>::quiet_NaN();
+                           return static_cast<double>(physical_ops) / duration_sec;
+                       });
+        }
 
         static optkit::core::metrics::MetricBuilder<uint64_t> AllMetrics()
         {
             return optkit::core::metrics::MetricBuilder<uint64_t>{}
-                .add(IOPS())
+                .add(SyscallIOPS())
+                .add(LogicalIOPS())
+                .add(PhysicalIOPS())
                 .add(LogicalReadPerSyscall())
                 .add(LogicalWritePerSyscall())
                 .add(PhysicalReadCacheHitRate())

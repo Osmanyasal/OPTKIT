@@ -47,7 +47,7 @@ namespace optkit::core::metrics
      * std::vector<std::pair<std::string, uint64_t>> results = {
      *     {"inst_retired", 5'000'000},
      *     {"cpu_cycles", 10'000'000},
-     *     {"cache_misses", 25'000}
+     *     {"cache_misses", 25'000},
      * };
      *
      * auto all_metrics = builder.calculate(results);
@@ -64,17 +64,15 @@ namespace optkit::core::metrics
      * @param print_events tells profiler to print the events (note that metrics are always printed.)
      * @param allow_duplicates if true, allows adding duplicate (name, code) pairs.
      *
-     *
      * @note In what order the event names and codes are added is IMPORTANT! it is read as it is added.
      *       If you add event1, event2, event3 then the read buffer will contain the values in the same order.
      *       Given the reason, we used vectors and pairs to store the data in metric Builder.
      */
-
-    template <typename eventT>
+    template <typename eventResultType>
     class MetricBuilder
     {
     public:
-        using CalculationFunc = std::function<double(const std::unordered_map<std::string, eventT> &)>;
+        using CalculationFunc = std::function<double(const std::unordered_map<std::string, eventResultType> &)>;
 
         MetricBuilder(bool print_events = true, bool allow_duplicates = false) : print_events{print_events}, allow_duplicates{allow_duplicates}, ill_formed{false} {};
 
@@ -135,7 +133,7 @@ namespace optkit::core::metrics
         }
 
         // Pass event results and calculate all metrics defined then return the result
-        std::vector<std::pair<std::string, double>> calculate(const std::unordered_map<std::string, eventT> &results) const
+        std::vector<std::pair<std::string, double>> calculate(const std::unordered_map<std::string, eventResultType> &results) const
         {
             if (calculation_funcs.empty())
                 return {};
@@ -193,15 +191,15 @@ namespace optkit::core::metrics
         bool ill_formed; // if true, the MetricBuilder is not well formed, i.e. no events or no calculations.
     };
 
-    template <typename eventT>
-    OPT_FORCE_INLINE eventT get_event_count(const std::unordered_map<std::string, eventT> &counts, const std::string &name, const eventT &default_value = eventT{})
+    template <typename eventResultType>
+    OPT_FORCE_INLINE eventResultType get_event_count(const std::unordered_map<std::string, eventResultType> &counts, const std::string &name, const eventResultType &default_value = eventResultType{})
     {
         auto it = counts.find(name);
         return (it != counts.end()) ? it->second : default_value;
     }
 
-    template <typename eventT>
-    std::string to_string(const MetricBuilder<eventT> &mb)
+    template <typename eventResultType>
+    std::string to_string(const MetricBuilder<eventResultType> &mb)
     {
         std::ostringstream oss;
 
@@ -226,8 +224,8 @@ namespace optkit::core::metrics
 
         return oss.str();
     }
-    template <typename eventT>
-    std::ostream &operator<<(std::ostream &os, const MetricBuilder<eventT> &mb)
+    template <typename eventResultType>
+    std::ostream &operator<<(std::ostream &os, const MetricBuilder<eventResultType> &mb)
     {
         return os << to_string(mb);
     }

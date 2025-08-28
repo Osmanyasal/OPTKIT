@@ -28,14 +28,12 @@ namespace optkit::core::disk
 
         virtual std::unordered_map<std::string, uint64_t> aggregate() override;
 
-    private:
         /**
-         * Reads selected io counters from /proc/self/io.
-         * @param keys vector of counter names (e.g. "rchar", "wchar", "syscr", ...)
-         * @return unordered_map from key -> value (uint64_t)
-         * Throws on file open error.
+         * @brief Reads selected IO counters from /proc/self/io.
+         *
+         * @return std::unordered_map<std::string, uint64_t>
          */
-        virtual std::unordered_map<std::string, uint64_t> read_selected_io_counters(const std::vector<std::string> &keys);
+        virtual std::unordered_map<std::string, uint64_t> read_selected_io_counters();
 
     private:
         uint64_t last_read = 0;
