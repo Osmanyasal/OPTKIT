@@ -40,7 +40,7 @@ namespace optkit::core::energy::rapl
     std::map<uint32_t, std::vector<std::pair<double, std::map<int32_t, std::map<RaplDomain, double>>>>> from_json(const std::string &json)
     {
         const auto json_obj = nlohmann::json::parse(json);
-        std::map<uint32_t,std::vector<std::pair<double, std::map<int32_t, std::map<RaplDomain, double>>>>> result;
+        std::map<uint32_t, std::vector<std::pair<double, std::map<int32_t, std::map<RaplDomain, double>>>>> result;
         std::map<int32_t, std::map<RaplDomain, double>> rapl_map;
 
         if (json_obj.is_array())

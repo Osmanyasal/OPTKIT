@@ -6,7 +6,7 @@
 #include <iomanip>
 #include "utils/logging/logger.hh"
 namespace optkit::core::energy::rapl
-{ 
+{
     /**
      * @brief All available rapl domain by 2023<br>
      * check intel_rapl for more information.
@@ -14,17 +14,17 @@ namespace optkit::core::energy::rapl
      */
     enum class RaplDomain
     {
-        BEGIN = 1,
+        BEGIN = 0,
 
-        PP0 = (1 << 1),     // CORES
-        PP1 = (1 << 2),     // INTEGRATED GPU
-        PACKAGE = (1 << 3), // PP0 + PP1 + SYSTEM AGENT + LAST_LEVEL_CACHE MEMORY CONTROLLER
-        PSYS = (1 << 4),    // PACKAGE + eDRAM + PCH
-        DRAM = (1 << 5),    // DRAM DIMM 0 and DRAM DIMM 1
+        PP0 = (1 << 0),     // CORES
+        PP1 = (1 << 1),     // INTEGRATED GPU
+        PACKAGE = (1 << 2), // PP0 + PP1 + SYSTEM AGENT + LAST_LEVEL_CACHE MEMORY CONTROLLER
+        PSYS = (1 << 3),    // PACKAGE + eDRAM + PCH
+        DRAM = (1 << 4),    // DRAM DIMM 0 and DRAM DIMM 1
 
-        END = (1 << 6),
+        END = (1 << 5),
 
-        ALL = 0b0111110, // All domains
+        ALL = 0b0011111, // All domains
     };
     extern const std::unordered_map<int32_t, std::string> rapl_domain_name_mapping;
 
@@ -36,9 +36,10 @@ namespace optkit::core::energy::rapl
      */
     enum class RaplReadMethods
     {
-        PERF = (1 << 1),
-        MSR = (1 << 2),
-        POWERCAP = (1 << 3),
+        PERF = (1 << 0),
+        MSR = (1 << 1),
+        POWERCAP = (1 << 2),
+        SYSFS = (1 << 3),
     };
 
     extern const std::unordered_map<int32_t, std::string> rapl_read_method_name_mapping;
@@ -55,7 +56,7 @@ namespace optkit::core::energy::rapl
     std::string to_string(const optkit::core::energy::rapl::RaplDomain &domain);
     std::string to_string(const optkit::core::energy::rapl::RaplDomainInfo &domain_info);
     std::string to_string(const optkit::core::energy::rapl::RaplReadMethods &read_method);
-    
+
     std::ostream &operator<<(std::ostream &os, const optkit::core::energy::rapl::RaplDomain &domain);
     std::ostream &operator<<(std::ostream &os, const optkit::core::energy::rapl::RaplDomainInfo &domain_info);
     std::ostream &operator<<(std::ostream &os, const optkit::core::energy::rapl::RaplReadMethods &read_method);

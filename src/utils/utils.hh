@@ -187,6 +187,31 @@ namespace optkit::utils
         return result;
     }
 
+    OPT_FORCE_INLINE int count_trailing_zeros(unsigned int x)
+    {
+        if (x == 0)
+        {
+            return 0; // Or handle the zero case as needed
+        }
+
+#if defined(__GNUC__) || defined(__clang__) || defined(__INTEL_COMPILER)
+        return __builtin_ctz(x);
+#elif defined(_MSC_VER)
+        unsigned long index;
+        _BitScanForward(&index, x);
+        return index;
+#else
+        // Portable implementation (less efficient)
+        int count = 0;
+        while ((x & 1) == 0)
+        {
+            x >>= 1;
+            count++;
+        }
+        return count;
+#endif
+    }
+
     OPT_FORCE_INLINE bool is_path_exists(const std::string &location)
     {
         struct stat buffer;

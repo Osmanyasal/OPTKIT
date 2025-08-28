@@ -1,7 +1,6 @@
 #pragma once
 
-#include "common/utils.hh"
-
+// #include "common/utils.hh"
 
 /* Test a simple loop of 1 million instructions             */
 /* Most implementations should count be correct within 1%   */
@@ -34,7 +33,7 @@ inline int instructions_million(void)
 		: "cc", "15" /* clobbered */
 	);
 	return 0;
- 
+
 #elif OPTKIT_ENV_CPU_ARCH_ARM32
 	asm("	ldr	r2,count	@ set count\n"
 		"	b       test_loop\n"
@@ -86,5 +85,5 @@ inline int instructions_million(void)
 	return 0;
 #endif
 
-	return CODE_UNIMPLEMENTED;
+	return 0;
 }

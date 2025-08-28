@@ -8,14 +8,15 @@ namespace optkit::core::energy::rapl
         {static_cast<int32_t>(RaplDomain::PP1), "energy-gpu"},
         {static_cast<int32_t>(RaplDomain::PACKAGE), "energy-pkg"},
         {static_cast<int32_t>(RaplDomain::PSYS), "energy-psys"},
-        {static_cast<int32_t>(RaplDomain::DRAM), "energy-ram"},
+        {static_cast<int32_t>(RaplDomain::DRAM), "energy-dram"},
         {static_cast<int32_t>(RaplDomain::END), "end"},
         {static_cast<int32_t>(RaplDomain::ALL), "All domains"}};
 
     const std::unordered_map<int32_t, std::string> rapl_read_method_name_mapping = {
         {static_cast<int32_t>(RaplReadMethods::PERF), "PERF"},
         {static_cast<int32_t>(RaplReadMethods::MSR), "MSR"},
-        {static_cast<int32_t>(RaplReadMethods::POWERCAP), "POWERCAP"}};
+        {static_cast<int32_t>(RaplReadMethods::POWERCAP), "POWERCAP"},
+        {static_cast<int32_t>(RaplReadMethods::SYSFS), "SYSFS"}};
 
     RaplDomain mapMetricNameToRaplDomain(const std::string &metric_name)
     {
@@ -72,7 +73,7 @@ namespace optkit::core::energy::rapl
             os << "energy-psys";
             break;
         case optkit::core::energy::rapl::RaplDomain::DRAM:
-            os << "energy-ram";
+            os << "energy-dram";
             break;
         default:
             break;

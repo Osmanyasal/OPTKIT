@@ -341,9 +341,37 @@ namespace optkit::core::metrics::disk
                        });
         }
 
+        /**
+         * @brief I/O Operations Per Second (IOPS)
+         *
+         * @return optkit::core::metrics::MetricBuilder<uint64_t>
+         */
+        static optkit::core::metrics::MetricBuilder<uint64_t> IOPS()
+        {
+            std::string syscr = to_string(CoreEvents::SYSCR);
+            std::string syscw = to_string(CoreEvents::SYSCW);
+            return optkit::core::metrics::MetricBuilder<uint64_t>{}
+                .add(syscr, {0x0})
+                .add(syscw, {0x0})
+                .build("IOPS",
+                       [syscr, syscw](const std::unordered_map<std::string, uint64_t> &m)
+                       {
+                           uint64_t val_syscr = m.at(syscr);
+                           uint64_t val_syscw = m.at(syscw);
+
+                           uint64_t total_logical = val_syscr + val_syscw;
+                           double duration_sec = get_event_count(m, "duration_microsec") / 1.0e6;
+
+                           if (duration_sec == 0)
+                               return std::numeric_limits<double>::quiet_NaN();
+                           return static_cast<double>(total_logical) / duration_sec;
+                       });
+        }
+
         static optkit::core::metrics::MetricBuilder<uint64_t> AllMetrics()
         {
             return optkit::core::metrics::MetricBuilder<uint64_t>{}
+                .add(IOPS())
                 .add(LogicalReadPerSyscall())
                 .add(LogicalWritePerSyscall())
                 .add(PhysicalReadCacheHitRate())

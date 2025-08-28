@@ -42,6 +42,9 @@ namespace optkit::core::metrics::cpu
     class CoreMetrics
     {
     public:
+        // CPU Utilization
+        static MetricBuilder<uint64_t> CPUMaxCapacityBasedUtilization() { return {}; } ///< 100 * (UNHALTED_CLK_CYCLES / (OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS * max_freq_khz * 1000  * duration_sec)))
+
         // Cache miss per kilo instruction (MPKI)
         static MetricBuilder<uint64_t> L1MPKI() { return {}; } ///< 1000 * L1_MISSES / INST_RETIRED -- L1 cache true misses per kilo instruction for retired demand loads.
         static MetricBuilder<uint64_t> L2MPKI() { return {}; } ///< 1000 * L2_MISSES / INST_RETIRED -- L2 cache true misses per kilo instruction for retired demand loads.

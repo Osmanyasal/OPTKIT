@@ -53,6 +53,29 @@ namespace optkit::core::metrics::cpu
     class CoreMetrics<ARMMetricsImpl>
     {
     public:
+        static const MetricBuilder<uint64_t> CPUMaxCapacityBasedUtilization()
+        {
+            static const MetricBuilder<uint64_t> metric = []
+            {
+                std::string unhalted_core_cycles_name = to_string(CoreEvents::UNHALTED_CORE_CYCLES);
+                return MetricBuilder<uint64_t>{}
+                    .add(unhalted_core_cycles_name, amd::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
+                    .build("CPUMaxCapacityBasedUtilization__%",
+                           [unhalted_core_cycles_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                           {
+                               static const double max_cycles = OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS * frequency::QueryCPUFrequency::get_cpuinfo_max_freq() * 1000; // KHz to Hz
+                               uint64_t unhalted_core_cycles = get_event_count(counts, unhalted_core_cycles_name);
+                               double duration_sec = get_event_count(counts, "duration_microsec") / 1.0e6;
+
+                               // Avoid div by zero
+                               if (duration_sec == 0)
+                                   return std::numeric_limits<double>::quiet_NaN();
+                               return 100.0 * static_cast<double>(unhalted_core_cycles) / (max_cycles * duration_sec);
+                           });
+            }();
+            return metric;
+        } ///< 100 * (UNHALTED_CLK_CYCLES / (OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS * max_freq_khz * 1000  * duration_sec)))
+
         // Native Metric implementations (not included in CoreMetrics)
         static const MetricBuilder<uint64_t> &L2HitRatio()
         {

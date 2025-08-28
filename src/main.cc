@@ -17,7 +17,18 @@ inline std::vector<T> generate_vector(size_t n = VECTOR_SIZE)
 int32_t main(int32_t argc, char **argv)
 {
     OPTKIT_INIT({false});
-    OPTKIT_CPU_TEMPERATURE_EVENTS("main", {});
+    auto result = optkit::core::energy::rapl::QueryRapl::rapl_domain_info();
+
+    // print result
+    std::cout << "Detected RAPL Domains:" << std::endl;
+    for (const auto &domain_info : result)
+    {
+        std::cout << domain_info << std::endl;
+    }
+    // exit(0);
+    // OPTKIT_CPU_TEMPERATURE_EVENTS("main", {});
+    // OPTKIT_DISK_EVENTS("main", optkit::core::metrics::disk::core_metrics::AllMetrics());
+    OPTKIT_CPU_EVENTS("main", optkit::core::metrics::cpu::core_metrics::CPUMaxCapacityBasedUtilization());
     // optkit::core::metrics::MetricBuilder mb{true, true};
 
     // mb.add(optkit::core::metrics::cpu::core_metrics::IpC());
@@ -28,6 +39,47 @@ int32_t main(int32_t argc, char **argv)
     // var12.read_and_store();
     // instructions_million();
 
+    // std::string name;
+
+    // std::cout << "Enter your name:" << std::endl;
+    // std::getline(std::cin, name);
+    // std::cout << "Hello, " << name << "!" << std::endl;
+    int num_threads = omp_get_max_threads();
+    std::cout << "Using " << num_threads << " threads.\n";
+
+    // Shared flag to stop after some time
+    std::atomic<bool> stop{false};
+
+    // Launch a timer thread to stop after e.g. 10 seconds
+    std::thread timer([&stop]()
+                      {
+        std::this_thread::sleep_for(std::chrono::seconds(10));
+        stop = true; });
+
+// Run OpenMP parallel region
+#pragma omp parallel
+    {
+        // Each thread runs a tight floating-point loop
+        double x = 1.0;
+        while (!stop.load(std::memory_order_relaxed))
+        {
+            // Some floating-point work
+            x *= 1.0000001;
+            x /= 1.0000001;
+            x += 0.0000001;
+            x -= 0.0000001;
+
+            // Prevent compiler from optimizing away
+            if (x > 1e100)
+                x = 1.0;
+        }
+    }
+
+    timer.join();
+
+    std::cout << "Benchmark finished.\n";
+    return 0;
+#if 0
     sleep(1);
     for (int j = 0; j < 1000; j++)
     {
@@ -61,5 +113,6 @@ int32_t main(int32_t argc, char **argv)
             v3[i] = v1[i] * 2.0 + v2[i];
         }
     }
+#endif
     return 0;
 }
