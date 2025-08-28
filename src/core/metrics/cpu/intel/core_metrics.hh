@@ -60,7 +60,7 @@ namespace optkit::core::metrics::cpu
             {
                 std::string unhalted_core_cycles_name = to_string(CoreEvents::UNHALTED_CORE_CYCLES);
                 return MetricBuilder<uint64_t>{}
-                    .add(unhalted_core_cycles_name, amd::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
+                    .add(unhalted_core_cycles_name, intel::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
                     .build("CPUMaxCapacityBasedUtilization__%",
                            [unhalted_core_cycles_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
