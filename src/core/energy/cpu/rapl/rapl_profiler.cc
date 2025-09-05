@@ -2,7 +2,7 @@
 
 namespace optkit::core::energy::rapl
 {
-    RaplProfiler::RaplProfiler(const char *block_name, const char *measurement_type, const RaplConfig &config) : BaseProfiler{block_name, measurement_type, true}, rapl_config{config}
+    RaplProfiler::RaplProfiler(const char *block_name, const char *measurement_type, const RaplConfig &config) : BaseProfiler{block_name, measurement_type, !config.dump_results_to_file}, rapl_config{config}
     {
         const std::map<int32_t, std::vector<int32_t>> &packages = Query::detect_cpu_packages();
         const std::vector<RaplDomainInfo> &avail_domains = QueryRapl::rapl_domain_info(); // Monitor for all available domains
@@ -39,8 +39,9 @@ namespace optkit::core::energy::rapl
             read_and_store();
             this->save();
         }
-        else if (OPT_LIKELY(this->verbose))
+        if (OPT_LIKELY(this->verbose))
         {
+            std::cout << "Here\n";
             // Disable the clock.
             auto end = std::chrono::high_resolution_clock::now();
 
@@ -48,7 +49,7 @@ namespace optkit::core::energy::rapl
             auto duration_ms = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000.0f;
             OPTKIT_CORE_INFO("Duration: {}", duration_ms);
         }
-
+        std::cout << "deleting\n";
         delete rapl_reader.release();
     }
 
