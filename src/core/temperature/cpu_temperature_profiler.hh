@@ -40,7 +40,7 @@ namespace optkit::core::temperature
         static std::unordered_map<std::string, std::string> sensor_paths; // sensor_name -> hwmon_path
 
     public:
-        CPUTemperatureProfiler(const char *block_name, const core::metrics::MetricBuilder<double> &mb, bool verbose = !Query::create_folder);
+        CPUTemperatureProfiler(const ProfilerConfig &profiler_config, const core::metrics::MetricBuilder<double> &mb);
         virtual ~CPUTemperatureProfiler();
 
         virtual void enable() override {}  // Already handled by constructor

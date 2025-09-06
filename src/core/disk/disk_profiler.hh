@@ -16,7 +16,7 @@ namespace optkit::core::disk
     class IoDiskProfiler : public BaseProfiler<std::vector<uint64_t>, uint64_t>
     {
     public:
-        IoDiskProfiler(const char *block_name, const core::metrics::MetricBuilder<uint64_t> &mb, bool verbose = !Query::create_folder);
+        IoDiskProfiler(const ProfilerConfig &profiler_config, const core::metrics::MetricBuilder<uint64_t> &mb);
         virtual ~IoDiskProfiler();
 
         virtual void enable() override {}  // Already handled by constructor
@@ -40,7 +40,6 @@ namespace optkit::core::disk
         uint64_t last_write = 0;
 
         std::unordered_map<std::string, uint64_t> last_snapshot;
-
         std::vector<std::pair<std::string, double>> metric_results;
         core::metrics::MetricBuilder<uint64_t> metric_builder;
     };

@@ -17,7 +17,7 @@ namespace optkit::core::energy::rapl
     class RaplProfiler : public BaseProfiler<std::map<int32_t, std::map<RaplDomain, double>>, double>
     {
     public:
-        RaplProfiler(const char *block_name, const char *measurement_type = "cpu_energy", const RaplConfig &config = RaplConfig{});
+        RaplProfiler(const ProfilerConfig &profiler_config, const RaplConfig &config = RaplConfig{});
         virtual ~RaplProfiler();
 
         /**

@@ -8,6 +8,32 @@
 namespace optkit::core
 {
     /**
+     * @brief Base profiler config.
+     *
+     */
+    struct ProfilerConfig
+    {
+        ProfilerConfig(const char *block_name,
+                       const char *measurement_type,
+                       bool is_reset_after_read,
+                       bool dump_results_to_file,
+                       bool verbose) : block_name{block_name},
+                                       measurement_type{measurement_type},
+                                       is_reset_after_read{is_reset_after_read},
+                                       dump_results_to_file{dump_results_to_file},
+                                       verbose{verbose}
+        {
+        }
+        virtual ~ProfilerConfig() {}
+
+        const char *block_name;
+        const char *measurement_type;
+        bool is_reset_after_read;
+        bool dump_results_to_file;
+        bool verbose;
+    };
+
+    /**
      * @brief Base class for profiling various metrics.
      *
      * This class provides a framework for measuring and storing performance metrics
@@ -27,7 +53,7 @@ namespace optkit::core
     class BaseProfiler
     {
     public:
-        BaseProfiler(const char *block_name, const char *measurement_type, bool verbose) : block_name{block_name}, measurement_type{measurement_type}, verbose{verbose}, total_duration_ms{0}, start{std::chrono::high_resolution_clock::now()}
+        BaseProfiler(const ProfilerConfig &config) : config{config}, total_duration_ms{0}, start{std::chrono::high_resolution_clock::now()}
         {
         }
         virtual ~BaseProfiler() {}
@@ -103,15 +129,13 @@ namespace optkit::core
         virtual void save() final
         {
             std::string json_data = to_json();
-            std::string block_name = this->block_name;
+            std::string block_name = this->config.block_name;
             std::replace(block_name.begin(), block_name.end(), ' ', '_');
-            utils::write_file(utils::EXECUTION_FOLDER_NAME + "/" + block_name + "__" + this->measurement_type + ".json", json_data, verbose);
+            utils::write_file(utils::EXECUTION_FOLDER_NAME + "/" + block_name + "__" + this->config.measurement_type + ".json", json_data, this->config.verbose);
         }
 
     public:
-        const char *block_name;
-        const char *measurement_type;
-        bool verbose;
+        const ProfilerConfig config;
 
     protected:
         double total_duration_ms;

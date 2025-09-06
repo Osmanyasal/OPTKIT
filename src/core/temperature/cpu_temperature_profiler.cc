@@ -22,8 +22,8 @@ namespace optkit::core::temperature
         }
     }
 
-    CPUTemperatureProfiler::CPUTemperatureProfiler(const char *block_name, const core::metrics::MetricBuilder<double> &mb, bool verbose)
-        : BaseProfiler(block_name, "temperature", verbose), metric_builder(mb)
+    CPUTemperatureProfiler::CPUTemperatureProfiler(const ProfilerConfig &profiler_config, const core::metrics::MetricBuilder<double> &mb)
+        : BaseProfiler(profiler_config), metric_builder(mb)
     {
         // Take initial snapshot
         last_snapshot = read_temperature_sensors();
@@ -49,10 +49,10 @@ namespace optkit::core::temperature
         if (OPT_LIKELY(Query::create_folder))
             this->save();
 
-        if (OPT_LIKELY(this->verbose))
+        if (OPT_LIKELY(this->config.verbose))
         {
             std::cout << std::fixed << "\033[1;33m" // Yellow for temperature
-                      << "Block: " << this->block_name << "\033[0m"
+                      << "Block: " << this->config.block_name << "\033[0m"
                       << " [" << this->total_duration_ms << "ms] Measured\n";
 
             if (OPT_UNLIKELY(this->metric_builder.print_events))
@@ -114,7 +114,7 @@ namespace optkit::core::temperature
     {
         std::stringstream ss;
         ss << "[\n";
-        ss << utils::to_json<double>(this->total_duration_ms, this->measurement_type, this->event_results, this->metric_results);
+        ss << utils::to_json<double>(this->total_duration_ms, this->config.measurement_type, this->event_results, this->metric_results);
         ss << "]\n";
         return ss.str();
     }

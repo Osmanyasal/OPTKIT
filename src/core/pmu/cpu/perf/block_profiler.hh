@@ -35,7 +35,7 @@ namespace optkit::core::pmu::cpu::perf
     class BlockProfiler : public BaseProfiler<std::vector<uint64_t>, uint64_t>
     {
     public:
-        BlockProfiler(const char *block_name, const core::metrics::MetricBuilder<uint64_t> &mb, bool verbose = !Query::create_folder, const PerfProfilerConfig &config = {});
+        BlockProfiler(const PerfProfilerConfig &profiler_config, const core::metrics::MetricBuilder<uint64_t> &mb);
         virtual ~BlockProfiler();
         /**
          * @brief Disables this block profiler and associated events
@@ -78,10 +78,9 @@ namespace optkit::core::pmu::cpu::perf
          * when created the same file description must be registered global fd_stack
          */
         std::vector<int32_t> fd_list;
-        PerfProfilerConfig profiler_config;
-
+        const PerfProfilerConfig profiler_config;
+        const core::metrics::MetricBuilder<uint64_t> metric_builder;
         std::vector<std::pair<std::string, double>> metric_results;
-        core::metrics::MetricBuilder<uint64_t> metric_builder;
     };
 
 } // namespace optkit::core::pmu::cpu::perf

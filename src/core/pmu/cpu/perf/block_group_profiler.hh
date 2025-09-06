@@ -31,7 +31,7 @@ namespace optkit::core::pmu::cpu::perf
     {
 
     public:
-        BlockGroupProfiler(const char *block_name, const core::metrics::MetricBuilder<uint64_t> &mb, bool verbose = !Query::create_folder, const PerfProfilerConfig &config = PerfProfilerConfig{Query::create_folder, true, true, 0, -1});
+        BlockGroupProfiler(const PerfProfilerConfig &config, const core::metrics::MetricBuilder<uint64_t> &mb);
         virtual ~BlockGroupProfiler();
         /**
          * @brief Disables this block profiler and associated events
@@ -76,11 +76,11 @@ namespace optkit::core::pmu::cpu::perf
 #endif
 
         bool is_configured;
-        PerfProfilerConfig profiler_config;
         int32_t group_leader;
 
+        const PerfProfilerConfig profiler_config;
+        const core::metrics::MetricBuilder<uint64_t> metric_builder;
         std::vector<std::pair<std::string, double>> metric_results;
-        core::metrics::MetricBuilder<uint64_t> metric_builder;
 
         struct read_format
         {

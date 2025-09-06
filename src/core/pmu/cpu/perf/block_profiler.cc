@@ -5,7 +5,8 @@
 namespace optkit::core::pmu::cpu::perf
 {
 
-    BlockProfiler::BlockProfiler(const char *block_name, const core::metrics::MetricBuilder<uint64_t> &mb, bool verbose, const PerfProfilerConfig &config) : BaseProfiler{block_name, "cpu_pmu", verbose}, profiler_config{config}, metric_builder{mb}
+    BlockProfiler::BlockProfiler(const PerfProfilerConfig &profiler_config, const core::metrics::MetricBuilder<uint64_t> &mb)
+        : BaseProfiler{static_cast<const ProfilerConfig &>(profiler_config)}, profiler_config{profiler_config}, metric_builder{mb}
     {
         PMUEventManager::disable_all_events();
 
@@ -44,13 +45,13 @@ namespace optkit::core::pmu::cpu::perf
 
         this->metric_results = this->metric_builder.calculate(aggregate());
 
-        if (OPT_LIKELY(profiler_config.dump_results_to_file))
+        if (OPT_LIKELY(this->config.dump_results_to_file))
             this->save();
 
-        if (OPT_LIKELY(this->verbose))
+        if (OPT_LIKELY(this->config.verbose))
         {
             std::cout << "\033[1;35m"
-                      << "Block: " << this->block_name << "\033[0m"
+                      << "Block: " << this->config.block_name << "\033[0m"
                       << " [" << this->total_duration_ms << "ms] Measured\n";
 
             if (OPT_UNLIKELY(this->metric_builder.print_events))
@@ -92,7 +93,7 @@ namespace optkit::core::pmu::cpu::perf
         std::stringstream ss;
         ss << "[\n";
         // based on the insertion order.
-        ss << utils::to_json<uint64_t>(this->total_duration_ms, this->measurement_type, this->event_results, this->metric_results);
+        ss << utils::to_json<uint64_t>(this->total_duration_ms, this->config.measurement_type, this->event_results, this->metric_results);
         ss << "]\n";
         return ss.str();
     }
@@ -107,7 +108,7 @@ namespace optkit::core::pmu::cpu::perf
         {
             ::read(fd, &count, sizeof(count));
             result.push_back(count);
-            if (OPT_LIKELY(this->profiler_config.is_reset_after_read))
+            if (OPT_LIKELY(this->config.is_reset_after_read))
                 ioctl(fd, PERF_EVENT_IOC_RESET, 0);
         }
 

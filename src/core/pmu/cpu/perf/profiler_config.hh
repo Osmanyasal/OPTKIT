@@ -5,8 +5,8 @@
 
 #include <cstring>
 #include <cstdint>
-#include "utils/utils.hh"
 #include <linux/perf_event.h>
+#include "utils/base_profiler.hh"
 
 namespace optkit::core::pmu::cpu::perf
 {
@@ -15,48 +15,85 @@ namespace optkit::core::pmu::cpu::perf
      * @see perf_event.h for more detail.
      *
      */
-    struct PerfProfilerConfig
+    struct PerfProfilerConfig : public optkit::core::ProfilerConfig
     {
         /**
-         * @brief Construct a new Profiler Config object
+         * @brief Construct a new PerfProfilerConfig object
          *
-         * @param dump_results_to_file Dump results to file or not. By default; true if folder is created
-         * @param is_reset_after_read Reset the counter after any read operations or not.
-         * @param is_grouped indicates all events in the BlockProfiler should be groupped or not @see perf_event_open man page
-         * @param pid
-         * @param cpu
+         * @param block_name Name of the profiling block (base ProfilerConfig)
+         * @param measurement_type Type of measurement (base ProfilerConfig)
+         * @param is_grouped Indicates if all events in the BlockProfiler should be grouped (see perf_event_open man page)
+         * @param pid See perf_event_open man page for meaning
+         * @param cpu See perf_event_open man page for meaning
+         * @param is_reset_after_read Reset after read (base ProfilerConfig)
+         * @param dump_results_to_file Dump results to file (base ProfilerConfig)
+         * @param verbose Verbose output (base ProfilerConfig)
          *
-         *  pid == 0 and cpu == -1
-         *        This measures the calling process/thread on any CPU.
+         * pid/cpu combinations:
+         *  - pid == 0 and cpu == -1: Measures the calling process/thread on any CPU.
+         *  - pid == 0 and cpu >= 0: Measures the calling process/thread only when running on the specified CPU.
+         *  - pid > 0 and cpu == -1: Measures the specified process/thread on any CPU.
+         *  - pid > 0 and cpu >= 0: Measures the specified process/thread only when running on the specified CPU.
+         *  - pid == -1 and cpu >= 0: Measures all processes/threads on the specified CPU. Requires CAP_PERFMON (since Linux 5.8) or CAP_SYS_ADMIN capability or /proc/sys/kernel/perf_event_paranoid < 1.
+         *  - pid == -1 and cpu == -1: Invalid setting, returns error.
          *
-         *  pid == 0 and cpu >= 0
-         *         This measures the calling process/thread only when running
-         *         on the specified CPU.
-         *
-         * pid > 0 and cpu == -1
-         *         This measures the specified process/thread on any CPU.
-         *
-         *  pid > 0 and cpu >= 0
-         *         This measures the specified process/thread only when
-         *         running on the specified CPU.
-         *
-         *  pid == -1 and cpu >= 0
-         *         This measures all processes/threads on the specified CPU.
-         *         This requires CAP_PERFMON (since Linux 5.8) or
-         *         CAP_SYS_ADMIN capability or a
-         *         /proc/sys/kernel/perf_event_paranoid value of less than 1.
-         *
-         *  pid == -1 and cpu == -1
-         *         This setting is invalid and will return an error.
-         *
+         * @param perf_event_config Optional perf_event_attr configuration (second constructor)
          */
 
-        PerfProfilerConfig(bool dump_results_to_file = Query::create_folder, bool is_reset_after_read = true, bool is_grouped = false, int32_t pid = 0, int32_t cpu = -1);
-        PerfProfilerConfig(perf_event_attr perf_event_config, bool dump_results_to_file = Query::create_folder, bool is_reset_after_read = true, int32_t pid = 0, int32_t cpu = -1);
-        void setGrouped(bool is_grouped);
+        PerfProfilerConfig(
+            const char *block_name,
+            bool is_grouped = false,
+            int32_t pid = 0,  // current process
+            int32_t cpu = -1, // any cpu
+            const char *measurement_type = "cpu_pmu",
+            bool is_reset_after_read = true,
+            bool dump_results_to_file = Query::create_folder,
+            bool verbose = !Query::create_folder);
 
-        bool dump_results_to_file;
-        bool is_reset_after_read;
+        PerfProfilerConfig(
+            const char *block_name,
+            const perf_event_attr &perf_event_config,
+            bool is_grouped = false,
+            int32_t pid = 0,  // current process
+            int32_t cpu = -1, // any cpu
+            const char *measurement_type = "cpu_pmu",
+            bool is_reset_after_read = true,
+            bool dump_results_to_file = Query::create_folder,
+            bool verbose = !Query::create_folder);
+
+        virtual ~PerfProfilerConfig() {}
+
+        PerfProfilerConfig &set_grouped(bool is_grouped)
+        {
+            if (is_grouped)
+                this->perf_event_config.read_format = PERF_FORMAT_GROUP | PERF_FORMAT_ID;
+            else
+                this->perf_event_config.read_format = 0;
+            this->is_grouped = is_grouped;
+            return *this;
+        }
+
+        PerfProfilerConfig &set_reset_after_read(bool is_reset_after_read)
+        {
+            this->is_reset_after_read = is_reset_after_read;
+            ProfilerConfig::is_reset_after_read = is_reset_after_read;
+            return *this;
+        }
+
+        PerfProfilerConfig &set_dump_results_to_file(bool dump_results_to_file)
+        {
+            this->dump_results_to_file = dump_results_to_file;
+            ProfilerConfig::dump_results_to_file = dump_results_to_file;
+            return *this;
+        }
+
+        PerfProfilerConfig &set_verbose(bool verbose)
+        {
+            this->verbose = verbose;
+            ProfilerConfig::verbose = verbose;
+            return *this;
+        }
+
         bool is_grouped;
         int32_t pid;
         int32_t cpu;

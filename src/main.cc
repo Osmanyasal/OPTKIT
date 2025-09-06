@@ -17,6 +17,12 @@ inline std::vector<T> generate_vector(size_t n = VECTOR_SIZE)
 int32_t main(int32_t argc, char **argv)
 {
     OPTKIT_INIT({false});
+
+    OPTKIT_CPU_ENERGY(main, "main");
+
+    sleep(5);
+
+    return 0;
     auto result = optkit::core::energy::rapl::QueryRapl::rapl_domain_info();
 
     // print result
