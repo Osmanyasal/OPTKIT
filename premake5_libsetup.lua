@@ -1,5 +1,11 @@
 ---@diagnostic disable: undefined-global, lowercase-global
 ---@diagnostic disable: undefined-field
+---@
+local vectorisation_flag = "-msse" -- default for x86/x64
+if arch and (arch == "aarch64" or arch == "arm64" or arch == "armv7l" or arch == "armv8l" or
+        arch == "riscv64" or arch == "riscv32") then
+    vectorisation_flag = "-fdse"
+end
 
 function base_project_setup()
     language "C++"
@@ -32,12 +38,6 @@ function base_project_setup()
         handle:close()
     end
 
-    local vectorisation_flag = "-msse" -- default for x86/x64
-    if arch and (arch == "aarch64" or arch == "arm64" or arch == "armv7l" or arch == "armv8l" or
-            arch == "riscv64" or arch == "riscv32") then
-        vectorisation_flag = "-fdse"
-    end
-
     -- Compiler options
     filter "configurations:Debug"
     symbols "On"
@@ -53,8 +53,8 @@ function base_project_setup()
         "-DCONF_LOG_DISABLE_TRACE=0",
         "-DCONF_LOG_DISABLE_INFO=0",
         "-DCONF_LOG_DISABLE_WARN=0",
-        "-DCONF_LOG_DISABLE_ERROR=0"
-        --TODO: DOPTKIT_TESTING set this for testing
+        "-DCONF_LOG_DISABLE_ERROR=0",
+        "-DOPTKIT_TESTING=1",
     }
     filter {} -- stop filtering
 
@@ -67,7 +67,7 @@ function base_project_setup()
         "-O2",
         "-fopenmp",
         "-fPIC",
-        "-march=native",
+        "-march=native -funroll-loops -ftree-vectorize -fopt-info-vec",
         "-DCONF_LOG_PRINT_GUID_LENGTH=10",
         "-DCONF_LOG_DISABLE_DEBUG=1",
         "-DCONF_LOG_DISABLE_TRACE=1",
@@ -87,7 +87,7 @@ function base_project_setup()
         "-O2",
         "-fopenmp",
         "-fPIC",
-        "-march=native",
+        "-march=native -funroll-loops -ftree-vectorize -fopt-info-vec",
         "-DCONF_LOG_PRINT_GUID_LENGTH=10",
         "-DCONF_LOG_DISABLE_DEBUG=1",
         "-DCONF_LOG_DISABLE_TRACE=1",
@@ -142,11 +142,23 @@ function test_project_setup()
     symbols "Off"
     defines { "OPTKIT_MODE_NDEBUG" }
     buildoptions {
+        "-Wall",    -- Enable all warnings
+        "-O0",      -- Explicitly no optimization
+        "-fopenmp", -- Enable OpenMP if needed
+        "-fPIC",    -- Position-independent code,
+        "-DOPTKIT_TESTING=1"
+    }
+
+    filter {}
+    filter "configurations:Release"
+    optimize "Off"
+    symbols "Off"
+    defines { "OPTKIT_MODE_NDEBUG" }
+    buildoptions {
         "-Wall", -- Enable all warnings
-        "-O0",   -- Explicitly no optimization
-        -- "-O3",   -- Explicitly no optimization
-        -- "-msse",
-        -- "-march=native -funroll-loops -ftree-vectorize -fopt-info-vec",
+        "-O2",   -- Explicitly no optimization
+        vectorisation_flag,
+        "-march=native -funroll-loops -ftree-vectorize -fopt-info-vec",
         "-fopenmp", -- Enable OpenMP if needed
         "-fPIC",    -- Position-independent code,
         "-DOPTKIT_TESTING=1"
