@@ -18,6 +18,7 @@ TEST(CARMTest, AI)
     {
         v3[i] = v1[i] * 2.0 + v2[i];
     }
+    GTEST_LOG_(INFO) << "Therotical maximum is:" << 0.083;
     GTEST_LOG_(INFO) << "Results need to be evaluated by the user. In case of inconsistency, open a ticket at: https://github.com/Osmanyasal/OPTKIT/issues\n";
 }
 

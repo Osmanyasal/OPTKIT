@@ -73,27 +73,6 @@ namespace optkit::core::pmu::cpu::perf
             return *this;
         }
 
-        PerfProfilerConfig &set_reset_after_read(bool is_reset_after_read)
-        {
-            this->is_reset_after_read = is_reset_after_read;
-            ProfilerConfig::is_reset_after_read = is_reset_after_read;
-            return *this;
-        }
-
-        PerfProfilerConfig &set_dump_results_to_file(bool dump_results_to_file)
-        {
-            this->dump_results_to_file = dump_results_to_file;
-            ProfilerConfig::dump_results_to_file = dump_results_to_file;
-            return *this;
-        }
-
-        PerfProfilerConfig &set_verbose(bool verbose)
-        {
-            this->verbose = verbose;
-            ProfilerConfig::verbose = verbose;
-            return *this;
-        }
-
         bool is_grouped;
         int32_t pid;
         int32_t cpu;
