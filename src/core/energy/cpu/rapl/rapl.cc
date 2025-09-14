@@ -83,9 +83,10 @@ namespace optkit::energy::rapl
 
     std::ostream &operator<<(std::ostream &os, const optkit::energy::rapl::RaplDomainInfo &domain_info)
     {
+        std::cout << domain_info.scale << "\n";
         os << "Event=" << domain_info.event << ", "
            << "Config=" << std::hex << "0x" << domain_info.config << ", "
-           << "scale=" << std::fixed << domain_info.scale << ", "
+           << "scale=" << std::dec << std::fixed << domain_info.scale << ", "
            << "units=" << domain_info.units;
         return os;
     }
