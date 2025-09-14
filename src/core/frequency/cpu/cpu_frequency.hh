@@ -9,7 +9,7 @@
 #include "core/frequency/cpu/query_cpu_frequency.hh"
 #include "core/frequency/msrs.hh"
 
-namespace optkit::core::frequency
+namespace optkit::frequency
 {
 
     /**
@@ -77,4 +77,4 @@ namespace optkit::core::frequency
     std::ostream &operator<<(std::ostream &os, const std::pair<int64_t, int64_t> &pair);
 }
 
-using optkit::core::frequency::operator<<; // make available to global namespace
+using optkit::frequency::operator<<; // make available to global namespace

@@ -1,7 +1,7 @@
 #include "core/pmu/cpu/perf/profiler_config.hh"
 
 #if OPTKIT_ENV_LIB_PERF_EVENT
-namespace optkit::core::pmu::cpu::perf
+namespace optkit::pmu::cpu::perf
 {
 
     PerfProfilerConfig::PerfProfilerConfig(
@@ -13,7 +13,7 @@ namespace optkit::core::pmu::cpu::perf
         bool is_reset_after_read,
         bool dump_results_to_file,
         bool verbose)
-        : optkit::core::ProfilerConfig(block_name, measurement_type, is_reset_after_read, dump_results_to_file, verbose),
+        : optkit::ProfilerConfig(block_name, measurement_type, is_reset_after_read, dump_results_to_file, verbose),
           is_grouped(is_grouped),
           pid(pid),
           cpu(cpu)
@@ -38,7 +38,7 @@ namespace optkit::core::pmu::cpu::perf
         bool is_reset_after_read,
         bool dump_results_to_file,
         bool verbose)
-        : optkit::core::ProfilerConfig(block_name, measurement_type, is_reset_after_read, dump_results_to_file, verbose),
+        : optkit::ProfilerConfig(block_name, measurement_type, is_reset_after_read, dump_results_to_file, verbose),
           is_grouped(is_grouped),
           pid(pid),
           cpu(cpu),
@@ -46,6 +46,6 @@ namespace optkit::core::pmu::cpu::perf
     {
         set_grouped(perf_event_config.read_format == (PERF_FORMAT_GROUP | PERF_FORMAT_ID));
     }
-} // namespace optkit::core::pmu::cpu::perf
+} // namespace optkit::pmu::cpu::perf
 
 #endif

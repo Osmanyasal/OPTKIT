@@ -9,7 +9,7 @@
 
 #include "common/utils.hh"
 #include "utils/utils.hh"
-using namespace optkit::core::frequency;
+using namespace optkit::frequency;
 
 class CPUFrequencyTest : public ::testing::Test
 {
@@ -131,7 +131,7 @@ TEST_F(CPUFrequencyTest, SetAndResetCoreFrequencySweepAllSockets)
     const int64_t step = 200'000;                           // 0.2 GHz in KHz
     const auto wait_time = std::chrono::milliseconds(1000); // 1 second
 
-    for (const auto &[socket, cores] : optkit::core::Query::detect_cpu_packages())
+    for (const auto &[socket, cores] : optkit::Query::detect_cpu_packages())
     {
         if (cores.empty())
             continue;

@@ -1,6 +1,6 @@
 #include "core/pmu/cpu/query_pmu.hh"
 
-namespace optkit::core::pmu::cpu
+namespace optkit::pmu::cpu
 {
     pfm_pmu_info_t QueryPMU::default_architectural_pmu;
 
@@ -193,9 +193,9 @@ namespace optkit::core::pmu::cpu
         out << "| " << std::setw(16) << "size:" << std::setw(_10_plus_event_info_desc_size) << event_info.size << " |\n";
         out << "| " << std::setw(16) << "code:" << std::setw(_10_plus_event_info_desc_size) << event_info.code << " |\n";
         // Print the rest of the members with appropriate setw values
-        out << "| " << std::setw(16) << "pmu:" << std::setw(_10_plus_event_info_desc_size - 6) << optkit::core::pmu::cpu::pmu_names[(std::size_t)event_info.pmu] << std::setw(6) << "(" + std::to_string(event_info.pmu) + ")"
+        out << "| " << std::setw(16) << "pmu:" << std::setw(_10_plus_event_info_desc_size - 6) << optkit::pmu::cpu::pmu_names[(std::size_t)event_info.pmu] << std::setw(6) << "(" + std::to_string(event_info.pmu) + ")"
             << " |\n";
-        out << "| " << std::setw(16) << "dtype:" << std::setw(_10_plus_event_info_desc_size - 6) << optkit::core::pmu::cpu::pmu_types[(std::size_t)event_info.dtype] << std::setw(6) << "(" + std::to_string(event_info.pmu) + ")"
+        out << "| " << std::setw(16) << "dtype:" << std::setw(_10_plus_event_info_desc_size - 6) << optkit::pmu::cpu::pmu_types[(std::size_t)event_info.dtype] << std::setw(6) << "(" + std::to_string(event_info.pmu) + ")"
             << " |\n";
 
         out << "| " << std::setw(16) << "idx:" << std::setw(_10_plus_event_info_desc_size) << event_info.idx << " |\n";
@@ -239,9 +239,9 @@ namespace optkit::core::pmu::cpu
         out << "| " << std::setw(16) << "desc:" << std::setw(30) << pmu_info.desc << " |\n";
         out << "| " << std::setw(16) << "size:" << std::setw(30) << pmu_info.size << " |\n";
         // Print the rest of the members with appropriate setw values
-        out << "| " << std::setw(16) << "pmu:" << std::setw(24) << optkit::core::pmu::cpu::pmu_names[(std::size_t)pmu_info.pmu] << std::setw(6) << "(" + std::to_string(pmu_info.pmu) + ")"
+        out << "| " << std::setw(16) << "pmu:" << std::setw(24) << optkit::pmu::cpu::pmu_names[(std::size_t)pmu_info.pmu] << std::setw(6) << "(" + std::to_string(pmu_info.pmu) + ")"
             << " |\n";
-        out << "| " << std::setw(16) << "type:" << std::setw(24) << optkit::core::pmu::cpu::pmu_types[(std::size_t)pmu_info.type] << std::setw(6) << "(" + std::to_string(pmu_info.pmu) + ")"
+        out << "| " << std::setw(16) << "type:" << std::setw(24) << optkit::pmu::cpu::pmu_types[(std::size_t)pmu_info.type] << std::setw(6) << "(" + std::to_string(pmu_info.pmu) + ")"
             << " |\n";
         out << "| " << std::setw(16) << "nevents:" << std::setw(30) << pmu_info.nevents << " |\n";
         out << "| " << std::setw(16) << "first_event:" << std::setw(30) << pmu_info.first_event << " |\n";
@@ -256,4 +256,4 @@ namespace optkit::core::pmu::cpu
         return out;
     }
 
-} // namespace optkit::core::pmu::cpu::perf
+} // namespace optkit::pmu::cpu::perf

@@ -1,7 +1,7 @@
 
 #include "core/metrics/cpu/intel/bdw/bdw_recepies.hh"
 
-namespace optkit::core::metrics::intel::bdw
+namespace optkit::metrics::intel::bdw
 {
     const std::vector<std::pair<uint64_t, std::string>> Recepies::computational_intensity()
     {

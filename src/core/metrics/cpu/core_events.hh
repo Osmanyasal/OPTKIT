@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-namespace optkit::core::metrics::cpu
+namespace optkit::metrics::cpu
 {
     /**
      * @brief These are the core events to be monitored for metrics. It is expected to exists in every CPUs
@@ -51,8 +51,8 @@ namespace optkit::core::metrics::cpu
         SW_LOAD_PREFETCH_ACCESS,
 
         // FP/Vector
-        RETIRED_FLOPS_ANY,     // single FP ops (ie. adding of flop variables)
-        RETIRED_VECTOR, // total FP operations caused by see_avx vector instruction
+        RETIRED_FLOPS_ANY, // single FP ops (ie. adding of flop variables)
+        RETIRED_VECTOR,    // total FP operations caused by see_avx vector instruction
 
         END,
     };

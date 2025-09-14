@@ -1,6 +1,6 @@
 #include "core/metrics/cpu/arm/event_mapper.hh"
 #if OPTKIT_ENV_CPU_ARM
-namespace optkit::core::metrics::cpu::arm
+namespace optkit::metrics::cpu::arm
 {
 
     const std::unordered_map<metrics::cpu::CoreEvents, std::vector<uint64_t>> EventMapper::core_event_map = {

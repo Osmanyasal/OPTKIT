@@ -12,7 +12,7 @@
  *
  *
  */
-namespace optkit::core::metrics::cpu::arm
+namespace optkit::metrics::cpu::arm
 {
     /**
      * @brief Considered only Neoverse cpus. others are not guaranteed.

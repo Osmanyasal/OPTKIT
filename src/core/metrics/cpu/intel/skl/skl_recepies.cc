@@ -1,7 +1,7 @@
 
 #include "core/metrics/cpu/intel/skl/skl_recepies.hh"
 
-namespace optkit::core::metrics::intel::skl
+namespace optkit::metrics::intel::skl
 {
   /**
    * @brief No need for exact numbers, we only need intuitions

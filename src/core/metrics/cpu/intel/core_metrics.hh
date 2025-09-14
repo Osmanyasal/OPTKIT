@@ -38,7 +38,7 @@
  */
 
 // Warn: to use template initialisation for a certain type, they must be in the same namespace. so do NOT change it.
-namespace optkit::core::metrics::cpu
+namespace optkit::metrics::cpu
 {
     /**
      * @class IntelMetricsImpl

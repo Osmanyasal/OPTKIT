@@ -5,7 +5,7 @@
 
 #include "core/pmu/cpu/pmu_event_manager.hh"
 
-using namespace optkit::core::pmu::cpu;
+using namespace optkit::pmu::cpu;
 
 class PMUEventManagerTest : public ::testing::Test
 {

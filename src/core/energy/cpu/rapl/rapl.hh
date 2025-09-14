@@ -5,7 +5,7 @@
 #include <sstream>
 #include <iomanip>
 #include "utils/logging/logger.hh"
-namespace optkit::core::energy::rapl
+namespace optkit::energy::rapl
 {
     /**
      * @brief All available rapl domain by 2023<br>
@@ -53,12 +53,12 @@ namespace optkit::core::energy::rapl
         std::string units;
     };
 
-    std::string to_string(const optkit::core::energy::rapl::RaplDomain &domain);
-    std::string to_string(const optkit::core::energy::rapl::RaplDomainInfo &domain_info);
-    std::string to_string(const optkit::core::energy::rapl::RaplReadMethods &read_method);
+    std::string to_string(const optkit::energy::rapl::RaplDomain &domain);
+    std::string to_string(const optkit::energy::rapl::RaplDomainInfo &domain_info);
+    std::string to_string(const optkit::energy::rapl::RaplReadMethods &read_method);
 
-    std::ostream &operator<<(std::ostream &os, const optkit::core::energy::rapl::RaplDomain &domain);
-    std::ostream &operator<<(std::ostream &os, const optkit::core::energy::rapl::RaplDomainInfo &domain_info);
-    std::ostream &operator<<(std::ostream &os, const optkit::core::energy::rapl::RaplReadMethods &read_method);
+    std::ostream &operator<<(std::ostream &os, const optkit::energy::rapl::RaplDomain &domain);
+    std::ostream &operator<<(std::ostream &os, const optkit::energy::rapl::RaplDomainInfo &domain_info);
+    std::ostream &operator<<(std::ostream &os, const optkit::energy::rapl::RaplReadMethods &read_method);
 
-} // namespace optkit::core::rapl
+} // namespace optkit::rapl

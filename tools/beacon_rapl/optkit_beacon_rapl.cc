@@ -29,13 +29,11 @@ int32_t main(int32_t argc, char **argv)
     OPTKIT_CPU_ENERGY(energy, "energy_monitoring");
 
     // Initialize RAPL
-    optkit::core::energy::rapl::RaplProfiler rapl{"energy_monitor", "rapl",
-        optkit::core::energy::rapl::RaplConfig{
-            optkit::core::energy::rapl::RaplReadMethods::PERF,
-            (int32_t)optkit::core::energy::rapl::RaplDomain::ALL,
-            true, false
-        }
-    };
+    optkit::energy::rapl::RaplProfiler rapl{"energy_monitor", "rapl",
+                                            optkit::energy::rapl::RaplConfig{
+                                                optkit::energy::rapl::RaplReadMethods::PERF,
+                                                (int32_t)optkit::energy::rapl::RaplDomain::ALL,
+                                                true, false}};
 
     double total_energy = 0.0;
 
@@ -122,7 +120,8 @@ void argument_parsing(int32_t argc, char **argv)
             try
             {
                 duration_sec = std::stoi(argv[++i]);
-                if (duration_sec < 0){
+                if (duration_sec < 0)
+                {
                     std::cerr << "Negative value\n";
                     std::exit(EXIT_FAILURE);
                 }

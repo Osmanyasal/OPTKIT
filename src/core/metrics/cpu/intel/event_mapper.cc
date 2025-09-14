@@ -9,7 +9,7 @@
 #define INTEL_X86_MOD_ANY (1 << INTEL_X86_ANY_BIT)
 #define INTEL_X86_MOD_INV (1 << INTEL_X86_INV_BIT)
 
-namespace optkit::core::metrics::cpu::intel
+namespace optkit::metrics::cpu::intel
 {
 
         const std::unordered_map<cpu::CoreEvents, std::vector<uint64_t>> EventMapper::core_event_map = {

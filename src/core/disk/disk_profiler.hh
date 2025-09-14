@@ -11,12 +11,12 @@
 #include "utils/base_profiler.hh"
 #include "utils/metric_builder.hh"
 
-namespace optkit::core::disk
+namespace optkit::disk
 {
     class IoDiskProfiler : public BaseProfiler<std::vector<uint64_t>, uint64_t>
     {
     public:
-        IoDiskProfiler(const ProfilerConfig &profiler_config, const core::metrics::MetricBuilder<uint64_t> &mb);
+        IoDiskProfiler(const ProfilerConfig &profiler_config, const optkit::metrics::MetricBuilder<uint64_t> &mb);
         virtual ~IoDiskProfiler();
 
         virtual void enable() override {}  // Already handled by constructor
@@ -41,6 +41,6 @@ namespace optkit::core::disk
 
         std::unordered_map<std::string, uint64_t> last_snapshot;
         std::vector<std::pair<std::string, double>> metric_results;
-        core::metrics::MetricBuilder<uint64_t> metric_builder;
+        optkit::metrics::MetricBuilder<uint64_t> metric_builder;
     };
 }

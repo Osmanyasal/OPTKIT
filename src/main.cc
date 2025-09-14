@@ -22,8 +22,8 @@ int32_t main(int32_t argc, char **argv)
 
     sleep(5);
 
-    return 0;
-    auto result = optkit::core::energy::rapl::QueryRapl::rapl_domain_info();
+    // return 0;
+    auto result = optkit::energy::rapl::QueryRapl::rapl_domain_info();
 
     // print result
     std::cout << "Detected RAPL Domains:" << std::endl;
@@ -33,11 +33,11 @@ int32_t main(int32_t argc, char **argv)
     }
     // exit(0);
     // OPTKIT_CPU_TEMPERATURE_EVENTS("main", {});
-    // OPTKIT_DISK_EVENTS("main", optkit::core::metrics::disk::core_metrics::AllMetrics());
-    OPTKIT_CPU_EVENTS("main", optkit::core::metrics::cpu::core_metrics::CPUMaxCapacityBasedUtilization());
-    // optkit::core::metrics::MetricBuilder mb{true, true};
+    // OPTKIT_DISK_EVENTS("main", optkit::metrics::disk::core_metrics::AllMetrics());
+    OPTKIT_CPU_EVENTS("main", optkit::metrics::cpu::core_metrics::CPUMaxCapacityBasedUtilization());
+    // optkit::metrics::MetricBuilder mb{true, true};
 
-    // mb.add(optkit::core::metrics::cpu::core_metrics::IpC());
+    // mb.add(optkit::metrics::cpu::core_metrics::IpC());
 
     // OPTKIT_CPU_EVENTS("main", mb);
 
@@ -93,7 +93,7 @@ int32_t main(int32_t argc, char **argv)
         std::vector<double> v2 = generate_vector<double>(); // 1 million elements
         std::vector<double> v3(VECTOR_SIZE);
 
-        // OPTKIT_CPU_EVENTS("FLOPs_AVX", optkit::core::metrics::cpu::core_metrics::IpAVXAnyFlop());
+        // OPTKIT_CPU_EVENTS("FLOPs_AVX", optkit::metrics::cpu::core_metrics::IpAVXAnyFlop());
 
         constexpr int simd_width = 4; // AVX 256-bit holds 4 doubles
         int i = 0;

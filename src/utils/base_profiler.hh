@@ -5,7 +5,7 @@
 #include <vector>
 #include "utils/utils.hh"
 
-namespace optkit::core
+namespace optkit
 {
     /**
      * @brief Base profiler config.
@@ -157,4 +157,4 @@ namespace optkit::core
         std::vector<std::pair<std::string, readvalT>> event_results;
     };
 
-} // namespace optkit::core
+} // namespace optkit

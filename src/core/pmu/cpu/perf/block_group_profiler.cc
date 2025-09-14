@@ -2,10 +2,10 @@
 #include "core/pmu/cpu/perf/block_group_profiler.hh"
 
 #if OPTKIT_ENV_LIB_PERF_EVENT
-namespace optkit::core::pmu::cpu::perf
+namespace optkit::pmu::cpu::perf
 {
 
-    BlockGroupProfiler::BlockGroupProfiler(const PerfProfilerConfig &profiler_config, const core::metrics::MetricBuilder<uint64_t> &mb)
+    BlockGroupProfiler::BlockGroupProfiler(const PerfProfilerConfig &profiler_config, const optkit::metrics::MetricBuilder<uint64_t> &mb)
         : BaseProfiler{static_cast<const ProfilerConfig &>(profiler_config)}, group_leader{-1}, profiler_config{profiler_config}, metric_builder{mb}
     {
         PMUEventManager::disable_all_events();
@@ -151,6 +151,6 @@ namespace optkit::core::pmu::cpu::perf
         aggregated_events["duration_microsec"] = this->total_duration_ms * 1000.0; // convert to microseconds
         return aggregated_events;
     }
-} // namespace optkit::core::pmu::cpu::perf
+} // namespace optkit::pmu::cpu::perf
 
 #endif

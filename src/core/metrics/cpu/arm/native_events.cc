@@ -1,6 +1,6 @@
 #include "core/metrics/cpu/arm/native_events.hh"
 #if OPTKIT_ENV_CPU_ARM
-namespace optkit::core::metrics::cpu::arm
+namespace optkit::metrics::cpu::arm
 {
 
     std::string to_string(NativeEvents event)

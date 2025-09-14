@@ -1,8 +1,8 @@
 #include "core/disk/disk_profiler.hh"
 
-namespace optkit::core::disk
+namespace optkit::disk
 {
-    IoDiskProfiler::IoDiskProfiler(const ProfilerConfig &profiler_config, const core::metrics::MetricBuilder<uint64_t> &mb)
+    IoDiskProfiler::IoDiskProfiler(const ProfilerConfig &profiler_config, const optkit::metrics::MetricBuilder<uint64_t> &mb)
         : BaseProfiler(profiler_config), metric_builder(mb)
     {
         last_snapshot = read_selected_io_counters();

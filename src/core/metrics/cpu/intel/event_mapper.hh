@@ -7,8 +7,7 @@
 #include "core/metrics/cpu/core_events.hh"
 #include "core/metrics/cpu/intel/native_events.hh"
 
-
-namespace optkit::core::metrics::cpu::intel
+namespace optkit::metrics::cpu::intel
 {
     /**
      * @brief Considered only zen1 to zen4. others are not guaranteed.
@@ -41,7 +40,7 @@ namespace optkit::core::metrics::cpu::intel
     private:
         EventMapper() {}
         ~EventMapper() {}
-        static const std::unordered_map<cpu::CoreEvents, std::vector<uint64_t>> core_event_map;     // coreEvent - even nums to monitor.
+        static const std::unordered_map<cpu::CoreEvents, std::vector<uint64_t>> core_event_map;            // coreEvent - even nums to monitor.
         static const std::unordered_map<cpu::intel::NativeEvents, std::vector<uint64_t>> native_event_map; // coreEvent - even nums to monitor.
     };
 };

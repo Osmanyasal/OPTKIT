@@ -11,7 +11,7 @@
 #include <linux/perf_event.h>
 #endif
 
-namespace optkit::core::pmu::cpu
+namespace optkit::pmu::cpu
 {
     /**
      * @class PMUEventManager

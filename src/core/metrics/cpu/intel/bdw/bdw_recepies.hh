@@ -4,7 +4,7 @@
 #include <string>
 #include "core/pmu/cpu/events/intel/bdw.hh"
 
-namespace optkit::core::metrics::intel::bdw
+namespace optkit::metrics::intel::bdw
 {
     class Recepies final
     {

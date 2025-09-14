@@ -4,7 +4,7 @@
 #include <string>
 #include "core/pmu/cpu/events/intel/skl.hh"
 
-namespace optkit::core::metrics::intel::skl
+namespace optkit::metrics::intel::skl
 {
     class Recepies final
     {

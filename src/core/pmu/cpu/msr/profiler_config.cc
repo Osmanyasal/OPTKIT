@@ -1,6 +1,6 @@
 #include "core/pmu/cpu/msr/profiler_config.hh"
 #if OPTKIT_ENV_LIB_MSR_SAFE
-namespace optkit::core::pmu::cpu::msr
+namespace optkit::pmu::cpu::msr
 {
 
     MSRProfilerConfig::MSRProfilerConfig(bool dump_results_to_file, bool is_reset_after_read, bool is_grouped, int32_t pid, int32_t cpu)
@@ -24,6 +24,6 @@ namespace optkit::core::pmu::cpu::msr
             perf_event_config.read_format = 0;
         this->is_grouped = is_grouped;
     }
-} // namespace optkit::core::pmu::cpu::msr
+} // namespace optkit::pmu::cpu::msr
 
 #endif

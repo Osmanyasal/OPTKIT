@@ -12,7 +12,7 @@
 #include "core/pmu/cpu/pmu_event_manager.hh"
 #include "core/pmu/cpu/pmu_utils.hh"
 
-namespace optkit::core::pmu::cpu::msr
+namespace optkit::pmu::cpu::msr
 {
     class BlockProfiler : public BaseProfiler<std::vector<uint64_t>>
     {
@@ -57,6 +57,6 @@ namespace optkit::core::pmu::cpu::msr
         std::vector<std::pair<uint64_t, std::string>> raw_events;
     };
 
-} // namespace optkit::core::pmu::cpu::msr
+} // namespace optkit::pmu::cpu::msr
 
 #endif

@@ -12,7 +12,7 @@
 #include "utils/base_profiler.hh"
 #include "utils/metric_builder.hh"
 
-namespace optkit::core::temperature
+namespace optkit::temperature
 {
     /**
      * @brief CPU temperature profiler.
@@ -40,7 +40,7 @@ namespace optkit::core::temperature
         static std::unordered_map<std::string, std::string> sensor_paths; // sensor_name -> hwmon_path
 
     public:
-        CPUTemperatureProfiler(const ProfilerConfig &profiler_config, const core::metrics::MetricBuilder<double> &mb);
+        CPUTemperatureProfiler(const ProfilerConfig &profiler_config, const optkit::metrics::MetricBuilder<double> &mb);
         virtual ~CPUTemperatureProfiler();
 
         virtual void enable() override {}  // Already handled by constructor
@@ -67,7 +67,7 @@ namespace optkit::core::temperature
         double read_hwmon_temperature(const std::string &hwmon_path);
 
     private:
-        core::metrics::MetricBuilder<double> metric_builder;
+        optkit::metrics::MetricBuilder<double> metric_builder;
         std::unordered_map<std::string, double> last_snapshot;
         std::vector<std::pair<std::string, double>> metric_results;
     };

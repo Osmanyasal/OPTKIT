@@ -2,7 +2,7 @@
 #include "core/pmu/cpu/perf/block_profiler.hh"
 
 #if OPTKIT_ENV_LIB_MSE_SAFE
-namespace optkit::core::pmu::cpu::msr
+namespace optkit::pmu::cpu::msr
 {
 
     BlockProfiler::BlockProfiler(const char *block_name, const char *event_name, const std::vector<std::pair<uint64_t, std::string>> &raw_events, bool verbose, const MSRProfilerConfig &config) : BaseProfiler{block_name, event_name, verbose}, profiler_config{config}, raw_events{raw_events}
@@ -109,6 +109,6 @@ namespace optkit::core::pmu::cpu::msr
 
         return result;
     }
-} // namespace optkit::core::pmu::cpu::msr
+} // namespace optkit::pmu::cpu::msr
 
 #endif

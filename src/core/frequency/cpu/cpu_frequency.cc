@@ -1,12 +1,12 @@
 #include "core/frequency/cpu/cpu_frequency.hh"
 
-namespace optkit::core::frequency
+namespace optkit::frequency
 {
     // Define static member variables
 
     // Socket id - cpus belonging to that socket
     // e.g. {0: [0, 1, 2, 3], 1: [8, 9, 10, 11]} means socket 0 has cores 0-3 and socket 1 has cores 4-7
-    static const std::map<int32_t, std::vector<int32_t>> &package_info = core::Query::detect_cpu_packages();
+    static const std::map<int32_t, std::vector<int32_t>> &package_info = optkit::Query::detect_cpu_packages();
 
 #define TRAVERSE_CORES(socket)                           \
     if (package_info.find(socket) == package_info.end()) \
@@ -88,7 +88,7 @@ namespace optkit::core::frequency
                 return;
             }
 
-            // Set core frequency for all cores
+            // Set optkit frequency for all cores
             TRAVERSE_CORES(socket)
             {
                 optkit::utils::write_file("/sys/devices/system/cpu/cpu" + std::to_string(__cpu) + "/cpufreq/scaling_max_freq", std::to_string(frequency));
@@ -285,7 +285,7 @@ namespace optkit::core::frequency
     {
         try
         {
-            // Set core frequency for all cores
+            // Set optkit frequency for all cores
             TRAVERSE_CORES(socket)
             {
                 optkit::utils::write_file("/sys/devices/system/cpu/cpu" + std::to_string(__cpu) + "/cpufreq/scaling_max_freq", std::to_string(QueryCPUFrequency::get_cpuinfo_max_freq(__cpu)));

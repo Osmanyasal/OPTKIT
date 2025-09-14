@@ -1,6 +1,6 @@
 #include "core/energy/cpu/rapl/rapl_perf_reader.hh"
 
-namespace optkit::core::energy::rapl
+namespace optkit::energy::rapl
 {
 
     RaplPerfReader::RaplPerfReader(const RaplPerfReaderConfig &rapl_perf_config) : rapl_perf_config{rapl_perf_config}
@@ -83,22 +83,22 @@ namespace optkit::core::energy::rapl
 
         return result;
     }
-    std::string to_string(const optkit::core::energy::rapl::RaplPerfReaderConfig &config)
+    std::string to_string(const optkit::energy::rapl::RaplPerfReaderConfig &config)
     {
         std::ostringstream oss;
         oss << config;
         return oss.str();
     }
-    std::string to_string(const std::map<int32_t, std::map<optkit::core::energy::rapl::RaplDomain, double>> &map)
+    std::string to_string(const std::map<int32_t, std::map<optkit::energy::rapl::RaplDomain, double>> &map)
     {
         std::ostringstream oss;
         oss << map;
         return oss.str();
     }
 
-    std::ostream &operator<<(std::ostream &os, const std::map<int32_t, std::map<optkit::core::energy::rapl::RaplDomain, double>> &map)
+    std::ostream &operator<<(std::ostream &os, const std::map<int32_t, std::map<optkit::energy::rapl::RaplDomain, double>> &map)
     {
-        const std::vector<optkit::core::energy::rapl::RaplDomainInfo> &avail_domains = optkit::core::energy::rapl::QueryRapl::rapl_domain_info();
+        const std::vector<optkit::energy::rapl::RaplDomainInfo> &avail_domains = optkit::energy::rapl::QueryRapl::rapl_domain_info();
         for (const auto &pair : map)
         {
             os << "\tPackage " << pair.first << "\n";
@@ -115,7 +115,7 @@ namespace optkit::core::energy::rapl
         }
         return os;
     }
-    std::ostream &operator<<(std::ostream &os, const optkit::core::energy::rapl::RaplPerfReaderConfig &config)
+    std::ostream &operator<<(std::ostream &os, const optkit::energy::rapl::RaplPerfReaderConfig &config)
     {
         os << "\nRaplPerfReaderConfig:\n";
         os << "---------------------:\n";
@@ -140,4 +140,4 @@ namespace optkit::core::energy::rapl
         return os;
     }
 
-} // namespace optkit::core::energy::rapl
+} // namespace optkit::energy::rapl

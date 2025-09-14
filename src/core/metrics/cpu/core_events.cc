@@ -1,6 +1,6 @@
 #include "core/metrics/cpu/core_events.hh"
 
-namespace optkit::core::metrics::cpu
+namespace optkit::metrics::cpu
 {
 
     std::string to_string(CoreEvents event)

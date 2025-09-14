@@ -7,7 +7,7 @@
 #include <cstdint>
 #include "utils/utils.hh"
 
-namespace optkit::core::pmu::cpu::msr
+namespace optkit::pmu::cpu::msr
 {
     /**
      * @brief perf_event_open profiler config.
@@ -59,6 +59,6 @@ namespace optkit::core::pmu::cpu::msr
         int32_t cpu;
     };
 
-} // namespace optkit::core::pmu::cpu::msr
+} // namespace optkit::pmu::cpu::msr
 
 #endif

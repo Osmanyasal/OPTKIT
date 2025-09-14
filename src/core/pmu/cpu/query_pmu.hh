@@ -11,8 +11,8 @@
 
 #include "utils/utils.hh"
 #include "core/pmu/cpu/libpfm4_wrapper.hh"
-namespace optkit::core::pmu::cpu
-{ 
+namespace optkit::pmu::cpu
+{
 
     /**
      * @brief  ASK PMU related queries here<br>
@@ -87,7 +87,6 @@ namespace optkit::core::pmu::cpu
          */
         static std::vector<int32_t> avail_pmu_ids();
 
-
     private:
         QueryPMU() = delete;
         ~QueryPMU() = delete;
@@ -101,6 +100,6 @@ namespace optkit::core::pmu::cpu
 
     std::ostream &operator<<(std::ostream &out, const pfm_pmu_info_t &pmu_info);
     std::ostream &operator<<(std::ostream &out, const pfm_event_info_t &event_info);
-} // namespace optkit::core
+} // namespace optkit
 
-using optkit::core::pmu::cpu::operator<<; // make available to global namespace
+using optkit::pmu::cpu::operator<<; // make available to global namespace

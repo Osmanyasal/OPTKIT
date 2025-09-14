@@ -9,7 +9,7 @@
 #include <map>
 #include <unistd.h>
 
-namespace optkit::core
+namespace optkit
 {
     /**
      * @brief  ASK System & CPU related queries here<br>
@@ -56,6 +56,6 @@ namespace optkit::core
 
     std::string to_string(const std::map<int32_t, std::vector<int32_t>> &packages);
     std::ostream &operator<<(std::ostream &out, const std::map<int32_t, std::vector<int32_t>> &packages);
-} // namespace optkit::core
+} // namespace optkit
 
-using optkit::core::operator<<; // make available to global namespace
+using optkit::operator<<; // make available to global namespace

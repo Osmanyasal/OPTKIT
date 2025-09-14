@@ -4,7 +4,7 @@
 #include <cstring>
 #include <algorithm>
 
-namespace optkit::core::temperature
+namespace optkit::temperature
 {
     // Static member definition
     std::unordered_map<std::string, std::string> CPUTemperatureProfiler::sensor_paths;
@@ -22,7 +22,7 @@ namespace optkit::core::temperature
         }
     }
 
-    CPUTemperatureProfiler::CPUTemperatureProfiler(const ProfilerConfig &profiler_config, const core::metrics::MetricBuilder<double> &mb)
+    CPUTemperatureProfiler::CPUTemperatureProfiler(const ProfilerConfig &profiler_config, const optkit::metrics::MetricBuilder<double> &mb)
         : BaseProfiler(profiler_config), metric_builder(mb)
     {
         // Take initial snapshot

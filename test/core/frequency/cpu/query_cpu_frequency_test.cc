@@ -10,7 +10,7 @@
 #include "core/frequency/cpu/query_cpu_frequency.hh"
 
 namespace fs = std::filesystem;
-using namespace optkit::core::frequency;
+using namespace optkit::frequency;
 
 class QueryCPUFrequencyTest : public ::testing::Test
 {
@@ -131,7 +131,7 @@ TEST_F(QueryCPUFrequencyTest, CpuinfoMinMaxFreq_ShouldBeValidIfPresent)
 
 TEST_F(QueryCPUFrequencyTest, SetValidGovernorOnEachSocket)
 {
-    const auto &cpu_packages = optkit::core::Query::detect_cpu_packages();
+    const auto &cpu_packages = optkit::Query::detect_cpu_packages();
     if (cpu_packages.empty())
         GTEST_SKIP() << "No CPU package info detected";
 
@@ -160,7 +160,7 @@ TEST_F(QueryCPUFrequencyTest, SetValidGovernorOnEachSocket)
             original_govs[core] = QueryCPUFrequency::get_scaling_governor(core);
 
         // Set new governor on socket
-        QueryCPUFrequency::set_scaling_governor(valid_gov, socket); 
+        QueryCPUFrequency::set_scaling_governor(valid_gov, socket);
 
         // Verify governor applied on all cores
         for (int32_t core : cores)
@@ -172,7 +172,7 @@ TEST_F(QueryCPUFrequencyTest, SetValidGovernorOnEachSocket)
         // Restore original governors
         for (const auto &[core, orig_gov] : original_govs)
         {
-            QueryCPUFrequency::set_scaling_governor_percore(orig_gov, core); 
+            QueryCPUFrequency::set_scaling_governor_percore(orig_gov, core);
             std::string restored_gov = QueryCPUFrequency::get_scaling_governor(core);
             EXPECT_EQ(restored_gov, orig_gov) << "Failed to restore governor on core " << core;
         }
@@ -181,7 +181,7 @@ TEST_F(QueryCPUFrequencyTest, SetValidGovernorOnEachSocket)
 
 TEST_F(QueryCPUFrequencyTest, SetInvalidGovernorOnEachSocket)
 {
-    const auto &cpu_packages = optkit::core::Query::detect_cpu_packages();
+    const auto &cpu_packages = optkit::Query::detect_cpu_packages();
     if (cpu_packages.empty())
         GTEST_SKIP() << "No CPU package info detected";
 

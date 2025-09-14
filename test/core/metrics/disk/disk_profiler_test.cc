@@ -2,8 +2,8 @@
 #include "common/module.hh"
 #include "optkit.hh"
 
-using namespace optkit::core::metrics;
-using namespace optkit::core::metrics::disk;
+using namespace optkit::metrics;
+using namespace optkit::metrics::disk;
 
 constexpr int64_t WRITE_SIZE = 41298;
 constexpr int64_t READ_SIZE = WRITE_SIZE;

@@ -2,7 +2,7 @@
 #include "core/pmu/cpu/perf/block_group_profiler.hh"
 
 #if OPTKIT_ENV_LIB_MSE_SAFE
-namespace optkit::core::pmu::cpu::msr
+namespace optkit::pmu::cpu::msr
 {
 
     BlockGroupProfiler::BlockGroupProfiler(const char *block_name, const char *event_name, const std::vector<std::pair<uint64_t, std::string>> &raw_events, bool verbose, const PerfProfilerConfig &config) : BaseProfiler{block_name, event_name, verbose}, profiler_config{config}, group_leader{-1}, is_active{true}, raw_events{raw_events}
@@ -133,6 +133,6 @@ namespace optkit::core::pmu::cpu::msr
         ss << "]\n";
         return ss.str();
     }
-} // namespace optkit::core::pmu::cpu::msr
+} // namespace optkit::pmu::cpu::msr
 
 #endif

@@ -6,7 +6,7 @@
 #include "core/frequency/base_governor.hh"
 #include "core/metrics/intel/icl/icl_recepies.hh"
 
-namespace optkit::core::governors::intel::icl
+namespace optkit::governors::intel::icl
 {
     class Governor final : public core::frequency::BaseGovernor
     {
@@ -52,7 +52,7 @@ namespace optkit::core::governors::intel::icl
 
     private:
         // cycle watcher gets extended to other cores. we need to fix this to a single core only!!!
-        optkit::core::pmu::BlockProfiler core_cycle_watcher;
-        optkit::core::pmu::BlockGroupProfiler interested_events;
+        optkit::pmu::BlockProfiler core_cycle_watcher;
+        optkit::pmu::BlockGroupProfiler interested_events;
     };
 }

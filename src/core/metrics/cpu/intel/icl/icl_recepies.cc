@@ -1,7 +1,7 @@
 
 #include "core/metrics/cpu/intel/icl/icl_recepies.hh"
 
-namespace optkit::core::metrics::intel::icl
+namespace optkit::metrics::intel::icl
 {
     /**
      * @brief No need for exact numbers, we only need intuitions

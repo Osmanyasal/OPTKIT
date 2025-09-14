@@ -6,12 +6,12 @@
 #include <iomanip>
 #include <vector>
 #include <string>
-#include <map> 
+#include <map>
 #include <unistd.h>
 
 #include "core/energy/cpu/rapl/rapl.hh"
 #include "utils/utils.hh"
-namespace optkit::core::energy::rapl
+namespace optkit::energy::rapl
 {
     /**
      * @brief  ASK CPU RAPL related queries here<br>
@@ -21,7 +21,6 @@ namespace optkit::core::energy::rapl
     {
 
     public:
-    
         /**
          * @brief Returns available Rapl read methods in combination of RaplReadMethods as bitwise OR.
          * @see RaplReadMethods
@@ -46,7 +45,6 @@ namespace optkit::core::energy::rapl
     private:
         QueryRapl() = delete;
         ~QueryRapl() = delete;
-
     };
 
-} // namespace optkit::core
+} // namespace optkit

@@ -8,14 +8,14 @@
 #include <linux/perf_event.h>
 #include "utils/base_profiler.hh"
 
-namespace optkit::core::pmu::cpu::perf
+namespace optkit::pmu::cpu::perf
 {
     /**
      * @brief perf_event_open profiler config.
      * @see perf_event.h for more detail.
      *
      */
-    struct PerfProfilerConfig : public optkit::core::ProfilerConfig
+    struct PerfProfilerConfig : public optkit::ProfilerConfig
     {
         /**
          * @brief Construct a new PerfProfilerConfig object
@@ -79,6 +79,6 @@ namespace optkit::core::pmu::cpu::perf
         perf_event_attr perf_event_config;
     };
 
-} // namespace optkit::core::pmu::cpu::perf
+} // namespace optkit::pmu::cpu::perf
 
 #endif

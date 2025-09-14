@@ -1,7 +1,7 @@
 
 #include "core/frequency/base_governor.hh"
 
-namespace optkit::core::frequency
+namespace optkit::frequency
 {
 
     BaseGovernor *BaseGovernor::current_governor = nullptr;

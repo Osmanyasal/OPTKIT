@@ -1,7 +1,7 @@
 
 #include "core/pmu/cpu/pmu_event_manager.hh"
 
-namespace optkit::core::pmu::cpu
+namespace optkit::pmu::cpu
 {
     std::map<int32_t, int32_t> PMUEventManager::fd__event_count_map;
     int32_t PMUEventManager::event_count_being_monitor = 0;

@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "core/pmu/cpu/query_pmu.hh"
 
-using namespace optkit::core::pmu::cpu;
+using namespace optkit::pmu::cpu;
 
 TEST(QueryPMUTest, AvailablePMUIdsNotEmpty)
 {

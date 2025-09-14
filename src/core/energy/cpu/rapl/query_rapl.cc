@@ -1,7 +1,7 @@
 
 #include "core/energy/cpu/rapl/query_rapl.hh"
 
-namespace optkit::core::energy::rapl
+namespace optkit::energy::rapl
 {
 
     int32_t QueryRapl::avail_rapl_read_methods()
@@ -100,4 +100,4 @@ namespace optkit::core::energy::rapl
         return res;
     }
 
-} // namespace optkit::core
+} // namespace optkit

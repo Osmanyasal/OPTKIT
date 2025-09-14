@@ -7,7 +7,7 @@
 #if OPTKIT_CONF_TEMPERATURE_MACROS_ENABLED
 
 #define OPTKIT_CPU_TEMPERATURE_EVENTS(block_name, metric_builder, ...) \
-    optkit::core::temperature::CPUTemperatureProfiler EXPAND_AND_CONCAT(var, __LINE__) { {block_name, "temperature", true, optkit::core::Query::create_folder, !optkit::core::Query::create_folder}, metric_builder, __VA_ARGS__ }
+    optkit::temperature::CPUTemperatureProfiler EXPAND_AND_CONCAT(var, __LINE__) { {block_name, "temperature", true, optkit::Query::create_folder, !optkit::Query::create_folder}, metric_builder, __VA_ARGS__ }
 
 #else
 #define OPTKIT_CPU_TEMPERATURE_EVENTS(block_name, metric_builder, ...)

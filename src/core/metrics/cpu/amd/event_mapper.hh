@@ -12,7 +12,7 @@
  *      https://www.amd.com/content/dam/amd/en/documents/epyc-technical-docs/programmer-references/58550-0.01.pdf (Performance Monitor Counters for AMD Family 1Ah Model 00h- 0Fh Processors)
  *
  */
-namespace optkit::core::metrics::cpu::amd
+namespace optkit::metrics::cpu::amd
 {
     /**
      * @brief Considered only zen1 to zen4. others are not guaranteed.
@@ -45,7 +45,7 @@ namespace optkit::core::metrics::cpu::amd
     private:
         EventMapper() {}
         ~EventMapper() {}
-        static const std::unordered_map<cpu::CoreEvents, std::vector<uint64_t>> core_event_map;     // coreEvent - even nums to monitor.
+        static const std::unordered_map<cpu::CoreEvents, std::vector<uint64_t>> core_event_map;          // coreEvent - even nums to monitor.
         static const std::unordered_map<cpu::amd::NativeEvents, std::vector<uint64_t>> native_event_map; // coreEvent - even nums to monitor.
     };
 };

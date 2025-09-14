@@ -1,6 +1,6 @@
 #include "core/energy/cpu/rapl/rapl_profiler.hh"
 
-namespace optkit::core::energy::rapl
+namespace optkit::energy::rapl
 {
     RaplProfiler::RaplProfiler(const ProfilerConfig &profiler_config, const RaplConfig &config) : BaseProfiler{profiler_config}, rapl_config{config}
     {
@@ -72,19 +72,19 @@ namespace optkit::core::energy::rapl
         std::stringstream ss;
         ss << "[\n";
         // based on the insertion order.
-        ss << core::energy::rapl::to_json(this->config.measurement_type, this->read_buffer);
+        ss << optkit::energy::rapl::to_json(this->config.measurement_type, this->read_buffer);
         ss << "]\n";
         return ss.str();
     }
 
-    std::string to_string(const std::map<optkit::core::energy::rapl::RaplDomain, double> &map)
+    std::string to_string(const std::map<optkit::energy::rapl::RaplDomain, double> &map)
     {
         std::ostringstream oss;
         oss << map;
         return oss.str();
     }
     // Overloading << for map with RaplDomain as keys
-    std::ostream &operator<<(std::ostream &os, const std::map<optkit::core::energy::rapl::RaplDomain, double> &map)
+    std::ostream &operator<<(std::ostream &os, const std::map<optkit::energy::rapl::RaplDomain, double> &map)
     {
 
         for (const auto &item : map)
@@ -95,4 +95,4 @@ namespace optkit::core::energy::rapl
         return os;
     }
 
-} // namespace optkit::core
+} // namespace optkit

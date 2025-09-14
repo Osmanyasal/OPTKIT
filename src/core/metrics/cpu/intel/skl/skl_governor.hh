@@ -6,7 +6,7 @@
 #include "core/frequency/base_governor.hh"
 #include "core/metrics/intel/skl/skl_recepies.hh"
 
-namespace optkit::core::governors::intel::skl
+namespace optkit::governors::intel::skl
 {
     class Governor final : public core::frequency::BaseGovernor
     {
@@ -51,7 +51,7 @@ namespace optkit::core::governors::intel::skl
         }
 
     private:
-        optkit::core::pmu::BlockProfiler core_cycle_watcher;
-        optkit::core::pmu::BlockGroupProfiler interested_events;
+        optkit::pmu::BlockProfiler core_cycle_watcher;
+        optkit::pmu::BlockGroupProfiler interested_events;
     };
 }

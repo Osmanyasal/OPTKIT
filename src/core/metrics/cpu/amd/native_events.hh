@@ -3,7 +3,7 @@
 #include "utils/deployment/deployment_config.hh"
 #if OPTKIT_ENV_CPU_AMD
 #include <string>
-namespace optkit::core::metrics::cpu::amd
+namespace optkit::metrics::cpu::amd
 {
     /**
      * @brief These are the core events to be monitored for metrics. It is expected to exists in every CPUs

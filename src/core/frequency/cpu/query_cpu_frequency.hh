@@ -4,7 +4,7 @@
 #include <string>
 #include "utils/utils.hh"
 
-namespace optkit::core::frequency
+namespace optkit::frequency
 {
 
     /**
@@ -39,4 +39,4 @@ namespace optkit::core::frequency
         ~QueryCPUFrequency() = delete;
     };
 
-} // namespace optkit::core::frequency
+} // namespace optkit::frequency

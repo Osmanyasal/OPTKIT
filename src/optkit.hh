@@ -17,7 +17,7 @@
 #include "core/temperature/module.hh"
 #include "core/metrics/module.hh"
 
-namespace optkit::core
+namespace optkit
 {
     class OPTKIT_CONFIG
     {
@@ -46,4 +46,4 @@ namespace optkit::core
 }
 
 #define OPTKIT_INIT(...) \
-    optkit::core::OPTKIT optkit { __VA_ARGS__ }
+    optkit::OPTKIT optkit { __VA_ARGS__ }

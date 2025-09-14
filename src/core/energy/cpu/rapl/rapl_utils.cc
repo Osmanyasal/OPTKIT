@@ -1,6 +1,6 @@
 #include "core/energy/cpu/rapl/rapl_utils.hh"
 
-namespace optkit::core::energy::rapl
+namespace optkit::energy::rapl
 {
 
     nlohmann::json to_json(const char *event_name, const std::vector<std::pair<double, std::map<int32_t, std::map<RaplDomain, double>>>> &rapl_pair_list)
@@ -72,4 +72,4 @@ namespace optkit::core::energy::rapl
         }
         return result;
     }
-} // namespace optkit::core
+} // namespace optkit

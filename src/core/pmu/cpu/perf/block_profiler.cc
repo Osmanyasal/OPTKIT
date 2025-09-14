@@ -2,10 +2,10 @@
 #include "core/pmu/cpu/perf/block_profiler.hh"
 
 #if OPTKIT_ENV_LIB_PERF_EVENT
-namespace optkit::core::pmu::cpu::perf
+namespace optkit::pmu::cpu::perf
 {
 
-    BlockProfiler::BlockProfiler(const PerfProfilerConfig &profiler_config, const core::metrics::MetricBuilder<uint64_t> &mb)
+    BlockProfiler::BlockProfiler(const PerfProfilerConfig &profiler_config, const optkit::metrics::MetricBuilder<uint64_t> &mb)
         : BaseProfiler{static_cast<const ProfilerConfig &>(profiler_config)}, profiler_config{profiler_config}, metric_builder{mb}
     {
         PMUEventManager::disable_all_events();
@@ -145,6 +145,6 @@ namespace optkit::core::pmu::cpu::perf
         return aggregated_events;
     }
 
-} // namespace optkit::core::pmu::cpu::perf
+} // namespace optkit::pmu::cpu::perf
 
 #endif

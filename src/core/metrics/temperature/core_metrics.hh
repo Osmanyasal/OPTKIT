@@ -12,7 +12,7 @@
 #include "utils/metric_builder.hh"
 #include "core/metrics/temperature/core_events.hh"
 
-namespace optkit::core::metrics::temperature
+namespace optkit::metrics::temperature
 {
     /**
      * @brief Temperature-related performance metrics.
@@ -23,9 +23,9 @@ namespace optkit::core::metrics::temperature
     class CoreMetrics
     {
     public:
-        static optkit::core::metrics::MetricBuilder<double> AllMetrics()
+        static optkit::metrics::MetricBuilder<double> AllMetrics()
         {
-            return optkit::core::metrics::MetricBuilder<double>{}
+            return optkit::metrics::MetricBuilder<double>{}
                 .add(to_string(CoreEvents::CPU), {0x0})
                 .add(to_string(CoreEvents::STORAGE), {0x0})
                 .add(to_string(CoreEvents::CPUGPU), {0x0})
@@ -49,4 +49,4 @@ namespace optkit::core::metrics::temperature
         CoreMetrics() {}
         ~CoreMetrics() {}
     };
-} // namespace optkit::core::metrics::disk
+} // namespace optkit::metrics::disk

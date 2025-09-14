@@ -11,7 +11,7 @@
 #include "core/pmu/cpu/pmu_event_manager.hh"
 #include "core/pmu/cpu/pmu_utils.hh"
 
-namespace optkit::core::pmu::cpu::msr
+namespace optkit::pmu::cpu::msr
 {
     /**
      * @brief The BlockGroupProfiler class utilizes the RAII technique to initiate and conclude profiling for a specific raw event.
@@ -25,7 +25,7 @@ namespace optkit::core::pmu::cpu::msr
     {
 
     public:
-        BlockGroupProfiler(const char *block_name, const char *event_name, const std::vector<std::pair<uint64_t, std::string>> &raw_events, bool verbose = true, const PerfProfilerConfig &config = PerfProfilerConfig{true, true, true,0,-1});
+        BlockGroupProfiler(const char *block_name, const char *event_name, const std::vector<std::pair<uint64_t, std::string>> &raw_events, bool verbose = true, const PerfProfilerConfig &config = PerfProfilerConfig{true, true, true, 0, -1});
         virtual ~BlockGroupProfiler();
         /**
          * @brief Disables this block profiler and associated events
@@ -52,7 +52,8 @@ namespace optkit::core::pmu::cpu::msr
          */
         virtual std::vector<uint64_t> read() override;
 
-        int32_t get_group_leader(){
+        int32_t get_group_leader()
+        {
             return this->group_leader;
         }
 
@@ -73,6 +74,6 @@ namespace optkit::core::pmu::cpu::msr
         };
     };
 
-} // namespace optkit::core::pmu::cpu::msr
+} // namespace optkit::pmu::cpu::msr
 
 #endif

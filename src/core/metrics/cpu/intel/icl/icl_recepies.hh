@@ -4,7 +4,7 @@
 #include <string>
 #include "core/pmu/cpu/events/intel/icl.hh"
 
-namespace optkit::core::metrics::intel::icl
+namespace optkit::metrics::intel::icl
 {
     class Recepies final
     {

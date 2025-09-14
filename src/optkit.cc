@@ -1,6 +1,6 @@
 #include "optkit.hh"
 
-namespace optkit::core
+namespace optkit
 {
     /**
      * @brief Construct a new Optimizer Kit:: Optimizer Kit object
@@ -15,7 +15,7 @@ namespace optkit::core
     OPTKIT::OPTKIT(const OPTKIT_CONFIG config) : config{config}
     {
         optkit::utils::logger::BaseLogger::init(); // logger init
-        int32_t paranoid = optkit::core::Query::paranoid();
+        int32_t paranoid = optkit::Query::paranoid();
         if (OPT_UNLIKELY(paranoid > 0))
         {
             OPTKIT_CORE_ERROR("perf_event_paranoid {}(current) must be <=0 for ACCURATE data collection by optimizer toolkit!", paranoid);
@@ -26,8 +26,8 @@ namespace optkit::core
         }
         else
         {
-            optkit::core::pmu::cpu::QueryPMU::init();                  // pmf init
-            optkit::core::temperature::CPUTemperatureProfiler::init(); // discover hwmon temperatures.
+            optkit::pmu::cpu::QueryPMU::init();                  // pmf init
+            optkit::temperature::CPUTemperatureProfiler::init(); // discover hwmon temperatures.
 
             Query::create_folder = config.create_folder;
             if (OPT_LIKELY(Query::create_folder))
@@ -94,7 +94,7 @@ namespace optkit::core
                 if (socket0__core_freq != nullptr)
                 {
                     Query::OPTKIT_SOCKET0__CORE_FREQ = std::atol(socket0__core_freq);
-                    core::frequency::CPUFrequency::set_core_frequency(Query::OPTKIT_SOCKET0__CORE_FREQ, 0);
+                    optkit::frequency::CPUFrequency::set_core_frequency(Query::OPTKIT_SOCKET0__CORE_FREQ, 0);
                     OPTKIT_CORE_INFO("---env read--- OPTKIT_SOCKET0__CORE_FREQ:{} ", Query::OPTKIT_SOCKET0__CORE_FREQ);
                 }
                 else
@@ -107,7 +107,7 @@ namespace optkit::core
 
 #if OPTKIT_ENV_CPU_INTEL
                     Query::OPTKIT_SOCKET0__UNCORE_FREQ = std::atol(socket0__uncore_freq);
-                    core::frequency::CPUFrequency::set_uncore_frequency(Query::OPTKIT_SOCKET0__UNCORE_FREQ, 0);
+                    optkit::frequency::CPUFrequency::set_uncore_frequency(Query::OPTKIT_SOCKET0__UNCORE_FREQ, 0);
                     OPTKIT_CORE_INFO("---env read--- OPTKIT_SOCKET0__UNCORE_FREQ:{} ", Query::OPTKIT_SOCKET0__UNCORE_FREQ);
 #endif
                 }
@@ -128,7 +128,7 @@ namespace optkit::core
                 if (socket1__core_freq != nullptr)
                 {
                     Query::OPTKIT_SOCKET1__CORE_FREQ = std::atol(socket1__core_freq);
-                    core::frequency::CPUFrequency::set_core_frequency(Query::OPTKIT_SOCKET1__CORE_FREQ, 1);
+                    optkit::frequency::CPUFrequency::set_core_frequency(Query::OPTKIT_SOCKET1__CORE_FREQ, 1);
                     OPTKIT_CORE_INFO("---env read--- OPTKIT_SOCKET1__CORE_FREQ:{} ", Query::OPTKIT_SOCKET1__CORE_FREQ);
                 }
                 else
@@ -141,7 +141,7 @@ namespace optkit::core
 
 #if OPTKIT_ENV_CPU_INTEL
                     Query::OPTKIT_SOCKET1__UNCORE_FREQ = std::atol(socket1__uncore_freq);
-                    core::frequency::CPUFrequency::set_uncore_frequency(Query::OPTKIT_SOCKET1__UNCORE_FREQ, 1);
+                    optkit::frequency::CPUFrequency::set_uncore_frequency(Query::OPTKIT_SOCKET1__UNCORE_FREQ, 1);
                     OPTKIT_CORE_INFO("---env read--- OPTKIT_SOCKET1__UNCORE_FREQ:{} ", Query::OPTKIT_SOCKET1__UNCORE_FREQ);
 #endif
                 }
@@ -207,7 +207,7 @@ namespace optkit::core
                     frequency::QueryCPUFrequency::set_scaling_governor("ondemand", i);
                     OPTKIT_CORE_INFO("Current cpufreq governor for socket {}: {}", i, frequency::QueryCPUFrequency::get_scaling_governor(i));
 
-                    OPTKIT_CORE_INFO("Resetting CPU core and uncore frequencies for socket {}", i);
+                    OPTKIT_CORE_INFO("Resetting CPU optkit and uncore frequencies for socket {}", i);
                     frequency::CPUFrequency::reset_core_frequency(i);
                     frequency::CPUFrequency::reset_uncore_frequency(i);
                 }
@@ -217,13 +217,13 @@ namespace optkit::core
                     frequency::QueryCPUFrequency::set_scaling_governor("powersave", i);
                     OPTKIT_CORE_INFO("Current cpufreq governor for socket {}: {}", i, frequency::QueryCPUFrequency::get_scaling_governor(i));
 
-                    OPTKIT_CORE_INFO("Resetting CPU core and uncore frequencies for socket {}", i);
+                    OPTKIT_CORE_INFO("Resetting CPU optkit and uncore frequencies for socket {}", i);
                     frequency::CPUFrequency::reset_core_frequency(i);
                     frequency::CPUFrequency::reset_uncore_frequency(i);
                 }
             }
         }
-        optkit::core::pmu::cpu::QueryPMU::destroy();
+        optkit::pmu::cpu::QueryPMU::destroy();
     }
 
-} // namespace optkit::core
+} // namespace optkit

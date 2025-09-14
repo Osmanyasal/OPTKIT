@@ -1,6 +1,6 @@
 #include "core/metrics/disk/core_events.hh"
 
-namespace optkit::core::metrics::disk
+namespace optkit::metrics::disk
 {
     std::string to_string(CoreEvents event)
     {

@@ -9,7 +9,7 @@
 #include <unordered_map>
 #include <iostream>
 #include "utils/utils.hh"
-namespace optkit::core::metrics
+namespace optkit::metrics
 {
     /**
      * @class MetricBuilder
@@ -230,6 +230,6 @@ namespace optkit::core::metrics
         return os << to_string(mb);
     }
 
-} // namespace optkit::core::metrics
+} // namespace optkit::metrics
 
-using optkit::core::metrics::operator<<;
+using optkit::metrics::operator<<;

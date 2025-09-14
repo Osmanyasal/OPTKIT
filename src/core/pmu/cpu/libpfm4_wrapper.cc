@@ -1,5 +1,5 @@
 #include "core/pmu/cpu/libpfm4_wrapper.hh"
-namespace optkit::core::pmu::cpu
+namespace optkit::pmu::cpu
 {
     // THIS IS IDENTICAL TO PFM_PMU_T STRUCTURE, DO NOT CHANGE THE ORDER !!
     const char *pmu_names[] = {

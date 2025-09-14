@@ -13,13 +13,11 @@
 #include "core/profiling/pmu/block_profiler.hh"
 #include "core/frequency/cpu/cpu_frequency.hh"
 #include "core/frequency/cpu/query_cpu_frequency.hh"
- 
-
 
 #define OPTKIT_BASE_GOVERNOR_MMAP_PAGES 8
 #define OPTKIT_BASE_GOVERNOR_GOVERNOR_CALLBACK_PERIOD_MS 10000 // 10 sec 1 call
 #define GHZ 1000000000
-namespace optkit::core::frequency
+namespace optkit::frequency
 {
     /**
      * @brief Base governor is called each 5ms by defaut.
@@ -32,7 +30,7 @@ namespace optkit::core::frequency
         static void call_back(int32_t signum, siginfo_t *oh, void *blah);
         static void collector_call_back(int32_t signum, siginfo_t *oh, void *blah);
         static BaseGovernor *current_governor;
-        
+
     private:
         static std::vector<float> mean;
         static std::vector<float> scale;
@@ -48,7 +46,7 @@ namespace optkit::core::frequency
         static float current_uncore_freq;
 
     public:
-        BaseGovernor(bool data_collector_mode = false ,int64_t sample_period = (((QueryCPUFreq::get_cpuinfo_max_freq() + QueryCPUFreq::get_cpuinfo_min_freq()) / 2) / 1000) * OPTKIT_BASE_GOVERNOR_GOVERNOR_CALLBACK_PERIOD_MS);
+        BaseGovernor(bool data_collector_mode = false, int64_t sample_period = (((QueryCPUFreq::get_cpuinfo_max_freq() + QueryCPUFreq::get_cpuinfo_min_freq()) / 2) / 1000) * OPTKIT_BASE_GOVERNOR_GOVERNOR_CALLBACK_PERIOD_MS);
         virtual ~BaseGovernor();
 
         virtual void snapshot_pmus() = 0;
@@ -61,12 +59,11 @@ namespace optkit::core::frequency
     private:
         // Function to read scaler values from scaler.txt
         void read_scaler_file(std::vector<float> &mean_values, std::vector<float> &scale_values);
- 
 
     protected:
         bool data_collector_mode;
         std::vector<uint64_t> pmu_record;
-        optkit::core::PerfProfilerConfig config;
+        optkit::PerfProfilerConfig config;
         const int64_t sample_period;
         struct sigaction sa;
         void *our_mmap;

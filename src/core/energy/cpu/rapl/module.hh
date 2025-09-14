@@ -15,14 +15,14 @@
 #if OPTKIT_CONF_RAPL_MACROS_ENABLED == 1
 
 #define OPTKIT_CPU_ENERGY(var_name, block_name) \
-    optkit::core::energy::rapl::RaplProfiler var_name{{block_name, "cpu_energy", true, optkit::core::Query::create_folder, !optkit::core::Query::create_folder}};
+    optkit::energy::rapl::RaplProfiler var_name{{block_name, "cpu_energy", true, optkit::Query::create_folder, !optkit::Query::create_folder}};
 
-#define OPTKIT_CPU_ENERGY_REPEAT(var_name, block_name, count)                                                                                                     \
-    optkit::core::energy::rapl::RaplProfiler var_name{{block_name, "cpu_energy", true, optkit::core::Query::create_folder, !optkit::core::Query::create_folder}}; \
+#define OPTKIT_CPU_ENERGY_REPEAT(var_name, block_name, count)                                                                                   \
+    optkit::energy::rapl::RaplProfiler var_name{{block_name, "cpu_energy", true, optkit::Query::create_folder, !optkit::Query::create_folder}}; \
     for (int32_t i = 0; i < count; i++)
 
-#define OPTKIT_CPU_ENERGY_REPEAT_READ_AND_STORE(var_name, block_name, count)                                                                                      \
-    optkit::core::energy::rapl::RaplProfiler var_name{{block_name, "cpu_energy", true, optkit::core::Query::create_folder, !optkit::core::Query::create_folder}}; \
+#define OPTKIT_CPU_ENERGY_REPEAT_READ_AND_STORE(var_name, block_name, count)                                                                    \
+    optkit::energy::rapl::RaplProfiler var_name{{block_name, "cpu_energy", true, optkit::Query::create_folder, !optkit::Query::create_folder}}; \
     for (int32_t i = 0; i < count; i++, var_name.read_and_store())
 
 #else

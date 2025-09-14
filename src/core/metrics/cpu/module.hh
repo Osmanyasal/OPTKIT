@@ -6,7 +6,7 @@
 #if OPTKIT_ENV_CPU_INTEL
 #include "core/metrics/cpu/intel/core_metrics.hh"
 #include "core/metrics/cpu/intel/event_mapper.hh"
-namespace optkit::core::metrics::cpu
+namespace optkit::metrics::cpu
 {
     using core_metrics = CoreMetrics<IntelMetricsImpl>;
     using event_mapper = intel::EventMapper;
@@ -16,7 +16,7 @@ namespace optkit::core::metrics::cpu
 #elif OPTKIT_ENV_CPU_AMD
 #include "core/metrics/cpu/amd/core_metrics.hh"
 #include "core/metrics/cpu/amd/event_mapper.hh"
-namespace optkit::core::metrics::cpu
+namespace optkit::metrics::cpu
 {
     using core_metrics = CoreMetrics<AMDMetricsImpl>;
     using event_mapper = amd::EventMapper;
@@ -26,7 +26,7 @@ namespace optkit::core::metrics::cpu
 #elif OPTKIT_ENV_CPU_ARM
 #include "core/metrics/cpu/arm/core_metrics.hh"
 #include "core/metrics/cpu/arm/event_mapper.hh"
-namespace optkit::core::metrics::cpu
+namespace optkit::metrics::cpu
 {
     using core_metrics = CoreMetrics<ARMMetricsImpl>;
     using event_mapper = arm::EventMapper;
@@ -39,4 +39,4 @@ namespace optkit::core::metrics::cpu
 #else
 #endif
 
-using optkit::core::metrics::cpu::operator<<; // make available to global namespace
+using optkit::metrics::cpu::operator<<; // make available to global namespace

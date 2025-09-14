@@ -6,7 +6,7 @@
 /**
  * @brief In case of in-consistancy, errors on your system, open a ticket at: https://github.com/Osmanyasal/OPTKIT/issues
  */
-using namespace optkit::core::metrics;
+using namespace optkit::metrics;
 int main(int argc, char **argv)
 {
     OPTKIT_INIT(false); // init optkit

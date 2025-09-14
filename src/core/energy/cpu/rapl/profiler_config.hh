@@ -4,7 +4,7 @@
 #include "core/energy/cpu/rapl/rapl.hh" // for rapl monitoring
 #include "core/query.hh"
 
-namespace optkit::core::energy::rapl
+namespace optkit::energy::rapl
 {
     struct RaplConfig
     {
@@ -20,9 +20,9 @@ namespace optkit::core::energy::rapl
         const bool dump_results_to_file;
     };
 
-    std::string to_string(const optkit::core::energy::rapl::RaplConfig &rapl_config);
-    std::ostream &operator<<(std::ostream &os, const optkit::core::energy::rapl::RaplConfig &rapl_config);
+    std::string to_string(const optkit::energy::rapl::RaplConfig &rapl_config);
+    std::ostream &operator<<(std::ostream &os, const optkit::energy::rapl::RaplConfig &rapl_config);
 
-} // optkit::core::energy::rapl
+} // optkit::energy::rapl
 
-using optkit::core::energy::rapl::operator<<; // make available to global namespace
+using optkit::energy::rapl::operator<<; // make available to global namespace

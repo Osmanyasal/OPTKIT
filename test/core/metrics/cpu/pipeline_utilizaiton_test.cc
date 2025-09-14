@@ -3,7 +3,7 @@
 #include "common/module.hh"
 #include "optkit.hh"
 
-using namespace optkit::core::metrics;
+using namespace optkit::metrics;
 
 TEST(PipelineUtilization, Instructions_10M)
 {

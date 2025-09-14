@@ -12,7 +12,7 @@
 #include "core/pmu/cpu/pmu_event_manager.hh"
 #include "core/metrics/cpu/core_metrics.hh"
 
-namespace optkit::core::pmu::cpu::perf
+namespace optkit::pmu::cpu::perf
 {
     /**
      * @brief The BlockProfiler class utilizes the RAII technique to initiate and conclude profiling for a specific raw event.
@@ -35,7 +35,7 @@ namespace optkit::core::pmu::cpu::perf
     class BlockProfiler : public BaseProfiler<std::vector<uint64_t>, uint64_t>
     {
     public:
-        BlockProfiler(const PerfProfilerConfig &profiler_config, const core::metrics::MetricBuilder<uint64_t> &mb);
+        BlockProfiler(const PerfProfilerConfig &profiler_config, const optkit::metrics::MetricBuilder<uint64_t> &mb);
         virtual ~BlockProfiler();
         /**
          * @brief Disables this block profiler and associated events
@@ -79,10 +79,10 @@ namespace optkit::core::pmu::cpu::perf
          */
         std::vector<int32_t> fd_list;
         const PerfProfilerConfig profiler_config;
-        const core::metrics::MetricBuilder<uint64_t> metric_builder;
+        const optkit::metrics::MetricBuilder<uint64_t> metric_builder;
         std::vector<std::pair<std::string, double>> metric_results;
     };
 
-} // namespace optkit::core::pmu::cpu::perf
+} // namespace optkit::pmu::cpu::perf
 
 #endif

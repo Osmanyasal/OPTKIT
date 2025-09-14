@@ -2,8 +2,8 @@
 #include "gtest/gtest.h"
 #include "common/module.hh"
 #include "optkit.hh"
-using namespace optkit::core::metrics;
-using namespace optkit::core::pmu::cpu;
+using namespace optkit::metrics;
+using namespace optkit::pmu::cpu;
 
 TEST(CPUPerfEventsTest, Instructions_1M)
 {

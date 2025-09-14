@@ -1,6 +1,6 @@
 #include "core/metrics/temperature/core_events.hh"
 
-namespace optkit::core::metrics::temperature
+namespace optkit::metrics::temperature
 {
     std::string to_string(CoreEvents event)
     {

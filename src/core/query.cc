@@ -1,7 +1,7 @@
 
 #include "core/query.hh"
 #include "utils/utils.hh"
-namespace optkit::core
+namespace optkit
 {
 
     int64_t Query::OPTKIT_SOCKET0__ENABLED = 0;
@@ -82,4 +82,4 @@ namespace optkit::core
         return out;
     }
 
-} // namespace optkit::core::pmu
+} // namespace optkit::pmu

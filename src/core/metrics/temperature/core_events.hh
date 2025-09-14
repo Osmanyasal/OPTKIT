@@ -3,7 +3,7 @@
 #include <string>
 #include <ostream>
 
-namespace optkit::core::metrics::temperature
+namespace optkit::metrics::temperature
 {
     // Extended CoreEvents (BEGIN/END sentinels preserved)
     enum class CoreEvents

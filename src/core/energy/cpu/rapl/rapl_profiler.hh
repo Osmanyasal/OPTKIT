@@ -11,7 +11,7 @@
 #include "core/energy/cpu/rapl/profiler_config.hh"
 #include "core/energy/cpu/rapl/rapl_perf_reader.hh"
 #include "core/energy/cpu/rapl/rapl_utils.hh"
-namespace optkit::core::energy::rapl
+namespace optkit::energy::rapl
 {
 
     class RaplProfiler : public BaseProfiler<std::map<int32_t, std::map<RaplDomain, double>>, double>
@@ -46,14 +46,14 @@ namespace optkit::core::energy::rapl
         virtual std::unordered_map<std::string, double> aggregate() override { return {}; }
 
     private:
-        std::unique_ptr<optkit::core::energy::rapl::RaplPerfReader> rapl_reader;
+        std::unique_ptr<optkit::energy::rapl::RaplPerfReader> rapl_reader;
         RaplConfig rapl_config;
     };
 
     // Overloading << for map with RaplDomain as keys
-    std::string to_string(const std::map<optkit::core::energy::rapl::RaplDomain, double> &map);
-    std::ostream &operator<<(std::ostream &os, const std::map<optkit::core::energy::rapl::RaplDomain, double> &map);
+    std::string to_string(const std::map<optkit::energy::rapl::RaplDomain, double> &map);
+    std::ostream &operator<<(std::ostream &os, const std::map<optkit::energy::rapl::RaplDomain, double> &map);
 
-} // namespace optkit::core::energy::rapl
+} // namespace optkit::energy::rapl
 
-using optkit::core::energy::rapl::operator<<; // make available to global namespace
+using optkit::energy::rapl::operator<<; // make available to global namespace

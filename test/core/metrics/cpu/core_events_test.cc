@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "core/metrics/cpu/core_events.hh"
 
-using namespace optkit::core::metrics::cpu;
+using namespace optkit::metrics::cpu;
 
 TEST(CoreEventsTest, ToStringReturnsValidNameForAllKnownEvents)
 {

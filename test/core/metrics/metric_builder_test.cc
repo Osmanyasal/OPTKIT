@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include "utils/metric_builder.hh"
 
-using namespace optkit::core::metrics;
+using namespace optkit::metrics;
 
 // Note that, event numbers (hex format) are not important here, we do not measure any events we just test the behaviour of MetricBuilder<uint64_t>.
 
