@@ -89,7 +89,7 @@ namespace optkit::energy::rapl
 
         os << "Event=" << domain_info.event << ", "
            << "Config=" << std::hex << "0x" << domain_info.config << ", "
-           << "scale=" << std::dec << scale_scf << ", "
+           << "scale=" << std::dec << std::fixed << scale_scf << ", "
            << "units=" << domain_info.units;
         return os;
     }
