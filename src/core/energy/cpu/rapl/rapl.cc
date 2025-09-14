@@ -83,10 +83,6 @@ namespace optkit::energy::rapl
 
     std::ostream &operator<<(std::ostream &os, const optkit::energy::rapl::RaplDomainInfo &domain_info)
     {
-        std::ostringstream stream;
-        stream << std::scientific << domain_info.scale;
-        std::string scale_scf = stream.str();
-
         os << "Event=" << domain_info.event << ", "
            << "Config=" << std::hex << "0x" << domain_info.config << ", "
            << "scale=" << std::dec << std::fixed << domain_info.scale << ", "
