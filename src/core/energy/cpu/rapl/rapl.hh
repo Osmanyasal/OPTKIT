@@ -5,6 +5,8 @@
 #include <sstream>
 #include <iomanip>
 #include "utils/logging/logger.hh"
+#include <limits>
+
 namespace optkit::energy::rapl
 {
     /**
