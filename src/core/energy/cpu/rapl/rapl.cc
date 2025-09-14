@@ -86,7 +86,7 @@ namespace optkit::energy::rapl
         std::cout << domain_info.scale << "\n";
         os << "Event=" << domain_info.event << ", "
            << "Config=" << std::hex << "0x" << domain_info.config << ", "
-           << "scale=" << std::dec << std::fixed << std::setprecision(std::numeric_limits<double>::max_digits10) << domain_info.scale << ", "
+           << "scale=" << std::dec << std::scientific << std::setprecision(std::numeric_limits<double>::max_digits10) << domain_info.scale << ", "
            << "units=" << domain_info.units;
         return os;
     }
