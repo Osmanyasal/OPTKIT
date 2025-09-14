@@ -1,5 +1,7 @@
-#pragma once
+#pragma once,
 
+#include <sys/ioctl.h>
+#include <linux/perf_event.h>
 #include <memory>
 #include <ostream>
 #include <map>
@@ -8,16 +10,28 @@
 #include "utils/base_profiler.hh"
 #include "core/query.hh"
 #include "core/energy/cpu/rapl/query_rapl.hh"
-#include "core/energy/cpu/rapl/profiler_config.hh"
-#include "core/energy/cpu/rapl/rapl_perf_reader.hh"
 #include "core/energy/cpu/rapl/rapl_utils.hh"
+
 namespace optkit::energy::rapl
 {
-
+    /**
+     * @brief Rapl Profiler
+     *
+     * This class provides a profiler for reading energy consumption data from RAPL (Running Average Power Limit) domains.
+     * It inherits from the BaseProfiler class and implements methods to enable, disable, read, and aggregate energy data.
+     *
+     * The profiler can be configured using the ProfilerConfig structure, which allows specifying the block name,
+     * measurement type, and other options.
+     *
+     * The read method returns a map where the keys are socket IDs and the values are maps of RAPL domains to their corresponding energy readings in Joules.
+     *
+     * @see BaseProfiler
+     * @see ProfilerConfig
+     */
     class RaplProfiler : public BaseProfiler<std::map<int32_t, std::map<RaplDomain, double>>, double>
     {
     public:
-        RaplProfiler(const ProfilerConfig &profiler_config, const RaplConfig &config = RaplConfig{});
+        RaplProfiler(const ProfilerConfig &profiler_config);
         virtual ~RaplProfiler();
 
         /**
@@ -46,13 +60,13 @@ namespace optkit::energy::rapl
         virtual std::unordered_map<std::string, double> aggregate() override { return {}; }
 
     private:
-        std::unique_ptr<optkit::energy::rapl::RaplPerfReader> rapl_reader;
-        RaplConfig rapl_config;
+        std::vector<std::vector<int32_t>> fd_package_domain; // file descriptors [package(socket)][domain]
     };
 
     // Overloading << for map with RaplDomain as keys
     std::string to_string(const std::map<optkit::energy::rapl::RaplDomain, double> &map);
     std::ostream &operator<<(std::ostream &os, const std::map<optkit::energy::rapl::RaplDomain, double> &map);
+    std::ostream &operator<<(std::ostream &os, const std::map<int32_t, std::map<optkit::energy::rapl::RaplDomain, double>> &map);
 
 } // namespace optkit::energy::rapl
 

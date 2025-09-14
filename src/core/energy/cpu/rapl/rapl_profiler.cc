@@ -2,39 +2,46 @@
 
 namespace optkit::energy::rapl
 {
-    RaplProfiler::RaplProfiler(const ProfilerConfig &profiler_config, const RaplConfig &config) : BaseProfiler{profiler_config}, rapl_config{config}
+    RaplProfiler::RaplProfiler(const ProfilerConfig &profiler_config) : BaseProfiler{profiler_config}
     {
-        const std::map<int32_t, std::vector<int32_t>> &packages = Query::detect_cpu_packages();
-        const std::vector<RaplDomainInfo> &avail_domains = QueryRapl::rapl_domain_info(); // Monitor for all available domains
+        auto &packages = Query::detect_cpu_packages();
+        auto &avail_domains = QueryRapl::rapl_domain_info(); // Monitor for all available domains
+        auto s_type = optkit::utils::read_file("/sys/bus/event_source/devices/power/type");
+        auto type = std::atoi(s_type.c_str());
 
-        // std::cout << rapl_config << std::endl;
-        switch (rapl_config.read_method)
+        struct perf_event_attr attr;
+
+        fd_package_domain.resize(packages.size());
+
+        for (size_t package = 0; package < packages.size(); package++)
         {
-        case RaplReadMethods::PERF:
-            rapl_reader.reset(new RaplPerfReader{{packages, avail_domains, rapl_config}});
-            break;
+            fd_package_domain[package].resize(avail_domains.size());
 
-        case RaplReadMethods::MSR:
-            // TODO:[FUTURE_WORK] Implement MSR reader
-            OPTKIT_CORE_WARN("MSR not implemented in this version! Switching to PERF.");
-            rapl_reader.reset(new RaplPerfReader{{packages, avail_domains, rapl_config}});
+            for (auto domain = 0u; domain < avail_domains.size(); domain++)
+            {
+                auto selected_domain = avail_domains[domain];
+                fd_package_domain[package][domain] = -1;
 
-            break;
+                ::memset(&attr, 0x0, sizeof(attr));
+                attr.type = type;
+                attr.config = selected_domain.config;
 
-        case RaplReadMethods::POWERCAP:
-            // TODO:[FUTURE_WORK] Implement POWERCAP reader
-            OPTKIT_CORE_WARN("POWERCAP not implemented in this version! Switching to PERF.");
-            rapl_reader.reset(new RaplPerfReader{{packages, avail_domains, rapl_config}});
-            break;
-        default:
-            OPTKIT_CORE_WARN("unknown read method!");
-            break;
+                if (attr.config == 0)
+                    continue;
+
+                fd_package_domain[package][domain] = ::syscall(__NR_perf_event_open, &attr, -1, packages.at(package).at(0), -1, 0);
+
+                if (fd_package_domain[package][domain] < 0)
+                {
+                    OPTKIT_CORE_ERROR("RAPL PERF: SOMETHING WENT WRONG!! {}", fd_package_domain[package][domain]);
+                }
+            }
         }
     }
 
     RaplProfiler::~RaplProfiler()
     {
-        if (OPT_LIKELY(this->rapl_config.dump_results_to_file))
+        if (OPT_LIKELY(this->config.dump_results_to_file))
         {
             read_and_store();
             this->save();
@@ -49,8 +56,10 @@ namespace optkit::energy::rapl
             auto duration_ms = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000.0f;
             OPTKIT_CORE_INFO("Duration: {}", duration_ms);
         }
-        std::cout << "deleting\n";
-        delete rapl_reader.release();
+        // Close all file descriptions!
+        for (auto package = 0u; package < Query::detect_cpu_packages().size(); package++)
+            for (auto domain = 0u; domain < QueryRapl::rapl_domain_info().size(); domain++)
+                ::close(fd_package_domain[package][domain]);
     }
 
     void RaplProfiler::disable()
@@ -61,10 +70,33 @@ namespace optkit::energy::rapl
     {
         OPTKIT_CORE_WARN("Rapl is always enabled");
     }
-
     std::map<int32_t, std::map<RaplDomain, double>> RaplProfiler::read()
     {
-        return rapl_reader->read();
+        std::map<int32_t, std::map<RaplDomain, double>> result;
+        int64_t value = 0;
+        const auto &packages = Query::detect_cpu_packages();
+        const auto &avail_domains = QueryRapl::rapl_domain_info();
+
+        for (size_t package = 0; package < packages.size(); ++package)
+        {
+            for (size_t domain = 0; domain < avail_domains.size(); ++domain)
+            {
+                const auto &selected_domain = avail_domains[domain];
+                int fd = fd_package_domain[package][domain];
+
+                if (fd == -1)
+                    continue;
+
+                if (::read(fd, &value, sizeof(value)) == sizeof(value))
+                {
+                    if (OPT_LIKELY(this->config.is_reset_after_read))
+                        ::ioctl(fd, PERF_EVENT_IOC_RESET, 0);
+
+                    result[static_cast<int32_t>(package)][selected_domain.domain] = static_cast<double>(value) * selected_domain.scale;
+                }
+            }
+        }
+        return result;
     }
 
     std::string RaplProfiler::to_json()
@@ -86,13 +118,28 @@ namespace optkit::energy::rapl
     // Overloading << for map with RaplDomain as keys
     std::ostream &operator<<(std::ostream &os, const std::map<optkit::energy::rapl::RaplDomain, double> &map)
     {
-
         for (const auto &item : map)
-        {
             os << item.first << ": " << item.second << "\n";
-        }
-
         return os;
     }
 
+    std::ostream &operator<<(std::ostream &os, const std::map<int32_t, std::map<optkit::energy::rapl::RaplDomain, double>> &map)
+    {
+        const std::vector<optkit::energy::rapl::RaplDomainInfo> &avail_domains = optkit::energy::rapl::QueryRapl::rapl_domain_info();
+        for (const auto &pair : map)
+        {
+            os << "\tPackage " << pair.first << "\n";
+            for (const auto &innerpair : pair.second)
+            {
+                for (const auto &info : avail_domains)
+                {
+                    if (info.domain == innerpair.first)
+                    {
+                        os << "\t\t" << info.event << ": " << innerpair.second << " " << info.units << " Consumed.\n";
+                    }
+                }
+            }
+        }
+        return os;
+    }
 } // namespace optkit

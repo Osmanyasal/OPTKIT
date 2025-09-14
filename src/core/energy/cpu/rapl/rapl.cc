@@ -13,12 +13,11 @@ namespace optkit::energy::rapl
         {static_cast<int32_t>(RaplDomain::ALL), "All domains"}};
 
     const std::unordered_map<int32_t, std::string> rapl_read_method_name_mapping = {
-        {static_cast<int32_t>(RaplReadMethods::PERF), "PERF"},
-        {static_cast<int32_t>(RaplReadMethods::MSR), "MSR"},
-        {static_cast<int32_t>(RaplReadMethods::POWERCAP), "POWERCAP"},
-        {static_cast<int32_t>(RaplReadMethods::SYSFS), "SYSFS"}};
+        {static_cast<int32_t>(RaplReadMethods::PERF), "perf"},
+        {static_cast<int32_t>(RaplReadMethods::MSR), "msr"},
+        {static_cast<int32_t>(RaplReadMethods::SYSFS), "sysfs"}};
 
-    RaplDomain mapMetricNameToRaplDomain(const std::string &metric_name)
+    RaplDomain metric_name_to_rapl_domain(const std::string &metric_name)
     {
         // Implement the mapping logic based on the rapl_domain_name_mapping
         auto it = optkit::energy::rapl::rapl_domain_name_mapping.begin();
@@ -97,17 +96,16 @@ namespace optkit::energy::rapl
 
     std::ostream &operator<<(std::ostream &os, const optkit::energy::rapl::RaplReadMethods &read_method)
     {
-
         switch (read_method)
         {
         case optkit::energy::rapl::RaplReadMethods::PERF:
-            os << "Perf";
+            os << "perf";
             break;
         case optkit::energy::rapl::RaplReadMethods::MSR:
-            os << "MSR";
+            os << "msr";
             break;
-        case optkit::energy::rapl::RaplReadMethods::POWERCAP:
-            os << "PowerCap";
+        case optkit::energy::rapl::RaplReadMethods::SYSFS:
+            os << "sysfs";
             break;
         default:
             break;

@@ -9,7 +9,7 @@ namespace optkit::energy::rapl
 {
     /**
      * @brief All available rapl domain by 2023<br>
-     * check intel_rapl for more information.
+     * check intel_rapl and its AMD implementation for more detail.
      *
      */
     enum class RaplDomain
@@ -24,11 +24,11 @@ namespace optkit::energy::rapl
 
         END = (1 << 5),
 
-        ALL = 0b0011111, // All domains
+        ALL = 0x1F, // All domains
     };
     extern const std::unordered_map<int32_t, std::string> rapl_domain_name_mapping;
 
-    RaplDomain mapMetricNameToRaplDomain(const std::string &metric_name);
+    RaplDomain metric_name_to_rapl_domain(const std::string &metric_name);
 
     /**
      * @brief Rapl Read Methods
@@ -38,8 +38,7 @@ namespace optkit::energy::rapl
     {
         PERF = (1 << 0),
         MSR = (1 << 1),
-        POWERCAP = (1 << 2),
-        SYSFS = (1 << 3),
+        SYSFS = (1 << 2),
     };
 
     extern const std::unordered_map<int32_t, std::string> rapl_read_method_name_mapping;
@@ -61,4 +60,4 @@ namespace optkit::energy::rapl
     std::ostream &operator<<(std::ostream &os, const optkit::energy::rapl::RaplDomainInfo &domain_info);
     std::ostream &operator<<(std::ostream &os, const optkit::energy::rapl::RaplReadMethods &read_method);
 
-} // namespace optkit::rapl
+} // namespace optkit::energy::rapl

@@ -1,11 +1,7 @@
 #pragma once
 
 #include "utils/deployment/deployment_config.hh"
-#include "core/energy/cpu/rapl/rapl.hh"
-#include "core/energy/cpu/rapl/rapl_perf_reader.hh"
 #include "core/energy/cpu/rapl/rapl_profiler.hh"
-#include "core/energy/cpu/rapl/rapl_utils.hh"
-#include "core/energy/cpu/rapl/query_rapl.hh"
 #include "core/query.hh"
 
 /*

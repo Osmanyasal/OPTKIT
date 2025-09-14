@@ -61,7 +61,7 @@ namespace optkit::energy::rapl
                         // std::string units = metricJson["units"];
                         // std::string description = metricJson["description"];
 
-                        RaplDomain domain = mapMetricNameToRaplDomain(metric_name);
+                        RaplDomain domain = metric_name_to_rapl_domain(metric_name);
                         inner_map[domain] = value;
                     }
                     rapl_map[package_number] = inner_map;

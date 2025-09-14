@@ -8,8 +8,8 @@ namespace optkit::energy::rapl
     {
         int32_t result = 0;
 
-        if (is_rapl_powercap_avail())
-            result = result | (int32_t)rapl::RaplReadMethods::POWERCAP;
+        if (is_rapl_sysfs_avail())
+            result = result | (int32_t)rapl::RaplReadMethods::SYSFS;
 
         if (is_rapl_perf_avail())
             result = result | (int32_t)rapl::RaplReadMethods::PERF;
@@ -36,13 +36,13 @@ namespace optkit::energy::rapl
             return false;
         }
     }
-    bool QueryRapl::is_rapl_powercap_avail()
+    bool QueryRapl::is_rapl_sysfs_avail()
     {
         if (optkit::utils::is_path_exists("/sys/class/powercap/intel-rapl/intel-rapl:0/"))
             return true;
         else
         {
-            OPTKIT_CORE_WARN("No powercap support found.");
+            OPTKIT_CORE_WARN("No sysfs support found.");
             return false;
         }
     }

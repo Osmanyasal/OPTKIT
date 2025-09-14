@@ -30,7 +30,7 @@ namespace optkit::energy::rapl
 
         static bool is_rapl_perf_avail();
 
-        static bool is_rapl_powercap_avail();
+        static bool is_rapl_sysfs_avail();
 
         static bool is_rapl_msr_avail();
 
