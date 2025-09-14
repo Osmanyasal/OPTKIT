@@ -88,8 +88,8 @@ namespace optkit::energy::rapl
         std::string scale_scf = stream.str();
 
         os << "Event=" << domain_info.event << ", "
-           << "Config=" << domain_info.config << ", "
-           << "scale=" << scale_scf << ", "
+           << "Config=" << std::hex << domain_info.config << ", "
+           << "scale=" << std::dec << scale_scf << ", "
            << "units=" << domain_info.units;
         return os;
     }
