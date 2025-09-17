@@ -29,11 +29,11 @@ int32_t main(int32_t argc, char **argv)
     OPTKIT_CPU_ENERGY(energy, "energy_monitoring");
 
     // Initialize RAPL
-    optkit::energy::rapl::RaplProfiler rapl{"energy_monitor", "rapl",
-                                            optkit::energy::rapl::RaplConfig{
-                                                optkit::energy::rapl::RaplReadMethods::PERF,
-                                                (int32_t)optkit::energy::rapl::RaplDomain::ALL,
-                                                true, false}};
+    optkit::energy::rapl::Profiler rapl{"energy_monitor", "rapl",
+                                        optkit::energy::rapl::RaplConfig{
+                                            optkit::energy::rapl::RaplReadMethods::PERF,
+                                            (int32_t)optkit::energy::rapl::RaplDomain::ALL,
+                                            true, false}};
 
     double total_energy = 0.0;
 

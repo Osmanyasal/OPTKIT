@@ -1,4 +1,4 @@
-#include "core/energy/cpu/rapl/rapl_utils.hh"
+#include "core/energy/cpu/rapl/utils.hh"
 
 namespace optkit::energy::rapl
 {

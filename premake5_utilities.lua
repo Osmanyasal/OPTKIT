@@ -120,6 +120,24 @@ function system_init()
     end
 end
 
+function get_nvml_include()
+    if os.isdir("/usr/local/cuda/include") then
+        return "/usr/local/cuda/include"
+    elseif os.isdir("/usr/local/cuda-12.9/include") then
+        return "/usr/local/cuda-12.9/include"
+    end
+    return nil
+end
+
+function get_rocm_include()
+    if os.isdir("/opt/rocm/include") then
+        return "/opt/rocm/include"
+    elseif os.isdir("/opt/rocm-5.7.1/include") then
+        return "/opt/rocm-5.7.1/include"
+    end
+    return nil
+end
+
 function dynamic_lib_exists(libname)
     local pipe = io.popen("ldconfig -p 2>/dev/null | grep lib" .. libname .. ".so")
     if not pipe then return false end

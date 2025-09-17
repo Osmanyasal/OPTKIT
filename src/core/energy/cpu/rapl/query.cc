@@ -1,5 +1,5 @@
 
-#include "core/energy/cpu/rapl/query_rapl.hh"
+#include "core/energy/cpu/rapl/query.hh"
 
 namespace optkit::energy::rapl
 {

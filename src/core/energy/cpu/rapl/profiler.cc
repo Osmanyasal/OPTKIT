@@ -1,10 +1,10 @@
-#include "core/energy/cpu/rapl/rapl_profiler.hh"
+#include "core/energy/cpu/rapl/profiler.hh"
 
 namespace optkit::energy::rapl
 {
-    RaplProfiler::RaplProfiler(const ProfilerConfig &profiler_config) : BaseProfiler{profiler_config}
+    Profiler::Profiler(const ProfilerConfig &profiler_config) : BaseProfiler{profiler_config}
     {
-        auto &packages = Query::detect_cpu_packages();
+        auto &packages = optkit::Query::detect_cpu_packages();
         auto &avail_domains = Query::rapl_domain_info(); // Monitor for all available domains
         auto s_type = optkit::utils::read_file("/sys/bus/event_source/devices/power/type");
         auto type = std::atoi(s_type.c_str());
@@ -39,7 +39,7 @@ namespace optkit::energy::rapl
         }
     }
 
-    RaplProfiler::~RaplProfiler()
+    Profiler::~Profiler()
     {
         if (OPT_LIKELY(this->config.dump_results_to_file))
         {
@@ -57,24 +57,24 @@ namespace optkit::energy::rapl
             OPTKIT_CORE_INFO("Duration: {}", duration_ms);
         }
         // Close all file descriptions!
-        for (auto package = 0u; package < Query::detect_cpu_packages().size(); package++)
+        for (auto package = 0u; package < optkit::Query::detect_cpu_packages().size(); package++)
             for (auto domain = 0u; domain < Query::rapl_domain_info().size(); domain++)
                 ::close(fd_package_domain[package][domain]);
     }
 
-    void RaplProfiler::disable()
+    void Profiler::disable()
     {
         OPTKIT_CORE_WARN("Rapl cannot be disabled");
     }
-    void RaplProfiler::enable()
+    void Profiler::enable()
     {
         OPTKIT_CORE_WARN("Rapl is always enabled");
     }
-    std::map<int32_t, std::map<RaplDomain, double>> RaplProfiler::read()
+    std::map<int32_t, std::map<RaplDomain, double>> Profiler::read()
     {
         std::map<int32_t, std::map<RaplDomain, double>> result;
         int64_t value = 0;
-        const auto &packages = Query::detect_cpu_packages();
+        const auto &packages = optkit::Query::detect_cpu_packages();
         const auto &avail_domains = Query::rapl_domain_info();
 
         for (size_t package = 0; package < packages.size(); ++package)
@@ -99,7 +99,7 @@ namespace optkit::energy::rapl
         return result;
     }
 
-    std::string RaplProfiler::to_json()
+    std::string Profiler::to_json()
     {
         std::stringstream ss;
         ss << "[\n";

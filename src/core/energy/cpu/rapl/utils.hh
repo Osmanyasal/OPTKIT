@@ -4,7 +4,7 @@
 #include <sstream>
 #include "utils/json.hh"
 #include "core/energy/cpu/rapl/rapl.hh"
-#include "core/energy/cpu/rapl/query_rapl.hh"
+#include "core/energy/cpu/rapl/query.hh"
 
 namespace optkit::energy::rapl
 { // vector<duration, map<package_num, map<rapl_domain, value>>>

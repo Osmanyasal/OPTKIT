@@ -1,5 +1,6 @@
 #include <omp.h>
 #include "optkit.hh"
+#include "core/energy/gpu/query.hh"
 #include <immintrin.h> // AVX intrinsics
 
 #define VECTOR_SIZE 1000000
@@ -20,10 +21,64 @@ int32_t main(int32_t argc, char **argv)
 
     OPTKIT_CPU_ENERGY(main, "main");
 
+    // GPU Query Methods Test
+    std::cout << "=== GPU Query Methods Test ===" << std::endl;
+
+    // Check vendor-specific power monitoring availability
+    std::cout << "NVIDIA power available: " << optkit::energy::gpu::Query::is_nvidia_power_available() << std::endl;
+    std::cout << "AMD power available: " << optkit::energy::gpu::Query::is_amd_power_available() << std::endl;
+    std::cout << "Intel GPU power available: " << optkit::energy::gpu::Query::is_intel_gpu_power_available() << std::endl;
+
+    // Get available power measurement methods
+    int32_t methods = optkit::energy::gpu::Query::get_available_power_methods();
+    std::cout << "Available power methods (bitmask): " << methods << std::endl;
+
+    // Check GPU capabilities
+    std::cout << "GPU frequency control available: " << optkit::energy::gpu::Query::is_gpu_frequency_control_available() << std::endl;
+    std::cout << "GPU temperature monitoring available: " << optkit::energy::gpu::Query::is_gpu_temperature_available() << std::endl;
+    std::cout << "GPU utilization monitoring available: " << optkit::energy::gpu::Query::is_gpu_utilization_monitoring_available() << std::endl;
+    std::cout << "GPU memory power monitoring available: " << optkit::energy::gpu::Query::is_gpu_memory_power_available() << std::endl;
+
+    // Get power-capable GPUs
+    auto gpus = optkit::energy::gpu::Query::get_power_capable_gpus();
+    std::cout << "Found " << gpus.size() << " power-capable GPUs:" << std::endl;
+    for (const auto &gpu : gpus)
+    {
+        std::cout << "  GPU " << gpu.id << ": " << gpu.name
+                  << " (Vendor: " << optkit::energy::gpu::to_string(gpu.vendor) << ")"
+                  << " Max Power: " << gpu.max_power_watts << "W"
+                  << " Current Power: " << gpu.current_power_watts << "W" << std::endl;
+        std::cout << "    Power monitoring: " << gpu.has_power_monitoring
+                  << ", Frequency control: " << gpu.has_frequency_control
+                  << ", Temperature monitoring: " << gpu.has_temperature_monitoring << std::endl;
+
+        // Get power limits for this GPU
+        auto limits = optkit::energy::gpu::Query::get_gpu_power_limits(gpu.id);
+        std::cout << "    Power limits - Min: " << limits.min_power_watts << "W"
+                  << ", Max: " << limits.max_power_watts << "W"
+                  << ", Default: " << limits.default_power_watts << "W"
+                  << ", Current limit: " << limits.current_limit_watts << "W"
+                  << ", Configurable: " << limits.is_configurable << std::endl;
+    }
+
+    // Get system-wide GPU power info
+    auto system_info = optkit::energy::gpu::Query::get_system_gpu_power_info();
+    std::cout << "System GPU Power Info:" << std::endl;
+    std::cout << "  Total GPU power budget: " << system_info.total_gpu_power_budget_watts << "W" << std::endl;
+    std::cout << "  Current GPU power usage: " << system_info.current_gpu_power_usage_watts << "W" << std::endl;
+    std::cout << "  Available GPU power headroom: " << system_info.available_gpu_power_headroom_watts << "W" << std::endl;
+    std::cout << "  Number of power-monitored GPUs: " << system_info.num_power_monitored_gpus << std::endl;
+
+    // Cleanup vendor libraries
+    optkit::energy::gpu::Query::cleanup_vendor_libraries();
+
+    std::cout << "=== End GPU Query Test ===" << std::endl;
+
+    std::cout << optkit::Query::is_smt_enabled() << "\n";
     sleep(5);
 
     // return 0;
-    auto result = optkit::energy::rapl::QueryRapl::rapl_domain_info();
+    auto result = optkit::energy::rapl::Query::rapl_domain_info();
 
     // print result
     std::cout << "Detected RAPL Domains:" << std::endl;

@@ -4,8 +4,8 @@
 #include <unordered_map>
 #include <sstream>
 #include <iomanip>
-#include "utils/logging/logger.hh"
 #include <limits>
+#include "utils/logging/logger.hh"
 
 namespace optkit::energy::rapl
 {

@@ -31,6 +31,25 @@ function base_project_setup()
     -- Always link static spdlog manually
     linkoptions { LIB_SPD_PATH .. "/build/libspdlog.a" }
 
+    if dynamic_lib_exists("nvidia-ml") then
+        local nvml_include = get_nvml_include()
+        if nvml_include then
+            includedirs { nvml_include }
+        end
+            libdirs { "/usr/lib/x86_64-linux-gnu" }
+            links { "nvidia-ml" }
+    end
+
+    if dynamic_lib_exists("rocm_smi64") then
+        local rocm_include = get_rocm_include()
+        if rocm_include then
+            includedirs { rocm_include }
+        end
+        libdirs { "/opt/rocm/lib","/usr/include/" }
+        links { "rocm_smi64" }
+    end
+
+
     -- Get architecture using uname -m
     local handle = io.popen("uname -m")
     local arch = handle and handle:read("*l") or nil
@@ -67,7 +86,8 @@ function base_project_setup()
         "-O2",
         "-fopenmp",
         "-fPIC",
-        "-march=native -funroll-loops -ftree-vectorize -fopt-info-vec",
+        "-march=native -funroll-loops -ftree-vectorize",
+        -- "-fopt-info-vec",
         "-DCONF_LOG_PRINT_GUID_LENGTH=10",
         "-DCONF_LOG_DISABLE_DEBUG=1",
         "-DCONF_LOG_DISABLE_TRACE=1",
@@ -130,6 +150,24 @@ function test_project_setup()
     }
     linkoptions { "-fopenmp" }
     linkoptions { "./bin/Test/liboptkit_static.a" }
+    
+    if dynamic_lib_exists("nvidia-ml") then
+        local nvml_include = get_nvml_include()
+        if nvml_include then
+            includedirs { nvml_include }
+        end
+            libdirs { "/usr/lib/x86_64-linux-gnu" }
+            links { "nvidia-ml" }
+    end
+
+    if dynamic_lib_exists("rocm_smi64") then
+        local rocm_include = get_rocm_include()
+        if rocm_include then
+            includedirs { rocm_include }
+        end
+        libdirs { "/opt/rocm/lib", "/usr/include/" }
+        links { "rocm_smi64" }
+    end
 
     -- filter "configurations:Release"
     -- optimize "On"
@@ -158,7 +196,8 @@ function test_project_setup()
         "-Wall", -- Enable all warnings
         "-O2",   -- Explicitly no optimization
         vectorisation_flag,
-        "-march=native -funroll-loops -ftree-vectorize -fopt-info-vec",
+        "-march=native -funroll-loops -ftree-vectorize",
+        -- "-fopt-info-vec",
         "-fopenmp", -- Enable OpenMP if needed
         "-fPIC",    -- Position-independent code,
         "-DOPTKIT_TESTING=1"

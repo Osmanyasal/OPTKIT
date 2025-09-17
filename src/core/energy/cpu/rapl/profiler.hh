@@ -1,4 +1,4 @@
-#pragma once,
+#pragma once
 
 #include <sys/ioctl.h>
 #include <linux/perf_event.h>
@@ -9,13 +9,13 @@
 #include "utils/utils.hh"
 #include "utils/base_profiler.hh"
 #include "core/query.hh"
-#include "core/energy/cpu/rapl/query_rapl.hh"
-#include "core/energy/cpu/rapl/rapl_utils.hh"
+#include "core/energy/cpu/rapl/query.hh"
+#include "core/energy/cpu/rapl/utils.hh"
 
 namespace optkit::energy::rapl
 {
     /**
-     * @brief Rapl Profiler
+     * @brief Rapl Profiler (using perf_event_open)
      *
      * This class provides a profiler for reading energy consumption data from RAPL (Running Average Power Limit) domains.
      * It inherits from the BaseProfiler class and implements methods to enable, disable, read, and aggregate energy data.
@@ -28,11 +28,11 @@ namespace optkit::energy::rapl
      * @see BaseProfiler
      * @see ProfilerConfig
      */
-    class RaplProfiler : public BaseProfiler<std::map<int32_t, std::map<RaplDomain, double>>, double>
+    class Profiler : public BaseProfiler<std::map<int32_t, std::map<RaplDomain, double>>, double>
     {
     public:
-        RaplProfiler(const ProfilerConfig &profiler_config);
-        virtual ~RaplProfiler();
+        Profiler(const ProfilerConfig &profiler_config);
+        virtual ~Profiler();
 
         /**
          * @brief Disables this rapl profiler.

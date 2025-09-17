@@ -39,8 +39,9 @@ write_headers() {
     echo -e "\n// Headers" >> "$SRC_CONFIG_FILE"
     check_header "linux/perf_event.h"
     check_header "msr_safe.h"
-    check_header "nvml.h"
-    check_header "rocm_smi/rocm_smi.h"
+    check_header "/usr/local/cuda/include/nvml.h"
+    check_header "/opt/rocm/include/rocm_smi/rocm_smi.h"
+    check_header "/usr/include/rocm_smi/rocm_smi.h"
 }
 
 write_compiler_macro() {

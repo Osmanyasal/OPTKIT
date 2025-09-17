@@ -10,6 +10,13 @@
 #include <map>
 #include <unistd.h>
 
+// Forward declaration
+namespace optkit::utils
+{
+    // this is inside utils.hh but utils also includes query.hh so to avoid cyclic include, we forward declare it here.
+    std::string read_file(const std::string &location);
+}
+
 namespace optkit
 {
     /**
@@ -47,7 +54,7 @@ namespace optkit
                 return false; // file missing or empty
             if (!content.empty() && content.back() == '\n')
                 content.pop_back();
-            return std::strtol(content.c_str(), nullptr, 10) != 0;
+            return static_cast<bool>(std::strtol(content.c_str(), nullptr, 10) != 0);
         }
 
         /**
