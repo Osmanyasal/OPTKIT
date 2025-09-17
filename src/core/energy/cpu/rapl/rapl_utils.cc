@@ -5,7 +5,7 @@ namespace optkit::energy::rapl
 
     nlohmann::json to_json(const char *event_name, const std::vector<std::pair<double, std::map<int32_t, std::map<RaplDomain, double>>>> &rapl_pair_list)
     {
-        const std::vector<RaplDomainInfo> &avail_domains = QueryRapl::rapl_domain_info();
+        const std::vector<RaplDomainInfo> &avail_domains = Query::rapl_domain_info();
         nlohmann::json result;
 
         for (const auto &rapl_pair : rapl_pair_list)

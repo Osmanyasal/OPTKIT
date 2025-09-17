@@ -11,10 +11,10 @@
 
 #include "core/energy/cpu/rapl/rapl.hh"
 #include "utils/utils.hh"
-namespace optkit::energy::rapl
+namespace optkit::energy::gpu
 {
     /**
-     * @brief  ASK CPU RAPL related queries here<br>
+     * @brief  ASK GPU related queries here<br>
      *
      */
     class Query final
@@ -36,7 +36,6 @@ namespace optkit::energy::rapl
 
         /**
          * @brief Returns rapl domain info in the system
-         *
          *
          * @return const ref of std::vector<RaplDomainInfo> static object!
          */

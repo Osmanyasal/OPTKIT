@@ -2,6 +2,7 @@
 
 #include <ostream>
 #include <iostream>
+#include <string>
 #include <sstream>
 #include <iomanip>
 #include <vector>
@@ -39,7 +40,15 @@ namespace optkit
          */
         static const std::map<int32_t, std::vector<int32_t>> &detect_cpu_packages();
 
-        static bool is_smt_enabled() { return true; }
+        static bool is_smt_enabled()
+        {
+            std::string content = optkit::utils::read_file("/sys/devices/system/cpu/smt/active");
+            if (content.empty())
+                return false; // file missing or empty
+            if (!content.empty() && content.back() == '\n')
+                content.pop_back();
+            return std::strtol(content.c_str(), nullptr, 10) != 0;
+        }
 
         /**
          * @brief Returns current perf_event_paranoid value from "/proc/sys/kernel/perf_event_paranoid"<br>

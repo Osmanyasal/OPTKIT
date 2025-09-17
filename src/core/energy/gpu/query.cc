@@ -1,7 +1,7 @@
 
 #include "core/energy/cpu/rapl/query_rapl.hh"
 
-namespace optkit::energy::rapl
+namespace optkit::energy::gpu
 {
 
     int32_t Query::avail_rapl_read_methods()

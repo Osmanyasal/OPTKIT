@@ -5,7 +5,7 @@ namespace optkit::energy::rapl
     RaplProfiler::RaplProfiler(const ProfilerConfig &profiler_config) : BaseProfiler{profiler_config}
     {
         auto &packages = Query::detect_cpu_packages();
-        auto &avail_domains = QueryRapl::rapl_domain_info(); // Monitor for all available domains
+        auto &avail_domains = Query::rapl_domain_info(); // Monitor for all available domains
         auto s_type = optkit::utils::read_file("/sys/bus/event_source/devices/power/type");
         auto type = std::atoi(s_type.c_str());
 
@@ -58,7 +58,7 @@ namespace optkit::energy::rapl
         }
         // Close all file descriptions!
         for (auto package = 0u; package < Query::detect_cpu_packages().size(); package++)
-            for (auto domain = 0u; domain < QueryRapl::rapl_domain_info().size(); domain++)
+            for (auto domain = 0u; domain < Query::rapl_domain_info().size(); domain++)
                 ::close(fd_package_domain[package][domain]);
     }
 
@@ -75,7 +75,7 @@ namespace optkit::energy::rapl
         std::map<int32_t, std::map<RaplDomain, double>> result;
         int64_t value = 0;
         const auto &packages = Query::detect_cpu_packages();
-        const auto &avail_domains = QueryRapl::rapl_domain_info();
+        const auto &avail_domains = Query::rapl_domain_info();
 
         for (size_t package = 0; package < packages.size(); ++package)
         {
@@ -125,7 +125,7 @@ namespace optkit::energy::rapl
 
     std::ostream &operator<<(std::ostream &os, const std::map<int32_t, std::map<optkit::energy::rapl::RaplDomain, double>> &map)
     {
-        const std::vector<optkit::energy::rapl::RaplDomainInfo> &avail_domains = optkit::energy::rapl::QueryRapl::rapl_domain_info();
+        const std::vector<optkit::energy::rapl::RaplDomainInfo> &avail_domains = optkit::energy::rapl::Query::rapl_domain_info();
         for (const auto &pair : map)
         {
             os << "\tPackage " << pair.first << "\n";
