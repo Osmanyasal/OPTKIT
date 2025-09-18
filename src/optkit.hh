@@ -3,19 +3,7 @@
 #include <string>
 #include <vector>
 #include <cstdlib>
-
-#include "utils/utils.hh"
-// =============================================
-// Include subsystem headers
-// =============================================
-
-// based on the configuration, each module is responsible including "ways" for the module.
-#include "core/pmu/cpu/module.hh" // if use_msr is enabled, include defaults + use_msr module likewise for perf. same macro but different classes is defined for them.
-#include "core/energy/cpu/rapl/module.hh"
-#include "core/frequency/module.hh"
-#include "core/disk/module.hh"
-#include "core/temperature/module.hh"
-#include "core/metrics/module.hh"
+#include "core/module.hh"
 
 namespace optkit
 {

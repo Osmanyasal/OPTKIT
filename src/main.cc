@@ -21,6 +21,55 @@ int32_t main(int32_t argc, char **argv)
 
     OPTKIT_CPU_ENERGY(main, "main");
 
+    std::cout << "GPU Device Query Example" << std::endl;
+    std::cout << "========================" << std::endl;
+
+    // Initialize GPU monitoring
+    if (!Query::init())
+    {
+        std::cerr << "Failed to initialize GPU monitoring libraries" << std::endl;
+        return 1;
+    }
+
+    // Get device count
+    uint32_t device_count = Query::get_device_count();
+    std::cout << "Found " << device_count << " GPU device(s)" << std::endl
+              << std::endl;
+
+    if (device_count == 0)
+    {
+        std::cout << "No GPU devices found. Make sure you have:" << std::endl;
+        std::cout << "- NVIDIA GPU with NVML library installed, or" << std::endl;
+        std::cout << "- AMD GPU with ROCm SMI library installed" << std::endl;
+        Query::shutdown();
+        return 0;
+    }
+
+    // Query each device
+    for (uint32_t i = 0; i < device_count; i++)
+    {
+        GpuDeviceInfo device_info = Query::deviceQuery(static_cast<int32_t>(i));
+        print_device_info(device_info);
+    }
+
+    // Alternative: Query a specific device by ID
+    std::cout << "Querying device 0 specifically:" << std::endl;
+    GpuDeviceInfo device_0 = Query::deviceQuery(0);
+    if (device_0.basic.vendor != GpuVendor::UNKNOWN)
+    {
+        std::cout << "Device 0: " << device_0.basic.device_name
+                  << " (" << device_0.basic.vendor_string << ")" << std::endl;
+    }
+    else
+    {
+        std::cout << "Device 0 not found or not supported" << std::endl;
+    }
+
+    // Cleanup
+    Query::shutdown();
+
+    return 0;
+
     // GPU Query Methods Test
     std::cout << "=== GPU Query Methods Test ===" << std::endl;
 
