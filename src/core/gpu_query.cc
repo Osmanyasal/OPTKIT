@@ -6,15 +6,13 @@
 #include "core/gpu_query.hh"
 
 namespace optkit::gpu
-{
-    // NVML helper functions
-    static bool initialized = false;
-
-    // Static member definitions
+{ 
+    // define static variables
+    bool Query::initialized = false;
 #if OPTKIT_ENV_LIB_NVML
-    static std::vector<nvmlDevice_t> Query::gpu_handles;
+    std::vector<nvmlDevice_t> Query::gpu_handles;
 #elif OPTKIT_ENV_LIB_ROCM_SMI
-    static std::vector<uint32_t> Query::gpu_handles;
+    std::vector<uint32_t> Query::gpu_handles;
 #endif
 
     bool Query::init()
@@ -22,12 +20,12 @@ namespace optkit::gpu
 #if OPTKIT_ENV_LIB_NVML
         if (OPT_UNLIKELY(!initialized))
         {
-            nvmlReturn_t result = nvmlInit_v2();
+            nvmlReturn_t result = nvmlInit();
             initialized = (result == NVML_SUCCESS);
             for (uint32_t i = 0; i < get_device_count(); i++)
             {
                 nvmlDevice_t device;
-                result = nvmlDeviceGetHandleByIndex_v2(i, &device);
+                result = nvmlDeviceGetHandleByIndex(i, &device);
                 if (result == NVML_SUCCESS)
                 {
                     Query::gpu_handles.push_back(device);
@@ -77,7 +75,7 @@ namespace optkit::gpu
     {
 #if OPTKIT_ENV_LIB_NVML
         int32_t version;
-        nvmlReturn_t result = nvmlSystemGetCudaDriverVersion_v2(&version);
+        nvmlReturn_t result = nvmlSystemGetCudaDriverVersion(&version);
         if (result == NVML_SUCCESS)
         {
             int32_t major = NVML_CUDA_DRIVER_VERSION_MAJOR(version);
@@ -181,9 +179,9 @@ namespace optkit::gpu
         if (OPT_UNLIKELY(cached_count == UINT32_MAX))
         {
 #if OPTKIT_ENV_LIB_NVML
-            uint64_t count;
-            nvmlReturn_t result = nvmlDeviceGetCount_v2(&count);
-            cached_count = (result == NVML_SUCCESS) ? static_cast<uint32_t>(count) : 0;
+            uint32_t count;
+            nvmlReturn_t result = nvmlDeviceGetCount(&count);
+            cached_count = (result == NVML_SUCCESS) ? count : 0;
 #elif OPTKIT_ENV_LIB_ROCM_SMI
             uint32_t count;
             rsmi_status_t result = rsmi_num_monitor_devices(&count);
@@ -200,7 +198,7 @@ namespace optkit::gpu
     {
 #if OPTKIT_ENV_LIB_NVML
         nvmlDevice_t device;
-        nvmlReturn_t result = nvmlDeviceGetHandleByIndex_v2(device_index, &device);
+        nvmlReturn_t result = nvmlDeviceGetHandleByIndex(device_index, &device);
         if (result != NVML_SUCCESS)
             return false;
 
@@ -228,15 +226,26 @@ namespace optkit::gpu
     {
 #if OPTKIT_ENV_LIB_NVML
         nvmlDevice_t device;
-        nvmlReturn_t result = nvmlDeviceGetHandleByIndex_v2(device_index, &device);
+        nvmlReturn_t result = nvmlDeviceGetHandleByIndex(device_index, &device);
         if (result != NVML_SUCCESS)
             return false;
 
         unsigned int limit_mw;
-        result = nvmlDeviceGetPowerManagementLimit(device, &limit_mw);
+        NVML_EXEC_IF_SUPPORTS(
+            "nvmlDeviceGetPowerManagementLimit",
+            device,
+            &limit_mw,
+            result
+        );
         if (result == NVML_SUCCESS)
         {
             limit_watts = limit_mw / 1000.0; // Convert from milliwatts to watts
+            return true;
+        }
+        else if(result == NVML_ERROR_NOT_SUPPORTED)
+        {
+            limit_watts = 0.0; // Not supported
+            OPTKIT_INFO("NVML does not support power limit query on this device");
             return true;
         }
 #elif OPTKIT_ENV_LIB_ROCM_SMI
@@ -251,7 +260,7 @@ namespace optkit::gpu
     {
 #if OPTKIT_ENV_LIB_NVML
         nvmlDevice_t device;
-        nvmlReturn_t result = nvmlDeviceGetHandleByIndex_v2(device_index, &device);
+        nvmlReturn_t result = nvmlDeviceGetHandleByIndex(device_index, &device);
         if (result != NVML_SUCCESS)
             return false;
 
@@ -275,14 +284,13 @@ namespace optkit::gpu
 #endif
         return false;
     }
-#endif
 
     // NVIDIA device query helper functions
     bool get_device_info(unsigned int device_index, GpuDeviceInfo &info)
     {
 #if OPTKIT_ENV_LIB_NVML
         nvmlDevice_t device;
-        nvmlReturn_t result = nvmlDeviceGetHandleByIndex_v2(device_index, &device);
+        nvmlReturn_t result = nvmlDeviceGetHandleByIndex(device_index, &device);
         if (result != NVML_SUCCESS)
             return false;
 
@@ -316,18 +324,39 @@ namespace optkit::gpu
 
         // Get memory bus width
         unsigned int busWidth;
-        result = nvmlDeviceGetMemoryBusWidth(device, &busWidth);
+        NVML_EXEC_IF_SUPPORTS(
+            "nvmlDeviceGetMemoryBusWidth",
+            device,
+            &busWidth,
+            result
+        );
+
         if (result == NVML_SUCCESS)
         {
             info.memory.memory_bus_width_bits = busWidth;
         }
+        else if(result == NVML_ERROR_NOT_SUPPORTED)
+        {
+            info.memory.memory_bus_width_bits = 0; // Not supported
+            OPTKIT_INFO("NVML does not support memory bus width query on this device");
+        }
 
         // Get multiprocessor count
         unsigned int multiProcessorCount;
-        result = nvmlDeviceGetMultiProcessorCount(device, &multiProcessorCount);
+        NVML_EXEC_IF_SUPPORTS(
+            "nvmlDeviceGetMultiProcessorCount",
+            device,
+            &multiProcessorCount,
+            result
+        );
         if (result == NVML_SUCCESS)
         {
             info.compute.multiprocessor_count = multiProcessorCount;
+        }
+        else if(result == NVML_ERROR_NOT_SUPPORTED)
+        {
+            info.compute.multiprocessor_count = 0; // Not supported
+            OPTKIT_INFO("NVML does not support multiprocessor count query on this device");
         }
 
         // Get clock rates
@@ -939,7 +968,7 @@ namespace optkit::gpu
                     {
                         std::string device_id = optkit::utils::read_file(device_id_path);
                         device_id.erase(std::remove_if(device_id.begin(), device_id.end(), ::isspace), device_id.end());
-                        gpu_info.name = device_id;
+                        gpu_info.basic.name = device_id;
                     }
 
                     // Try to get a more descriptive name from modalias or other sources
@@ -948,40 +977,40 @@ namespace optkit::gpu
                     {
                         std::string modalias = optkit::utils::read_file(modalias_path);
                         // Extract useful info from modalias if available
-                        if (!modalias.empty() && gpu_info.name.empty())
+                        if (!modalias.empty() && gpu_info.basic.name.empty())
                         {
-                            gpu_info.name = "GPU Device";
+                            gpu_info.basic.name = "GPU Device";
                         }
                     }
 
                     // Fallback name based on vendor
-                    if (gpu_info.name.empty())
+                    if (gpu_info.basic.name.empty())
                     {
-                        switch (gpu_info.vendor)
+                        switch (gpu_info.basic.vendor)
                         {
                         case GpuVendor::NVIDIA:
-                            gpu_info.name = "NVIDIA GPU";
+                            gpu_info.basic.name = "NVIDIA GPU";
                             break;
                         case GpuVendor::AMD:
-                            gpu_info.name = "AMD GPU";
+                            gpu_info.basic.name = "AMD GPU";
                             break;
                         case GpuVendor::INTEL:
-                            gpu_info.name = "Intel GPU";
+                            gpu_info.basic.name = "Intel GPU";
                             break;
                         default:
-                            gpu_info.name = "Unknown GPU";
+                            gpu_info.basic.name = "Unknown GPU";
                             break;
                         }
                     }
 
                     // Check power monitoring capabilities - prioritize vendor-specific APIs
-                    gpu_info.has_power_monitoring = false;
-                    gpu_info.current_power_watts = 0.0;
-                    gpu_info.max_power_watts = 0.0;
+                    gpu_info.power.has_power_monitoring = false;
+                    gpu_info.power.current_power_watts = 0.0;
+                    gpu_info.power.max_power_watts = 0.0;
                     std::string active_power_path;
 
                     // For NVIDIA GPUs: Use NVML exclusively if available
-                    if (gpu_info.vendor == GpuVendor::NVIDIA)
+                    if (gpu_info.basic.vendor == GpuVendor::NVIDIA)
                     {
                         // Try NVML first - iterate through NVML devices to find matching one
                         unsigned int nvml_device_count = get_device_count();
@@ -992,28 +1021,28 @@ namespace optkit::gpu
                             double power_watts;
                             if (get_nvidia_device_power(nvml_idx, power_watts))
                             {
-                                gpu_info.has_power_monitoring = true;
-                                gpu_info.current_power_watts = power_watts;
+                                gpu_info.power.has_power_monitoring = true;
+                                gpu_info.power.current_power_watts = power_watts;
                                 found_via_nvml = true;
 
                                 // Try to get power limit via NVML
                                 double limit_watts;
                                 if (get_nvidia_device_power_limit(nvml_idx, limit_watts))
                                 {
-                                    gpu_info.max_power_watts = limit_watts;
+                                    gpu_info.power.max_power_watts = limit_watts;
                                 }
 
                                 // Try to get temperature via NVML
                                 double temp_celsius;
                                 if (get_nvidia_device_temperature(nvml_idx, temp_celsius))
                                 {
-                                    gpu_info.has_temperature_monitoring = true;
+                                    gpu_info.power.has_temperature_monitoring = true;
                                 }
 
                                 // Update name to indicate NVML source
-                                if (gpu_info.name.find("NVIDIA") == std::string::npos)
+                                if (gpu_info.basic.name.find("NVIDIA") == std::string::npos)
                                 {
-                                    gpu_info.name = "NVIDIA GPU (NVML)";
+                                    gpu_info.basic.name = "NVIDIA GPU (NVML)";
                                 }
                                 break; // Found the first working NVML device for this GPU
                             }
@@ -1021,12 +1050,12 @@ namespace optkit::gpu
                         if (!found_via_nvml)
                         {
                             // NVML not available or no power monitoring - this is expected
-                            gpu_info.has_power_monitoring = false;
-                            gpu_info.current_power_watts = 0.0;
+                            gpu_info.power.has_power_monitoring = false;
+                            gpu_info.power.current_power_watts = 0.0;
                         }
                     }
                     // For AMD GPUs: Use ROCm if available, otherwise sysfs
-                    else if (gpu_info.vendor == GpuVendor::AMD)
+                    else if (gpu_info.basic.vendor == GpuVendor::AMD)
                     {
                         // Try ROCm first - iterate through ROCm devices
                         uint32_t rocm_device_count = get_device_count();
@@ -1037,21 +1066,21 @@ namespace optkit::gpu
                             double power_watts;
                             if (get_device_power_impl(rocm_idx, power_watts))
                             {
-                                gpu_info.has_power_monitoring = true;
-                                gpu_info.current_power_watts = power_watts;
+                                gpu_info.power.has_power_monitoring = true;
+                                gpu_info.power.current_power_watts = power_watts;
                                 found_via_rocm = true;
 
                                 // Try to get temperature via ROCm
                                 double temp_celsius;
                                 if (get_device_temperature_impl(rocm_idx, temp_celsius))
                                 {
-                                    gpu_info.has_temperature_monitoring = true;
+                                    gpu_info.temperature.has_temperature_monitoring = true;
                                 }
 
                                 // Update name to indicate ROCm source
-                                if (gpu_info.name.find("AMD") == std::string::npos)
+                                if (gpu_info.basic.name.find("AMD") == std::string::npos)
                                 {
-                                    gpu_info.name = "AMD GPU (ROCm)";
+                                    gpu_info.basic.name = "AMD GPU (ROCm)";
                                 }
                                 break; // Found the first working ROCm device for this GPU
                             }
@@ -1117,9 +1146,9 @@ namespace optkit::gpu
                                     gpu_info.current_power_watts = std::stod(power_str) / 1000000.0; // Convert from microwatts
 
                                     // Update name to indicate sysfs source
-                                    if (gpu_info.name.find("sysfs") == std::string::npos)
+                                    if (gpu_info.basic.name.find("sysfs") == std::string::npos)
                                     {
-                                        gpu_info.name = gpu_info.name + " (sysfs)";
+                                        gpu_info.basic.name = gpu_info.basic.name + " (sysfs)";
                                     }
                                 }
                                 catch (...)

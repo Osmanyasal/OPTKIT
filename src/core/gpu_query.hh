@@ -17,6 +17,31 @@
 #include <nvml.h>
 #endif
 
+#include <dlfcn.h>
+
+
+// Generic runtime NVML call macro with fallback
+#define NVML_EXEC_IF_SUPPORTS(NAME_STR, DEVICE, OUT, RESULT) \
+do { \
+    using fn_t = nvmlReturn_t(*)(nvmlDevice_t, unsigned int*); \
+    static fn_t fn = []() -> fn_t { \
+        void* lib = dlopen("libnvidia-ml.so", RTLD_NOW | RTLD_NOLOAD); \
+        return lib ? (fn_t)dlsym(lib, NAME_STR) : nullptr; \
+    }(); \
+    if (fn) {fn(DEVICE, OUT); RESULT = NVML_SUCCESS;} \
+    else RESULT = NVML_ERROR_NOT_SUPPORTED; \
+} while(0)
+
+
+
+#ifndef NVML_CUDA_DRIVER_VERSION_MAJOR
+#define NVML_CUDA_DRIVER_VERSION_MAJOR(v) (((int32_t)(v))/1000)
+#endif
+
+#ifndef NVML_CUDA_DRIVER_VERSION_MINOR
+#define NVML_CUDA_DRIVER_VERSION_MINOR(v) (((int32_t)(v)%1000)/10)
+#endif
+
 #if OPTKIT_ENV_LIB_ROCM_SMI
 #include <rocm_smi.h>
 #endif
@@ -314,7 +339,7 @@ namespace optkit::gpu
         static void print_device_info(const GpuDeviceInfo &info);
 
     private:
-// make it for rocm as well
+        static bool initialized;
 #if OPTKIT_ENV_LIB_NVML
         static std::vector<nvmlDevice_t> gpu_handles;
 #elif OPTKIT_ENV_LIB_ROCM_SMI
@@ -325,6 +350,7 @@ namespace optkit::gpu
     private:
         Query() = delete;
         ~Query() = delete;
+
     };
 
     // Global helper functions
