@@ -24,14 +24,14 @@ int32_t main(int32_t argc, char **argv)
     std::cout << "========================" << std::endl;
 
     // Initialize GPU monitoring
-    if (!Query::init())
+    if (!optkit::gpu::Query::init())
     {
         std::cerr << "Failed to initialize GPU monitoring libraries" << std::endl;
         return 1;
     }
 
     // Get device count
-    uint32_t device_count = Query::get_device_count();
+    uint32_t device_count = optkit::gpu::Query::get_device_count();
     std::cout << "Found " << device_count << " GPU device(s)" << std::endl
               << std::endl;
 
@@ -40,21 +40,21 @@ int32_t main(int32_t argc, char **argv)
         std::cout << "No GPU devices found. Make sure you have:" << std::endl;
         std::cout << "- NVIDIA GPU with NVML library installed, or" << std::endl;
         std::cout << "- AMD GPU with ROCm SMI library installed" << std::endl;
-        Query::shutdown();
+        optkit::gpu::Query::shutdown();
         return 0;
     }
 
     // Query each device
     for (uint32_t i = 0; i < device_count; i++)
     {
-        GpuDeviceInfo device_info = Query::deviceQuery(static_cast<int32_t>(i));
-        print_device_info(device_info);
+        optkit::gpu::GpuDeviceInfo device_info = optkit::gpu::Query::device_query(static_cast<int32_t>(i));
+        std::cout << device_info << "\n";
     }
 
     // Alternative: Query a specific device by ID
     std::cout << "Querying device 0 specifically:" << std::endl;
-    GpuDeviceInfo device_0 = Query::deviceQuery(0);
-    if (device_0.basic.vendor != GpuVendor::UNKNOWN)
+    optkit::gpu::GpuDeviceInfo device_0 = optkit::gpu::Query::device_query(0);
+    if (device_0.basic.vendor != optkit::gpu::GpuVendor::UNKNOWN)
     {
         std::cout << "Device 0: " << device_0.basic.device_name
                   << " (" << device_0.basic.vendor_string << ")" << std::endl;
@@ -63,11 +63,6 @@ int32_t main(int32_t argc, char **argv)
     {
         std::cout << "Device 0 not found or not supported" << std::endl;
     }
-
-    // Cleanup
-    Query::shutdown();
-
-    return 0;
 
     // GPU Query Methods Test
     std::cout << "=== GPU Query Methods Test ===" << std::endl;
@@ -81,46 +76,23 @@ int32_t main(int32_t argc, char **argv)
     int32_t methods = optkit::gpu::Query::get_available_power_methods();
     std::cout << "Available power methods (bitmask): " << methods << std::endl;
 
-    // Check GPU capabilities
-    std::cout << "GPU frequency control available: " << optkit::gpu::Query::is_gpu_frequency_control_available() << std::endl;
-    std::cout << "GPU temperature monitoring available: " << optkit::gpu::Query::is_gpu_temperature_available() << std::endl;
-    std::cout << "GPU utilization monitoring available: " << optkit::gpu::Query::is_gpu_utilization_monitoring_available() << std::endl;
-    std::cout << "GPU memory power monitoring available: " << optkit::gpu::Query::is_gpu_memory_power_available() << std::endl;
-
     // Get power-capable GPUs
     auto gpus = optkit::gpu::Query::get_power_capable_gpus();
     std::cout << "Found " << gpus.size() << " power-capable GPUs:" << std::endl;
     for (const auto &gpu : gpus)
     {
-        std::cout << "  GPU " << gpu.id << ": " << gpu.name
-                  << " (Vendor: " << optkit::gpu::to_string(gpu.vendor) << ")"
-                  << " Max Power: " << gpu.max_power_watts << "W"
-                  << " Current Power: " << gpu.current_power_watts << "W" << std::endl;
-        std::cout << "    Power monitoring: " << gpu.has_power_monitoring
-                  << ", Frequency control: " << gpu.has_frequency_control
-                  << ", Temperature monitoring: " << gpu.has_temperature_monitoring << std::endl;
-
-        // Get power limits for this GPU
-        auto limits = optkit::gpu::Query::get_gpu_power_limits(gpu.id);
-        std::cout << "    Power limits - Min: " << limits.min_power_watts << "W"
-                  << ", Max: " << limits.max_power_watts << "W"
-                  << ", Default: " << limits.default_power_watts << "W"
-                  << ", Current limit: " << limits.current_limit_watts << "W"
-                  << ", Configurable: " << limits.is_configurable << std::endl;
+        std::cout << gpu << std::endl;
     }
 
     // Get system-wide GPU power info
     auto system_info = optkit::gpu::Query::get_system_gpu_power_info();
-    std::cout << "System GPU Power Info:" << std::endl;
-    std::cout << "  Total GPU power budget: " << system_info.total_gpu_power_budget_watts << "W" << std::endl;
-    std::cout << "  Current GPU power usage: " << system_info.current_gpu_power_usage_watts << "W" << std::endl;
-    std::cout << "  Available GPU power headroom: " << system_info.available_gpu_power_headroom_watts << "W" << std::endl;
-    std::cout << "  Number of power-monitored GPUs: " << system_info.num_power_monitored_gpus << std::endl;
+    std::cout << system_info << std::endl;
 
     // Cleanup vendor libraries
-    optkit::gpu::Query::cleanup_vendor_libraries();
-
+    optkit::gpu::Query::shutdown();
     std::cout << "=== End GPU Query Test ===" << std::endl;
+
+    return 0;
 
     std::cout << optkit::Query::is_smt_enabled() << "\n";
     sleep(5);
