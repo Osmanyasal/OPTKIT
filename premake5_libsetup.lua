@@ -36,8 +36,8 @@ function base_project_setup()
         if nvml_include then
             includedirs { nvml_include }
         end
-            libdirs { "/usr/lib/x86_64-linux-gnu" }
-            links { "nvidia-ml" }
+        libdirs { "/usr/lib/x86_64-linux-gnu" }
+        links { "nvidia-ml" }
     end
 
     if dynamic_lib_exists("rocm_smi64") then
@@ -45,7 +45,7 @@ function base_project_setup()
         if rocm_include then
             includedirs { rocm_include }
         end
-        libdirs { "/opt/rocm/lib","/usr/include/" }
+        libdirs { "/opt/rocm/lib", "/usr/include/" }
         links { "rocm_smi64" }
     end
 
@@ -150,14 +150,14 @@ function test_project_setup()
     }
     linkoptions { "-fopenmp" }
     linkoptions { "./bin/Test/liboptkit_static.a" }
-    
+
     if dynamic_lib_exists("nvidia-ml") then
         local nvml_include = get_nvml_include()
         if nvml_include then
             includedirs { nvml_include }
         end
-            libdirs { "/usr/lib/x86_64-linux-gnu" }
-            links { "nvidia-ml" }
+        libdirs { "/usr/lib/x86_64-linux-gnu" }
+        links { "nvidia-ml" }
     end
 
     if dynamic_lib_exists("rocm_smi64") then

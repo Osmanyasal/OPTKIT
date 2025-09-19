@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <string>
 #include <algorithm>
+#include "utils/optimizations/cpu_opt.hh"
 
 #if OPTKIT_ENV_LIB_NVML
 #include <nvml.h>
@@ -14,21 +15,25 @@
 
 #include <dlfcn.h>
 
+using fn_t = nvmlReturn_t (*)(nvmlDevice_t, ...);
+OPT_FORCE_INLINE fn_t query_nvml_fn(const char *function_name)
+{
+    static void *lib = dlopen("libnvidia-ml.so", RTLD_NOW | RTLD_NOLOAD);
+    return lib ? (fn_t)dlsym(lib, function_name) : nullptr;
+}
+
 // Generic runtime NVML call macro with fallback
-#define NVML_EXEC_IF_SUPPORTS(NAME_STR, DEVICE, OUT, RESULT)         \
-    do                                                               \
-    {                                                                \
-        using fn_t = nvmlReturn_t (*)(nvmlDevice_t, unsigned int *); \
-        static fn_t fn = []() -> fn_t { \
-        void* lib = dlopen("libnvidia-ml.so", RTLD_NOW | RTLD_NOLOAD); \
-        return lib ? (fn_t)dlsym(lib, NAME_STR) : nullptr; }();                         \
-        if (fn)                                                      \
-        {                                                            \
-            fn(DEVICE, OUT);                                         \
-            RESULT = NVML_SUCCESS;                                   \
-        }                                                            \
-        else                                                         \
-            RESULT = NVML_ERROR_NOT_SUPPORTED;                       \
+// method name, device handle, result variable, arguments of the method...
+#define NVML_EXEC_IF_SUPPORTS(NAME_STR, DEVICE, RESULT, ...) \
+    do                                                       \
+    {                                                        \
+        static fn_t fn = query_nvml_fn(NAME_STR);            \
+        if (fn)                                              \
+        {                                                    \
+            RESULT = fn(DEVICE, __VA_ARGS__);                \
+        }                                                    \
+        else                                                 \
+            RESULT = NVML_ERROR_NOT_SUPPORTED;               \
     } while (0)
 
 #ifndef NVML_CUDA_DRIVER_VERSION_MAJOR
@@ -39,6 +44,13 @@
 #define NVML_CUDA_DRIVER_VERSION_MINOR(v) (((int32_t)(v) % 1000) / 10)
 #endif
 
+// vendor IDs from PCI-SIG
+
+#define VENDOR_ID_INTEL 0x8086
+#define VENDOR_ID_AMD 0x1002
+#define VENDOR_ID_NVIDIA 0x10DE
+#define VENDOR_ID_ARM 0x13B5
+#define VENDOR_ID_QUALCOMM 0x5143
 namespace optkit::gpu
 {
     /**

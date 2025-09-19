@@ -16,4 +16,15 @@ namespace optkit::utils::logger
         core_logger = spdlog::stdout_color_mt("CORE");
         client_logger = spdlog::stdout_color_mt("CLIENT");
     }
+
+    void BaseLogger::shutdown()
+    {
+        core_logger->flush();
+        client_logger->flush();
+
+        core_logger.reset();
+        client_logger.reset();
+
+        spdlog::shutdown();
+    }
 }

@@ -27,6 +27,7 @@ namespace optkit
         else
         {
             optkit::pmu::cpu::QueryPMU::init();                  // pmf init
+            optkit::gpu::Query::init();                          // gpu init
             optkit::temperature::CPUTemperatureProfiler::init(); // discover hwmon temperatures.
 
             Query::create_folder = config.create_folder;
@@ -223,7 +224,9 @@ namespace optkit
                 }
             }
         }
+        optkit::gpu::Query::shutdown();
         optkit::pmu::cpu::QueryPMU::destroy();
+        optkit::utils::logger::BaseLogger::shutdown(); // logger shutdown.
     }
 
 } // namespace optkit

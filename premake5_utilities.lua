@@ -23,9 +23,9 @@ local allowed_actions = {
     remove = true,
     generate_doc = true,
     remove_doc = true,
-    gmake= true,
-    gmakelegacy= true,
-    codelite=true,
+    gmake = true,
+    gmakelegacy = true,
+    codelite = true,
 }
 
 function print_help()
@@ -71,10 +71,8 @@ function system_checks()
     end
 end
 
-
 function system_init()
     if _ACTION == "gmake" or _ACTION == "gmakelegacy" or _ACTION == "codelite" then
-
         -- environment_config.hh generation for the current system
         print("🛠️ Generating environment config...")
         os.execute("./generate_environment_config.sh")
@@ -100,8 +98,11 @@ function system_init()
 
         -- GoogleTest compilation
         local googletest_compile = ""
-        googletest_compile = googletest_compile .. 'if [ ! -f "' .. LIB_GOOGLETEST_PATH .. '/build/lib/libgtest.a" ]; then\n'
-        googletest_compile = googletest_compile .. 'cd ' .. LIB_GOOGLETEST_PATH .. " && git branch v1.17.0 && mkdir build && cd build && cmake .. && make -j$(nproc);\n"
+        googletest_compile = googletest_compile ..
+        'if [ ! -f "' .. LIB_GOOGLETEST_PATH .. '/build/lib/libgtest.a" ]; then\n'
+        googletest_compile = googletest_compile ..
+        'cd ' ..
+        LIB_GOOGLETEST_PATH .. " && git branch v1.17.0 && mkdir build && cd build && cmake .. && make -j$(nproc);\n"
         googletest_compile = googletest_compile .. 'fi && echo [✅ COMPILE SPDLOG] || echo [❌ COMPILE SPDLOG ERROR]'
         os.execute(googletest_compile)
 
@@ -112,11 +113,13 @@ function system_init()
         export_events = export_events .. '    echo "⛏️ Exporting events from libpfm4" &&\n'
         export_events = export_events .. '    mkdir -p ' .. CPU_PMU_EVENTS_DIR .. ' &&\n'
         export_events = export_events .. '    cd ' .. UTILS_DIR .. ' &&\n'
-        export_events = export_events .. '    python3 pmu_parser.py $(find ../../' .. LIB_PFM_PATH .. '/lib/events -type f \\( -name "intel*.h" -or -name "amd*.h" -or -name "arm*.h" -or -name "power*.h" \\) -exec echo "{}" \\;) &&\n'
+        export_events = export_events ..
+        '    python3 pmu_parser.py $(find ../../' ..
+        LIB_PFM_PATH ..
+        '/lib/events -type f \\( -name "intel*.h" -or -name "amd*.h" -or -name "arm*.h" -or -name "power*.h" \\) -exec echo "{}" \\;) &&\n'
         export_events = export_events .. '    touch ../../' .. CPU_PMU_EVENTS_DIR .. '/all_set\n'
         export_events = export_events .. 'fi && echo "[✅ CHECK EVENTS]" || echo "[❌ CHECK EVENTS ERROR]"'
         os.execute(export_events)
-
     end
 end
 

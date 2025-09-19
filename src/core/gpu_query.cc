@@ -37,6 +37,10 @@ namespace optkit::gpu
                 }
             }
         }
+        else
+        {
+            OPTKIT_CORE_WARN("Failed to initialize GPU monitoring libraries");
+        }
         return initialized;
 
 #elif OPTKIT_ENV_LIB_ROCM_SMI
@@ -44,6 +48,10 @@ namespace optkit::gpu
         {
             rsmi_status_t result = rsmi_init(0);
             initialized = (result == RSMI_STATUS_SUCCESS);
+        }
+        else
+        {
+            OPTKIT_CORE_WARN("Failed to initialize GPU monitoring libraries");
         }
         return initialized;
 #else
@@ -194,7 +202,7 @@ namespace optkit::gpu
         return cached_count;
     }
 
-    bool get_device_power_impl(unsigned int device_index, double &power_watts)
+    bool get_device_power_impl(uint32_t device_index, double &power_watts)
     {
 #if OPTKIT_ENV_LIB_NVML
         nvmlDevice_t device;
@@ -202,7 +210,7 @@ namespace optkit::gpu
         if (result != NVML_SUCCESS)
             return false;
 
-        unsigned int power_mw;
+        uint32_t power_mw;
         result = nvmlDeviceGetPowerUsage(device, &power_mw);
         if (result == NVML_SUCCESS)
         {
@@ -222,20 +230,17 @@ namespace optkit::gpu
 #endif
     }
 
-    bool get_device_power_limit_impl(unsigned int device_index, double &limit_watts)
+    bool Query::get_device_power_limit(uint32_t device_index, double &limit_watts)
     {
 #if OPTKIT_ENV_LIB_NVML
-        nvmlDevice_t device;
-        nvmlReturn_t result = nvmlDeviceGetHandleByIndex(device_index, &device);
-        if (result != NVML_SUCCESS)
-            return false;
-
-        unsigned int limit_mw;
+        nvmlDevice_t device = Query::gpu_handles.at(device_index);
+        nvmlReturn_t result;
+        uint32_t limit_mw;
         NVML_EXEC_IF_SUPPORTS(
             "nvmlDeviceGetPowerManagementLimit",
             device,
-            &limit_mw,
-            result);
+            result,
+            &limit_mw);
         if (result == NVML_SUCCESS)
         {
             limit_watts = limit_mw / 1000.0; // Convert from milliwatts to watts
@@ -255,16 +260,13 @@ namespace optkit::gpu
         return false;
     }
 
-    bool get_device_temperature_impl(unsigned int device_index, double &temp_celsius)
+    bool Query::get_device_temperature(uint32_t device_index, double &temp_celsius)
     {
 #if OPTKIT_ENV_LIB_NVML
-        nvmlDevice_t device;
-        nvmlReturn_t result = nvmlDeviceGetHandleByIndex(device_index, &device);
-        if (result != NVML_SUCCESS)
-            return false;
-
-        unsigned int temp;
-        result = nvmlDeviceGetTemperature(device, NVML_TEMPERATURE_GPU, &temp);
+        nvmlDevice_t device = Query::gpu_handles.at(device_index);
+        nvmlReturn_t result;
+        uint32_t temp;
+        NVML_EXEC_IF_SUPPORTS("nvmlDeviceGetTemperature", device, result, NVML_TEMPERATURE_GPU, &temp);
         if (result == NVML_SUCCESS)
         {
             temp_celsius = static_cast<double>(temp);
@@ -284,18 +286,14 @@ namespace optkit::gpu
         return false;
     }
 
-    // NVIDIA device query helper functions
-    bool get_device_info(unsigned int device_index, GpuDeviceInfo &info)
+    bool Query::get_device_info(uint32_t device_index, GpuDeviceInfo &info)
     {
 #if OPTKIT_ENV_LIB_NVML
-        nvmlDevice_t device;
-        nvmlReturn_t result = nvmlDeviceGetHandleByIndex(device_index, &device);
-        if (result != NVML_SUCCESS)
-            return false;
-
+        nvmlDevice_t device = Query::gpu_handles.at(device_index);
+        nvmlReturn_t result;
         // Get device name
         char name[NVML_DEVICE_NAME_BUFFER_SIZE];
-        result = nvmlDeviceGetName(device, name, NVML_DEVICE_NAME_BUFFER_SIZE);
+        NVML_EXEC_IF_SUPPORTS("nvmlDeviceGetName", device, result, &name[0], NVML_DEVICE_NAME_BUFFER_SIZE);
         if (result == NVML_SUCCESS)
         {
             info.basic.device_name = std::string(name);
@@ -304,7 +302,7 @@ namespace optkit::gpu
 
         // Get compute capability
         int major, minor;
-        result = nvmlDeviceGetCudaComputeCapability(device, &major, &minor);
+        NVML_EXEC_IF_SUPPORTS("nvmlDeviceGetCudaComputeCapability", device, result, &major, &minor);
         if (result == NVML_SUCCESS)
         {
             info.compute.compute_capability_major = major;
@@ -313,7 +311,11 @@ namespace optkit::gpu
 
         // Get memory information
         nvmlMemory_t memory;
-        result = nvmlDeviceGetMemoryInfo(device, &memory);
+        NVML_EXEC_IF_SUPPORTS(
+            "nvmlDeviceGetMemoryInfo",
+            device,
+            result,
+            &memory);
         if (result == NVML_SUCCESS)
         {
             info.memory.total_global_memory_bytes = memory.total;
@@ -322,12 +324,12 @@ namespace optkit::gpu
         }
 
         // Get memory bus width
-        unsigned int busWidth;
+        uint32_t busWidth;
         NVML_EXEC_IF_SUPPORTS(
             "nvmlDeviceGetMemoryBusWidth",
             device,
-            &busWidth,
-            result);
+            result,
+            &busWidth);
 
         if (result == NVML_SUCCESS)
         {
@@ -340,12 +342,12 @@ namespace optkit::gpu
         }
 
         // Get multiprocessor count
-        unsigned int multiProcessorCount;
+        uint32_t multiProcessorCount;
         NVML_EXEC_IF_SUPPORTS(
             "nvmlDeviceGetMultiProcessorCount",
             device,
-            &multiProcessorCount,
-            result);
+            result,
+            &multiProcessorCount);
         if (result == NVML_SUCCESS)
         {
             info.compute.multiprocessor_count = multiProcessorCount;
@@ -357,42 +359,67 @@ namespace optkit::gpu
         }
 
         // Get clock rates
-        unsigned int clockRate;
-        result = nvmlDeviceGetMaxClockInfo(device, NVML_CLOCK_GRAPHICS, &clockRate);
+        uint32_t clockRate;
+        NVML_EXEC_IF_SUPPORTS(
+            "nvmlDeviceGetMaxClockInfo",
+            device,
+            result,
+            NVML_CLOCK_GRAPHICS,
+            &clockRate);
         if (result == NVML_SUCCESS)
         {
             info.clocks.boost_clock_rate_khz = clockRate * 1000; // Convert MHz to kHz
         }
-
-        result = nvmlDeviceGetMaxClockInfo(device, NVML_CLOCK_MEM, &clockRate);
+        NVML_EXEC_IF_SUPPORTS(
+            "nvmlDeviceGetMaxClockInfo",
+            device,
+            result,
+            NVML_CLOCK_MEM,
+            &clockRate);
         if (result == NVML_SUCCESS)
         {
             info.memory.memory_clock_rate_max_khz = clockRate * 1000; // Convert MHz to kHz
         }
 
         // Get current clocks
-        result = nvmlDeviceGetClockInfo(device, NVML_CLOCK_GRAPHICS, &clockRate);
+        NVML_EXEC_IF_SUPPORTS(
+            "nvmlDeviceGetClockInfo",
+            device,
+            result,
+            NVML_CLOCK_GRAPHICS,
+            &clockRate);
         if (result == NVML_SUCCESS)
         {
             info.clocks.current_graphics_clock_mhz = clockRate;
         }
-
-        result = nvmlDeviceGetClockInfo(device, NVML_CLOCK_MEM, &clockRate);
+        NVML_EXEC_IF_SUPPORTS(
+            "nvmlDeviceGetClockInfo",
+            device,
+            result,
+            NVML_CLOCK_MEM,
+            &clockRate);
         if (result == NVML_SUCCESS)
         {
             info.clocks.current_memory_clock_mhz = clockRate;
         }
 
         // Get power information
-        unsigned int power;
-        result = nvmlDeviceGetPowerUsage(device, &power);
+        uint32_t power;
+        NVML_EXEC_IF_SUPPORTS(
+            "nvmlDeviceGetPowerUsage",
+            device,
+            result,
+            &power);
         if (result == NVML_SUCCESS)
         {
             info.power.current_power_watts = power / 1000.0;
             info.power.has_power_monitoring = true;
         }
-
-        result = nvmlDeviceGetPowerManagementLimit(device, &power);
+        NVML_EXEC_IF_SUPPORTS(
+            "nvmlDeviceGetPowerManagementLimit",
+            device,
+            result,
+            &power);
         if (result == NVML_SUCCESS)
         {
             info.power.power_limit_watts = power / 1000.0;
@@ -401,15 +428,24 @@ namespace optkit::gpu
         }
 
         // Get power management constraints (min/max/default)
-        unsigned int min_power, max_power, default_power;
-        result = nvmlDeviceGetPowerManagementLimitConstraints(device, &min_power, &max_power);
+        uint32_t min_power, max_power, default_power;
+        NVML_EXEC_IF_SUPPORTS(
+            "nvmlDeviceGetPowerManagementLimitConstraints",
+            device,
+            result,
+            &min_power,
+            &max_power);
         if (result == NVML_SUCCESS)
         {
             info.power.min_power_watts = min_power / 1000.0;
             info.power.max_power_watts = max_power / 1000.0;
         }
 
-        result = nvmlDeviceGetPowerManagementDefaultLimit(device, &default_power);
+        NVML_EXEC_IF_SUPPORTS(
+            "nvmlDeviceGetPowerManagementDefaultLimit",
+            device,
+            result,
+            &default_power);
         if (result == NVML_SUCCESS)
         {
             info.power.default_power_watts = default_power / 1000.0;
@@ -417,15 +453,19 @@ namespace optkit::gpu
 
         // Check if power management is configurable
         nvmlEnableState_t power_management_state;
-        result = nvmlDeviceGetPowerManagementMode(device, &power_management_state);
+        NVML_EXEC_IF_SUPPORTS(
+            "nvmlDeviceGetPowerManagementMode",
+            device,
+            result,
+            &power_management_state);
         if (result == NVML_SUCCESS)
         {
             info.power.is_configurable = (power_management_state == NVML_FEATURE_ENABLED);
         }
 
         // Get temperature
-        unsigned int temp;
-        result = nvmlDeviceGetTemperature(device, NVML_TEMPERATURE_GPU, &temp);
+        uint32_t temp;
+        NVML_EXEC_IF_SUPPORTS("nvmlDeviceGetTemperature", device, result, NVML_TEMPERATURE_GPU, &temp);
         if (result == NVML_SUCCESS)
         {
             info.temperature.current_temperature_celsius = static_cast<double>(temp);
@@ -434,7 +474,7 @@ namespace optkit::gpu
 
         // Get utilization
         nvmlUtilization_t utilization;
-        result = nvmlDeviceGetUtilizationRates(device, &utilization);
+        NVML_EXEC_IF_SUPPORTS("nvmlDeviceGetUtilizationRates", device, result, &utilization);
         if (result == NVML_SUCCESS)
         {
             info.performance.gpu_utilization_percent = utilization.gpu;
@@ -444,7 +484,11 @@ namespace optkit::gpu
 
         // Get PCI information
         nvmlPciInfo_t pci;
-        result = nvmlDeviceGetPciInfo(device, &pci);
+        NVML_EXEC_IF_SUPPORTS(
+            "nvmlDeviceGetPciInfo",
+            device,
+            result,
+            &pci);
         if (result == NVML_SUCCESS)
         {
             info.hardware.pci_bus_id = std::string(pci.busId);
@@ -454,7 +498,7 @@ namespace optkit::gpu
 
         // Get performance state
         nvmlPstates_t pstate;
-        result = nvmlDeviceGetPerformanceState(device, &pstate);
+        NVML_EXEC_IF_SUPPORTS("nvmlDeviceGetPerformanceState", device, result, &pstate);
         if (result == NVML_SUCCESS)
         {
             info.performance.performance_state = static_cast<uint32_t>(pstate);
@@ -462,15 +506,15 @@ namespace optkit::gpu
 
         // Get ECC mode
         nvmlEnableState_t current, pending;
-        result = nvmlDeviceGetEccMode(device, &current, &pending);
+        NVML_EXEC_IF_SUPPORTS("nvmlDeviceGetEccMode", device, result, &current, &pending);
         if (result == NVML_SUCCESS)
         {
             info.capabilities.ecc_enabled = (current == NVML_FEATURE_ENABLED);
         }
 
         // Get board ID for multi-GPU detection
-        unsigned int boardId;
-        result = nvmlDeviceGetBoardId(device, &boardId);
+        uint32_t boardId;
+        NVML_EXEC_IF_SUPPORTS("nvmlDeviceGetBoardId", device, result, &boardId);
         if (result == NVML_SUCCESS)
         {
             info.hardware.board_id = boardId;
@@ -478,7 +522,7 @@ namespace optkit::gpu
 
         // Get persistence mode
         nvmlEnableState_t mode;
-        result = nvmlDeviceGetPersistenceMode(device, &mode);
+        NVML_EXEC_IF_SUPPORTS("nvmlDeviceGetPersistenceMode", device, result, &mode);
         if (result == NVML_SUCCESS)
         {
             info.capabilities.persistence_mode_enabled = (mode == NVML_FEATURE_ENABLED);
@@ -647,9 +691,14 @@ namespace optkit::gpu
         return false;
     }
 
-    GpuDeviceInfo Query::device_query(int32_t gpu_id)
+    GpuDeviceInfo Query::device_query(uint32_t gpu_id)
     {
         GpuDeviceInfo info = {};
+        if (OPT_UNLIKELY(gpu_id > get_device_count()))
+        {
+            OPTKIT_CORE_WARN("Not valid GPU ID: {}, Total device count: {}", gpu_id, get_device_count());
+            return info;
+        }
         // Rely on value-initialization above (GpuDeviceInfo info = {}).
         // Do not memset structs with non-trivial members.
         info.basic.id = gpu_id;
@@ -663,84 +712,12 @@ namespace optkit::gpu
         info.version.driver_version_string = std::to_string(info.version.driver_major_minor);
         info.version.library_version_string = get_library_version();
 
-        if (gpu_id >= 0 && gpu_id < static_cast<int32_t>(get_device_count()))
-            if (get_device_info(static_cast<unsigned int>(gpu_id), info))
-                return info;
-
-        // Fallback: try to get basic info from sysfs
-        try
+        if (get_device_info(static_cast<uint32_t>(gpu_id), info))
+            return info;
+        else
         {
-            const std::string drm_path = "/sys/class/drm";
-            if (optkit::utils::is_path_exists(drm_path))
-            {
-                std::vector<std::string> drm_entries = optkit::utils::get_all_files(drm_path);
-                int32_t current_id = 0;
-
-                for (const auto &entry_name : drm_entries)
-                {
-                    if (entry_name.find("card") == 0 && entry_name.find("-") == std::string::npos)
-                    {
-                        if (current_id == gpu_id)
-                        {
-                            std::string device_base_path = drm_path + "/" + entry_name + "/device";
-
-                            // Get vendor information
-                            std::string vendor_path = device_base_path + "/vendor";
-                            if (optkit::utils::is_path_exists(vendor_path))
-                            {
-                                std::string vendor_id = optkit::utils::read_file(vendor_path);
-                                vendor_id.erase(std::remove_if(vendor_id.begin(), vendor_id.end(), ::isspace), vendor_id.end());
-
-                                if (vendor_id.find("0x10de") != std::string::npos)
-                                {
-                                    info.basic.vendor = GpuVendor::NVIDIA;
-                                    info.basic.vendor_string = "NVIDIA";
-                                    info.basic.name = "NVIDIA GPU (sysfs)";
-                                }
-                                else if (vendor_id.find("0x1002") != std::string::npos)
-                                {
-                                    info.basic.vendor = GpuVendor::AMD;
-                                    info.basic.vendor_string = "AMD";
-                                    info.basic.name = "AMD GPU (sysfs)";
-                                }
-                                else if (vendor_id.find("0x8086") != std::string::npos)
-                                {
-                                    info.basic.vendor = GpuVendor::INTEL;
-                                    info.basic.vendor_string = "Intel";
-                                    info.basic.name = "Intel GPU (sysfs)";
-                                    info.basic.is_integrated = true;
-                                }
-                            }
-
-                            // Get device ID
-                            std::string device_id_path = device_base_path + "/device";
-                            if (optkit::utils::is_path_exists(device_id_path))
-                            {
-                                std::string device_id = optkit::utils::read_file(device_id_path);
-                                device_id.erase(std::remove_if(device_id.begin(), device_id.end(), ::isspace), device_id.end());
-                                // Convert hex string to uint32_t
-                                try
-                                {
-                                    info.hardware.pci_device_id = std::stoul(device_id, nullptr, 16);
-                                }
-                                catch (...)
-                                {
-                                    info.hardware.pci_device_id = 0;
-                                }
-                            }
-
-                            break;
-                        }
-                        current_id++;
-                    }
-                }
-            }
+            OPTKIT_ERROR("Failed to get device info for GPU ID {}", gpu_id);
         }
-        catch (...)
-        {
-            // Continue with default values
-        }
-
         return info;
     }
 
@@ -765,7 +742,7 @@ namespace optkit::gpu
                 if (optkit::utils::is_path_exists(vendor_path))
                 {
                     std::string vendor = optkit::utils::read_file(vendor_path);
-                    if (vendor.find("0x10de") != std::string::npos)
+                    if (vendor.find(STRINGIFY(VENDOR_ID_NVIDIA)) != std::string::npos)
                     { // NVIDIA vendor ID
                         return true;
                     }
@@ -797,7 +774,7 @@ namespace optkit::gpu
                 if (optkit::utils::is_path_exists(vendor_path))
                 {
                     std::string vendor = optkit::utils::read_file(vendor_path);
-                    if (vendor.find("0x1002") != std::string::npos)
+                    if (vendor.find(STRINGIFY(VENDOR_ID_AMD)) != std::string::npos)
                     { // AMD vendor ID
                         // Check for power monitoring capability
                         std::string power_path = "/sys/class/drm/card" + std::to_string(i) + "/device/power1_average";
@@ -835,8 +812,7 @@ namespace optkit::gpu
                         if (optkit::utils::is_path_exists(vendor_path))
                         {
                             std::string vendor_content = optkit::utils::read_file(vendor_path);
-                            // Intel vendor ID is 0x8086
-                            if (vendor_content.find("0x8086") != std::string::npos)
+                            if (vendor_content.find(STRINGIFY(VENDOR_ID_INTEL)) != std::string::npos)
                             {
                                 // Check for Intel i915 power monitoring
                                 std::string power_path = device_path + "/power1_average";
@@ -855,398 +831,6 @@ namespace optkit::gpu
             return false;
         }
         return false;
-    }
-
-    std::vector<GpuDeviceInfo> Query::get_power_capable_gpus()
-    {
-        std::vector<GpuDeviceInfo> gpus;
-        try
-        {
-            const std::string drm_path = "/sys/class/drm";
-            if (!optkit::utils::is_path_exists(drm_path))
-            {
-                return gpus;
-            }
-
-            int32_t gpu_id = 0;
-            std::vector<std::string> drm_entries = optkit::utils::get_all_files(drm_path);
-
-            for (const auto &entry_name : drm_entries)
-            {
-                // Only process actual card entries (not render nodes, control nodes, etc.)
-                if (entry_name.find("card") == 0 && entry_name.find("-") == std::string::npos)
-                {
-                    // Extract card number and verify it's a base card (not a sub-device)
-                    std::string card_num_str = entry_name.substr(4); // Remove "card" prefix
-                    bool is_digit_only = !card_num_str.empty() &&
-                                         std::all_of(card_num_str.begin(), card_num_str.end(), ::isdigit);
-
-                    if (!is_digit_only)
-                        continue; // Skip non-numeric card entries
-
-                    GpuDeviceInfo gpu_info = {};
-                    gpu_info.basic.id = gpu_id++;
-
-                    std::string device_base_path = drm_path + "/" + entry_name + "/device";
-
-                    // Read vendor ID
-                    std::string vendor_path = device_base_path + "/vendor";
-                    if (optkit::utils::is_path_exists(vendor_path))
-                    {
-                        std::string vendor_id = optkit::utils::read_file(vendor_path);
-                        // Remove whitespace and newlines
-                        vendor_id.erase(std::remove_if(vendor_id.begin(), vendor_id.end(), ::isspace), vendor_id.end());
-
-                        if (vendor_id.find("0x10de") != std::string::npos)
-                        {
-                            gpu_info.basic.vendor = GpuVendor::NVIDIA;
-                        }
-                        else if (vendor_id.find("0x1002") != std::string::npos)
-                        {
-                            gpu_info.basic.vendor = GpuVendor::AMD;
-                        }
-                        else if (vendor_id.find("0x8086") != std::string::npos)
-                        {
-                            gpu_info.basic.vendor = GpuVendor::INTEL;
-                        }
-                        else
-                        {
-                            gpu_info.basic.vendor = GpuVendor::UNKNOWN;
-                        }
-                    }
-                    else
-                    {
-                        gpu_info.basic.vendor = GpuVendor::UNKNOWN;
-                    }
-
-                    // Try to read GPU device ID for name identification
-                    std::string device_id_path = device_base_path + "/device";
-                    if (optkit::utils::is_path_exists(device_id_path))
-                    {
-                        std::string device_id = optkit::utils::read_file(device_id_path);
-                        device_id.erase(std::remove_if(device_id.begin(), device_id.end(), ::isspace), device_id.end());
-                        gpu_info.basic.name = device_id;
-                    }
-
-                    // Try to get a more descriptive name from modalias or other sources
-                    std::string modalias_path = device_base_path + "/modalias";
-                    if (optkit::utils::is_path_exists(modalias_path))
-                    {
-                        std::string modalias = optkit::utils::read_file(modalias_path);
-                        // Extract useful info from modalias if available
-                        if (!modalias.empty() && gpu_info.basic.name.empty())
-                        {
-                            gpu_info.basic.name = "GPU Device";
-                        }
-                    }
-
-                    // Fallback name based on vendor
-                    if (gpu_info.basic.name.empty())
-                    {
-                        switch (gpu_info.basic.vendor)
-                        {
-                        case GpuVendor::NVIDIA:
-                            gpu_info.basic.name = "NVIDIA GPU";
-                            break;
-                        case GpuVendor::AMD:
-                            gpu_info.basic.name = "AMD GPU";
-                            break;
-                        case GpuVendor::INTEL:
-                            gpu_info.basic.name = "Intel GPU";
-                            break;
-                        default:
-                            gpu_info.basic.name = "Unknown GPU";
-                            break;
-                        }
-                    }
-
-                    // Check power monitoring capabilities - prioritize vendor-specific APIs
-                    gpu_info.power.has_power_monitoring = false;
-                    gpu_info.power.current_power_watts = 0.0;
-                    gpu_info.power.max_power_watts = 0.0;
-                    std::string active_power_path;
-#if OPTKIT_ENV_LIB_NVML
-                    // For NVIDIA GPUs: Use NVML exclusively if available
-                    // Try NVML first - iterate through NVML devices to find matching one
-                    unsigned int nvml_device_count = get_device_count();
-                    bool found_via_nvml = false;
-
-                    for (unsigned int nvml_idx = 0; nvml_idx < nvml_device_count && !found_via_nvml; nvml_idx++)
-                    {
-                        uint32_t power_watts;
-                        nvmlReturn_t result;
-                        NVML_EXEC_IF_SUPPORTS(
-                            "get_nvidia_device_power",
-                            gpu_handles.at(nvml_idx),
-                            &power_watts,
-                            result);
-
-                        if (result == NVML_SUCCESS)
-                        {
-                            gpu_info.power.has_power_monitoring = true;
-                            gpu_info.power.current_power_watts = power_watts;
-                            found_via_nvml = true;
-
-                            // Try to get power limit via NVML
-                            uint32_t limit_watts;
-                            NVML_EXEC_IF_SUPPORTS(
-                                "get_nvidia_device_power_limit",
-                                gpu_handles.at(nvml_idx),
-                                &limit_watts,
-                                result);
-
-                            if (result == NVML_SUCCESS)
-                            {
-                                gpu_info.power.max_power_watts = limit_watts;
-                            }
-
-                            // Try to get temperature via NVML
-                            uint32_t temp_celsius;
-                            NVML_EXEC_IF_SUPPORTS(
-                                "get_nvidia_device_temperature",
-                                gpu_handles.at(nvml_idx),
-                                &temp_celsius,
-                                result);
-
-                            if (result == NVML_SUCCESS)
-                            {
-                                gpu_info.temperature.has_temperature_monitoring = true;
-                            }
-
-                            // Update name to indicate NVML source
-                            if (gpu_info.basic.name.find("NVIDIA") == std::string::npos)
-                            {
-                                gpu_info.basic.name = "NVIDIA GPU (NVML)";
-                            }
-                            break; // Found the first working NVML device for this GPU
-                        }
-                    } // For NVIDIA: Don't fall back to sysfs - NVML is the authoritative source
-                    if (!found_via_nvml)
-                    {
-                        // NVML not available or no power monitoring - this is expected
-                        gpu_info.power.has_power_monitoring = false;
-                        gpu_info.power.current_power_watts = 0.0;
-                    }
-#elif OPTKIT_ENV_LIB_ROCM_SMI
-                    // For AMD GPUs: Use ROCm if available, otherwise sysfs
-                    // Try ROCm first - iterate through ROCm devices
-                    uint32_t rocm_device_count = get_device_count();
-                    bool found_via_rocm = false;
-
-                    for (uint32_t rocm_idx = 0; rocm_idx < rocm_device_count && !found_via_rocm; rocm_idx++)
-                    {
-                        double power_watts;
-                        nvmlReturn_t result;
-
-                        if (get_device_power_impl(rocm_idx, power_watts))
-                        {
-                            gpu_info.power.has_power_monitoring = true;
-                            gpu_info.power.current_power_watts = power_watts;
-                            found_via_rocm = true;
-
-                            // Try to get temperature via ROCm
-                            double temp_celsius;
-                            if (get_device_temperature_impl(rocm_idx, temp_celsius))
-                            {
-                                gpu_info.temperature.has_temperature_monitoring = true;
-                            }
-
-                            // Update name to indicate ROCm source
-                            if (gpu_info.basic.name.find("AMD") == std::string::npos)
-                            {
-                                gpu_info.basic.name = "AMD GPU (ROCm)";
-                            }
-                            break; // Found the first working ROCm device for this GPU
-                        }
-                    }
-
-                    // For AMD: Fall back to sysfs if ROCm not available
-                    if (!found_via_rocm)
-                    {
-                        // Try sysfs as fallback for AMD
-                        std::vector<std::string> power_files = {
-                            device_base_path + "/power1_average",
-                            device_base_path + "/power1_input",
-                            device_base_path + "/power_average",
-                            device_base_path + "/power_input"};
-
-                        // Check direct power files first
-                        for (const auto &power_path : power_files)
-                        {
-                            if (optkit::utils::is_path_exists(power_path))
-                            {
-                                gpu_info.has_power_monitoring = true;
-                                active_power_path = power_path;
-                                break;
-                            }
-                        }
-
-                        // If no direct power files, check in hwmon subdirectories
-                        if (!gpu_info.has_power_monitoring)
-                        {
-                            std::string hwmon_path = device_base_path + "/hwmon";
-                            if (optkit::utils::is_path_exists(hwmon_path))
-                            {
-                                std::vector<std::string> hwmon_entries = optkit::utils::get_all_files(hwmon_path);
-                                for (const auto &hwmon_entry : hwmon_entries)
-                                {
-                                    if (hwmon_entry.find("hwmon") == 0)
-                                    {
-                                        std::string hwmon_subdir = hwmon_path + "/" + hwmon_entry;
-                                        for (const auto &pf : {"power1_average", "power1_input"})
-                                        {
-                                            std::string hwmon_power_path = hwmon_subdir + "/" + pf;
-                                            if (optkit::utils::is_path_exists(hwmon_power_path))
-                                            {
-                                                gpu_info.has_power_monitoring = true;
-                                                active_power_path = hwmon_power_path;
-                                                break;
-                                            }
-                                        }
-                                        if (gpu_info.has_power_monitoring)
-                                            break;
-                                    }
-                                }
-                            }
-                        }
-
-                        // Read power from sysfs if we found a path and ROCm didn't work
-                        if (gpu_info.has_power_monitoring && !active_power_path.empty())
-                        {
-                            try
-                            {
-                                std::string power_str = optkit::utils::read_file(active_power_path);
-                                power_str.erase(std::remove_if(power_str.begin(), power_str.end(), ::isspace), power_str.end());
-                                gpu_info.power.current_power_watts = std::stod(power_str) / 1000000.0; // Convert from microwatts
-
-                                // Update name to indicate sysfs source
-                                if (gpu_info.basic.name.find("sysfs") == std::string::npos)
-                                {
-                                    gpu_info.basic.name = gpu_info.basic.name + " (sysfs)";
-                                }
-                            }
-                            catch (...)
-                            {
-                                gpu_info.current_power_watts = 0.0;
-                            }
-                        }
-                    }
-#else
-                    // For Intel and other GPUs: Use sysfs only
-                    // Primary power monitoring files to check
-                    std::vector<std::string> power_files = {
-                        device_base_path + "/power1_average",
-                        device_base_path + "/power1_input",
-                        device_base_path + "/power_average",
-                        device_base_path + "/power_input"};
-
-                    // Check direct power files first
-                    for (const auto &power_path : power_files)
-                    {
-                        if (optkit::utils::is_path_exists(power_path))
-                        {
-                            gpu_info.has_power_monitoring = true;
-                            active_power_path = power_path;
-                            break;
-                        }
-                    }
-
-                    // If no direct power files, check in hwmon subdirectories
-                    if (!gpu_info.has_power_monitoring)
-                    {
-                        std::string hwmon_path = device_base_path + "/hwmon";
-                        if (optkit::utils::is_path_exists(hwmon_path))
-                        {
-                            std::vector<std::string> hwmon_entries = optkit::utils::get_all_files(hwmon_path);
-                            for (const auto &hwmon_entry : hwmon_entries)
-                            {
-                                if (hwmon_entry.find("hwmon") == 0)
-                                {
-                                    std::string hwmon_subdir = hwmon_path + "/" + hwmon_entry;
-                                    for (const auto &pf : {"power1_average", "power1_input"})
-                                    {
-                                        std::string hwmon_power_path = hwmon_subdir + "/" + pf;
-                                        if (optkit::utils::is_path_exists(hwmon_power_path))
-                                        {
-                                            gpu_info.has_power_monitoring = true;
-                                            active_power_path = hwmon_power_path;
-                                            break;
-                                        }
-                                    }
-                                    if (gpu_info.has_power_monitoring)
-                                        break;
-                                }
-                            }
-                        }
-                    }
-
-                    // Read power from sysfs if we found a path
-                    if (gpu_info.has_power_monitoring && !active_power_path.empty())
-                    {
-                        try
-                        {
-                            std::string power_str = optkit::utils::read_file(active_power_path);
-                            power_str.erase(std::remove_if(power_str.begin(), power_str.end(), ::isspace), power_str.end());
-                            gpu_info.current_power_watts = std::stod(power_str) / 1000000.0; // Convert from microwatts
-                        }
-                        catch (...)
-                        {
-                            gpu_info.current_power_watts = 0.0;
-                        }
-                    }
-#endif
-                    // Check for frequency control (enhanced check)
-                    gpu_info.clocks.has_frequency_control = false;
-                    if (gpu_info.basic.vendor == GpuVendor::INTEL)
-                    {
-                        std::string freq_path = drm_path + "/" + entry_name + "/gt/gt0/rps";
-                        gpu_info.clocks.has_frequency_control = optkit::utils::is_path_exists(freq_path);
-                    }
-                    // For NVIDIA and AMD, frequency control is typically available through their drivers
-                    else if (gpu_info.basic.vendor == GpuVendor::NVIDIA || gpu_info.basic.vendor == GpuVendor::AMD)
-                    {
-                        // Check for basic frequency info
-                        std::string freq_path = device_base_path + "/current_link_speed";
-                        gpu_info.clocks.has_frequency_control = optkit::utils::is_path_exists(freq_path);
-                    }
-
-                    // Check temperature monitoring via sysfs only if vendor APIs haven't already detected it
-                    if (!gpu_info.temperature.has_temperature_monitoring)
-                    {
-                        std::string hwmon_path = device_base_path + "/hwmon";
-                        if (optkit::utils::is_path_exists(hwmon_path))
-                        {
-                            std::vector<std::string> hwmon_entries = optkit::utils::get_all_files(hwmon_path);
-                            for (const auto &hwmon_entry : hwmon_entries)
-                            {
-                                if (hwmon_entry.find("hwmon") == 0)
-                                {
-                                    std::string temp_path = hwmon_path + "/" + hwmon_entry + "/temp1_input";
-                                    if (optkit::utils::is_path_exists(temp_path))
-                                    {
-                                        gpu_info.temperature.has_temperature_monitoring = true;
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // Only add GPUs that have some form of monitoring capability or are from known vendors
-                    if (gpu_info.power.has_power_monitoring || gpu_info.temperature.has_temperature_monitoring ||
-                        gpu_info.basic.vendor != GpuVendor::UNKNOWN)
-                    {
-                        gpus.push_back(gpu_info);
-                    }
-                }
-            }
-        }
-        catch (...)
-        {
-            // Return what we have so far
-        }
-
-        return gpus;
     }
 
     int32_t Query::get_available_power_methods()
@@ -1333,10 +917,10 @@ namespace optkit::gpu
         if (get_device_count() > 0)
         {
             // Check if any NVML device supports temperature
-            for (unsigned int i = 0; i < get_device_count(); i++)
+            for (uint32_t i = 0; i < get_device_count(); i++)
             {
                 double temp;
-                if (get_device_temperature_impl(i, temp))
+                if (get_device_temperature(i, temp))
                 {
                     return true;
                 }
@@ -1351,7 +935,7 @@ namespace optkit::gpu
             for (uint32_t i = 0; i < get_device_count(); i++)
             {
                 double temp;
-                if (get_device_temperature_impl(i, temp))
+                if (get_device_temperature(i, temp))
                 {
                     return true;
                 }
@@ -1449,30 +1033,6 @@ namespace optkit::gpu
             return false;
         }
         return false;
-    }
-
-    SystemGpuPowerInfo Query::get_system_gpu_power_info()
-    {
-        SystemGpuPowerInfo info = {};
-
-        auto gpus = get_power_capable_gpus();
-        info.num_power_monitored_gpus = 0;
-        info.current_gpu_power_usage_watts = 0.0;
-
-        for (const auto &gpu : gpus)
-        {
-            if (gpu.power.has_power_monitoring)
-            {
-                info.num_power_monitored_gpus++;
-                info.current_gpu_power_usage_watts += gpu.power.current_power_watts;
-                info.total_gpu_power_budget_watts += gpu.power.max_power_watts;
-            }
-        }
-
-        info.available_gpu_power_headroom_watts =
-            info.total_gpu_power_budget_watts - info.current_gpu_power_usage_watts;
-
-        return info;
     }
 
 } // namespace optkit::gpu

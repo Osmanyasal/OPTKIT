@@ -46,7 +46,7 @@ namespace optkit::gpu
          * @param gpu_id
          * @return GpuDeviceInfo
          */
-        static GpuDeviceInfo device_query(int32_t gpu_id);
+        static GpuDeviceInfo device_query(uint32_t gpu_id);
 
         /**
          * @brief Get the version of the GPU monitoring library
@@ -80,17 +80,34 @@ namespace optkit::gpu
         static bool is_intel_gpu_power_available();
 
         /**
-         * @brief Get list of available GPU devices with power monitoring
-         * @return vector of GPU device info (id, name, vendor, power_cap)
-         */
-        static std::vector<GpuDeviceInfo> get_power_capable_gpus();
-
-        /**
          * @brief Get available GPU power measurement methods
          * @return bitmask of available methods (NVIDIA_ML, AMD_ROCM, INTEL_I915, etc.)
          */
         static int32_t get_available_power_methods();
 
+        /**
+         * @brief Get comprehensive GPU device information
+         * @param device_index Index of the GPU device (0 to get_device_count()-1)
+         * @param info Output parameter to store the GPU device information
+         * @return true if device information was successfully retrieved, false otherwise
+         */
+        static bool get_device_info(uint32_t device_index, GpuDeviceInfo &info);
+
+        /**
+         * @brief Get GPU power usage in Watts
+         * @param device_index Index of the GPU device (0 to get_device_count()-1)
+         * @param power_watts Output parameter to store the power usage in Watts
+         * @return true if power reading was successful, false otherwise
+         */
+        static bool get_device_power_limit(uint32_t device_index, double &limit_watts);
+
+        /**
+         * @brief Get GPU temperature in degrees Celsius
+         * @param device_index Index of the GPU device (0 to get_device_count()-1)
+         * @param temp_celsius Output parameter to store the temperature in degrees Celsius
+         * @return true if temperature reading was successful, false otherwise
+         */
+        static bool get_device_temperature(uint32_t device_index, double &temp_celsius);
         /**
          * @brief Check if GPU frequency scaling is available
          * @return true if GPU frequency can be monitored/controlled
@@ -114,12 +131,6 @@ namespace optkit::gpu
          * @return true if GPU memory power can be monitored separately
          */
         static bool is_gpu_memory_power_available();
-
-        /**
-         * @brief Get system-wide GPU power budget info
-         * @return total GPU power budget, current usage, available headroom
-         */
-        static SystemGpuPowerInfo get_system_gpu_power_info();
 
         // Helper functions for enum conversion
         static GpuVendor vendor_from_string(const std::string &vendor_name);

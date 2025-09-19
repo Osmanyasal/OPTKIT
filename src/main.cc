@@ -23,12 +23,8 @@ int32_t main(int32_t argc, char **argv)
     std::cout << "GPU Device Query Example" << std::endl;
     std::cout << "========================" << std::endl;
 
-    // Initialize GPU monitoring
-    if (!optkit::gpu::Query::init())
-    {
-        std::cerr << "Failed to initialize GPU monitoring libraries" << std::endl;
-        return 1;
-    }
+    std::cout << "Driver version:" << optkit::gpu::Query::get_driver_version() << std::endl;
+    std::cout << "Library version:" << optkit::gpu::Query::get_library_version() << std::endl;
 
     // Get device count
     uint32_t device_count = optkit::gpu::Query::get_device_count();
@@ -51,19 +47,6 @@ int32_t main(int32_t argc, char **argv)
         std::cout << device_info << "\n";
     }
 
-    // Alternative: Query a specific device by ID
-    std::cout << "Querying device 0 specifically:" << std::endl;
-    optkit::gpu::GpuDeviceInfo device_0 = optkit::gpu::Query::device_query(0);
-    if (device_0.basic.vendor != optkit::gpu::GpuVendor::UNKNOWN)
-    {
-        std::cout << "Device 0: " << device_0.basic.device_name
-                  << " (" << device_0.basic.vendor_string << ")" << std::endl;
-    }
-    else
-    {
-        std::cout << "Device 0 not found or not supported" << std::endl;
-    }
-
     // GPU Query Methods Test
     std::cout << "=== GPU Query Methods Test ===" << std::endl;
 
@@ -75,22 +58,6 @@ int32_t main(int32_t argc, char **argv)
     // Get available power measurement methods
     int32_t methods = optkit::gpu::Query::get_available_power_methods();
     std::cout << "Available power methods (bitmask): " << methods << std::endl;
-
-    // Get power-capable GPUs
-    auto gpus = optkit::gpu::Query::get_power_capable_gpus();
-    std::cout << "Found " << gpus.size() << " power-capable GPUs:" << std::endl;
-    for (const auto &gpu : gpus)
-    {
-        std::cout << gpu << std::endl;
-    }
-
-    // Get system-wide GPU power info
-    auto system_info = optkit::gpu::Query::get_system_gpu_power_info();
-    std::cout << system_info << std::endl;
-
-    // Cleanup vendor libraries
-    optkit::gpu::Query::shutdown();
-    std::cout << "=== End GPU Query Test ===" << std::endl;
 
     return 0;
 
