@@ -1,15 +1,10 @@
-#include "core/temperature/cpu_temperature_profiler.hh"
-#include <dirent.h>
-#include <sys/stat.h>
-#include <cstring>
-#include <algorithm>
-
-namespace optkit::temperature
+#include "core/temperature/hwmon/profiler.hh"
+namespace optkit::temperature::hwmon
 {
     // Static member definition
-    std::unordered_map<std::string, std::string> CPUTemperatureProfiler::sensor_paths;
+    std::unordered_map<std::string, std::string> Profiler::sensor_paths;
 
-    void CPUTemperatureProfiler::init()
+    void Profiler::init()
     {
         sensor_paths = discover_hwmon_sensors();
         if (sensor_paths.empty())
@@ -22,7 +17,7 @@ namespace optkit::temperature
         }
     }
 
-    CPUTemperatureProfiler::CPUTemperatureProfiler(const ProfilerConfig &profiler_config, const optkit::metrics::MetricBuilder<double> &mb)
+    Profiler::Profiler(const ProfilerConfig &profiler_config, const optkit::metrics::MetricBuilder<double> &mb)
         : BaseProfiler(profiler_config), metric_builder(mb)
     {
         // Take initial snapshot
@@ -41,7 +36,7 @@ namespace optkit::temperature
         //     std::cout << i.first << " -> " << i.second << std::endl;
     }
 
-    CPUTemperatureProfiler::~CPUTemperatureProfiler()
+    Profiler::~Profiler()
     {
         this->read_and_store();
         this->metric_results = this->metric_builder.calculate(aggregate());
@@ -64,7 +59,7 @@ namespace optkit::temperature
         }
     }
 
-    std::vector<double> CPUTemperatureProfiler::read()
+    std::vector<double> Profiler::read()
     {
 
         auto current_snapshot = read_temperature_sensors();
@@ -84,7 +79,7 @@ namespace optkit::temperature
         return current_temps;
     }
 
-    std::unordered_map<std::string, double> CPUTemperatureProfiler::aggregate()
+    std::unordered_map<std::string, double> Profiler::aggregate()
     {
         double total_duration = 0.0;
         std::unordered_map<std::string, double> aggregated_events;
@@ -110,7 +105,7 @@ namespace optkit::temperature
         return aggregated_events;
     }
 
-    std::string CPUTemperatureProfiler::to_json()
+    std::string Profiler::to_json()
     {
         std::stringstream ss;
         ss << "[\n";
@@ -163,8 +158,8 @@ namespace optkit::temperature
         return temp_num_str;
     }
 
-    std::string CPUTemperatureProfiler::build_sensor_name(const std::string &hwmon_name,
-                                                          const std::string &temp_num_str)
+    std::string Profiler::build_sensor_name(const std::string &hwmon_name,
+                                            const std::string &temp_num_str)
     {
         // std::cout << "build_sensor_name:" << hwmon_name << " ---- " << temp_num_str << std::endl;
         // Group patterns - ordered by specificity (most specific first)
@@ -241,7 +236,7 @@ namespace optkit::temperature
         return hwmon_name + "_" + temp_num_str;
     }
 
-    std::unordered_map<std::string, std::string> CPUTemperatureProfiler::discover_hwmon_sensors()
+    std::unordered_map<std::string, std::string> Profiler::discover_hwmon_sensors()
     {
         std::unordered_map<std::string, std::string> sensors;
 
@@ -319,7 +314,7 @@ namespace optkit::temperature
         return sensors;
     }
 
-    double CPUTemperatureProfiler::read_hwmon_temperature(const std::string &hwmon_path)
+    double Profiler::read_hwmon_temperature(const std::string &hwmon_path)
     {
         try
         {
@@ -332,7 +327,7 @@ namespace optkit::temperature
         }
     }
 
-    std::unordered_map<std::string, double> CPUTemperatureProfiler::read_temperature_sensors()
+    std::unordered_map<std::string, double> Profiler::read_temperature_sensors()
     {
         std::unordered_map<std::string, double> results;
 

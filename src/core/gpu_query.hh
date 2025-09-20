@@ -9,6 +9,7 @@
 #include <map>
 #include <unistd.h>
 #include <cstdint>
+
 #include "utils/utils.hh"
 #include "utils/gpu.hh"
 
@@ -27,6 +28,7 @@ namespace optkit::gpu
          * @return false
          */
         static bool init();
+
         /**
          * @brief Cleanup vendor-specific libraries (NVML, ROCm)
          * @note Call this when done with GPU monitoring to properly shutdown libraries
@@ -34,19 +36,19 @@ namespace optkit::gpu
         static void shutdown();
 
         /**
-         * @brief Get the driver version object
-         *
-         * @return double
-         */
-        static double get_driver_version();
-
-        /**
-         * @brief Query GPU device information
+         * @brief Query GPU device information, returns all information about the GPU
          *
          * @param gpu_id
          * @return GpuDeviceInfo
          */
-        static GpuDeviceInfo device_query(uint32_t gpu_id);
+        static GpuDeviceInfo device_query(uint32_t gpu_id = 0);
+
+        /**
+         * @brief Get the driver version of the GPU
+         *
+         * @return double -> major.minor
+         */
+        static double get_driver_version();
 
         /**
          * @brief Get the version of the GPU monitoring library
@@ -62,6 +64,23 @@ namespace optkit::gpu
         static uint32_t get_device_count();
 
         /**
+         * @brief Get the device power impl object
+         *
+         * @param device_index
+         * @param power_watts
+         * @return true
+         * @return false
+         */
+        static bool get_device_power(uint32_t device_index, double &power_watts);
+
+        /**
+         * @brief Get the cpu architecture object
+         *
+         * @return uint32_t
+         */
+        static uint32_t get_gpu_architecture(uint32_t device_index);
+
+        /**
          * @brief Check if NVIDIA GPU power monitoring is available via nvidia-ml
          * @return true if NVIDIA GPUs with power monitoring are detected
          */
@@ -72,18 +91,6 @@ namespace optkit::gpu
          * @return true if AMD GPUs with power monitoring are detected
          */
         static bool is_amd_power_available();
-
-        /**
-         * @brief Check if Intel GPU power monitoring is available via i915/sysfs
-         * @return true if Intel integrated GPUs with power monitoring are detected
-         */
-        static bool is_intel_gpu_power_available();
-
-        /**
-         * @brief Get available GPU power measurement methods
-         * @return bitmask of available methods (NVIDIA_ML, AMD_ROCM, INTEL_I915, etc.)
-         */
-        static int32_t get_available_power_methods();
 
         /**
          * @brief Get comprehensive GPU device information
@@ -108,29 +115,6 @@ namespace optkit::gpu
          * @return true if temperature reading was successful, false otherwise
          */
         static bool get_device_temperature(uint32_t device_index, double &temp_celsius);
-        /**
-         * @brief Check if GPU frequency scaling is available
-         * @return true if GPU frequency can be monitored/controlled
-         */
-        static bool is_gpu_frequency_control_available();
-
-        /**
-         * @brief Check if GPU temperature monitoring is available
-         * @return true if GPU temperature sensors are accessible
-         */
-        static bool is_gpu_temperature_available();
-
-        /**
-         * @brief Get GPU compute utilization monitoring capabilities
-         * @return true if GPU utilization can be monitored
-         */
-        static bool is_gpu_utilization_monitoring_available();
-
-        /**
-         * @brief Check for GPU memory power monitoring (GDDR/HBM power)
-         * @return true if GPU memory power can be monitored separately
-         */
-        static bool is_gpu_memory_power_available();
 
         // Helper functions for enum conversion
         static GpuVendor vendor_from_string(const std::string &vendor_name);

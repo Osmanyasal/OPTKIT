@@ -1,6 +1,7 @@
 #include <omp.h>
 #include "optkit.hh"
 #include <immintrin.h> // AVX intrinsics
+#include <utils/gpu.hh>
 
 #define VECTOR_SIZE 1000000
 
@@ -17,7 +18,8 @@ inline std::vector<T> generate_vector(size_t n = VECTOR_SIZE)
 int32_t main(int32_t argc, char **argv)
 {
     OPTKIT_INIT({false});
-
+    OPTKIT_HWMON_TEMPERATURE_EVENTS("main", {});
+    OPTKIT_GPU_TEMPERATURE_EVENTS("main", {});
     OPTKIT_CPU_ENERGY(main, "main");
 
     std::cout << "GPU Device Query Example" << std::endl;
@@ -28,23 +30,14 @@ int32_t main(int32_t argc, char **argv)
 
     // Get device count
     uint32_t device_count = optkit::gpu::Query::get_device_count();
-    std::cout << "Found " << device_count << " GPU device(s)" << std::endl
-              << std::endl;
-
-    if (device_count == 0)
-    {
-        std::cout << "No GPU devices found. Make sure you have:" << std::endl;
-        std::cout << "- NVIDIA GPU with NVML library installed, or" << std::endl;
-        std::cout << "- AMD GPU with ROCm SMI library installed" << std::endl;
-        optkit::gpu::Query::shutdown();
-        return 0;
-    }
+    std::cout << "Found " << device_count << " GPU device(s)" << std::endl;
+    std::cout << "Architecture: " << optkit::gpu::Query::get_gpu_architecture(0) << std::endl;
 
     // Query each device
     for (uint32_t i = 0; i < device_count; i++)
     {
-        optkit::gpu::GpuDeviceInfo device_info = optkit::gpu::Query::device_query(static_cast<int32_t>(i));
-        std::cout << device_info << "\n";
+        optkit::gpu::GpuDeviceInfo device_query = optkit::gpu::Query::device_query(static_cast<int32_t>(i));
+        std::cout << device_query << "\n";
     }
 
     // GPU Query Methods Test
@@ -53,13 +46,6 @@ int32_t main(int32_t argc, char **argv)
     // Check vendor-specific power monitoring availability
     std::cout << "NVIDIA power available: " << optkit::gpu::Query::is_nvidia_power_available() << std::endl;
     std::cout << "AMD power available: " << optkit::gpu::Query::is_amd_power_available() << std::endl;
-    std::cout << "Intel GPU power available: " << optkit::gpu::Query::is_intel_gpu_power_available() << std::endl;
-
-    // Get available power measurement methods
-    int32_t methods = optkit::gpu::Query::get_available_power_methods();
-    std::cout << "Available power methods (bitmask): " << methods << std::endl;
-
-    return 0;
 
     std::cout << optkit::Query::is_smt_enabled() << "\n";
     sleep(5);
@@ -74,7 +60,6 @@ int32_t main(int32_t argc, char **argv)
         std::cout << domain_info << std::endl;
     }
     // exit(0);
-    // OPTKIT_CPU_TEMPERATURE_EVENTS("main", {});
     // OPTKIT_DISK_EVENTS("main", optkit::metrics::disk::core_metrics::AllMetrics());
     OPTKIT_CPU_EVENTS("main", optkit::metrics::cpu::core_metrics::CPUMaxCapacityBasedUtilization());
     // optkit::metrics::MetricBuilder mb{true, true};
@@ -98,10 +83,10 @@ int32_t main(int32_t argc, char **argv)
     // Shared flag to stop after some time
     std::atomic<bool> stop{false};
 
-    // Launch a timer thread to stop after e.g. 10 seconds
+    // Launch a timer thread to stop after e.g. 100 seconds
     std::thread timer([&stop]()
                       {
-        std::this_thread::sleep_for(std::chrono::seconds(10));
+        std::this_thread::sleep_for(std::chrono::seconds(100));
         stop = true; });
 
 // Run OpenMP parallel region

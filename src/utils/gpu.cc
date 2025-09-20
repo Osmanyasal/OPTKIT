@@ -2,7 +2,37 @@
 
 namespace optkit::gpu
 {
-
+#if OPTKIT_ENV_LIB_NVML
+    std::string to_string(nvmlDeviceArchitecture_t arch)
+    {
+        switch (arch)
+        {
+        case NVML_DEVICE_ARCH_KEPLER:
+            return "Kepler";
+        case NVML_DEVICE_ARCH_MAXWELL:
+            return "Maxwell";
+        case NVML_DEVICE_ARCH_PASCAL:
+            return "Pascal";
+        case NVML_DEVICE_ARCH_VOLTA:
+            return "Volta";
+        case NVML_DEVICE_ARCH_TURING:
+            return "Turing";
+        case NVML_DEVICE_ARCH_AMPERE:
+            return "Ampere";
+        case NVML_DEVICE_ARCH_ADA:
+            return "Ada";
+        case NVML_DEVICE_ARCH_HOPPER:
+            return "Hopper";
+        case NVML_DEVICE_ARCH_BLACKWELL:
+            return "Blackwell";
+        case NVML_DEVICE_ARCH_T23X:
+            return "Orin (T23X)";
+        case NVML_DEVICE_ARCH_UNKNOWN:
+        default:
+            return "Unknown";
+        }
+    }
+#endif
     std::string to_string(GpuVendor vendor)
     {
         switch (vendor)
@@ -105,6 +135,7 @@ namespace optkit::gpu
         return "{\"id\":" + std::to_string(info.id) +
                ",\"name\":\"" + info.name + "\"" +
                ",\"device_name\":\"" + info.device_name + "\"" +
+               ",\"architecture\":\"" + to_string(info.architecture) + "\"" +
                ",\"vendor\":\"" + to_string(info.vendor) + "\"" +
                ",\"vendor_string\":\"" + info.vendor_string + "\"" +
                ",\"is_integrated\":" + (info.is_integrated ? "true" : "false") + "}";
@@ -140,10 +171,14 @@ namespace optkit::gpu
 
     std::string to_string(const GpuClockInfo &info)
     {
-        return "{\"base_clock_rate_khz\":" + std::to_string(info.base_clock_rate_khz) +
-               ",\"boost_clock_rate_khz\":" + std::to_string(info.boost_clock_rate_khz) +
+        return "{\"current_sm_clock_mhz\":" + std::to_string(info.current_sm_clock_mhz) +
+               ",\"current_video_clock_mhz\":" + std::to_string(info.current_video_clock_mhz) +
                ",\"current_graphics_clock_mhz\":" + std::to_string(info.current_graphics_clock_mhz) +
                ",\"current_memory_clock_mhz\":" + std::to_string(info.current_memory_clock_mhz) +
+               ",\"max_sm_clock_mhz\":" + std::to_string(info.max_sm_clock_mhz) +
+               ",\"max_video_clock_mhz\":" + std::to_string(info.max_video_clock_mhz) +
+               ",\"max_graphics_clock_mhz\":" + std::to_string(info.max_graphics_clock_mhz) +
+               ",\"max_memory_clock_mhz\":" + std::to_string(info.max_memory_clock_mhz) +
                ",\"has_frequency_control\":" + (info.has_frequency_control ? "true" : "false") + "}";
     }
 
@@ -213,6 +248,14 @@ namespace optkit::gpu
     }
 
     // Stream operators for all structures
+#if OPTKIT_ENV_LIB_NVML
+    std::ostream &operator<<(std::ostream &os, nvmlDeviceArchitecture_t arch)
+    {
+        os << to_string(arch);
+        return os;
+    }
+#endif
+
     std::ostream &operator<<(std::ostream &os, const GpuPowerMethod &method)
     {
         os << to_string(method);

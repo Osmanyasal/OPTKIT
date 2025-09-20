@@ -276,8 +276,8 @@ namespace optkit::frequency
         optkit::utils::write_msr(socket, MSR_UNCORE_RATIO_LIMIT, MSR_UNCORE_RATIO_LIMIT_bits);
     }
 #else
-    int64_t CPUFrequency::get_uncore_frequency(int16_t socket) {};
-    std::pair<int64_t, int64_t> CPUFrequency::get_uncore_min_max(int16_t socket) {};
+    int64_t CPUFrequency::get_uncore_frequency(int16_t socket) { return -1; };
+    std::pair<int64_t, int64_t> CPUFrequency::get_uncore_min_max(int16_t socket) { return {}; };
     void CPUFrequency::reset_uncore_frequency(int16_t socket) {};
     void CPUFrequency::set_uncore_frequency(int64_t frequency, int16_t socket) {};
 #endif

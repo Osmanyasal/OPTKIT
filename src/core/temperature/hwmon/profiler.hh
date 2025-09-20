@@ -6,22 +6,23 @@
 #include <iostream>
 #include <utility>
 #include <cstdint>
+#include <cstring>
+#include <algorithm>
 #include <unordered_map>
-#include <filesystem>
 #include "utils/utils.hh"
 #include "utils/base_profiler.hh"
 #include "utils/metric_builder.hh"
 
-namespace optkit::temperature
+namespace optkit::temperature::hwmon
 {
     /**
-     * @brief CPU temperature profiler.
-     * This profiler reads CPU temperature sensors from the hwmon interface.
+     * @brief HWMON temperature profiler.
+     * This profiler reads temperature sensors from the hwmon interface.
      * It is designed to work with the hwmon interface, which is typically found in Linux
      * systems under `/sys/class/hwmon/`.
      *
      * double is chosen as the read type since, as opposed to pmu and io, next reading can be smaller than the previous one,
-     * e.g., when the CPU cools down. This is why we use double instead of uint64_t.
+     * e.g., when the related device cools down. This is why we use double instead of uint64_t.
      *
      * Discovery of sensors is done in the static `init()` method, which is called in OPTKIT ctor.
      * The sensors are stored in a static map `sensor_paths` which maps sensor names to their respective hwmon paths to obtain the temperature readings.
@@ -29,7 +30,7 @@ namespace optkit::temperature
      * @note: grouping feature is not fully implemented. meaning, what ever exists in hwmon, is reported as is.
      *
      */
-    class CPUTemperatureProfiler : public BaseProfiler<std::vector<double>, double>
+    class Profiler : public BaseProfiler<std::vector<double>, double>
     {
     public:
         static void init(); // Initialize static sensor paths
@@ -40,8 +41,8 @@ namespace optkit::temperature
         static std::unordered_map<std::string, std::string> sensor_paths; // sensor_name -> hwmon_path
 
     public:
-        CPUTemperatureProfiler(const ProfilerConfig &profiler_config, const optkit::metrics::MetricBuilder<double> &mb);
-        virtual ~CPUTemperatureProfiler();
+        Profiler(const ProfilerConfig &profiler_config, const optkit::metrics::MetricBuilder<double> &mb);
+        virtual ~Profiler();
 
         virtual void enable() override {}  // Already handled by constructor
         virtual void disable() override {} // No-op
@@ -71,4 +72,4 @@ namespace optkit::temperature
         std::unordered_map<std::string, double> last_snapshot;
         std::vector<std::pair<std::string, double>> metric_results;
     };
-}
+} // namespace optkit::temperature::hwmon

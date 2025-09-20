@@ -26,9 +26,9 @@ namespace optkit
         }
         else
         {
-            optkit::pmu::cpu::QueryPMU::init();                  // pmf init
-            optkit::gpu::Query::init();                          // gpu init
-            optkit::temperature::CPUTemperatureProfiler::init(); // discover hwmon temperatures.
+            optkit::pmu::cpu::QueryPMU::init();           // pmf init
+            optkit::gpu::Query::init();                   // gpu init
+            optkit::temperature::hwmon::Profiler::init(); // discover hwmon temperatures.
 
             Query::create_folder = config.create_folder;
             if (OPT_LIKELY(Query::create_folder))

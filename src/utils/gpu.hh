@@ -29,9 +29,7 @@ OPT_FORCE_INLINE fn_t query_nvml_fn(const char *function_name)
     {                                                        \
         static fn_t fn = query_nvml_fn(NAME_STR);            \
         if (fn)                                              \
-        {                                                    \
             RESULT = fn(DEVICE, __VA_ARGS__);                \
-        }                                                    \
         else                                                 \
             RESULT = NVML_ERROR_NOT_SUPPORTED;               \
     } while (0)
@@ -92,6 +90,9 @@ namespace optkit::gpu
         std::string name;
         std::string device_name;
         GpuVendor vendor;
+#if OPTKIT_ENV_LIB_NVML
+        nvmlDeviceArchitecture_t architecture;
+#endif
         std::string vendor_string;
         bool is_integrated;
     };
@@ -138,10 +139,15 @@ namespace optkit::gpu
      */
     struct GpuClockInfo
     {
-        uint32_t base_clock_rate_khz;
-        uint32_t boost_clock_rate_khz;
+        uint32_t current_sm_clock_mhz;
+        uint32_t current_video_clock_mhz;
         uint32_t current_graphics_clock_mhz;
         uint32_t current_memory_clock_mhz;
+
+        uint32_t max_sm_clock_mhz;
+        uint32_t max_video_clock_mhz;
+        uint32_t max_graphics_clock_mhz;
+        uint32_t max_memory_clock_mhz;
         bool has_frequency_control;
     };
 
@@ -232,6 +238,9 @@ namespace optkit::gpu
     };
 
     GpuVendor vendor_from_string(const std::string &vendor_name);
+#if OPTKIT_ENV_LIB_NVML
+    std::string to_string(nvmlDeviceArchitecture_t arch);
+#endif
     std::string to_string(GpuVendor vendor);
     std::string to_string(const GpuPowerMethod &method);
     std::string to_string(const GpuBasicInfo &info);
@@ -246,6 +255,7 @@ namespace optkit::gpu
     std::string to_string(const GpuCapabilitiesInfo &info);
     std::string to_string(const GpuDeviceInfo &info);
     std::string to_string(const SystemGpuPowerInfo &info);
+
     std::ostream &operator<<(std::ostream &os, GpuVendor vendor);
     std::ostream &operator<<(std::ostream &os, const GpuPowerMethod &method);
     std::ostream &operator<<(std::ostream &os, const GpuBasicInfo &info);
