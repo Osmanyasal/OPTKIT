@@ -6,10 +6,10 @@ namespace optkit::temperature::gpu
     {
         for (uint32_t i = 0; i < optkit::gpu::Query::get_device_count(); i++)
         {
-            double temp_celcius = 0.0;
-            optkit::gpu::Query::get_device_temperature(i, temp_celcius);
-            last_snapshot[i] = temp_celcius;
-            std::cout << "Initial snapshot: " << i << " -> " << temp_celcius << std::endl;
+            double temp_celsius;
+            optkit::gpu::Query::get_device_temperature(i, temp_celsius);
+            last_snapshot[i] = temp_celsius;
+            // std::cout << "Initial snapshot: " << i << " -> " << temp_celsius << std::endl;
         }
 
         metric_builder = {};
@@ -48,9 +48,9 @@ namespace optkit::temperature::gpu
         std::unordered_map<uint32_t, double> current_snapshot;
         for (uint32_t i = 0; i < optkit::gpu::Query::get_device_count(); i++)
         {
-            double temp_celcius = 0.0;
-            optkit::gpu::Query::get_device_temperature(i, temp_celcius);
-            current_snapshot[i] = temp_celcius;
+            double temp_celsius;
+            optkit::gpu::Query::get_device_temperature(i, temp_celsius);
+            current_snapshot[i] = temp_celsius;
         }
 
         std::vector<double> current_temps;

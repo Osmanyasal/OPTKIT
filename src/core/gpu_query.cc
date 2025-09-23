@@ -859,17 +859,9 @@ namespace optkit::gpu
         return info;
     }
 
-    bool Query::is_nvidia_power_available()
+    bool Query::is_power_available()
     {
         // First try NVML
-        if (get_device_count() > 0)
-            return true;
-        return false;
-    }
-
-    bool Query::is_amd_power_available()
-    {
-        // First try ROCm
         if (get_device_count() > 0)
             return true;
         return false;

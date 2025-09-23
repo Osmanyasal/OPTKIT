@@ -81,16 +81,10 @@ namespace optkit::gpu
         static uint32_t get_gpu_architecture(uint32_t device_index);
 
         /**
-         * @brief Check if NVIDIA GPU power monitoring is available via nvidia-ml
-         * @return true if NVIDIA GPUs with power monitoring are detected
+         * @brief Check if GPU power monitoring is available.
+         * @return true if GPUs with power monitoring are detected
          */
-        static bool is_nvidia_power_available();
-
-        /**
-         * @brief Check if AMD GPU power monitoring is available via ROCm/sysfs
-         * @return true if AMD GPUs with power monitoring are detected
-         */
-        static bool is_amd_power_available();
+        static bool is_power_available();
 
         /**
          * @brief Get comprehensive GPU device information
