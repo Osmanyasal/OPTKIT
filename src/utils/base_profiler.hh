@@ -121,6 +121,16 @@ namespace optkit
          */
         virtual std::unordered_map<std::string, readvalT> aggregate() = 0;
 
+        /**
+         * @brief Returns the historic data of power samples taken.
+         *
+         * @return std::vector<std::pair<double, readT>> where first is duration and second is the value.
+         */
+        std::vector<std::pair<double, readT>> get_read_buffer()
+        {
+            return this->read_buffer;
+        }
+
     protected:
         /**
          * @brief Converts the buffer to JSON format and writes it to a file.

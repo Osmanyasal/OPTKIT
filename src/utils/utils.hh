@@ -9,6 +9,8 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <fstream>
+#include <type_traits>
+#include <unordered_map>
 
 #include <chrono>
 #include <string>
@@ -115,6 +117,55 @@ namespace optkit::utils
     std::vector<std::string> get_all_files(const std::string &directory_name);
     std::vector<std::string> str_split(const std::string &s, const std::string &delimiter);
 
+    // Helper functions for C++11 compatible type handling
+    template <typename T>
+    typename std::enable_if<std::is_arithmetic<T>::value, void>::type
+    format_result_value(std::ostringstream &ss, const T &value)
+    {
+        ss << std::fixed << value;
+    }
+
+    template <typename T>
+    typename std::enable_if<std::is_same<T, std::unordered_map<uint32_t, double>>::value, void>::type
+    format_result_value(std::ostringstream &ss, const T &value)
+    {
+        ss << "{";
+        bool first = true;
+        for (typename T::const_iterator it = value.begin(); it != value.end(); ++it)
+        {
+            if (!first)
+                ss << ",";
+            ss << "\"" << it->first << "\":" << std::fixed << it->second;
+            first = false;
+        }
+        ss << "}";
+    }
+
+    // Fallback for unsupported types
+    template <typename T>
+    typename std::enable_if<!std::is_arithmetic<T>::value &&
+                                !std::is_same<T, std::unordered_map<uint32_t, double>>::value,
+                            void>::type
+    format_result_value(std::ostringstream &ss, const T &value)
+    {
+        ss << "\"unsupported_type\"";
+    }
+
+    // Helper to get dtype string
+    template <typename T>
+    typename std::enable_if<std::is_same<T, uint64_t>::value, std::string>::type
+    get_dtype_string() { return "uint64_t"; }
+
+    template <typename T>
+    typename std::enable_if<std::is_same<T, double>::value, std::string>::type
+    get_dtype_string() { return "double"; }
+
+    template <typename T>
+    typename std::enable_if<!std::is_same<T, uint64_t>::value &&
+                                !std::is_same<T, double>::value,
+                            std::string>::type
+    get_dtype_string() { return "complex"; }
+
     template <typename resultT>
     nlohmann::json to_json(double duration, const char *metric_name,
                            const std::vector<std::pair<std::string, resultT>> &results,
@@ -149,14 +200,14 @@ namespace optkit::utils
             const std::string &unit = parsed.second;
 
             std::ostringstream ss;
-            ss << std::fixed << value;
+            format_result_value(ss, value);
 
             nlohmann::json entry;
             entry["type"] = "event";
             entry["name"] = name;
             entry["value"] = ss.str();
             entry["value_unit"] = unit;
-            entry["dtype"] = "uint64_t";
+            entry["dtype"] = get_dtype_string<resultT>();
 
             packageJson["measurements"].push_back(entry);
         }

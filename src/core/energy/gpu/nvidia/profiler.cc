@@ -1,26 +1,54 @@
-#include "core/energy/gpu/profiler.hh"
-namespace optkit::energy::gpu
+#include "core/energy/gpu/nvidia/profiler.hh"
+
+namespace optkit::energy::gpu::nvidia
 {
-    Profiler::Profiler(const ProfilerConfig &profiler_config, const optkit::metrics::MetricBuilder<double> &mb)
-        : BaseProfiler(profiler_config), metric_builder(mb)
+    // this is the sampling function that runs in a separate thread
+    // it accumulates power readings every sampling_frequency_sec seconds
+    // unordered-map stands for device-id <-> {power (Watts)}
+    OPT_FORCE_INLINE void sampling_function(std::unordered_map<uint32_t, double> &snapshot, uint32_t sampling_frequency_sec = 1) // in seconds
     {
-        for (uint32_t i = 0; i < optkit::gpu::Query::get_device_count(); i++)
+        static uint32_t device_count = optkit::gpu::Query::get_device_count();
+        for (uint32_t i = 0; i < device_count; i++)
         {
-            double temp_celcius = 0.0;
-            optkit::gpu::Query::get_device_temperature(i, temp_celcius);
-            last_snapshot[i] = temp_celcius;
+            double power_watts = 0.0;
+            if (OPT_LIKELY(optkit::gpu::Query::get_device_power(i, power_watts)))
+            {
+                snapshot[i] = power_watts * sampling_frequency_sec; // power in Watts * time in seconds = energy in Joules
+                // std::cout << "snapshot[" << i << "] = " << snapshot[i] << " Joules\n"; // debug
+            }
+            else
+            {
+                snapshot[i] = 0; // Not supported
+                OPTKIT_WARN("Power monitoring not supported for GPU {}", i);
+            }
         }
+    }
+    Profiler::Profiler(const ProfilerConfig &profiler_config, const uint32_t sampling_frequency_sec, const optkit::metrics::MetricBuilder<std::unordered_map<uint32_t, double>> &mb)
+        : BaseProfiler{profiler_config}, metric_builder{mb}, sampling_frequency_sec{sampling_frequency_sec}, sampling_counter{0}, is_sampling{true}
+    {
 
         metric_builder = {};
-        for (auto &&i : last_snapshot)
+        uint32_t device_count = optkit::gpu::Query::get_device_count();
+        for (uint32_t i = 0; i < device_count; i++)
         {
-            metric_builder.add("gpu_" + std::to_string(i.first), {0x0});
+            metric_builder.add("gpu[" + std::to_string(i) + "]", {0x0});
         }
+        this->sampling_thread = std::thread([this]()
+                                            {
+                                            while (this->is_sampling)
+                                            { 
+                                                this->read_and_store();
+                                                this->sampling_counter++;
+                                                std::this_thread::sleep_for(std::chrono::seconds(this->sampling_frequency_sec));
+                                            } });
+        OPTKIT_INFO("Initialized NVIDIA GPU Energy Profiler with sampling frequency: {} seconds.", sampling_frequency_sec);
     }
 
     Profiler::~Profiler()
     {
         this->read_and_store();
+        this->is_sampling = false;    // stop sampling thread
+        this->sampling_thread.join(); // wait for it to join.
         this->metric_results = this->metric_builder.calculate(aggregate());
 
         if (OPT_LIKELY(Query::create_folder))
@@ -34,57 +62,42 @@ namespace optkit::energy::gpu
 
             if (OPT_UNLIKELY(this->metric_builder.print_events))
                 for (auto &&event : this->event_results)
-                    std::cout << std::fixed << "\t" << event.first << ": " << event.second << "°C" << std::endl;
+                {
+                    for (auto &&device : event.second)
+                        std::cout << "GPU[" << device.first << "]=" << device.second << " Joules ";
+                    std::cout << std::endl;
+                }
 
             for (auto &&metric : this->metric_results)
                 std::cout << std::fixed << "\t" << metric.first << ": " << metric.second << std::endl;
         }
     }
 
-    std::vector<double> Profiler::read()
+    std::unordered_map<uint32_t, double> Profiler::read()
     {
-
-        std::unordered_map<uint32_t, double> current_snapshot;
-        for (uint32_t i = 0; i < optkit::gpu::Query::get_device_count(); i++)
-        {
-            double temp_celcius = 0.0;
-            optkit::gpu::Query::get_device_temperature(i, temp_celcius);
-            current_snapshot[i] = temp_celcius;
-        }
-
-        std::vector<double> current_temps;
-        for (const auto &cs : current_snapshot)
-        {
-            // std::cout << "Current snapshot: " << cs.first << " -> " << cs.second << std::endl;
-            double curr_val = current_snapshot.at(cs.first);
-            double prev_val = last_snapshot.at(cs.first);
-
-            double delta = curr_val - prev_val;
-            last_snapshot.at(cs.first) = curr_val;
-            current_temps.push_back(delta); // store the delta
-        }
-
-        return current_temps;
+        optkit::energy::gpu::nvidia::sampling_function(this->snapshot, this->sampling_frequency_sec);
+        return this->snapshot;
     }
 
-    std::unordered_map<std::string, double> Profiler::aggregate()
+    std::unordered_map<std::string, std::unordered_map<uint32_t, double>> Profiler::aggregate()
     {
         double total_duration = 0.0;
-        std::unordered_map<std::string, double> aggregated_events;
+        std::unordered_map<std::string, std::unordered_map<uint32_t, double>> aggregated_events;
         const std::vector<std::string> &event_names = this->metric_builder.event_names();
 
         for (const auto &entry : read_buffer)
         {
             total_duration += entry.first;
+            const auto &values = entry.second;
 
-            const std::vector<double> &values = entry.second;
-
-            for (size_t j = 0; j < values.size(); ++j)
+            for (auto &&i : values)
             {
-                aggregated_events[event_names[j]] += values[j];
+                // std::cout << std::fixed << "adding..:" << i.second << " Joules \n";
+                aggregated_events[event_names[i.first]][i.first] += i.second;
+                // std::cout << std::fixed << "Aggregated GPU[" << i.first << "] += " << aggregated_events[event_names[i.first]][i.first] << " Joules\n"; // debug
             }
         }
-        std::vector<std::pair<std::string, double>> event_value(
+        std::vector<std::pair<std::string, std::unordered_map<uint32_t, double>>> event_value(
             aggregated_events.begin(), aggregated_events.end());
 
         this->event_results = event_value;
@@ -97,8 +110,8 @@ namespace optkit::energy::gpu
     {
         std::stringstream ss;
         ss << "[\n";
-        ss << utils::to_json<double>(this->total_duration_ms, this->config.measurement_type, this->event_results, this->metric_results);
+        ss << utils::to_json<std::unordered_map<uint32_t, double>>(this->total_duration_ms, this->config.measurement_type, this->event_results, this->metric_results);
         ss << "]\n";
         return ss.str();
     }
-}
+} // namespace optkit::energy::gpu::nvidia

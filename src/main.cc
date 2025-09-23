@@ -18,10 +18,12 @@ inline std::vector<T> generate_vector(size_t n = VECTOR_SIZE)
 int32_t main(int32_t argc, char **argv)
 {
     OPTKIT_INIT({false});
-    OPTKIT_HWMON_TEMPERATURE_EVENTS("main", {});
-    OPTKIT_GPU_TEMPERATURE_EVENTS("main", {});
-    OPTKIT_CPU_ENERGY(main, "main");
+    // OPTKIT_HWMON_TEMPERATURE_EVENTS("main", {});
+    // OPTKIT_GPU_TEMPERATURE_EVENTS("main", {});
+    OPTKIT_GPU_ENERGY_EVENTS("main gpu temp", {});
+    // OPTKIT_CPU_ENERGY(main, "main");
 
+#if 0
     std::cout << "GPU Device Query Example" << std::endl;
     std::cout << "========================" << std::endl;
 
@@ -48,7 +50,7 @@ int32_t main(int32_t argc, char **argv)
     std::cout << "AMD power available: " << optkit::gpu::Query::is_amd_power_available() << std::endl;
 
     std::cout << optkit::Query::is_smt_enabled() << "\n";
-    sleep(5);
+    
 
     // return 0;
     auto result = optkit::energy::rapl::Query::rapl_domain_info();
@@ -59,7 +61,11 @@ int32_t main(int32_t argc, char **argv)
     {
         std::cout << domain_info << std::endl;
     }
+#endif
+
+    sleep(90);
     // exit(0);
+    return 0;
     // OPTKIT_DISK_EVENTS("main", optkit::metrics::disk::core_metrics::AllMetrics());
     OPTKIT_CPU_EVENTS("main", optkit::metrics::cpu::core_metrics::CPUMaxCapacityBasedUtilization());
     // optkit::metrics::MetricBuilder mb{true, true};
