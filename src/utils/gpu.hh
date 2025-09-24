@@ -90,9 +90,7 @@ namespace optkit::gpu
         std::string name;
         std::string device_name;
         GpuVendor vendor;
-#if OPTKIT_ENV_LIB_NVML
-        nvmlDeviceArchitecture_t architecture;
-#endif
+        uint32_t architecture;
         std::string vendor_string;
         bool is_integrated;
     };
