@@ -3,7 +3,7 @@
 namespace optkit::gpu
 {
 #if OPTKIT_ENV_LIB_NVML
-    std::string to_string(nvmlDeviceArchitecture_t arch)
+    std::string to_string(uint32_t arch)
     {
         switch (arch)
         {
@@ -248,13 +248,6 @@ namespace optkit::gpu
     }
 
     // Stream operators for all structures
-#if OPTKIT_ENV_LIB_NVML
-    std::ostream &operator<<(std::ostream &os, nvmlDeviceArchitecture_t arch)
-    {
-        os << to_string(arch);
-        return os;
-    }
-#endif
 
     std::ostream &operator<<(std::ostream &os, const GpuPowerMethod &method)
     {
