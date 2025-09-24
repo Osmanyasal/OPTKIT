@@ -49,6 +49,10 @@
 #define NVML_DEVICE_ARCH_T23X 11 // Devices based on NVIDIA Orin architecture
 #endif
 
+#ifndef NVML_DEVICE_ARCH_UNKNOWN
+#define NVML_DEVICE_ARCH_UNKNOWN 0xFFFFFFFF // Unknown architecture
+#endif
+
 #endif
 
 #if OPTKIT_ENV_LIB_ROCM_SMI
