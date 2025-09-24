@@ -48,7 +48,6 @@ namespace optkit::energy::rapl
         }
         if (OPT_LIKELY(this->config.verbose))
         {
-            std::cout << "Here\n";
             // Disable the clock.
             auto end = std::chrono::high_resolution_clock::now();
 

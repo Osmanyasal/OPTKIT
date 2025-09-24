@@ -19,9 +19,9 @@ int32_t main(int32_t argc, char **argv)
 {
     OPTKIT_INIT({false});
     // OPTKIT_HWMON_TEMPERATURE_EVENTS("main", {});
-    // OPTKIT_GPU_TEMPERATURE_EVENTS("main", {});
-    OPTKIT_GPU_ENERGY_EVENTS("main gpu temp", {});
-    // OPTKIT_CPU_ENERGY(main, "main");
+    OPTKIT_GPU_TEMPERATURE_EVENTS("main gpu temp", {});
+    OPTKIT_GPU_ENERGY_EVENTS("main gpu energy", {});
+    OPTKIT_CPU_ENERGY(main, "cpu energy");
 
 #if 0
     std::cout << "GPU Device Query Example" << std::endl;
@@ -46,11 +46,10 @@ int32_t main(int32_t argc, char **argv)
     std::cout << "=== GPU Query Methods Test ===" << std::endl;
 
     // Check vendor-specific power monitoring availability
-    std::cout << "NVIDIA power available: " << optkit::gpu::Query::is_nvidia_power_available() << std::endl;
-    std::cout << "AMD power available: " << optkit::gpu::Query::is_amd_power_available() << std::endl;
+    // std::cout << "NVIDIA power available: " << optkit::gpu::Query::is_nvidia_power_available() << std::endl;
+    // std::cout << "AMD power available: " << optkit::gpu::Query::is_amd_power_available() << std::endl;
 
     std::cout << optkit::Query::is_smt_enabled() << "\n";
-    
 
     // return 0;
     auto result = optkit::energy::rapl::Query::rapl_domain_info();
@@ -63,7 +62,7 @@ int32_t main(int32_t argc, char **argv)
     }
 #endif
 
-    sleep(90);
+    sleep(100);
     // exit(0);
     return 0;
     // OPTKIT_DISK_EVENTS("main", optkit::metrics::disk::core_metrics::AllMetrics());
