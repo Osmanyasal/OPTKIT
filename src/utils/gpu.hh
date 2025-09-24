@@ -7,6 +7,11 @@
 
 #if OPTKIT_ENV_LIB_NVML
 #include <nvml.h>
+
+#ifndef NVML_DEVICE_ARCH_UNKNOWN
+#define NVML_DEVICE_ARCH_UNKNOWN 0xFFFFFFFF
+#endif
+
 #endif
 
 #if OPTKIT_ENV_LIB_ROCM_SMI

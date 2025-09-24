@@ -818,7 +818,7 @@ namespace optkit::gpu
     uint32_t Query::get_gpu_architecture(uint32_t device_index)
     {
 
-        nvmlDeviceArchitecture_t arch;
+        uint32_t arch;
         nvmlDevice_t device = Query::gpu_handles.at(device_index);
         nvmlReturn_t result;
         NVML_EXEC_IF_SUPPORTS("nvmlDeviceGetArchitecture", device, result, &arch);
