@@ -236,9 +236,6 @@ namespace optkit::gpu
     };
 
     GpuVendor vendor_from_string(const std::string &vendor_name);
-#if OPTKIT_ENV_LIB_NVML
-    std::string to_string(nvmlDeviceArchitecture_t arch);
-#endif
     std::string to_string(GpuVendor vendor);
     std::string to_string(const GpuPowerMethod &method);
     std::string to_string(const GpuBasicInfo &info);
