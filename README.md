@@ -308,60 +308,62 @@ int main(){
 }
 ```
 
-## Development
+## Directory Structure
 
 Project structure and explanations are given below.
 
 ```text
-src/
-│
-├── bindings/                    # Language bindings for OPTKIT
-│   ├── c/                       # C language bindings
-│   └── python/                  # Python language bindings
-│
-├── core/                        # Core functionality modules
-│   ├── metrics/                 # Unified abstraction layer of performance metrics
-│   │   ├── cpu/                 # CPU specific performance metrics
-│   │   │   ├── intel/           # Intel metrics with architecture-specific implementations
-│   │   │   ├── amd/             # AMD CPU metrics and event mappings
-│   │   │   └── arm/             # ARM CPU metrics and event mappings
-│   │   ├── gpu/                 # GPU specific performance metrics
-│   │   │   ├── nvidia/          # NVIDIA GPU-specific performance metrics
-│   │   │   ├── amd/             # AMD ROCm GPU-specific performance metrics
-│   │   │   └── intel/           # Intel GPU-specific performance metrics
-│   │   └── disk/                # Disk I/O performance metrics
-│   │
-│   ├── frequency/               # Interfaces to access and control frequencies
-│   │   ├── cpu/                 # CPU frequency control (sysfs, MSR-based)
-│   │   └── gpu/                 # GPU frequency control
-│   │       ├── nvidia/          # NVIDIA GPU frequency control
-│   │       ├── amd/             # AMD GPU frequency control
-│   │       └── intel/           # Intel GPU frequency control
-│   │
-│   ├── energy/                  # Modules to monitor energy consumption
-│   │   ├── cpu/                 # CPU energy data sources
-│   │   │   ├── rapl/            # Intel & AMD RAPL (Running Average Power Limit) interface
-│   │   │   └── msr/             # Direct MSR access for energy monitoring
-│   │   └── gpu/                 # GPU energy data sources
-│   │       ├── nvidia/          # NVIDIA Management Library interface
-│   │       ├── amd/             # ROCm System Management Interface (SMI)
-│   │       └── intel/           # Intel GPU energy monitoring
-│   │
-│   ├── pmu/                     # Interfaces for accessing hardware performance counters
-│   │   ├── cpu/                 # CPU performance monitoring
-│   │   │   ├── msr/             # MSR-based access to performance counters
-│   │   │   └── perf/            # Linux perf_event_open-based access
-│   │   └── gpu/                 # GPU performance monitoring interfaces
-│   │       ├── nvidia/          # NVIDIA PMU event access (via NVML)
-│   │       └── amd/             # AMD ROCm-based PMU access
-│   │
-│   ├── disk/                    # Disk I/O monitoring and profiling
-│   └── tempreture/              # Temperature monitoring interfaces
-│       ├── cpu/                 # CPU temperature monitoring
-│       └── gpu/                 # GPU temperature monitoring
-│
-└── utils/                       # General-purpose utilities and helpers
-    ├── logging/                 # Logging infrastructure and configuration
-    ├── optimizations/           # Runtime optimizations utilities
-    └── deployment/              # Deployment configuration utilities
-```
+.
+├── docs
+├── examples
+├── lib
+│   ├── googletest  
+│   ├── libpfm4 
+│   └── spdlog 
+├── src
+│   ├── bindings
+│   │   ├── c
+│   │   └── python
+│   ├── core
+│   │   ├── disk
+│   │   ├── energy
+│   │   │   ├── cpu
+│   │   │   └── gpu
+│   │   ├── frequency
+│   │   │   ├── cpu
+│   │   │   └── gpu
+│   │   ├── metrics
+│   │   │   ├── cpu
+│   │   │   ├── disk
+│   │   │   ├── gpu
+│   │   │   └── temperature
+│   │   ├── pmu
+│   │   │   ├── cpu
+│   │   │   └── gpu
+│   │   └── temperature
+│   │       ├── gpu
+│   │       └── hwmon
+│   └── utils
+│       ├── deployment
+│       ├── logging
+│       └── optimizations
+├── test
+│   ├── common
+│   ├── core
+│   │   ├── energy
+│   │   │   ├── cpu
+│   │   │   └── gpu
+│   │   ├── frequency
+│   │   │   ├── cpu
+│   │   │   └── gpu
+│   │   ├── metrics
+│   │   │   ├── cpu
+│   │   │   ├── disk
+│   │   │   └── gpu
+│   │   └── pmu
+│   │       ├── cpu
+│   │       └── gpu
+│   └── utils
+└── tools
+    ├── optkit-cli
+    └── optkit-setenv
