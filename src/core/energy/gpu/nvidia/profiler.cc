@@ -28,7 +28,7 @@ namespace optkit::energy::gpu::nvidia
     {
 
         metric_builder = {};
-        uint32_t device_count = optkit::gpu::Query::get_device_count();
+        uint32_t device_count = optkit::gpu::Query::get_device_count().at(GpuVendor::NVIDIA);
         for (uint32_t i = 0; i < device_count; i++)
         {
             metric_builder.add("gpu[" + std::to_string(i) + "]", {0x0});

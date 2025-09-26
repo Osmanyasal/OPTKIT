@@ -81,7 +81,14 @@
         "instructions_testcode.h": "c",
         "__locale": "cpp",
         "__tuple": "cpp",
-        "locale": "cpp"
+        "locale": "cpp",
+        "strstream": "cpp",
+        "cfenv": "cpp",
+        "complex": "cpp",
+        "future": "cpp",
+        "shared_mutex": "cpp",
+        "typeindex": "cpp",
+        "stdfloat": "cpp"
     },
     "Lua.diagnostics.globals": [
         "ld_has_library"
