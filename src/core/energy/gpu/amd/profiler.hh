@@ -14,18 +14,18 @@
 #include "utils/metric_builder.hh"
 #include "core/gpu_query.hh"
 
-namespace optkit::energy::gpu::nvidia
+namespace optkit::energy::gpu::amd
 {
 
     /**
-     * @brief Nvidia GPU Energy Profiler
+     * @brief AMD GPU Energy Profiler
      *
-     * This profiler measures the energy consumption of NVIDIA GPUs using the NVIDIA Management Library (NVML).
+     * This profiler measures the energy consumption of AMD GPUs using the AMD ROCm SMI Library.
      * It periodically samples the power usage of each GPU and aggregates the data to provide insights into energy efficiency and usage patterns.
      * The profiler runs a separate sampling thread that collects power readings at a user-defined frequency.
      * It averages the power consumption over the sampling period and can output the results in JSON format.
      *
-     * @note User should call get_read_buffer to get the raw data of power samples taken, which gives eirther instantaneous power or 1 seconds average power consumption. Consult NVML documentation for more details.
+     * @note User should call get_read_buffer to get the raw data of power samples taken, which gives eirther instantaneous power or 1 seconds average power consumption. Consult ROCm SMI documentation for more details.
      *
      */
     class Profiler : public BaseProfiler<std::unordered_map<uint32_t, double>, std::unordered_map<uint32_t, double>> // storing device-id, energy in Joules
@@ -54,4 +54,4 @@ namespace optkit::energy::gpu::nvidia
         std::thread sampling_thread;
         bool is_sampling;
     };
-} // namespace optkit::energy::gpu::nvidia
+} // namespace optkit::energy::gpu::amd

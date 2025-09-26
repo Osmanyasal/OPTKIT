@@ -8,75 +8,143 @@
 namespace optkit::gpu
 {
     // define static variables
-    bool Query::initialized = false;
+    std::unordered_map<GpuVendor, bool> Query::initialized;
 
 #if OPTKIT_ENV_LIB_NVML
-    std::vector<nvmlDevice_t> Query::gpu_handles;
-#elif OPTKIT_ENV_LIB_ROCM_SMI
-    std::vector<uint32_t> Query::gpu_handles;
+    std::vector<nvmlDevice_t> Query::gpu_handles_nvml;
+
+#elif OPTKIT_ENV_LIB_AMDSMI
+    std::vector<amdsmi_socket_handle> Query::socket_handles_amdsmi;
+    std::vector<amdsmi_processor_handle> Query::gpu_handles_amdsmi;
 #endif
 
-    bool Query::init()
+    std::unordered_map<GpuVendor, bool> Query::init()
     {
 #if OPTKIT_ENV_LIB_NVML
-        if (OPT_UNLIKELY(!initialized))
+        if (OPT_LIKELY(!initialized[GpuVendor::NVIDIA]))
         {
             nvmlReturn_t result = nvmlInit();
-            initialized = (result == NVML_SUCCESS);
-            for (uint32_t i = 0; i < get_device_count(); i++)
+            initialized[GpuVendor::NVIDIA] = (result == NVML_SUCCESS);
+            if (OPT_LIKELY(initialized[GpuVendor::NVIDIA]))
             {
-                nvmlDevice_t device;
-                result = nvmlDeviceGetHandleByIndex(i, &device);
-                if (result == NVML_SUCCESS)
+                OPTKIT_INFO("Initialized NVML library successfully");
+
+                // Get device count directly from NVML to avoid circular dependency
+                uint32_t device_count = 0;
+                nvmlReturn_t count_result = nvmlDeviceGetCount(&device_count);
+                if (count_result == NVML_SUCCESS)
                 {
-                    Query::gpu_handles.push_back(device);
+                    Query::gpu_handles_nvml.reserve(device_count);
+                    for (uint32_t i = 0; i < device_count; i++)
+                    {
+                        nvmlDevice_t device;
+                        result = nvmlDeviceGetHandleByIndex(i, &device);
+                        if (result == NVML_SUCCESS)
+                            Query::gpu_handles_nvml.push_back(device);
+                        else
+                        {
+                            OPTKIT_ERROR("NVML error in nvmlDeviceGetHandleByIndex: {}", std::string(nvmlErrorString(result)));
+                            initialized[GpuVendor::NVIDIA] = false;
+                            nvmlShutdown();
+                            break;
+                        }
+                    }
                 }
                 else
                 {
-                    OPTKIT_ERROR("NVML error in nvmlDeviceGetHandleByIndex: {}", std::string(nvmlErrorString(result)));
-                    initialized = false;
+                    OPTKIT_ERROR("NVML error in nvmlDeviceGetCount: {}", std::string(nvmlErrorString(count_result)));
+                    initialized[GpuVendor::NVIDIA] = false;
+                    nvmlShutdown();
                 }
             }
+            else
+                OPTKIT_ERROR("NVML error in nvmlInit: {}", std::string(nvmlErrorString(result)));
         }
-        else
-        {
-            OPTKIT_CORE_WARN("Failed to initialize GPU monitoring libraries");
-        }
-        return initialized;
-
-#elif OPTKIT_ENV_LIB_ROCM_SMI
-        if (!initialized)
-        {
-            rsmi_status_t result = rsmi_init(0);
-            initialized = (result == RSMI_STATUS_SUCCESS);
-        }
-        else
-        {
-            OPTKIT_CORE_WARN("Failed to initialize GPU monitoring libraries");
-        }
-        return initialized;
-#else
-        return false;
 #endif
+
+#if OPTKIT_ENV_LIB_AMDSMI
+        if (OPT_LIKELY(!initialized[GpuVendor::AMD]))
+        {
+            amdsmi_status_t result = amdsmi_init(0);
+            initialized[GpuVendor::AMD] = (result == AMDSMI_STATUS_SUCCESS);
+            if (OPT_LIKELY(initialized[GpuVendor::AMD]))
+            {
+                OPTKIT_INFO("Initialized ROCm SMI library successfully");
+
+                // Use the existing helper function to populate AMD device handles
+                uint32_t device_count = _amdsmi_populate_device_count_and_fill_handlers();
+                if (device_count == 0)
+                {
+                    OPTKIT_WARN("No AMD devices found or failed to populate device handles");
+                    initialized[GpuVendor::AMD] = false;
+                    amdsmi_shut_down();
+                }
+            }
+            else
+            {
+                OPTKIT_ERROR("ROCm SMI error in amdsmi_init: {}", _amdsmi_status_to_string(result));
+                initialized[GpuVendor::AMD] = false;
+                amdsmi_shut_down();
+            }
+        }
+#endif
+
+        return Query::initialized;
     }
 
-    void Query::shutdown()
+    std::unordered_map<GpuVendor, bool> Query::shutdown()
     {
-        gpu_handles.clear();
-        initialized = false;
+        std::unordered_map<GpuVendor, bool> results;
 
 #if OPTKIT_ENV_LIB_NVML
-        if (initialized)
-            nvmlShutdown();
+        if (initialized[GpuVendor::NVIDIA])
+        {
+            nvmlReturn_t result = nvmlShutdown();
+            bool success = (result == NVML_SUCCESS);
+            results[GpuVendor::NVIDIA] = success;
 
-#elif OPTKIT_ENV_LIB_ROCM_SMI
-        if (initialized)
-            rsmi_shut_down();
+            if (success)
+            {
+                OPTKIT_INFO("Shutdown NVML library successfully");
+                initialized[GpuVendor::NVIDIA] = false;
+            }
+            else
+            {
+                OPTKIT_ERROR("Failed to shutdown NVML library: {}", nvmlErrorString(result));
+            }
+
+            Query::gpu_handles_nvml.clear();
+        }
 #endif
+
+#if OPTKIT_ENV_LIB_AMDSMI
+        if (initialized[GpuVendor::AMD])
+        {
+            amdsmi_status_t result = amdsmi_shut_down();
+            bool success = (result == AMDSMI_STATUS_SUCCESS);
+            results[GpuVendor::AMD] = success;
+
+            if (success)
+            {
+                OPTKIT_INFO("Shutdown AMD SMI library successfully");
+                initialized[GpuVendor::AMD] = false;
+            }
+            else
+            {
+                OPTKIT_ERROR("Failed to shutdown ROCm SMI library: {}", _amdsmi_status_to_string(result));
+            }
+
+            Query::gpu_handles_amdsmi.clear();
+            Query::socket_handles_amdsmi.clear();
+        }
+#endif
+
+        return results;
     }
 
-    double Query::get_driver_version()
+    std::unordered_map<GpuVendor, double> Query::get_driver_version()
     {
+        std::unordered_map<GpuVendor, double> results;
 #if OPTKIT_ENV_LIB_NVML
         int32_t version;
         nvmlReturn_t result = nvmlSystemGetCudaDriverVersion(&version);
@@ -84,124 +152,135 @@ namespace optkit::gpu
         {
             int32_t major = NVML_CUDA_DRIVER_VERSION_MAJOR(version);
             int32_t minor = NVML_CUDA_DRIVER_VERSION_MINOR(version);
-            return major + minor / 10.0; // divide minor by 10
+            results[GpuVendor::NVIDIA] = major + minor / 10.0; // divide minor by 10
         }
         else
         {
+            results[GpuVendor::NVIDIA] = 0.0;
             OPTKIT_ERROR("NVML error in nvmlSystemGetCudaDriverVersion: {}", std::string(nvmlErrorString(result)));
-            return -1;
         }
-#elif OPTKIT_ENV_LIB_ROCM_SMI
-        rsmi_status_t status = rsmi_init(0);
-        if (status != RSMI_STATUS_SUCCESS)
-        {
-            OPTKIT_ERROR("ROCm SMI init failed: {}", status);
-            return -1;
-        }
-
-        const char *version_cstr = nullptr;
-        status = rsmi_version_get(&version_cstr);
-        if (status != RSMI_STATUS_SUCCESS || version_cstr == nullptr)
-        {
-            OPTKIT_ERROR("ROCm SMI failed to get version: {}", status);
-            return -1;
-        }
-
-        std::string version_str(version_cstr);
-        int32_t major = 0, minor = 0;
-        try
-        {
-            std::size_t dot_pos = version_str.find('.');
-            if (dot_pos != std::string::npos)
-            {
-                major = std::stoi(version_str.substr(0, dot_pos));
-                std::size_t second_dot = version_str.find('.', dot_pos + 1);
-                minor = std::stoi(version_str.substr(dot_pos + 1, second_dot - dot_pos - 1));
-            }
-            else
-            {
-                OPTKIT_WARN("ROCm version string '{}' has no dot, cannot parse", version_str);
-                return -1;
-            }
-        }
-        catch (const std::exception &e)
-        {
-            OPTKIT_ERROR("Failed to parse ROCm version '{}': {}", version_str, e.what());
-            return -1;
-        }
-        return major + minor / 10.0; // major.minor as double
-#else
-        OPTKIT_WARN("Driver version query not supported without NVML or ROCm SMI");
-        return -1;
 #endif
+
+#if OPTKIT_ENV_LIB_AMDSMI
+        amdsmi_version_t amdsmi_version{};
+
+        amdsmi_status_t status = amdsmi_get_lib_version(&amdsmi_version);
+        if (status == AMDSMI_STATUS_SUCCESS)
+        {
+            int32_t major = amdsmi_version.major, minor = amdsmi_version.minor;
+            results[GpuVendor::AMD] = major + minor / 10.0; // major.minor as double
+        }
+        else
+        {
+            results[GpuVendor::AMD] = 0.0;
+            OPTKIT_ERROR("ROCm SMI failed to get version: {}", _amdsmi_status_to_string(status));
+        }
+
+#endif
+
+#if !OPTKIT_ENV_LIB_NVML && !OPTKIT_ENV_LIB_AMDSMI
+        OPTKIT_WARN("Driver version query not supported without NVML or ROCm SMI");
+#endif
+        return results;
     }
 
-    std::string Query::get_library_version()
+    std::unordered_map<GpuVendor, std::string> Query::get_library_version()
     {
+        std::unordered_map<GpuVendor, std::string> results;
+
 #if OPTKIT_ENV_LIB_NVML
         char version[NVML_SYSTEM_NVML_VERSION_BUFFER_SIZE] = {0};
         nvmlReturn_t result = nvmlSystemGetNVMLVersion(version, NVML_SYSTEM_NVML_VERSION_BUFFER_SIZE);
         if (result == NVML_SUCCESS)
         {
-            return std::string(version);
+            results[GpuVendor::NVIDIA] = std::string(version);
         }
         else
         {
             OPTKIT_ERROR("NVML error in nvmlSystemGetNVMLVersion: {}", std::string(nvmlErrorString(result)));
-            return "unknown";
         }
-
-#elif OPTKIT_ENV_LIB_ROCM_SMI
-        rsmi_status_t status = rsmi_init(0);
-        if (status != RSMI_STATUS_SUCCESS)
-        {
-            OPTKIT_ERROR("ROCm SMI init failed: {}", status);
-            return "unknown";
-        }
-
-        const char *version_cstr = nullptr;
-        status = rsmi_version_get(&version_cstr);
-        if (status != RSMI_STATUS_SUCCESS || version_cstr == nullptr)
-        {
-            OPTKIT_ERROR("ROCm SMI failed to get version: {}", status);
-            return "unknown";
-        }
-
-        std::string version_str(version_cstr);
-        return version_str;
-
-#else
-        OPTKIT_WARN("Library version query not supported without NVML or ROCm SMI");
-        return "unknown";
 #endif
+
+#if OPTKIT_ENV_LIB_AMDSMI
+        amdsmi_version_t amdsmi_version{};
+        amdsmi_status_t status = amdsmi_get_lib_version(&amdsmi_version);
+        if (status != AMDSMI_STATUS_SUCCESS)
+        {
+            OPTKIT_ERROR("ROCm SMI failed to get version: {}", _amdsmi_status_to_string(status));
+        }
+
+        uint32_t major = amdsmi_version.major;
+        uint32_t minor = amdsmi_version.minor;
+        results[GpuVendor::AMD] = std::to_string(major) + "." + std::to_string(minor);
+#endif
+
+#if !OPTKIT_ENV_LIB_NVML && !OPTKIT_ENV_LIB_AMDSMI
+        OPTKIT_WARN("Driver version query not supported without NVML or ROCm SMI");
+#endif
+        return results;
     }
 
-    uint32_t Query::get_device_count()
+    std::unordered_map<GpuVendor, uint32_t> Query::get_device_count()
     {
-        static uint32_t cached_count = UINT32_MAX; // Use max value as "uninitialized" marker
+        static std::unordered_map<GpuVendor, uint32_t> results;
 
-        if (OPT_UNLIKELY(cached_count == UINT32_MAX))
+        if (OPT_UNLIKELY(results.empty()))
         {
 #if OPTKIT_ENV_LIB_NVML
             uint32_t count;
             nvmlReturn_t result = nvmlDeviceGetCount(&count);
-            cached_count = (result == NVML_SUCCESS) ? count : 0;
-#elif OPTKIT_ENV_LIB_ROCM_SMI
-            uint32_t count;
-            rsmi_status_t result = rsmi_num_monitor_devices(&count);
-            cached_count = (result == RSMI_STATUS_SUCCESS) ? count : 0;
-#else
-            cached_count = 0;
+            results[GpuVendor::NVIDIA] = (result == NVML_SUCCESS) ? count : 0;
+#endif
+
+#if OPTKIT_ENV_LIB_AMDSMI
+            results[GpuVendor::AMD] = _amdsmi_populate_device_count_and_fill_handlers();
+#endif
+
+#if !OPTKIT_ENV_LIB_NVML && !OPTKIT_ENV_LIB_AMDSMI
+            OPTKIT_ERROR("Device count query not supported without NVML or ROCm SMI");
 #endif
         }
 
-        return cached_count;
+        return results;
     }
+
+#if OPTKIT_ENV_LIB_AMDSMI
+    inline uint32_t _amdsmi_populate_device_count_and_fill_handlers()
+    {
+        amdsmi_status_t result;
+
+        uint32_t socket_count = 0;
+        uint32_t device_count = 0;
+
+        result = amdsmi_get_socket_handles(&socket_count, nullptr);
+        if (result == AMDSMI_STATUS_SUCCESS)
+        {
+            for (uint32_t i = 0; i < socket_count; i++)
+            {
+                amdsmi_socket_handle socket;
+                Query::socket_handles_amdsmi.reserve((size_t)socket_count);
+                result = amdsmi_get_socket_handles(&i, &Query::socket_handles_amdsmi[0]);
+            }
+
+            for (auto &&socket : Query::socket_handles_amdsmi)
+            {
+                amdsmi_get_processor_handles(socket, &device_count, &Query::gpu_handles_amdsmi[0]);
+            }
+        }
+        else
+        {
+            OPTKIT_ERROR("AMD SMI error in amdsmi_get_socket_count: {}",
+                         _amdsmi_status_to_string(result));
+        }
+
+        return device_count;
+    }
+#endif
 
     bool Query::get_device_power(uint32_t device_index, double &power_watts)
     {
 #if OPTKIT_ENV_LIB_NVML
-        nvmlDevice_t device = Query::gpu_handles.at(device_index);
+        nvmlDevice_t device = Query::gpu_handles_nvml.at(device_index);
         nvmlReturn_t result;
         uint32_t power_mw;
         NVML_EXEC_IF_SUPPORTS("nvmlDeviceGetPowerUsage", device, result, &power_mw);
@@ -217,13 +296,24 @@ namespace optkit::gpu
             power_watts = 0.0; // Not supported
         }
         return false;
-#elif OPTKIT_ENV_LIB_ROCM_SMI
-        uint64_t power_uw;
-        rsmi_status_t result = rsmi_dev_power_ave_get(device_index, 0, &power_uw);
+#elif OPTKIT_ENV_LIB_AMDSMI
+
+        amdsmi_power_info_t power_info;
+        amdsmi_status_t result;
+        // Returns the current power and voltage of the GPU.
+        ROCM_EXEC_IF_SUPPORTS("amdsmi_get_power_info",
+                              device_index,
+                              result,
+                              &power_info);
         if (result == RSMI_STATUS_SUCCESS)
         {
-            power_watts = power_uw / 1000000.0; // Convert from microwatts to watts
+            power_watts = power_info.average_socket_power;
             return true;
+        }
+        else
+        {
+            OPTKIT_WARN("amdsmi_get_power_info: {}", _amdsmi_status_to_string(result));
+            power_watts = 0.0; // Not supported
         }
         return false;
 #endif
@@ -232,7 +322,7 @@ namespace optkit::gpu
     bool Query::get_device_power_limit(uint32_t device_index, double &limit_watts)
     {
 #if OPTKIT_ENV_LIB_NVML
-        nvmlDevice_t device = Query::gpu_handles.at(device_index);
+        nvmlDevice_t device = Query::gpu_handles_nvml.at(device_index);
         nvmlReturn_t result;
         uint32_t limit_mw;
         NVML_EXEC_IF_SUPPORTS(
@@ -251,7 +341,7 @@ namespace optkit::gpu
             limit_watts = 0.0; // Not supported
         }
         return false;
-#elif OPTKIT_ENV_LIB_ROCM_SMI
+#elif OPTKIT_ENV_LIB_AMDSMI
         // ROCm SMI does not provide a direct method to get power limit
         // This would require reading from sysfs or using other methods
         // For now, we return false indicating not implemented
@@ -262,7 +352,7 @@ namespace optkit::gpu
     bool Query::get_device_temperature(uint32_t device_index, double &temp_celsius)
     {
 #if OPTKIT_ENV_LIB_NVML
-        nvmlDevice_t device = Query::gpu_handles.at(device_index);
+        nvmlDevice_t device = Query::gpu_handles_nvml.at(device_index);
         nvmlReturn_t result;
         uint32_t temp;
 
@@ -278,15 +368,23 @@ namespace optkit::gpu
             OPTKIT_WARN("nvmlDeviceGetTemperature: {}", nvmlErrorString(result));
         }
         return false;
-#elif OPTKIT_ENV_LIB_ROCM_SMI
-        int64_t temp_millidegrees;
-        rsmi_status_t result = rsmi_dev_temp_metric_get(device_index, RSMI_TEMP_TYPE_EDGE, RSMI_TEMP_CURRENT, &temp_millidegrees);
+#elif OPTKIT_ENV_LIB_AMDSMI
+        uint32_t ptmon;
+        ROCM_EXEC_IF_SUPPORTS("amdsmi_get_cpu_socket_temperature",
+                              Query::socket_handles_amdsmi.at(device_index),
+                              result,
+                              &ptmon);
         if (result == RSMI_STATUS_SUCCESS)
         {
-            temp_celsius = temp_millidegrees / 1000.0; // Convert from millidegrees to degrees Celsius
+            temp_celsius = static_cast<double>(ptmon);
             return true;
         }
-        return false;
+        else
+        {
+            temp_celsius = 0.0; // Not supported
+            OPTKIT_WARN("amdsmi_get_cpu_socket_temperature: {}", _amdsmi_status_to_string(result));
+        }
+
 #endif
         return false;
     }
@@ -294,7 +392,7 @@ namespace optkit::gpu
     bool Query::get_device_info(uint32_t device_index, GpuDeviceInfo &info)
     {
 #if OPTKIT_ENV_LIB_NVML
-        nvmlDevice_t device = Query::gpu_handles.at(device_index);
+        nvmlDevice_t device = Query::gpu_handles_nvml.at(device_index);
         nvmlReturn_t result;
         // Get device name
         char name[NVML_DEVICE_NAME_BUFFER_SIZE];
@@ -684,8 +782,8 @@ namespace optkit::gpu
         info.basic.is_integrated = false; // NVIDIA discrete GPUs are typically not integrated
 
         return true;
-
-#elif OPTKIT_ENV_LIB_ROCM_SMI
+#endif
+#if OPTKIT_ENV_LIB_AMDSMI
         // Get device name
         char name[256];
         rsmi_status_t result = rsmi_dev_name_get(device_index, name, 256);
@@ -818,14 +916,19 @@ namespace optkit::gpu
     uint32_t Query::get_gpu_architecture(uint32_t device_index)
     {
 
+#if OPTKIT_ENV_LIB_NVML
         uint32_t arch;
-        nvmlDevice_t device = Query::gpu_handles.at(device_index);
+        nvmlDevice_t device = Query::gpu_handles_nvml.at(device_index);
         nvmlReturn_t result;
         NVML_EXEC_IF_SUPPORTS("nvmlDeviceGetArchitecture", device, result, &arch);
         if (result == NVML_SUCCESS)
             return static_cast<uint32_t>(arch);
         else
             return NVML_DEVICE_ARCH_UNKNOWN; // Unknown architecture
+
+#elif OPTKIT_ENV_LIB_AMDSMI
+        return 0;
+#endif
     }
 
     GpuDeviceInfo Query::device_query(uint32_t gpu_id)
@@ -859,11 +962,4 @@ namespace optkit::gpu
         return info;
     }
 
-    bool Query::is_power_available()
-    {
-        // First try NVML
-        if (get_device_count() > 0)
-            return true;
-        return false;
-    }
 } // namespace optkit::gpu

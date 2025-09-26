@@ -5,67 +5,17 @@
 #include <algorithm>
 #include "utils/optimizations/cpu_opt.hh"
 
-#if OPTKIT_ENV_LIB_NVML
-#include <nvml.h>
-
-// do these ifndefs exist, to avoid redefinition warnings
-#ifndef NVML_DEVICE_ARCH_KEPLER
-#define NVML_DEVICE_ARCH_KEPLER 2 // Devices based on the NVIDIA Kepler architecture
-#endif
-
-#ifndef NVML_DEVICE_ARCH_MAXWELL
-#define NVML_DEVICE_ARCH_MAXWELL 3 // Devices based on the NVIDIA Maxwell architecture
-#endif
-
-#ifndef NVML_DEVICE_ARCH_PASCAL
-#define NVML_DEVICE_ARCH_PASCAL 4 // Devices based on the NVIDIA Pascal architecture
-#endif
-
-#ifndef NVML_DEVICE_ARCH_VOLTA
-#define NVML_DEVICE_ARCH_VOLTA 5 // Devices based on the NVIDIA Volta architecture
-#endif
-
-#ifndef NVML_DEVICE_ARCH_TURING
-#define NVML_DEVICE_ARCH_TURING 6 // Devices based on the NVIDIA Turing architecture
-#endif
-
-#ifndef NVML_DEVICE_ARCH_AMPERE
-#define NVML_DEVICE_ARCH_AMPERE 7 // Devices based on the NVIDIA Ampere architecture
-#endif
-
-#ifndef NVML_DEVICE_ARCH_ADA
-#define NVML_DEVICE_ARCH_ADA 8 // Devices based on the NVIDIA Ada architecture
-#endif
-
-#ifndef NVML_DEVICE_ARCH_HOPPER
-#define NVML_DEVICE_ARCH_HOPPER 9 // Devices based on the NVIDIA Hopper architecture
-#endif
-
-#ifndef NVML_DEVICE_ARCH_BLACKWELL
-#define NVML_DEVICE_ARCH_BLACKWELL 10 // Devices based on the NVIDIA Blackwell architecture
-#endif
-
-#ifndef NVML_DEVICE_ARCH_T23X
-#define NVML_DEVICE_ARCH_T23X 11 // Devices based on NVIDIA Orin architecture
-#endif
-
-#ifndef NVML_DEVICE_ARCH_UNKNOWN
-#define NVML_DEVICE_ARCH_UNKNOWN 0xFFFFFFFF // Unknown architecture
-#endif
-
-#endif
-
-#if OPTKIT_ENV_LIB_ROCM_SMI
-#include <rocm_smi.h>
-#endif
-
 #include <dlfcn.h>
 
-using fn_t = nvmlReturn_t (*)(nvmlDevice_t, ...);
-OPT_FORCE_INLINE fn_t query_nvml_fn(const char *function_name)
+#if OPTKIT_ENV_LIB_NVML
+#include <nvml.h>
+#include "utils/nvml_failsafe.hh"
+
+using nvml_fn_t = nvmlReturn_t (*)(nvmlDevice_t, ...);
+OPT_FORCE_INLINE nvml_fn_t query_nvml_fn(const char *function_name)
 {
     static void *lib = dlopen("libnvidia-ml.so", RTLD_NOW | RTLD_NOLOAD);
-    return lib ? (fn_t)dlsym(lib, function_name) : nullptr;
+    return lib ? (nvml_fn_t)dlsym(lib, function_name) : nullptr;
 }
 
 // Generic runtime NVML call macro with fallback
@@ -73,7 +23,7 @@ OPT_FORCE_INLINE fn_t query_nvml_fn(const char *function_name)
 #define NVML_EXEC_IF_SUPPORTS(NAME_STR, DEVICE, RESULT, ...) \
     do                                                       \
     {                                                        \
-        static fn_t fn = query_nvml_fn(NAME_STR);            \
+        static nvml_fn_t fn = query_nvml_fn(NAME_STR);       \
         if (fn)                                              \
             RESULT = fn(DEVICE, __VA_ARGS__);                \
         else                                                 \
@@ -83,9 +33,31 @@ OPT_FORCE_INLINE fn_t query_nvml_fn(const char *function_name)
 #ifndef NVML_CUDA_DRIVER_VERSION_MAJOR
 #define NVML_CUDA_DRIVER_VERSION_MAJOR(v) (((int32_t)(v)) / 1000)
 #endif
+#endif
 
 #ifndef NVML_CUDA_DRIVER_VERSION_MINOR
 #define NVML_CUDA_DRIVER_VERSION_MINOR(v) (((int32_t)(v) % 1000) / 10)
+#endif
+
+#if OPTKIT_ENV_LIB_AMDSMI
+#include <amd_smi/amdsmi.h>
+#include "utils/amd_smi_failsafe.hh"
+using amdsmi_fn_t = amdsmi_status_t (*)(amdsmi_processor_handle, ...);
+OPT_FORCE_INLINE amdsmi_fn_t query_amd_smi_fn(const char *function_name)
+{
+    static void *lib = dlopen("libamd_smi.so", RTLD_NOW | RTLD_NOLOAD);
+    return lib ? (amdsmi_fn_t)dlsym(lib, function_name) : nullptr;
+}
+
+#define ROCM_EXEC_IF_SUPPORTS(NAME_STR, DEVICE, RESULT, ...) \
+    do                                                       \
+    {                                                        \
+        static amdsmi_fn_t fn = query_amd_smi_fn(NAME_STR);  \
+        if (fn)                                              \
+            RESULT = fn(DEVICE, __VA_ARGS__);                \
+        else                                                 \
+            RESULT = AMDSMI_STATUS_NOT_SUPPORTED;            \
+    } while (0)
 #endif
 
 // vendor IDs from PCI-SIG

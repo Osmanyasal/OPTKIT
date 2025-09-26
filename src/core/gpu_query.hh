@@ -9,6 +9,7 @@
 #include <map>
 #include <unistd.h>
 #include <cstdint>
+#include <unordered_map>
 
 #include "utils/utils.hh"
 #include "utils/gpu.hh"
@@ -20,6 +21,10 @@ namespace optkit::gpu
      */
     class Query final
     {
+#if OPTKIT_ENV_LIB_AMDSMI
+    private:
+        friend inline uint32_t _amdsmi_populate_device_count_and_fill_handlers();
+#endif
     public:
         /**
          * @brief Initialize GPU monitoring libraries (NVML, ROCm,...)
@@ -27,13 +32,13 @@ namespace optkit::gpu
          * @return true
          * @return false
          */
-        static bool init();
+        static std::unordered_map<GpuVendor, bool> init();
 
         /**
          * @brief Cleanup vendor-specific libraries (NVML, ROCm)
          * @note Call this when done with GPU monitoring to properly shutdown libraries
          */
-        static void shutdown();
+        static std::unordered_map<GpuVendor, bool> shutdown();
 
         /**
          * @brief Query GPU device information, returns all information about the GPU
@@ -41,50 +46,44 @@ namespace optkit::gpu
          * @param gpu_id
          * @return GpuDeviceInfo
          */
-        static GpuDeviceInfo device_query(uint32_t gpu_id = 0);
+        static std::unordered_map<GpuVendor, GpuDeviceInfo> device_query(uint32_t gpu_id = 0);
 
         /**
          * @brief Get the driver version of the GPU
          *
          * @return double -> major.minor
          */
-        static double get_driver_version();
+        static std::unordered_map<GpuVendor, double> get_driver_version();
 
         /**
          * @brief Get the version of the GPU monitoring library
          *
          * @return std::string
          */
-        static std::string get_library_version();
+        static std::unordered_map<GpuVendor, std::string> get_library_version();
 
         /**
          * @brief Get number of GPU devices detected via vendor libraries
          * @return number of GPU devices
          */
-        static uint32_t get_device_count();
+        static std::unordered_map<GpuVendor, uint32_t> get_device_count();
 
         /**
-         * @brief Get the device power impl object
+         * @brief Get the device power implementation object
          *
          * @param device_index
          * @param power_watts
          * @return true
          * @return false
          */
-        static bool get_device_power(uint32_t device_index, double &power_watts);
+        static std::unordered_map<GpuVendor, bool> get_device_power(uint32_t device_index, double &power_watts);
 
         /**
          * @brief Get the cpu architecture object
          *
          * @return uint32_t
          */
-        static uint32_t get_gpu_architecture(uint32_t device_index);
-
-        /**
-         * @brief Check if GPU power monitoring is available.
-         * @return true if GPUs with power monitoring are detected
-         */
-        static bool is_power_available();
+        static std::unordered_map<GpuVendor, uint32_t> get_gpu_architecture(uint32_t device_index);
 
         /**
          * @brief Get comprehensive GPU device information
@@ -92,7 +91,7 @@ namespace optkit::gpu
          * @param info Output parameter to store the GPU device information
          * @return true if device information was successfully retrieved, false otherwise
          */
-        static bool get_device_info(uint32_t device_index, GpuDeviceInfo &info);
+        static bool get_device_info(GpuVendor vendor, uint32_t device_index, GpuDeviceInfo &info);
 
         /**
          * @brief Get GPU power usage in Watts
@@ -100,7 +99,7 @@ namespace optkit::gpu
          * @param power_watts Output parameter to store the power usage in Watts
          * @return true if power reading was successful, false otherwise
          */
-        static bool get_device_power_limit(uint32_t device_index, double &limit_watts);
+        static bool get_device_power_limit(GpuVendor vendor, uint32_t device_index, double &limit_watts);
 
         /**
          * @brief Get GPU temperature in degrees Celsius
@@ -108,19 +107,22 @@ namespace optkit::gpu
          * @param temp_celsius Output parameter to store the temperature in degrees Celsius
          * @return true if temperature reading was successful, false otherwise
          */
-        static bool get_device_temperature(uint32_t device_index, double &temp_celsius);
+        static bool get_device_temperature(GpuVendor vendor, uint32_t device_index, double &temp_celsius);
 
         // Helper functions for enum conversion
         static GpuVendor vendor_from_string(const std::string &vendor_name);
         static void print_device_info(const GpuDeviceInfo &info);
 
     private:
-        static bool initialized;
+        static std::unordered_map<GpuVendor, bool> initialized;
+
 #if OPTKIT_ENV_LIB_NVML
-        static std::vector<nvmlDevice_t> gpu_handles;
-#elif OPTKIT_ENV_LIB_ROCM_SMI
-        static std::vector<uint32_t> gpu_handles;
-#else
+        static std::vector<nvmlDevice_t> gpu_handles_nvml;
+#endif
+
+#if OPTKIT_ENV_LIB_AMDSMI
+        static std::vector<amdsmi_socket_handle> socket_handles_amdsmi;
+        static std::vector<amdsmi_processor_handle> gpu_handles_amdsmi;
 #endif
 
     private:

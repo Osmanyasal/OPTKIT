@@ -40,8 +40,7 @@ write_headers() {
     check_header "linux/perf_event.h"
     check_header "msr_safe.h"
     check_header "/usr/local/cuda/include/nvml.h"
-    check_header "/opt/rocm/include/rocm_smi/rocm_smi.h"
-    check_header "/usr/include/rocm_smi/rocm_smi.h"
+    check_header "/opt/rocm/include/amd_smi/amdsmi.h" 
 }
 
 write_compiler_macro() {
