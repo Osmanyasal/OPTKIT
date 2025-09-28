@@ -133,7 +133,6 @@ namespace optkit::gpu
     std::string to_string(const GpuBasicInfo &info)
     {
         return "{\"id\":" + std::to_string(info.id) +
-               ",\"name\":\"" + info.name + "\"" +
                ",\"device_name\":\"" + info.device_name + "\"" +
                ",\"architecture\":\"" + to_string(info.architecture) + "\"" +
                ",\"vendor\":\"" + to_string(info.vendor) + "\"" +
@@ -189,7 +188,6 @@ namespace optkit::gpu
                ",\"min_power_watts\":" + std::to_string(info.min_power_watts) +
                ",\"max_power_watts\":" + std::to_string(info.max_power_watts) +
                ",\"default_power_watts\":" + std::to_string(info.default_power_watts) +
-               ",\"current_limit_watts\":" + std::to_string(info.current_limit_watts) +
                ",\"has_power_monitoring\":" + (info.has_power_monitoring ? "true" : "false") +
                ",\"is_configurable\":" + (info.is_configurable ? "true" : "false") + "}";
     }
@@ -201,12 +199,11 @@ namespace optkit::gpu
                ",\"has_temperature_monitoring\":" + (info.has_temperature_monitoring ? "true" : "false") + "}";
     }
 
-    std::string to_string(const GpuPerformanceInfo &info)
+    std::string to_string(const GpuUtilizationInfo &info)
     {
         return "{\"gpu_utilization_percent\":" + std::to_string(info.gpu_utilization_percent) +
-               ",\"has_utilization_monitoring\":" + (info.has_utilization_monitoring ? "true" : "false") +
-               ",\"performance_state\":" + std::to_string(info.performance_state) +
-               ",\"power_state\":" + std::to_string(info.power_state) + "}";
+               ",\"memory_utilization_percent\":" + std::to_string(info.memory_utilization_percent) +
+               ",\"has_utilization_monitoring\":" + (info.has_utilization_monitoring ? "true" : "false") + "}";
     }
 
     std::string to_string(const GpuHardwareInfo &info)
@@ -234,17 +231,9 @@ namespace optkit::gpu
                ",\"clocks\":" + to_string(info.clocks) +
                ",\"power\":" + to_string(info.power) +
                ",\"temperature\":" + to_string(info.temperature) +
-               ",\"performance\":" + to_string(info.performance) +
+               ",\"utilization\":" + to_string(info.utilization) +
                ",\"hardware\":" + to_string(info.hardware) +
                ",\"capabilities\":" + to_string(info.capabilities) + "}";
-    }
-
-    std::string to_string(const SystemGpuPowerInfo &info)
-    {
-        return "{\"total_gpu_power_budget_watts\":" + std::to_string(info.total_gpu_power_budget_watts) +
-               ",\"current_gpu_power_usage_watts\":" + std::to_string(info.current_gpu_power_usage_watts) +
-               ",\"available_gpu_power_headroom_watts\":" + std::to_string(info.available_gpu_power_headroom_watts) +
-               ",\"num_power_monitored_gpus\":" + std::to_string(info.num_power_monitored_gpus) + "}";
     }
 
     // Stream operators for all structures
@@ -297,7 +286,7 @@ namespace optkit::gpu
         return os;
     }
 
-    std::ostream &operator<<(std::ostream &os, const GpuPerformanceInfo &info)
+    std::ostream &operator<<(std::ostream &os, const GpuUtilizationInfo &info)
     {
         os << to_string(info);
         return os;
@@ -316,12 +305,6 @@ namespace optkit::gpu
     }
 
     std::ostream &operator<<(std::ostream &os, const GpuDeviceInfo &info)
-    {
-        os << to_string(info);
-        return os;
-    }
-
-    std::ostream &operator<<(std::ostream &os, const SystemGpuPowerInfo &info)
     {
         os << to_string(info);
         return os;

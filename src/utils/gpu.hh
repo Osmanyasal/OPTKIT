@@ -24,7 +24,7 @@ OPT_FORCE_INLINE nvml_fn_t query_nvml_fn(const char *function_name)
     do                                                       \
     {                                                        \
         static nvml_fn_t fn = query_nvml_fn(NAME_STR);       \
-        if (fn)                                              \
+        if (OPT_LIKELY(fn))                                  \
             RESULT = fn(DEVICE, __VA_ARGS__);                \
         else                                                 \
             RESULT = NVML_ERROR_NOT_SUPPORTED;               \
@@ -33,10 +33,11 @@ OPT_FORCE_INLINE nvml_fn_t query_nvml_fn(const char *function_name)
 #ifndef NVML_CUDA_DRIVER_VERSION_MAJOR
 #define NVML_CUDA_DRIVER_VERSION_MAJOR(v) (((int32_t)(v)) / 1000)
 #endif
-#endif
 
 #ifndef NVML_CUDA_DRIVER_VERSION_MINOR
 #define NVML_CUDA_DRIVER_VERSION_MINOR(v) (((int32_t)(v) % 1000) / 10)
+#endif
+
 #endif
 
 #if OPTKIT_ENV_LIB_AMDSMI
@@ -100,12 +101,14 @@ namespace optkit::gpu
     };
 
     /**
+     * @brief Comprehensive GPU device information using composition
+     */
+    /**
      * @brief Basic GPU device identification information
      */
     struct GpuBasicInfo
     {
-        int32_t id;
-        std::string name;
+        uint32_t id;
         std::string device_name;
         GpuVendor vendor;
         uint32_t architecture;
@@ -174,11 +177,10 @@ namespace optkit::gpu
     {
         double current_power_watts;
         double power_limit_watts;
-        bool has_power_monitoring;
         double min_power_watts;
         double max_power_watts;
         double default_power_watts;
-        double current_limit_watts;
+        bool has_power_monitoring;
         bool is_configurable;
     };
 
@@ -195,12 +197,11 @@ namespace optkit::gpu
     /**
      * @brief GPU utilization and performance information
      */
-    struct GpuPerformanceInfo
+    struct GpuUtilizationInfo
     {
         uint32_t gpu_utilization_percent;
+        uint32_t memory_utilization_percent;
         bool has_utilization_monitoring;
-        uint32_t performance_state;
-        uint32_t power_state;
     };
 
     /**
@@ -224,10 +225,6 @@ namespace optkit::gpu
         bool supports_unified_memory;
         bool persistence_mode_enabled;
     };
-
-    /**
-     * @brief Comprehensive GPU device information using composition
-     */
     struct GpuDeviceInfo
     {
         GpuBasicInfo basic;
@@ -237,37 +234,25 @@ namespace optkit::gpu
         GpuClockInfo clocks;
         GpuPowerInfo power;
         GpuTemperatureInfo temperature;
-        GpuPerformanceInfo performance;
+        GpuUtilizationInfo utilization;
         GpuHardwareInfo hardware;
         GpuCapabilitiesInfo capabilities;
-    };
-
-    /**
-     * @brief System-wide GPU power information
-     */
-    struct SystemGpuPowerInfo
-    {
-        double total_gpu_power_budget_watts;
-        double current_gpu_power_usage_watts;
-        double available_gpu_power_headroom_watts;
-        int32_t num_power_monitored_gpus;
     };
 
     GpuVendor vendor_from_string(const std::string &vendor_name);
     std::string to_string(GpuVendor vendor);
     std::string to_string(const GpuPowerMethod &method);
-    std::string to_string(const GpuBasicInfo &info);
-    std::string to_string(const GpuVersionInfo &info);
-    std::string to_string(const GpuComputeInfo &info);
-    std::string to_string(const GpuMemoryInfo &info);
-    std::string to_string(const GpuClockInfo &info);
-    std::string to_string(const GpuPowerInfo &info);
-    std::string to_string(const GpuTemperatureInfo &info);
-    std::string to_string(const GpuPerformanceInfo &info);
-    std::string to_string(const GpuHardwareInfo &info);
-    std::string to_string(const GpuCapabilitiesInfo &info);
-    std::string to_string(const GpuDeviceInfo &info);
-    std::string to_string(const SystemGpuPowerInfo &info);
+    std::string to_string(const GpuBasicInfo &basic_info);
+    std::string to_string(const GpuVersionInfo &version_info);
+    std::string to_string(const GpuComputeInfo &compute_info);
+    std::string to_string(const GpuMemoryInfo &memory_info);
+    std::string to_string(const GpuClockInfo &clk_info);
+    std::string to_string(const GpuPowerInfo &power_info);
+    std::string to_string(const GpuTemperatureInfo &temperature_info);
+    std::string to_string(const GpuUtilizationInfo &utilization_info);
+    std::string to_string(const GpuHardwareInfo &hardware_info);
+    std::string to_string(const GpuCapabilitiesInfo &capabilities_info);
+    std::string to_string(const GpuDeviceInfo &device_info);
 
     std::ostream &operator<<(std::ostream &os, GpuVendor vendor);
     std::ostream &operator<<(std::ostream &os, const GpuPowerMethod &method);
@@ -278,11 +263,10 @@ namespace optkit::gpu
     std::ostream &operator<<(std::ostream &os, const GpuClockInfo &info);
     std::ostream &operator<<(std::ostream &os, const GpuPowerInfo &info);
     std::ostream &operator<<(std::ostream &os, const GpuTemperatureInfo &info);
-    std::ostream &operator<<(std::ostream &os, const GpuPerformanceInfo &info);
+    std::ostream &operator<<(std::ostream &os, const GpuUtilizationInfo &utilization_info);
     std::ostream &operator<<(std::ostream &os, const GpuHardwareInfo &info);
     std::ostream &operator<<(std::ostream &os, const GpuCapabilitiesInfo &info);
     std::ostream &operator<<(std::ostream &os, const GpuDeviceInfo &info);
-    std::ostream &operator<<(std::ostream &os, const SystemGpuPowerInfo &info);
 } // namespace optkit::gpu
 
 using optkit::gpu::operator<<; // make available to global namespace
