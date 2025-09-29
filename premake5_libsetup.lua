@@ -40,13 +40,13 @@ function base_project_setup()
         links { "nvidia-ml" }
     end
 
-    if dynamic_lib_exists("rocm_smi64") then
+    if dynamic_lib_exists("amd_smi") then
         local rocm_include = get_rocm_include()
         if rocm_include then
             includedirs { rocm_include }
         end
-        libdirs { "/opt/rocm/lib", "/usr/include/" }
-        links { "rocm_smi64" }
+        libdirs { "/opt/rocm/lib" }
+        links { "amd_smi" }
     end
 
 
@@ -160,13 +160,13 @@ function test_project_setup()
         links { "nvidia-ml" }
     end
 
-    if dynamic_lib_exists("rocm_smi64") then
+    if dynamic_lib_exists("amd_smi") then
         local rocm_include = get_rocm_include()
         if rocm_include then
             includedirs { rocm_include }
         end
-        libdirs { "/opt/rocm/lib", "/usr/include/" }
-        links { "rocm_smi64" }
+        libdirs { "/opt/rocm/lib" }
+        links { "amd_smi" }
     end
 
     -- filter "configurations:Release"
