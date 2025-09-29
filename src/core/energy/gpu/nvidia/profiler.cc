@@ -7,11 +7,17 @@ namespace optkit::energy::gpu::nvidia
     // unordered-map stands for device-id <-> {power (Watts)}
     OPT_FORCE_INLINE void sampling_function(std::unordered_map<uint32_t, double> &snapshot, uint32_t sampling_frequency_sec = 1) // in seconds
     {
-        static uint32_t device_count = optkit::gpu::Query::get_device_count();
+        uint32_t device_count;
+        auto vendor = optkit::utils::GpuDevice::NVIDIA;
+        if (!optkit::gpu::Query::get_device_count(vendor, device_count))
+        {
+            OPTKIT_ERROR("Failed to get device count for NVIDIA GPUs.");
+            return;
+        }
         for (uint32_t i = 0; i < device_count; i++)
         {
             double power_watts = 0.0;
-            if (OPT_LIKELY(optkit::gpu::Query::get_device_power(i, power_watts)))
+            if (OPT_LIKELY(optkit::gpu::Query::get_device_power(vendor, i, power_watts)))
             {
                 snapshot[i] = power_watts * sampling_frequency_sec; // power in Watts * time in seconds = energy in Joules
                 // std::cout << "snapshot[" << i << "] = " << snapshot[i] << " Joules\n"; // debug

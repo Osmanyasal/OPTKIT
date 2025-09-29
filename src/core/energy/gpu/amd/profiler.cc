@@ -7,7 +7,14 @@ namespace optkit::energy::gpu::amd
     // unordered-map stands for device-id <-> {power (Watts)}
     OPT_FORCE_INLINE void sampling_function(std::unordered_map<uint32_t, double> &snapshot, uint32_t sampling_frequency_sec = 1) // in seconds
     {
-        for (uint32_t i = 0; i < optkit::gpu::Query::get_device_count(); i++)
+        uint32_t device_count;
+        auto vendor = optkit::utils::GpuDevice::AMD;
+        if (!optkit::gpu::Query::get_device_count(vendor, device_count))
+        {
+            OPTKIT_ERROR("Failed to get device count for AMD GPUs.");
+            return;
+        }
+        for (uint32_t i = 0; i < device_count; i++)
         {
             amdsmi_processor_handle device = Query::gpu_handles_amdsmi.at(i);
             uint64_t energy_accumulator = 0.0;

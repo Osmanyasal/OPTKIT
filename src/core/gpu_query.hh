@@ -142,16 +142,7 @@ namespace optkit::gpu
          * @return true
          * @return false
          */
-        static bool Query::get_device_name(GpuVendor vendor, uint32_t device_index, std::string &device_name);
-
-        /**
-         * @brief Get comprehensive GPU device information
-         * @param device_index Index of the GPU device (0 to get_device_count()-1)
-         * @param info Output parameter to store the GPU device information
-         * @return true if device information was successfully retrieved, false otherwise
-         * @return false
-         */
-        static bool Query::get_device_name(GpuVendor vendor, uint32_t device_index, std::string &name);
+        static bool get_device_name(GpuVendor vendor, uint32_t device_index, std::string &device_name);
 
         /**
          * @brief Get comprehensive GPU device information
@@ -161,6 +152,8 @@ namespace optkit::gpu
          */
         // TODO: NOT OK
         static bool get_device_info(GpuVendor vendor, uint32_t device_index, GpuDeviceInfo &info);
+
+        static bool get_device_temperature_thresholds(GpuVendor vendor, uint32_t device_index, double &max_temp_celsius);
 
     private:
         static std::unordered_map<GpuVendor, bool> initialized;

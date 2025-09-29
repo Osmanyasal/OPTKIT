@@ -148,8 +148,9 @@ namespace optkit::gpu
         uint64_t free_memory_bytes;
         uint64_t used_memory_bytes;
         uint32_t memory_bus_width_bits;
-        uint32_t memory_clock_rate_khz;
-        uint32_t memory_clock_rate_max_khz;
+        uint32_t memory_clock_rate_mhz;
+        uint32_t memory_clock_rate_max_mhz;
+        uint32_t memory_clock_rate_min_mhz;
         uint32_t memory_utilization_percent;
     };
 

@@ -41,7 +41,7 @@ namespace optkit::gpu
                         {
                             nvmlDevice_t device;
                             result = nvmlDeviceGetHandleByIndex(i, &device);
-                            if (result == NVML_SUCCESS)
+                            if (OPT_LIKELY(result == NVML_SUCCESS))
                                 Query::gpu_handles_nvml.push_back(device);
                             else
                             {
@@ -287,10 +287,54 @@ namespace optkit::gpu
         compute_info = {};
         bool is_ok = true; // stays true if all calls are being successfully made.
 
+        if (vendor == GpuVendor::NVIDIA)
+        {
+#if OPTKIT_ENV_LIB_NVML
+            nvmlReturn_t result;
+            auto device = Query::gpu_handles_nvml.at(device_index);
+            // Get compute capability
+            int major, minor;
+            NVML_EXEC_IF_SUPPORTS("nvmlDeviceGetCudaComputeCapability", device, result, &major, &minor);
+            if (OPT_LIKELY(result == NVML_SUCCESS))
+            {
+                compute_info.compute_capability_major = major;
+                compute_info.compute_capability_minor = minor;
+            }
+            else
+            {
+                OPTKIT_WARN("nvmlDeviceGetCudaComputeCapability: {}", nvmlErrorString(result));
+            }
+            // Get multiprocessor count
+            uint32_t multiProcessorCount;
+            NVML_EXEC_IF_SUPPORTS(
+                "nvmlDeviceGetMultiProcessorCount",
+                device,
+                result,
+                &multiProcessorCount);
+            if (OPT_LIKELY(result == NVML_SUCCESS))
+            {
+                compute_info.multiprocessor_count = multiProcessorCount;
+            }
+            else
+            {
+                OPTKIT_WARN("nvmlDeviceGetMultiProcessorCount: {}", nvmlErrorString(result));
+            }
+#endif
+        }
+        else if (vendor == GpuVendor::AMD)
+        {
+#if OPTKIT_ENV_LIB_AMDSMI
+#endif
+        }
+        else
+        {
+            OPTKIT_WARN("Compute info query not implemented for this GPU vendor");
+            return false;
+        }
+
         return is_ok;
     }
 
-    // TODO: fill this function
     bool Query::get_memory_info(GpuVendor vendor, uint32_t device_index, GpuMemoryInfo &memory_info)
     {
         memory_info = {};  // Initialize all fields to zero
@@ -309,7 +353,7 @@ namespace optkit::gpu
                 result,
                 &busWidth);
 
-            if (result == NVML_SUCCESS)
+            if (OPT_LIKELY(result == NVML_SUCCESS))
             {
                 memory_info.memory_bus_width_bits = busWidth;
             }
@@ -325,7 +369,7 @@ namespace optkit::gpu
                 device,
                 result,
                 &nvml_mem_info);
-            if (result == NVML_SUCCESS)
+            if (OPT_LIKELY(result == NVML_SUCCESS))
             {
                 memory_info.total_global_memory_bytes = nvml_mem_info.total;
                 memory_info.free_memory_bytes = nvml_mem_info.free;
@@ -345,9 +389,9 @@ namespace optkit::gpu
                 result,
                 NVML_CLOCK_MEM,
                 &cur_mem_clock_mhz);
-            if (result == NVML_SUCCESS)
+            if (OPT_LIKELY(result == NVML_SUCCESS))
             {
-                memory_info.memory_clock_rate_khz = cur_mem_clock_mhz * 1000u;
+                memory_info.memory_clock_rate_mhz = cur_mem_clock_mhz;
             }
             else
             {
@@ -363,9 +407,9 @@ namespace optkit::gpu
                 result,
                 NVML_CLOCK_MEM,
                 &max_mem_clock_mhz);
-            if (result == NVML_SUCCESS)
+            if (OPT_LIKELY(result == NVML_SUCCESS))
             {
-                memory_info.memory_clock_rate_max_khz = max_mem_clock_mhz * 1000u;
+                memory_info.memory_clock_rate_max_mhz = max_mem_clock_mhz;
             }
             else
             {
@@ -373,28 +417,89 @@ namespace optkit::gpu
                 OPTKIT_WARN("nvmlDeviceGetMaxClockInfo: {}", nvmlErrorString(result));
             }
 
-            nvmlUtilization_t nvmlUtilization;
+            uint32_t count, *clocksMhz;
             NVML_EXEC_IF_SUPPORTS(
-                "nvmlDeviceGetUtilizationRates",
+                "nvmlDeviceGetSupportedMemoryClocks",
                 device,
                 result,
-                &nvmlUtilization);
-            if (result == NVML_SUCCESS)
+                count,
+                clocksMhz);
+            if (OPT_LIKELY(result == NVML_SUCCESS) && count > 0)
             {
-                memory_info.memory_utilization_percent = nvmlUtilization.memory;
+                // Get the minimum memory clock from the supported clocks
+                memory_info.memory_clock_rate_min_mhz = clocksMhz[0];
             }
             else
             {
                 is_ok = false;
-                OPTKIT_WARN("nvmlDeviceGetUtilizationRates: {}", nvmlErrorString(result));
+                OPTKIT_WARN("nvmlDeviceGetSupportedMemoryClocks: {}", nvmlErrorString(result));
             }
-
+            nvmlUtilization_t utilization;
+            NVML_EXEC_IF_SUPPORTS("nvmlDeviceGetUtilizationRates",
+                                  Query::gpu_handles_nvml.at(device_index),
+                                  result,
+                                  &utilization);
+            if (OPT_LIKELY(result == NVML_SUCCESS))
+            {
+                memory_info.memory_utilization_percent = utilization.memory;
+            }
+            else
+            {
+                is_ok = false;
+                OPTKIT_WARN("Failed to get NVIDIA GPU utilization info: {}", std::string(nvmlErrorString(result)));
+            }
 #endif
         }
         else if (vendor == GpuVendor::AMD)
         {
 #if OPTKIT_ENV_LIB_AMDSMI
             amdsmi_status_t result;
+
+            ROCM_EXEC_IF_SUPPORTS("amdsmi_get_gpu_memory_total",
+                                  Query::gpu_handles_amdsmi.at(device_index),
+                                  result,
+                                  AMDSMI_MEM_TYPE_VRAM,
+                                  &total_memory);
+            if (result == AMDSMI_STATUS_SUCCESS)
+            {
+                memory_info.total_global_memory_bytes = total_memory;
+            }
+            else
+            {
+                is_ok = false;
+                OPTKIT_WARN("Failed to get AMD GPU total memory: {}", _amdsmi_status_to_string(result));
+            }
+
+            ROCM_EXEC_IF_SUPPORTS("amdsmi_get_gpu_memory_usage",
+                                  Query::gpu_handles_amdsmi.at(device_index),
+                                  result,
+                                  AMDSMI_MEM_TYPE_VRAM,
+                                  &total_memory);
+            if (result == AMDSMI_STATUS_SUCCESS)
+            {
+                memory_info.used_memory_bytes = total_memory;
+                memory_info.free_memory_bytes = memory_info.total_global_memory_bytes - memory_info.used_memory_bytes;
+                memory_info.memory_utilization_percent = static_cast<uint32_t>(
+                    (static_cast<double>(memory_info.used_memory_bytes) / static_cast<double>(memory_info.total_global_memory_bytes)) * 100.0);
+            }
+            else
+            {
+                is_ok = false;
+                OPTKIT_WARN("Failed to get AMD GPU used memory: {}", _amdsmi_status_to_string(result));
+            }
+            amdsmi_clk_info_t clk_info;
+            ROCM_EXEC_IF_SUPPORTS("amdsmi_get_clock_info",
+                                  Query::gpu_handles_amdsmi.at(device_index),
+                                  result,
+                                  AMDSMI_CLK_TYPE_MAX,
+                                  &clk_info);
+            if (result == AMDSMI_STATUS_SUCCESS)
+            {
+                memory_info.memory_clock_rate_max_khz = clk_info.max_memory_clock; // in MHz
+                memory_info.memory_clock_rate_min_khz = clk_info.min_memory_clock; // in MHz
+                memory_info.memory_clock_rate_khz = clk_info.current_memory_clock; // in MHz
+            }
+
 #endif
         }
         return is_ok;
@@ -403,6 +508,7 @@ namespace optkit::gpu
     bool Query::get_clock_info(GpuVendor vendor, uint32_t device_index, GpuClockInfo &clock_info)
     {
         bool is_ok = true;
+        clock_info = {}; // Initialize all fields to zero
         if (vendor == GpuVendor::NVIDIA)
         {
 #if OPTKIT_ENV_LIB_NVML
@@ -416,14 +522,13 @@ namespace optkit::gpu
                 result,
                 NVML_CLOCK_GRAPHICS,
                 &clockRate);
-            if (result == NVML_SUCCESS)
+            if (OPT_LIKELY(result == NVML_SUCCESS))
             {
                 clock_info.current_graphics_clock_mhz = clockRate * 1000; // Convert MHz to kHz
             }
             else
             {
                 is_ok = false;
-                clock_info.current_graphics_clock_mhz = 0;
                 OPTKIT_WARN("nvmlDeviceGetClockInfo: {}", nvmlErrorString(result));
             }
             NVML_EXEC_IF_SUPPORTS(
@@ -432,14 +537,13 @@ namespace optkit::gpu
                 result,
                 NVML_CLOCK_SM,
                 &clockRate);
-            if (result == NVML_SUCCESS)
+            if (OPT_LIKELY(result == NVML_SUCCESS))
             {
                 clock_info.current_sm_clock_mhz = clockRate * 1000; // Convert MHz to kHz
             }
             else
             {
                 is_ok = false;
-                clock_info.current_sm_clock_mhz = 0;
                 OPTKIT_WARN("nvmlDeviceGetClockInfo: {}", nvmlErrorString(result));
             }
             NVML_EXEC_IF_SUPPORTS(
@@ -448,14 +552,13 @@ namespace optkit::gpu
                 result,
                 NVML_CLOCK_MEM,
                 &clockRate);
-            if (result == NVML_SUCCESS)
+            if (OPT_LIKELY(result == NVML_SUCCESS))
             {
                 clock_info.current_memory_clock_mhz = clockRate * 1000; // Convert MHz to kHz
             }
             else
             {
                 is_ok = false;
-                clock_info.current_memory_clock_mhz = 0;
                 OPTKIT_WARN("nvmlDeviceGetClockInfo: {}", nvmlErrorString(result));
             }
             NVML_EXEC_IF_SUPPORTS(
@@ -464,14 +567,13 @@ namespace optkit::gpu
                 result,
                 NVML_CLOCK_VIDEO,
                 &clockRate);
-            if (result == NVML_SUCCESS)
+            if (OPT_LIKELY(result == NVML_SUCCESS))
             {
                 clock_info.current_video_clock_mhz = clockRate * 1000; // Convert MHz to kHz
             }
             else
             {
                 is_ok = false;
-                clock_info.current_video_clock_mhz = 0;
                 OPTKIT_WARN("nvmlDeviceGetClockInfo: {}", nvmlErrorString(result));
             }
 
@@ -482,14 +584,13 @@ namespace optkit::gpu
                 result,
                 NVML_CLOCK_GRAPHICS,
                 &clockRate);
-            if (result == NVML_SUCCESS)
+            if (OPT_LIKELY(result == NVML_SUCCESS))
             {
                 clock_info.max_graphics_clock_mhz = clockRate * 1000; // Convert MHz to kHz
             }
             else
             {
                 is_ok = false;
-                clock_info.max_graphics_clock_mhz = 0;
                 OPTKIT_WARN("nvmlDeviceGetMaxClockInfo: {}", nvmlErrorString(result));
             }
 
@@ -499,7 +600,7 @@ namespace optkit::gpu
                 result,
                 NVML_CLOCK_SM,
                 &clockRate);
-            if (result == NVML_SUCCESS)
+            if (OPT_LIKELY(result == NVML_SUCCESS))
             {
                 clock_info.max_sm_clock_mhz = clockRate;
             }
@@ -516,14 +617,13 @@ namespace optkit::gpu
                 result,
                 NVML_CLOCK_MEM,
                 &clockRate);
-            if (result == NVML_SUCCESS)
+            if (OPT_LIKELY(result == NVML_SUCCESS))
             {
                 clock_info.max_memory_clock_mhz = clockRate * 1000; // Convert MHz to kHz
             }
             else
             {
                 is_ok = false;
-                clock_info.max_memory_clock_mhz = 0;
                 OPTKIT_WARN("nvmlDeviceGetMaxClockInfo: {}", nvmlErrorString(result));
             }
 
@@ -533,17 +633,15 @@ namespace optkit::gpu
                 result,
                 NVML_CLOCK_VIDEO,
                 &clockRate);
-            if (result == NVML_SUCCESS)
+            if (OPT_LIKELY(result == NVML_SUCCESS))
             {
                 clock_info.current_video_clock_mhz = clockRate;
             }
             else
             {
                 is_ok = false;
-                clock_info.max_video_clock_mhz = 0;
                 OPTKIT_WARN("nvmlDeviceGetMaxClockInfo: {}", nvmlErrorString(result));
             }
-            clock_info.has_frequency_control = true; // NVIDIA GPUs generally support frequency control
 
 #endif
         }
@@ -554,7 +652,7 @@ namespace optkit::gpu
             // Get clock frequencies
             amdsmi_frequencies_t frequencies;
 
-            ROCM_EXEC_IF_SUPPORTS("	amdsmi_get_clk_freq",
+            ROCM_EXEC_IF_SUPPORTS("amdsmi_get_clk_freq",
                                   Query::gpu_handles_amdsmi.at(device_index),
                                   result,
                                   AMDSMI_CLK_TYPE_SYS,
@@ -567,12 +665,10 @@ namespace optkit::gpu
             else
             {
                 is_ok = false;
-                clock_info.current_sm_clock_mhz = 0;
-                clock_info.max_sm_clock_mhz = 0;
                 OPTKIT_WARN("Failed to get AMD GPU SM clock info: {}", _amdsmi_status_to_string(result));
             }
 
-            ROCM_EXEC_IF_SUPPORTS("	amdsmi_get_clk_freq",
+            ROCM_EXEC_IF_SUPPORTS("amdsmi_get_clk_freq",
                                   Query::gpu_handles_amdsmi.at(device_index),
                                   result,
                                   AMDSMI_CLK_TYPE_GFX,
@@ -585,12 +681,10 @@ namespace optkit::gpu
             else
             {
                 is_ok = false;
-                clock_info.current_graphics_clock_mhz = 0;
-                clock_info.max_graphics_clock_mhz = 0;
                 OPTKIT_WARN("Failed to get AMD GPU Graphics clock info: {}", _amdsmi_status_to_string(result));
             }
 
-            ROCM_EXEC_IF_SUPPORTS("	amdsmi_get_clk_freq",
+            ROCM_EXEC_IF_SUPPORTS("amdsmi_get_clk_freq",
                                   Query::gpu_handles_amdsmi.at(device_index),
                                   result,
                                   AMDSMI_CLK_TYPE_VCLK0,
@@ -603,12 +697,10 @@ namespace optkit::gpu
             else
             {
                 is_ok = false;
-                clock_info.current_video_clock_mhz = 0;
-                clock_info.max_video_clock_mhz = 0;
                 OPTKIT_WARN("Failed to get AMD GPU Video clock info: {}", _amdsmi_status_to_string(result));
             }
 
-            ROCM_EXEC_IF_SUPPORTS("	amdsmi_get_clk_freq",
+            ROCM_EXEC_IF_SUPPORTS("amdsmi_get_clk_freq",
                                   Query::gpu_handles_amdsmi.at(device_index),
                                   result,
                                   AMDSMI_CLK_TYPE_MEM,
@@ -621,8 +713,6 @@ namespace optkit::gpu
             else
             {
                 is_ok = false;
-                clock_info.current_memory_clock_mhz = 0;
-                clock_info.max_memory_clock_mhz = 0;
                 OPTKIT_WARN("Failed to get AMD GPU Memory clock info: {}", _amdsmi_status_to_string(result));
             }
             clock_info.has_frequency_control = true; // AMD GPUs generally support frequency control
@@ -647,9 +737,24 @@ namespace optkit::gpu
         return is_ok;
     }
 
-    // TODO: fill this function
-    bool Query::get_temperature_info(GpuVendor vendor, uint32_t device_index, GpuTemperatureInfo &info)
+    bool Query::get_temperature_info(GpuVendor vendor, uint32_t device_index, GpuTemperatureInfo &temperature_info)
     {
+        temperature_info = {};
+        bool is_okay = true; // stays true if all calls are being successfully made.
+
+        if (Query::get_device_temperature(vendor, device_index, temperature_info.current_temperature_celsius))
+        {
+            temperature_info.has_temperature_monitoring = true;
+            is_okay = get_device_temperature_thresholds(vendor, device_index,
+                                                        temperature_info.max_temperature_celsius);
+        }
+        else
+        {
+            temperature_info.has_temperature_monitoring = false;
+            is_okay = false;
+        }
+
+        return is_okay;
     }
 
     bool Query::get_utilization_info(GpuVendor vendor, uint32_t device_index, GpuUtilizationInfo &utilization_info)
@@ -665,7 +770,7 @@ namespace optkit::gpu
                                   Query::gpu_handles_nvml.at(device_index),
                                   result,
                                   &utilization);
-            if (result == NVML_SUCCESS)
+            if (OPT_LIKELY(result == NVML_SUCCESS))
             {
                 utilization_info.gpu_utilization_percent = utilization.gpu;
                 utilization_info.memory_utilization_percent = utilization.memory;
@@ -711,12 +816,106 @@ namespace optkit::gpu
     }
 
     // TODO: fill this function
-    bool Query::get_hardware_info(GpuVendor vendor, uint32_t device_index, GpuHardwareInfo &info)
+    bool Query::get_hardware_info(GpuVendor vendor, uint32_t device_index, GpuHardwareInfo &hardware_info)
     {
+        hardware_info = {};
+        bool is_ok = true; // stays true if all calls are being successfully made.
+
+        if (vendor == GpuVendor::NVIDIA)
+        {
+#if OPTKIT_ENV_LIB_NVML
+            nvmlPciInfo_t pci;
+            NVML_EXEC_IF_SUPPORTS(
+                "nvmlDeviceGetPciInfo",
+                device,
+                result,
+                &pci);
+            if (OPT_LIKELY(result == NVML_SUCCESS))
+            {
+                hardware_info.pci_bus_id = std::string(pci.busId);
+                hardware_info.pci_device_id = pci.pciDeviceId;
+                hardware_info.pci_subsystem_id = pci.pciSubSystemId;
+            }
+            else
+            {
+                OPTKIT_WARN("nvmlDeviceGetPciInfo: {}", nvmlErrorString(result));
+            }
+            // Get board ID for multi-GPU detection
+            uint32_t boardId;
+            NVML_EXEC_IF_SUPPORTS("nvmlDeviceGetBoardId", device, result, &boardId);
+            if (OPT_LIKELY(result == NVML_SUCCESS))
+            {
+                hardware_info.board_id = boardId;
+            }
+            else
+            {
+                OPTKIT_WARN("nvmlDeviceGetBoardId: {}", nvmlErrorString(result));
+            }
+#endif
+        }
+        else if (vendor == GpuVendor::AMD)
+        {
+#if OPTKIT_ENV_LIB_AMDSMI
+#endif
+        }
+        else
+        {
+            OPTKIT_WARN("Compute info query not implemented for this GPU vendor");
+            return false;
+        }
+
+        return is_ok;
     }
-    // TODO: fill this function
-    bool Query::get_capabilities_info(GpuVendor vendor, uint32_t device_index, GpuCapabilitiesInfo &info)
+
+    bool Query::get_capabilities_info(GpuVendor vendor, uint32_t device_index, GpuCapabilitiesInfo &capabilities_info)
     {
+        capabilities_info = {};
+        if (vendor == GpuVendor::NVIDIA)
+        {
+#if OPTKIT_ENV_LIB_NVML
+            nvmlEnableState_t current, pending;
+            NVML_EXEC_IF_SUPPORTS("nvmlDeviceGetEccMode", device, result, &current, &pending);
+            if (OPT_LIKELY(result == NVML_SUCCESS))
+            {
+                capabilities_info.ecc_enabled = (current == NVML_FEATURE_ENABLED);
+            }
+            else
+            {
+                OPTKIT_WARN("nvmlDeviceGetEccMode: {}", nvmlErrorString(result));
+            }
+            // Get persistence mode
+            nvmlEnableState_t mode;
+            NVML_EXEC_IF_SUPPORTS("nvmlDeviceGetPersistenceMode", device, result, &mode);
+            if (OPT_LIKELY(result == NVML_SUCCESS))
+            {
+                capabilities_info.persistence_mode_enabled = (mode == NVML_FEATURE_ENABLED);
+            }
+            else
+            {
+                OPTKIT_WARN("nvmlDeviceGetPersistenceMode: {}", nvmlErrorString(result));
+            }
+#endif
+        }
+        else if (vendor == GpuBasicInfo::AMD)
+        {
+#if OPTKIT_ENV_LIB_AMDSMI
+            uint64_t enabled_blocks;
+            ROCM_EXEC_IF_SUPPORTS("amdsmi_get_gpu_ecc_enabled",
+                                  Query::gpu_handles_amdsmi.at(device_index),
+                                  result,
+                                  &enabled_blocks);
+            if (result == AMDSMI_STATUS_SUCCESS)
+            {
+                capabilities_info.ecc_enabled = (enabled_blocks != 0);
+            }
+            else
+            {
+                OPTKIT_WARN("Failed to get AMD GPU ECC status: {}", _amdsmi_status_to_string(result));
+            }
+
+            capabilities_info.persistence_mode_enabled = false; // AMD GPUs do not have persistence mode
+#endif
+        }
     }
 
     bool Query::get_driver_version(GpuVendor vendor, double &driver_version)
@@ -726,7 +925,7 @@ namespace optkit::gpu
 #if OPTKIT_ENV_LIB_NVML
             int32_t version;
             nvmlReturn_t result = nvmlSystemGetCudaDriverVersion(&version);
-            if (result == NVML_SUCCESS)
+            if (OPT_LIKELY(result == NVML_SUCCESS))
             {
                 int32_t major = NVML_CUDA_DRIVER_VERSION_MAJOR(version);
                 int32_t minor = NVML_CUDA_DRIVER_VERSION_MINOR(version);
@@ -1082,7 +1281,7 @@ namespace optkit::gpu
             uint32_t temp;
 
             NVML_EXEC_IF_SUPPORTS("nvmlDeviceGetTemperature", device, result, NVML_TEMPERATURE_GPU, &temp);
-            if (result == NVML_SUCCESS)
+            if (OPT_LIKELY(result == NVML_SUCCESS))
             {
                 temp_celsius = static_cast<double>(temp);
                 return true;
@@ -1136,7 +1335,7 @@ namespace optkit::gpu
             // Get device name
             char name[NVML_DEVICE_NAME_BUFFER_SIZE];
             NVML_EXEC_IF_SUPPORTS("nvmlDeviceGetName", device, result, &name[0], NVML_DEVICE_NAME_BUFFER_SIZE);
-            if (result == NVML_SUCCESS)
+            if (OPT_LIKELY(result == NVML_SUCCESS))
             {
                 device_name = std::string(name);
                 return true;
@@ -1176,208 +1375,6 @@ namespace optkit::gpu
         }
     }
 
-    bool Query::get_device_info(GpuVendor vendor, uint32_t device_index, GpuDeviceInfo &info)
-    {
-        if (vendor == GpuVendor::NVIDIA)
-        {
-#if OPTKIT_ENV_LIB_NVML
-            nvmlReturn_t result;
-            auto device = Query::gpu_handles_nvml.at(device_index);
-            // Get compute capability
-            int major, minor;
-            NVML_EXEC_IF_SUPPORTS("nvmlDeviceGetCudaComputeCapability", device, result, &major, &minor);
-            if (result == NVML_SUCCESS)
-            {
-                info.compute.compute_capability_major = major;
-                info.compute.compute_capability_minor = minor;
-            }
-            else
-            {
-                OPTKIT_WARN("nvmlDeviceGetCudaComputeCapability: {}", nvmlErrorString(result));
-            }
-            // Get multiprocessor count
-            uint32_t multiProcessorCount;
-            NVML_EXEC_IF_SUPPORTS(
-                "nvmlDeviceGetMultiProcessorCount",
-                device,
-                result,
-                &multiProcessorCount);
-            if (result == NVML_SUCCESS)
-            {
-                info.compute.multiprocessor_count = multiProcessorCount;
-            }
-            else
-            {
-                OPTKIT_WARN("nvmlDeviceGetMultiProcessorCount: {}", nvmlErrorString(result));
-            }
-            // Get memory bus width
-
-            // Get power information
-            get_device_power(GpuVendor::NVIDIA, device_index, info.power.current_power_watts);
-
-            // Get PCI information
-            nvmlPciInfo_t pci;
-            NVML_EXEC_IF_SUPPORTS(
-                "nvmlDeviceGetPciInfo",
-                device,
-                result,
-                &pci);
-            if (result == NVML_SUCCESS)
-            {
-                info.hardware.pci_bus_id = std::string(pci.busId);
-                info.hardware.pci_device_id = pci.pciDeviceId;
-                info.hardware.pci_subsystem_id = pci.pciSubSystemId;
-            }
-            else
-            {
-                OPTKIT_WARN("nvmlDeviceGetPciInfo: {}", nvmlErrorString(result));
-            }
-
-            // Get ECC mode
-            nvmlEnableState_t current, pending;
-            NVML_EXEC_IF_SUPPORTS("nvmlDeviceGetEccMode", device, result, &current, &pending);
-            if (result == NVML_SUCCESS)
-            {
-                info.capabilities.ecc_enabled = (current == NVML_FEATURE_ENABLED);
-            }
-            else
-            {
-                OPTKIT_WARN("nvmlDeviceGetEccMode: {}", nvmlErrorString(result));
-            }
-
-            // Get board ID for multi-GPU detection
-            uint32_t boardId;
-            NVML_EXEC_IF_SUPPORTS("nvmlDeviceGetBoardId", device, result, &boardId);
-            if (result == NVML_SUCCESS)
-            {
-                info.hardware.board_id = boardId;
-            }
-            else
-            {
-                OPTKIT_WARN("nvmlDeviceGetBoardId: {}", nvmlErrorString(result));
-            }
-            // Get persistence mode
-            nvmlEnableState_t mode;
-            NVML_EXEC_IF_SUPPORTS("nvmlDeviceGetPersistenceMode", device, result, &mode);
-            if (result == NVML_SUCCESS)
-            {
-                info.capabilities.persistence_mode_enabled = (mode == NVML_FEATURE_ENABLED);
-            }
-            else
-            {
-                OPTKIT_WARN("nvmlDeviceGetPersistenceMode: {}", nvmlErrorString(result));
-            }
-
-            // Estimate CUDA cores (approximation based on compute capability)
-            if (info.compute.compute_capability_major > 0)
-            {
-                // Rough estimates for CUDA cores per SM for different architectures
-                uint32_t cores_per_sm = 32; // Default fallback
-                if (info.compute.compute_capability_major == 2)
-                    cores_per_sm = 32;
-                else if (info.compute.compute_capability_major == 3)
-                    cores_per_sm = 192;
-                else if (info.compute.compute_capability_major == 5)
-                    cores_per_sm = 128;
-                else if (info.compute.compute_capability_major == 6)
-                    cores_per_sm = (info.compute.compute_capability_minor == 0) ? 64 : 128;
-                else if (info.compute.compute_capability_major == 7)
-                    cores_per_sm = 64;
-                else if (info.compute.compute_capability_major == 8)
-                    cores_per_sm = (info.compute.compute_capability_minor == 6) ? 128 : 64;
-                else if (info.compute.compute_capability_major >= 9)
-                    cores_per_sm = 128;
-
-                info.compute.cuda_cores_per_mp = cores_per_sm;
-                info.compute.total_cuda_cores = info.compute.multiprocessor_count * cores_per_sm;
-                info.compute.warp_size = 32; // Standard for NVIDIA
-            }
-
-            // Set vendor-specific information
-            info.basic.vendor = GpuVendor::NVIDIA;
-            info.basic.vendor_string = to_string(GpuVendor::NVIDIA);
-            info.clocks.has_frequency_control = true;
-            info.basic.is_integrated = false; // NVIDIA discrete GPUs are typically not integrated
-
-            return true;
-#endif
-        }
-
-        else if (vendor == GpuVendor::AMD)
-        {
-#if OPTKIT_ENV_LIB_AMDSMI
-
-            // Get memory information
-            uint64_t total_memory;
-
-            ROCM_EXEC_IF_SUPPORTS("amdsmi_get_memory_total",
-                                  Query::gpu_handles_amdsmi.at(device_index),
-                                  result,
-                                  &total_memory);
-            if (result == AMDSMI_STATUS_SUCCESS)
-            {
-                info.memory.total_global_memory_bytes = total_memory;
-            }
-
-            amdsmi_power_cap_info_t powercap_info;
-            ROCM_EXEC_IF_SUPPORTS("amdsmi_get_power_cap_info",
-                                  Query::gpu_handles_amdsmi.at(device_index),
-                                  result_amd,
-                                  &powercap_info);
-            if (result_amd == AMDSMI_STATUS_SUCCESS)
-            {
-                info.power.current_power_watts = powercap_info.power_cap / 1000000.0;         // uW to W
-                info.power.max_power_watts = powercap_info.max_power_cap / 1000000.0;         // uW to W
-                info.power.min_power_watts = powercap_info.min_power_cap / 1000000.0;         // uW to W
-                info.power.default_power_watts = powercap_info.default_power_cap / 1000000.0; // uW to W
-                info.power.has_power_monitoring = true;
-            }
-
-            bool is_power_management_enabled = false;
-            ROCM_EXEC_IF_SUPPORTS("amdsmi_is_power_management_enabled",
-                                  Query::gpu_handles_amdsmi.at(device_index),
-                                  result_amd,
-                                  &is_power_management_enabled);
-            if (result_amd == AMDSMI_STATUS_SUCCESS)
-                info.power.is_configurable = is_power_management_enabled;
-
-            uint32_t ptmon;
-            amdsmi_status_t result;
-            ROCM_EXEC_IF_SUPPORTS("amdsmi_get_cpu_socket_temperature",
-                                  Query::gpu_handles_amdsmi.at(device_index),
-                                  result,
-                                  &ptmon);
-            if (result == AMDSMI_STATUS_SUCCESS)
-            {
-                info.temperature.current_temperature_celsius = ptmon;
-                info.temperature.has_temperature_monitoring = true;
-                return true;
-            }
-            else
-            {
-                info.temperature.current_temperature_celsius = 0.0; // Not supported
-                OPTKIT_WARN("amdsmi_get_cpu_socket_temperature: {}", _amdsmi_status_to_string(result));
-            }
-
-            // Get utilization
-            uint32_t busy_percent;
-            ROCM_EXEC_IF_SUPPORTS("	amdsmi_get_busy_percent",
-                                  Query::gpu_handles_amdsmi.at(device_index),
-                                  result,
-                                  &busy_percent);
-            if (result == AMDSMI_STATUS_SUCCESS)
-            {
-                info.performance.gpu_utilization_percent = busy_percent;
-                info.performance.has_utilization_monitoring = true;
-            }
-
-            return true;
-#endif
-        }
-
-        return false;
-    }
-
     bool Query::get_architecture(GpuVendor vendor, uint32_t device_index, uint32_t &architecture)
     {
 
@@ -1407,7 +1404,7 @@ namespace optkit::gpu
             // Try to get device ID from ASIC info
             amdsmi_asic_info_t asic_info{};
             amdsmi_status_t result_amdsmi;
-            ROCM_EXEC_IF_SUPPORTS("amdsmi_get_asic_info",
+            ROCM_EXEC_IF_SUPPORTS("amdsmi_get_gpu_asic_info",
                                   Query::gpu_handles_amdsmi.at(device_index),
                                   result_amdsmi,
                                   &asic_info);
@@ -1418,30 +1415,70 @@ namespace optkit::gpu
                 architecture = _map_amd_device_id_to_arch(device_id);
                 return true;
             }
-            else // Fallback: try to get device ID directly
+            else
             {
-                uint16_t device_id;
-                ROCM_EXEC_IF_SUPPORTS("amdsmi_get_id",
-                                      Query::gpu_handles_amdsmi.at(device_index),
-                                      result_amdsmi,
-                                      &device_id);
-                if (result_amdsmi == AMDSMI_STATUS_SUCCESS)
-                {
-                    architecture = _map_amd_device_id_to_arch(static_cast<uint32_t>(device_id));
-                    return true;
-                }
-                else
-                {
-                    OPTKIT_WARN("Failed to get AMD device ID: {}", _amdsmi_status_to_string(result_amdsmi));
-                }
+                architecture = AMDSMI_DEVICE_ARCH_UNKNOWN;
             }
-            architecture = AMDSMI_DEVICE_ARCH_UNKNOWN;
             return false;
 #endif
         }
 
         OPTKIT_WARN("Unsupported vendor for architecture query");
         return 0xFFFFFFFF; // return unknown architecture
+    }
+
+    bool Query::get_device_temperature_thresholds(GpuVendor vendor, uint32_t device_index, double &max_temp_celsius)
+    {
+        bool is_ok = true;
+
+        if (vendor == GpuVendor::NVIDIA)
+        {
+#if OPTKIT_ENV_LIB_NVML
+            uint32_t temp;
+            nvmlReturn_t result;
+            NVML_EXEC_IF_SUPPORTS("nvmlDeviceGetTemperatureThreshold",
+                                  Query::gpu_handles_nvml.at(device_index),
+                                  result,
+                                  NVML_TEMPERATURE_THRESHOLD_GPU_MAX,
+                                  &temp);
+            if (OPT_LIKELY(result == NVML_SUCCESS))
+            {
+                max_temp_celsius = static_cast<double>(temp);
+            }
+            else
+            {
+                is_ok = false;
+                max_temp_celsius = 0;
+                OPTKIT_WARN("Failed to get NVIDIA max temperature threshold: {}", std::string(nvmlErrorString(result)));
+            }
+#endif
+        }
+        else if (vendor == GpuVendor::AMD)
+        {
+#if OPTKIT_ENV_LIB_AMDSMI
+            uint32_t temperature;
+            amdsmi_status_t result;
+            amdsmi_temperature_type_t sensor_type = AMDSMI_TEMPERATURE_TYPE_EDGE;
+            amdsmi_temperature_metric_t metric = AMDSMI_TEMP_MAX;
+            ROCM_EXEC_IF_SUPPORTS("amdsmi_get_temp_metric",
+                                  Query::gpu_handles_amdsmi.at(device_index),
+                                  result,
+                                  sensor_type,
+                                  metric,
+                                  &temperature);
+            if (result == AMDSMI_STATUS_SUCCESS)
+            {
+                max_temp_celsius = static_cast<double>(temperature) / 1000.0; // Convert from millidegrees to degrees
+            }
+            else
+            {
+                is_ok = false;
+                max_temp_celsius = 0.0; // Not supported
+                OPTKIT_WARN("amdsmi_get_cpu_socket_temperature: {}", _amdsmi_status_to_string(result));
+            }
+#endif
+        }
+        return is_ok;
     }
 
 } // namespace optkit::gpu
