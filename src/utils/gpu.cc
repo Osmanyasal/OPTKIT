@@ -152,8 +152,8 @@ namespace optkit::gpu
         return "{\"compute_capability_major\":" + std::to_string(info.compute_capability_major) +
                ",\"compute_capability_minor\":" + std::to_string(info.compute_capability_minor) +
                ",\"multiprocessor_count\":" + std::to_string(info.multiprocessor_count) +
-               ",\"cuda_cores_per_mp\":" + std::to_string(info.cuda_cores_per_mp) +
-               ",\"total_cuda_cores\":" + std::to_string(info.total_cuda_cores) +
+               ",\"cores_per_mp\":" + std::to_string(info.cores_per_mp) +
+               ",\"total_cores\":" + std::to_string(info.total_cores) +
                ",\"warp_size\":" + std::to_string(info.warp_size) + "}";
     }
 

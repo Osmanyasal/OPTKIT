@@ -131,12 +131,12 @@ namespace optkit::gpu
      */
     struct GpuComputeInfo
     {
-        int32_t compute_capability_major; // NVIDIA specific
-        int32_t compute_capability_minor; // NVIDIA specific
+        int32_t compute_capability_major;
+        int32_t compute_capability_minor;
         uint32_t multiprocessor_count;
-        uint32_t cuda_cores_per_mp; // NVIDIA specific
-        uint32_t total_cuda_cores;  // NVIDIA specific
-        uint32_t warp_size;         // 32 for NVIDIA, 64 for AMD
+        uint32_t cores_per_mp;
+        uint32_t total_cores;
+        uint32_t warp_size;
     };
 
     /**

@@ -62,7 +62,7 @@ int32_t main(int32_t argc, char **argv)
     }
 #endif
 
-    sleep(100);
+    sleep(20);
     // exit(0);
     return 0;
     // OPTKIT_DISK_EVENTS("main", optkit::metrics::disk::core_metrics::AllMetrics());

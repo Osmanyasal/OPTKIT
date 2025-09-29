@@ -19,8 +19,8 @@ namespace optkit::energy::gpu::nvidia
             double power_watts = 0.0;
             if (OPT_LIKELY(optkit::gpu::Query::get_device_power(vendor, i, power_watts)))
             {
-                snapshot[i] = power_watts * sampling_frequency_sec;                    // power in Watts * time in seconds = energy in Joules
-                std::cout << "snapshot[" << i << "] = " << snapshot[i] << " Joules\n"; // debug
+                snapshot[i] = power_watts * sampling_frequency_sec; // power in Watts * time in seconds = energy in Joules
+                // std::cout << "snapshot[" << i << "] = " << snapshot[i] << " Joules\n"; // debug
             }
             else
             {
@@ -64,7 +64,7 @@ namespace optkit::energy::gpu::nvidia
         if (OPT_LIKELY(this->config.verbose))
         {
             std::cout << std::fixed << "\033[1;33m" // Yellow for temperature
-                      << "Block: " << this->config.block_name << "\033[0m"
+                      << "Block: " << this->config.block_name << ":" << this->config.measurement_type << "\033[0m"
                       << " [" << this->total_duration_ms << "ms] Measured\n";
 
             if (OPT_UNLIKELY(this->metric_builder.print_events))

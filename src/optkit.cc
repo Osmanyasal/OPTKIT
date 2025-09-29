@@ -26,8 +26,11 @@ namespace optkit
         }
         else
         {
-            optkit::pmu::cpu::QueryPMU::init();           // pmf init
-            optkit::gpu::Query::init();                   // gpu init
+            optkit::pmu::cpu::QueryPMU::init(); // pmf init
+            for (optkit::gpu::GpuVendor i = optkit::gpu::GpuVendor::BEGIN; i != optkit::gpu::GpuVendor::END; i = static_cast<optkit::gpu::GpuVendor>(static_cast<uint8_t>(i) + 1))
+            {
+                optkit::gpu::Query::init(i); // gpu init
+            }
             optkit::temperature::hwmon::Profiler::init(); // discover hwmon temperatures.
 
             Query::create_folder = config.create_folder;
@@ -224,7 +227,10 @@ namespace optkit
                 }
             }
         }
-        optkit::gpu::Query::shutdown();
+        for (optkit::gpu::GpuVendor i = optkit::gpu::GpuVendor::BEGIN; i != optkit::gpu::GpuVendor::END; i = static_cast<optkit::gpu::GpuVendor>(static_cast<uint8_t>(i) + 1))
+        {
+            optkit::gpu::Query::shutdown(i); // gpu shutdown
+        }
         optkit::pmu::cpu::QueryPMU::destroy();
         optkit::utils::logger::BaseLogger::shutdown(); // logger shutdown.
     }
