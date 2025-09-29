@@ -4,29 +4,35 @@ namespace optkit::temperature::gpu
     Profiler::Profiler(const ProfilerConfig &profiler_config, const optkit::metrics::MetricBuilder<double> &mb)
         : BaseProfiler(profiler_config), metric_builder(mb)
     {
-        std::unordered_map<optkit::gpu::GpuVendor, uint32_t> device_counts = optkit::gpu::Query::get_device_count();
+        // Define array of vendors to support
+        std::vector<optkit::gpu::GpuVendor> vendors;
+        vendors.push_back(optkit::gpu::GpuVendor::NVIDIA);
+        vendors.push_back(optkit::gpu::GpuVendor::AMD);
+
         uint32_t device_index = 0;
-
         // Initialize temperature snapshots for all vendors and their devices
-        for (std::unordered_map<optkit::gpu::GpuVendor, uint32_t>::const_iterator it = device_counts.begin();
-             it != device_counts.end(); ++it)
+        for (std::vector<optkit::gpu::GpuVendor>::const_iterator vendor_it = vendors.begin();
+             vendor_it != vendors.end(); ++vendor_it)
         {
-            optkit::gpu::GpuVendor vendor = it->first;
-            uint32_t count = it->second;
+            optkit::gpu::GpuVendor vendor = *vendor_it;
+            uint32_t device_count;
 
-            for (uint32_t i = 0; i < count; i++)
+            if (optkit::gpu::Query::get_device_count(vendor, device_count))
             {
-                double temp_celsius;
-                if (optkit::gpu::Query::get_device_temperature(vendor, i, temp_celsius))
+                for (uint32_t i = 0; i < device_count; i++)
                 {
-                    last_snapshot[device_index] = temp_celsius;
-                    // std::cout << "Initial snapshot: " << device_index << " -> " << temp_celsius << std::endl;
+                    double temp_celsius;
+                    if (optkit::gpu::Query::get_device_temperature(vendor, i, temp_celsius))
+                    {
+                        last_snapshot[device_index] = temp_celsius;
+                        // std::cout << "Initial snapshot: " << device_index << " -> " << temp_celsius << std::endl;
+                    }
+                    else
+                    {
+                        last_snapshot[device_index] = 0.0; // Default for unsupported devices
+                    }
+                    device_index++;
                 }
-                else
-                {
-                    last_snapshot[device_index] = 0.0; // Default for unsupported devices
-                }
-                device_index++;
             }
         }
 
@@ -66,13 +72,37 @@ namespace optkit::temperature::gpu
 
     std::vector<double> Profiler::read()
     {
+        // Define array of vendors to support (same as constructor)
+        std::vector<optkit::gpu::GpuVendor> vendors;
+        vendors.push_back(optkit::gpu::GpuVendor::NVIDIA);
+        vendors.push_back(optkit::gpu::GpuVendor::AMD);
 
         std::unordered_map<uint32_t, double> current_snapshot;
-        for (uint32_t i = 0; i < optkit::gpu::Query::get_device_count(); i++)
+        uint32_t device_index = 0;
+
+        // Read temperature from all vendors and their devices
+        for (std::vector<optkit::gpu::GpuVendor>::const_iterator vendor_it = vendors.begin();
+             vendor_it != vendors.end(); ++vendor_it)
         {
-            double temp_celsius;
-            optkit::gpu::Query::get_device_temperature(i, temp_celsius);
-            current_snapshot[i] = temp_celsius;
+            optkit::gpu::GpuVendor vendor = *vendor_it;
+            uint32_t device_count;
+
+            if (optkit::gpu::Query::get_device_count(vendor, device_count))
+            {
+                for (uint32_t i = 0; i < device_count; i++)
+                {
+                    double temp_celsius;
+                    if (optkit::gpu::Query::get_device_temperature(vendor, i, temp_celsius))
+                    {
+                        current_snapshot[device_index] = temp_celsius;
+                    }
+                    else
+                    {
+                        current_snapshot[device_index] = 0.0; // Default for unsupported devices
+                    }
+                    device_index++;
+                }
+            }
         }
 
         std::vector<double> current_temps;

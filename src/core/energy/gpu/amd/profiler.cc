@@ -8,7 +8,7 @@ namespace optkit::energy::gpu::amd
     OPT_FORCE_INLINE void sampling_function(std::unordered_map<uint32_t, double> &snapshot, uint32_t sampling_frequency_sec = 1) // in seconds
     {
         uint32_t device_count;
-        auto vendor = optkit::utils::GpuDevice::AMD;
+        optkit::gpu::GpuVendor vendor = optkit::gpu::GpuVendor::AMD;
         if (!optkit::gpu::Query::get_device_count(vendor, device_count))
         {
             OPTKIT_ERROR("Failed to get device count for AMD GPUs.");
@@ -16,20 +16,11 @@ namespace optkit::energy::gpu::amd
         }
         for (uint32_t i = 0; i < device_count; i++)
         {
-            amdsmi_processor_handle device = Query::gpu_handles_amdsmi.at(i);
-            uint64_t energy_accumulator = 0.0;
-            float counter_resolution = 0.0;
-            uint64_t time_stamp = 0.0;
-
-            ROCM_EXEC_IF_SUPPORTS(
-                "amdsmi_get_energy_count",
-                device,
-                result,
-                &energy_accumulator,
-                &counter_resolution,
-                &time_stamp);
-
-            snapshot[i] = snapshot[i - 1] - energy_accumulator * 1e-6; // micro Joules to Joules
+            double power_watts = 0.0;
+            if (optkit::gpu::Query::get_device_power(vendor, i, power_watts))
+            {
+                snapshot[i] = snapshot[i - 1] - (power_watts * sampling_frequency_sec);
+            }
         }
     }
     Profiler::Profiler(const ProfilerConfig &profiler_config, const uint32_t sampling_frequency_sec, const optkit::metrics::MetricBuilder<std::unordered_map<uint32_t, double>> &mb)
@@ -37,7 +28,9 @@ namespace optkit::energy::gpu::amd
     {
 
         metric_builder = {};
-        const static uint32_t device_count = optkit::gpu::Query::get_device_count();
+        uint32_t device_count;
+        auto vendor = optkit::gpu::GpuVendor::AMD;
+        optkit::gpu::Query::get_device_count(vendor, device_count);
         for (uint32_t i = 0; i < device_count; i++)
         {
             metric_builder.add("gpu[" + std::to_string(i) + "]", {0x0});
@@ -46,20 +39,11 @@ namespace optkit::energy::gpu::amd
         // we need to record the initial energy count to calculate deltas later
         for (uint32_t i = 0; i < device_count; i++)
         {
-            amdsmi_processor_handle device = Query::gpu_handles_amdsmi.at(i);
-            uint64_t energy_accumulator = 0.0;
-            float counter_resolution = 0.0;
-            uint64_t time_stamp = 0.0;
-
-            ROCM_EXEC_IF_SUPPORTS(
-                "amdsmi_get_energy_count",
-                device,
-                result,
-                &energy_accumulator,
-                &counter_resolution,
-                &time_stamp);
-
-            snapshot[i] = energy_accumulator * 1e-6; // micro Joules to Joules
+            double power_watts = 0.0;
+            if (optkit::gpu::Query::get_device_power(vendor, i, power_watts))
+            {
+                snapshot[i] = (power_watts * sampling_frequency_sec);
+            }
         }
 
         this->sampling_thread = std::thread([this]()
@@ -104,7 +88,7 @@ namespace optkit::energy::gpu::amd
 
     std::unordered_map<uint32_t, double> Profiler::read()
     {
-        optkit::energy::gpu::nvidia::sampling_function(this->snapshot, this->sampling_frequency_sec);
+        optkit::energy::gpu::amd::sampling_function(this->snapshot, this->sampling_frequency_sec);
         return this->snapshot;
     }
 

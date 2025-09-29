@@ -8,7 +8,7 @@ namespace optkit::energy::gpu::nvidia
     OPT_FORCE_INLINE void sampling_function(std::unordered_map<uint32_t, double> &snapshot, uint32_t sampling_frequency_sec = 1) // in seconds
     {
         uint32_t device_count;
-        auto vendor = optkit::utils::GpuDevice::NVIDIA;
+        optkit::gpu::GpuVendor vendor = optkit::gpu::GpuVendor::NVIDIA;
         if (!optkit::gpu::Query::get_device_count(vendor, device_count))
         {
             OPTKIT_ERROR("Failed to get device count for NVIDIA GPUs.");
@@ -19,8 +19,8 @@ namespace optkit::energy::gpu::nvidia
             double power_watts = 0.0;
             if (OPT_LIKELY(optkit::gpu::Query::get_device_power(vendor, i, power_watts)))
             {
-                snapshot[i] = power_watts * sampling_frequency_sec; // power in Watts * time in seconds = energy in Joules
-                // std::cout << "snapshot[" << i << "] = " << snapshot[i] << " Joules\n"; // debug
+                snapshot[i] = power_watts * sampling_frequency_sec;                    // power in Watts * time in seconds = energy in Joules
+                std::cout << "snapshot[" << i << "] = " << snapshot[i] << " Joules\n"; // debug
             }
             else
             {
@@ -34,7 +34,8 @@ namespace optkit::energy::gpu::nvidia
     {
 
         metric_builder = {};
-        uint32_t device_count = optkit::gpu::Query::get_device_count().at(GpuVendor::NVIDIA);
+        uint32_t device_count;
+        optkit::gpu::Query::get_device_count(optkit::gpu::GpuVendor::NVIDIA, device_count);
         for (uint32_t i = 0; i < device_count; i++)
         {
             metric_builder.add("gpu[" + std::to_string(i) + "]", {0x0});

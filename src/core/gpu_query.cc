@@ -60,7 +60,9 @@ namespace optkit::gpu
                     }
                 }
                 else
+                {
                     OPTKIT_ERROR("NVML error in nvmlInit: {}", std::string(nvmlErrorString(result)));
+                }
             }
             return true;
 #endif
@@ -454,7 +456,7 @@ namespace optkit::gpu
         {
 #if OPTKIT_ENV_LIB_AMDSMI
             amdsmi_status_t result;
-
+            uint32_t total_memory;
             ROCM_EXEC_IF_SUPPORTS("amdsmi_get_gpu_memory_total",
                                   Query::gpu_handles_amdsmi.at(device_index),
                                   result,
@@ -491,13 +493,13 @@ namespace optkit::gpu
             ROCM_EXEC_IF_SUPPORTS("amdsmi_get_clock_info",
                                   Query::gpu_handles_amdsmi.at(device_index),
                                   result,
-                                  AMDSMI_CLK_TYPE_MAX,
+                                  AMDSMI_CLK_TYPE_MEM,
                                   &clk_info);
             if (result == AMDSMI_STATUS_SUCCESS)
             {
-                memory_info.memory_clock_rate_max_khz = clk_info.max_memory_clock; // in MHz
-                memory_info.memory_clock_rate_min_khz = clk_info.min_memory_clock; // in MHz
-                memory_info.memory_clock_rate_khz = clk_info.current_memory_clock; // in MHz
+                memory_info.memory_clock_rate_max_mhz = clk_info.max_clk; // in MHz
+                memory_info.memory_clock_rate_min_mhz = clk_info.min_clk; // in MHz
+                memory_info.memory_clock_rate_mhz = clk_info.clk;         // in MHz
             }
 
 #endif
@@ -824,7 +826,9 @@ namespace optkit::gpu
         if (vendor == GpuVendor::NVIDIA)
         {
 #if OPTKIT_ENV_LIB_NVML
+            nvmlReturn_t result;
             nvmlPciInfo_t pci;
+            auto device = Query::gpu_handles_nvml.at(device_index);
             NVML_EXEC_IF_SUPPORTS(
                 "nvmlDeviceGetPciInfo",
                 device,
@@ -856,6 +860,8 @@ namespace optkit::gpu
         else if (vendor == GpuVendor::AMD)
         {
 #if OPTKIT_ENV_LIB_AMDSMI
+            auto device = Query::gpu_handles_amdsmi.at(device_index);
+            amdsmi_status_t result;
 #endif
         }
         else
@@ -1008,7 +1014,6 @@ namespace optkit::gpu
 
     bool Query::get_device_count(GpuVendor vendor, uint32_t &device_count)
     {
-
         if (vendor == GpuVendor::NVIDIA)
         {
 #if OPTKIT_ENV_LIB_NVML
@@ -1029,77 +1034,6 @@ namespace optkit::gpu
             return false;
         }
     }
-
-#if OPTKIT_ENV_LIB_AMDSMI
-    inline uint32_t _amdsmi_populate_device_count_and_fill_handlers()
-    {
-        amdsmi_status_t result;
-
-        uint32_t socket_count = 0;
-        uint32_t total_device_count = 0;
-
-        result = amdsmi_get_socket_handles(&socket_count, nullptr);
-        if (result == AMDSMI_STATUS_SUCCESS)
-        {
-            Query::socket_handles_amdsmi.reserve(socket_count);
-
-            // First, get all socket handles
-            for (uint32_t i = 0; i < socket_count; i++)
-            {
-                amdsmi_socket_handle socket;
-                result = amdsmi_get_socket_handles(&socket_count, &socket);
-                if (result == AMDSMI_STATUS_SUCCESS)
-                {
-                    Query::socket_handles_amdsmi.push_back(socket);
-                }
-                else
-                {
-                    OPTKIT_WARN("Failed to get socket handle {}: {}", i, _amdsmi_status_to_string(result));
-                }
-            }
-
-            // Then, accumulate device counts from each socket
-            for (auto &&socket : Query::socket_handles_amdsmi)
-            {
-                uint32_t socket_device_count = 0;
-                result = amdsmi_get_processor_handles(socket, &socket_device_count, nullptr);
-                if (result == AMDSMI_STATUS_SUCCESS)
-                {
-                    total_device_count += socket_device_count;
-
-                    // Reserve space for each socket at least (usually 1 socket = 1 GPU but not always)
-                    Query::gpu_handles_amdsmi.reserve(total_device_count);
-
-                    // Get the actual processor handles for this socket
-                    std::vector<amdsmi_processor_handle> socket_handles(socket_device_count);
-                    result = amdsmi_get_processor_handles(socket, &socket_device_count, socket_handles.data());
-                    if (result == AMDSMI_STATUS_SUCCESS)
-                    {
-                        // Add handles from this socket to the main vector
-                        Query::gpu_handles_amdsmi.insert(
-                            Query::gpu_handles_amdsmi.end(),
-                            socket_handles.begin(),
-                            socket_handles.end());
-                    }
-                    else
-                    {
-                        OPTKIT_WARN("Failed to get processor handles for socket: {}", _amdsmi_status_to_string(result));
-                    }
-                }
-                else
-                {
-                    OPTKIT_WARN("Failed to get processor count for socket: {}", _amdsmi_status_to_string(result));
-                }
-            }
-        }
-        else
-        {
-            OPTKIT_ERROR("AMD SMI error in amdsmi_get_socket_handles: {}", _amdsmi_status_to_string(result));
-        }
-
-        return total_device_count;
-    }
-#endif
 
     bool Query::get_device_power(GpuVendor vendor, uint32_t device_index, double &power_watts)
     {
