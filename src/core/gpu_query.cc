@@ -530,7 +530,8 @@ namespace optkit::gpu
             if (OPT_LIKELY(result == NVML_SUCCESS) && count > 0)
             {
                 // Allocate memory for the clocks
-                std::vector<uint32_t> clocksMhz(count);
+                std::vector<uint32_t> clocksMhz();
+                clocksMhz.resize(count);
                 NVML_EXEC_IF_SUPPORTS(
                     "nvmlDeviceGetSupportedMemoryClocks",
                     nvml_device,
