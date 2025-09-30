@@ -35,9 +35,9 @@ namespace optkit::energy::gpu::amd
         Profiler(const ProfilerConfig &profiler_config, const uint32_t sampling_frequency_sec = 1, const optkit::metrics::MetricBuilder<std::unordered_map<uint32_t, double>> &mb = {});
         virtual ~Profiler();
 
-        virtual void enable() override {}  // Already handled by constructor
-        virtual void disable() override {} // No-op
-        virtual void reset() override {}   // No-op
+        virtual void enable() override {}                             // Already handled by constructor
+        virtual void disable() override { this->is_enabled = false; } // No-op
+        virtual void reset() override {}                              // No-op
 
         // returns device_id - energy (power * delta_time) values in a vector.
         virtual std::unordered_map<uint32_t, double> read() override;
@@ -53,5 +53,6 @@ namespace optkit::energy::gpu::amd
         uint32_t sampling_counter;
         std::thread sampling_thread;
         bool is_sampling;
+        bool is_enabled;
     };
 } // namespace optkit::energy::gpu::amd

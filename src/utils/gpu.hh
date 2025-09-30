@@ -144,14 +144,14 @@ namespace optkit::gpu
      */
     struct GpuMemoryInfo
     {
-        uint64_t total_global_memory_bytes;
-        uint64_t free_memory_bytes;
-        uint64_t used_memory_bytes;
+        uint64_t total_global_memory_MBytes;
+        uint64_t free_memory_MBytes;
+        uint64_t used_memory_MBytes;
         uint32_t memory_bus_width_bits;
-        uint32_t memory_clock_rate_mhz;
-        uint32_t memory_clock_rate_max_mhz;
-        uint32_t memory_clock_rate_min_mhz;
-        uint32_t memory_utilization_percent;
+        uint32_t memory_clock_rate_MHz;
+        uint32_t memory_clock_rate_max_MHz;
+        uint32_t memory_clock_rate_min_MHz;
+        double memory_utilization_percent;
     };
 
     /**
@@ -159,15 +159,15 @@ namespace optkit::gpu
      */
     struct GpuClockInfo
     {
-        uint32_t current_sm_clock_mhz;
-        uint32_t current_video_clock_mhz;
-        uint32_t current_graphics_clock_mhz;
-        uint32_t current_memory_clock_mhz;
+        uint32_t current_sm_clock_MHz;
+        uint32_t current_video_clock_MHz;
+        uint32_t current_graphics_clock_MHz;
+        uint32_t current_memory_clock_MHz;
 
-        uint32_t max_sm_clock_mhz;
-        uint32_t max_video_clock_mhz;
-        uint32_t max_graphics_clock_mhz;
-        uint32_t max_memory_clock_mhz;
+        uint32_t max_sm_clock_MHz;
+        uint32_t max_video_clock_MHz;
+        uint32_t max_graphics_clock_MHz;
+        uint32_t max_memory_clock_MHz;
         bool has_frequency_control;
     };
 
@@ -200,8 +200,8 @@ namespace optkit::gpu
      */
     struct GpuUtilizationInfo
     {
-        uint32_t gpu_utilization_percent;
-        uint32_t memory_utilization_percent;
+        double gpu_utilization_percent;
+        double memory_utilization_percent;
         bool has_utilization_monitoring;
     };
 

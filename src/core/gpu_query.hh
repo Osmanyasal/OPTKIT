@@ -48,7 +48,16 @@ namespace optkit::gpu
          * @note Call this when done with GPU monitoring to properly shutdown libraries
          */
         static bool shutdown(GpuVendor vendor);
+        static bool shutdown_amdsmi();
+        static bool shutdown_nvml();
 
+        /**
+         * @brief Comprehensive GPU device information query
+         * @return GpuDeviceInfo
+         * @note Returns empty GpuDeviceInfo if query fails
+         *
+         */
+        static GpuDeviceInfo device_query(GpuVendor vendor, uint32_t gpu_id = 0);
         static bool get_basic_info(GpuVendor vendor, uint32_t device_index, GpuBasicInfo &basic_info);
         static bool get_version_info(GpuVendor vendor, uint32_t device_index, GpuVersionInfo &version_info);
         static bool get_compute_info(GpuVendor vendor, uint32_t device_index, GpuComputeInfo &compute_info);
@@ -64,14 +73,6 @@ namespace optkit::gpu
          * @brief Get the warp size of the GPU
          */
         static bool get_warp_size(GpuVendor vendor, uint32_t device_index, uint32_t &warp_size);
-
-        /**
-         * @brief Query GPU device information, returns all information about the GPU
-         *
-         * @param gpu_id
-         * @return GpuDeviceInfo
-         */
-        static GpuDeviceInfo device_query(GpuVendor vendor, uint32_t gpu_id = 0);
 
         /**
          * @brief Get the driver version of the GPU
@@ -143,15 +144,6 @@ namespace optkit::gpu
          * @return false
          */
         static bool get_device_name(GpuVendor vendor, uint32_t device_index, std::string &device_name);
-
-        /**
-         * @brief Get comprehensive GPU device information
-         * @param device_index Index of the GPU device (0 to get_device_count()-1)
-         * @param info Output parameter to store the GPU device information
-         * @return true if device information was successfully retrieved, false otherwise
-         */
-        // TODO: NOT OK
-        static bool get_device_info(GpuVendor vendor, uint32_t device_index, GpuDeviceInfo &info);
 
         static bool get_device_temperature_thresholds(GpuVendor vendor, uint32_t device_index, double &max_temp_celsius);
 

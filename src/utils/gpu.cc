@@ -159,25 +159,25 @@ namespace optkit::gpu
 
     std::string to_string(const GpuMemoryInfo &info)
     {
-        return "{\"total_global_memory_bytes\":" + std::to_string(info.total_global_memory_bytes) +
-               ",\"free_memory_bytes\":" + std::to_string(info.free_memory_bytes) +
-               ",\"used_memory_bytes\":" + std::to_string(info.used_memory_bytes) +
+        return "{\"total_global_memory_MBytes\":" + std::to_string(info.total_global_memory_MBytes) +
+               ",\"free_memory_MBytes\":" + std::to_string(info.free_memory_MBytes) +
+               ",\"used_memory_MBytes\":" + std::to_string(info.used_memory_MBytes) +
                ",\"memory_bus_width_bits\":" + std::to_string(info.memory_bus_width_bits) +
-               ",\"memory_clock_rate_mhz\":" + std::to_string(info.memory_clock_rate_mhz) +
-               ",\"memory_clock_rate_max_mhz\":" + std::to_string(info.memory_clock_rate_max_mhz) +
+               ",\"memory_clock_rate_MHz\":" + std::to_string(info.memory_clock_rate_MHz) +
+               ",\"memory_clock_rate_max_MHz\":" + std::to_string(info.memory_clock_rate_max_MHz) +
                ",\"memory_utilization_percent\":" + std::to_string(info.memory_utilization_percent) + "}";
     }
 
     std::string to_string(const GpuClockInfo &info)
     {
-        return "{\"current_sm_clock_mhz\":" + std::to_string(info.current_sm_clock_mhz) +
-               ",\"current_video_clock_mhz\":" + std::to_string(info.current_video_clock_mhz) +
-               ",\"current_graphics_clock_mhz\":" + std::to_string(info.current_graphics_clock_mhz) +
-               ",\"current_memory_clock_mhz\":" + std::to_string(info.current_memory_clock_mhz) +
-               ",\"max_sm_clock_mhz\":" + std::to_string(info.max_sm_clock_mhz) +
-               ",\"max_video_clock_mhz\":" + std::to_string(info.max_video_clock_mhz) +
-               ",\"max_graphics_clock_mhz\":" + std::to_string(info.max_graphics_clock_mhz) +
-               ",\"max_memory_clock_mhz\":" + std::to_string(info.max_memory_clock_mhz) +
+        return "{\"current_sm_clock_MHz\":" + std::to_string(info.current_sm_clock_MHz) +
+               ",\"current_video_clock_MHz\":" + std::to_string(info.current_video_clock_MHz) +
+               ",\"current_graphics_clock_MHz\":" + std::to_string(info.current_graphics_clock_MHz) +
+               ",\"current_memory_clock_MHz\":" + std::to_string(info.current_memory_clock_MHz) +
+               ",\"max_sm_clock_MHz\":" + std::to_string(info.max_sm_clock_MHz) +
+               ",\"max_video_clock_MHz\":" + std::to_string(info.max_video_clock_MHz) +
+               ",\"max_graphics_clock_MHz\":" + std::to_string(info.max_graphics_clock_MHz) +
+               ",\"max_memory_clock_MHz\":" + std::to_string(info.max_memory_clock_MHz) +
                ",\"has_frequency_control\":" + (info.has_frequency_control ? "true" : "false") + "}";
     }
 

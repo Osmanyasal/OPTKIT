@@ -24,13 +24,18 @@ namespace optkit::energy::gpu::amd
         }
     }
     Profiler::Profiler(const ProfilerConfig &profiler_config, const uint32_t sampling_frequency_sec, const optkit::metrics::MetricBuilder<std::unordered_map<uint32_t, double>> &mb)
-        : BaseProfiler{profiler_config}, metric_builder{mb}, sampling_frequency_sec{sampling_frequency_sec}, sampling_counter{0}, is_sampling{true}
+        : BaseProfiler{profiler_config}, metric_builder{mb}, sampling_frequency_sec{sampling_frequency_sec}, sampling_counter{0}, is_sampling{true}, is_enabled{true}
     {
 
         metric_builder = {};
         uint32_t device_count;
         auto vendor = optkit::gpu::GpuVendor::AMD;
         optkit::gpu::Query::get_device_count(vendor, device_count);
+        if (device_count == 0)
+        {
+            this->is_enabled = false;
+            return;
+        }
         for (uint32_t i = 0; i < device_count; i++)
         {
             metric_builder.add("gpu[" + std::to_string(i) + "]", {0x0});
@@ -59,6 +64,9 @@ namespace optkit::energy::gpu::amd
 
     Profiler::~Profiler()
     {
+        if (!this->is_enabled)
+            return;
+
         this->read_and_store();
         this->is_sampling = false;    // stop sampling thread
         this->sampling_thread.join(); // wait for it to join.
