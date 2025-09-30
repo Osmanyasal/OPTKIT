@@ -45,4 +45,21 @@
 #define NVML_DEVICE_ARCH_UNKNOWN 0xFFFFFFFF // Unknown architecture
 #endif
 
+// Define nvmlDeviceAttributes_t if it doesn't exist in older NVML versions
+#if !defined(NVML_DEVICE_ATTRIBUTES_T_DEFINED) && !defined(nvmlDeviceAttributes_t)
+#define NVML_DEVICE_ATTRIBUTES_T_DEFINED
+typedef struct nvmlDeviceAttributes_st
+{
+    unsigned int multiprocessorCount;       //!< Streaming Multiprocessor count
+    unsigned int sharedCopyEngineCount;     //!< Shared Copy Engine count
+    unsigned int sharedDecoderCount;        //!< Shared Decoder Engine count
+    unsigned int sharedEncoderCount;        //!< Shared Encoder Engine count
+    unsigned int sharedJpegCount;           //!< Shared JPEG Engine count
+    unsigned int sharedOfaCount;            //!< Shared OFA Engine count
+    unsigned int gpuInstanceSliceCount;     //!< GPU instance slice count
+    unsigned int computeInstanceSliceCount; //!< Compute instance slice count
+    unsigned long long memorySizeMB;        //!< Device memory size (in MiB)
+} nvmlDeviceAttributes_t;
+#endif
+
 #endif
