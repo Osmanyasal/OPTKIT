@@ -30,7 +30,7 @@ namespace optkit::gpu
                 initialized[GpuVendor::NVIDIA] = (result == NVML_SUCCESS);
                 if (OPT_LIKELY(initialized[GpuVendor::NVIDIA]))
                 {
-                    OPTKIT_INFO("Initialized NVML library successfully");
+                    OPTKIT_CORE_INFO("Initialized NVML library successfully");
 
                     // Get device count directly from NVML to avoid circular dependency
                     uint32_t device_count = 0;
@@ -46,7 +46,7 @@ namespace optkit::gpu
                                 Query::gpu_handles_nvml.push_back(device);
                             else
                             {
-                                OPTKIT_ERROR("NVML error in nvmlDeviceGetHandleByIndex: {}", std::string(nvmlErrorString(result)));
+                                OPTKIT_CORE_ERROR("NVML error in nvmlDeviceGetHandleByIndex: {}", std::string(nvmlErrorString(result)));
                                 initialized[GpuVendor::NVIDIA] = false;
                                 nvmlShutdown();
                                 break;
@@ -55,14 +55,14 @@ namespace optkit::gpu
                     }
                     else
                     {
-                        OPTKIT_ERROR("NVML error in nvmlDeviceGetCount: {}", std::string(nvmlErrorString(count_result)));
+                        OPTKIT_CORE_ERROR("NVML error in nvmlDeviceGetCount: {}", std::string(nvmlErrorString(count_result)));
                         initialized[GpuVendor::NVIDIA] = false;
                         nvmlShutdown();
                     }
                 }
                 else
                 {
-                    OPTKIT_ERROR("NVML error in nvmlInit: {}", std::string(nvmlErrorString(result)));
+                    OPTKIT_CORE_ERROR("NVML error in nvmlInit: {}", std::string(nvmlErrorString(result)));
                 }
             }
             return true;
@@ -77,19 +77,19 @@ namespace optkit::gpu
                 initialized[GpuVendor::AMD] = (result == AMDSMI_STATUS_SUCCESS);
                 if (OPT_LIKELY(initialized[GpuVendor::AMD]))
                 {
-                    OPTKIT_INFO("Initialized ROCm SMI library successfully");
+                    OPTKIT_CORE_INFO("Initialized ROCm SMI library successfully");
 
                     // Use the existing helper function to populate AMD device handles
                     uint32_t device_count = _amdsmi_populate_device_count_and_fill_handlers();
                     if (device_count == 0)
                     {
-                        OPTKIT_WARN("No AMD devices found or failed to populate device handles");
+                        OPTKIT_CORE_WARN("No AMD devices found or failed to populate device handles");
                         shutdown_amdsmi();
                     }
                 }
                 else
                 {
-                    OPTKIT_ERROR("ROCm SMI error in amdsmi_init: {}", _amdsmi_status_to_string(result));
+                    OPTKIT_CORE_ERROR("ROCm SMI error in amdsmi_init: {}", _amdsmi_status_to_string(result));
                     shutdown_amdsmi();
                 }
             }
@@ -98,7 +98,7 @@ namespace optkit::gpu
         }
         else
         {
-            OPTKIT_ERROR("Unsupported or unknown GPU vendor for initialization");
+            OPTKIT_CORE_ERROR("Unsupported or unknown GPU vendor for initialization");
             return false;
         }
 
@@ -118,7 +118,7 @@ namespace optkit::gpu
         }
         else
         {
-            OPTKIT_ERROR("Unsupported or unknown GPU vendor for shutdown");
+            OPTKIT_CORE_ERROR("Unsupported or unknown GPU vendor for shutdown");
             is_ok = false;
         }
         return is_ok;
@@ -127,20 +127,20 @@ namespace optkit::gpu
     bool Query::shutdown_nvml()
     {
 #if OPTKIT_ENV_LIB_NVML
-        if (initialized[GpuVendor::NVIDIA])
+        if (initialized.at(GpuVendor::NVIDIA))
         {
             nvmlReturn_t result = nvmlShutdown();
             bool success = (result == NVML_SUCCESS);
             if (success)
             {
-                OPTKIT_INFO("Shutdown NVML library successfully");
-                initialized[GpuVendor::NVIDIA] = false;
+                OPTKIT_CORE_INFO("Shutdown NVML library successfully");
+                initialized.at(GpuVendor::NVIDIA) = false;
                 Query::gpu_handles_nvml.clear();
                 return true;
             }
             else
             {
-                OPTKIT_ERROR("Failed to shutdown NVML library: {}", nvmlErrorString(result));
+                OPTKIT_CORE_ERROR("Failed to shutdown NVML library: {}", nvmlErrorString(result));
                 return false;
             }
         }
@@ -151,22 +151,22 @@ namespace optkit::gpu
     {
 
 #if OPTKIT_ENV_LIB_AMDSMI
-        if (initialized[GpuVendor::AMD])
+        if (initialized.at(GpuVendor::AMD))
         {
             amdsmi_status_t result = amdsmi_shut_down();
             bool success = (result == AMDSMI_STATUS_SUCCESS);
 
             if (success)
             {
-                OPTKIT_INFO("Shutdown AMD SMI library successfully");
-                initialized[GpuVendor::AMD] = false;
+                OPTKIT_CORE_INFO("Shutdown AMD SMI library successfully");
+                initialized.at(GpuVendor::AMD) = false;
                 Query::gpu_handles_amdsmi.clear();
                 Query::socket_handles_amdsmi.clear();
                 return true;
             }
             else
             {
-                OPTKIT_ERROR("Failed to shutdown ROCm SMI library: {}", _amdsmi_status_to_string(result));
+                OPTKIT_CORE_ERROR("Failed to shutdown ROCm SMI library: {}", _amdsmi_status_to_string(result));
                 return false;
             }
         }
@@ -375,7 +375,7 @@ namespace optkit::gpu
             else
             {
                 is_ok = false;
-                OPTKIT_WARN("nvmlDeviceGetAttributes: {}", nvmlErrorString(result));
+                OPTKIT_CORE_WARN("nvmlDeviceGetAttributes: {}", nvmlErrorString(result));
             }
 
 #endif
@@ -519,50 +519,28 @@ namespace optkit::gpu
             }
 
             // Get supported memory clocks (proper two-step process)
-            uint32_t count = 0;
-            // Step 1: Get the count of supported memory clocks
+            uint32_t count = 100;
+            // set max uint32_size
+            std::vector<uint32_t> clocksMhz(count, std::numeric_limits<uint32_t>::max());
             NVML_EXEC_IF_SUPPORTS(
                 "nvmlDeviceGetSupportedMemoryClocks",
                 nvml_device,
                 result,
                 &count,
-                nullptr); // Pass nullptr to get count
+                &clocksMhz[0]);
 
-            if (result == NVML_SUCCESS && count > 0)
+            if (result == NVML_SUCCESS && !clocksMhz.empty())
             {
-                // Step 2: Allocate memory and get the actual clocks
-                std::vector<uint32_t> clocksMhz(count); // Pre-allocate with size
-                NVML_EXEC_IF_SUPPORTS(
-                    "nvmlDeviceGetSupportedMemoryClocks",
-                    nvml_device,
-                    result,
-                    &count, // Pass the same count variable
-                    clocksMhz.data());
-
-                if (result == NVML_SUCCESS && !clocksMhz.empty())
-                {
-                    // Find the minimum memory clock from the supported clocks
-                    auto min_clock = *std::min_element(clocksMhz.begin(), clocksMhz.end());
-                    memory_info.memory_clock_rate_min_MHz = min_clock;
-                }
-                else
-                {
-                    OPTKIT_CORE_WARN("nvmlDeviceGetSupportedMemoryClocks (data): {}", nvmlErrorString(result));
-                    memory_info.memory_clock_rate_min_MHz = 200; // Safe fallback
-                }
-            }
-            else if (result == NVML_ERROR_NOT_SUPPORTED)
-            {
-                // Function not supported - this is normal for some GPUs
-                OPTKIT_CORE_WARN("Memory clock enumeration not supported for this GPU");
-                memory_info.memory_clock_rate_min_MHz = 200; // Safe fallback
+                // Find the minimum memory clock from the supported clocks
+                memory_info.memory_clock_rate_min_MHz = std::min_element(clocksMhz.begin(), clocksMhz.begin() + count) != clocksMhz.end()
+                                                            ? *std::min_element(clocksMhz.begin(), clocksMhz.begin() + count)
+                                                            : 200; // Safe fallback
             }
             else
             {
-                OPTKIT_CORE_WARN("nvmlDeviceGetSupportedMemoryClocks (count): {}", nvmlErrorString(result));
+                OPTKIT_CORE_WARN("nvmlDeviceGetSupportedMemoryClocks (data): {}", nvmlErrorString(result));
                 memory_info.memory_clock_rate_min_MHz = 200; // Safe fallback
             }
-
 #endif
         }
 
@@ -1011,7 +989,7 @@ namespace optkit::gpu
             }
             else
             {
-                OPTKIT_WARN("nvmlDeviceGetEccMode: {}", nvmlErrorString(result));
+                OPTKIT_CORE_WARN("nvmlDeviceGetEccMode: {}", nvmlErrorString(result));
             }
             // Get persistence mode
             nvmlEnableState_t mode;
@@ -1097,7 +1075,7 @@ namespace optkit::gpu
             {
                 is_ok = false;
                 driver_version = 0.0;
-                OPTKIT_ERROR("NVML error in nvmlSystemGetCudaDriverVersion: {}", std::string(nvmlErrorString(result)));
+                OPTKIT_CORE_ERROR("NVML error in nvmlSystemGetCudaDriverVersion: {}", std::string(nvmlErrorString(result)));
             }
 #endif
         }
@@ -1116,7 +1094,7 @@ namespace optkit::gpu
             {
                 is_ok = false;
                 driver_version = 0.0;
-                OPTKIT_ERROR("ROCm SMI failed to get version: {}", _amdsmi_status_to_string(status));
+                OPTKIT_CORE_ERROR("ROCm SMI failed to get version: {}", _amdsmi_status_to_string(status));
             }
 
 #endif
@@ -1145,7 +1123,7 @@ namespace optkit::gpu
             {
                 is_ok = false;
                 library_version = "0.0";
-                OPTKIT_ERROR("NVML error in nvmlSystemGetNVMLVersion: {}", std::string(nvmlErrorString(result_nvidia)));
+                OPTKIT_CORE_ERROR("NVML error in nvmlSystemGetNVMLVersion: {}", std::string(nvmlErrorString(result_nvidia)));
             }
 #endif
         }
@@ -1164,7 +1142,7 @@ namespace optkit::gpu
             {
                 is_ok = false;
                 library_version = "0.0";
-                OPTKIT_ERROR("ROCm SMI failed to get version: {}", _amdsmi_status_to_string(result_amd));
+                OPTKIT_CORE_ERROR("ROCm SMI failed to get version: {}", _amdsmi_status_to_string(result_amd));
             }
 #endif
         }
