@@ -16,64 +16,7 @@ namespace optkit::frequency
     else                                                 \
         for (int32_t __cpu : package_info.at(socket))
 
-    int64_t CPUFrequency::convert_frequency_with_unit(const std::string &freq_str, Unit target_unit)
-    {
-        size_t i = 0;
-        while (i < freq_str.size() && (std::isdigit(freq_str[i]) || freq_str[i] == '.'))
-            ++i;
-
-        if (i == 0)
-            throw std::invalid_argument("No numeric value in frequency string: " + std::string(freq_str));
-
-        double number = std::stod(std::string(freq_str.substr(0, i)));
-
-        std::string unit_str;
-        for (char c : freq_str.substr(i))
-            if (!std::isspace(c))
-                unit_str += static_cast<char>(std::tolower(c));
-
-        // Normalize for comparison (to_string returns capitalized, so lower it)
-        auto lower = [](const std::string &s)
-        {
-            std::string r;
-            for (char c : s)
-                r += std::tolower(c);
-            return r;
-        };
-
-        static const std::string u_hz = lower(to_string(Unit::Hz));
-        static const std::string u_khz = lower(to_string(Unit::KHz));
-        static const std::string u_mhz = lower(to_string(Unit::MHz));
-        static const std::string u_ghz = lower(to_string(Unit::GHz));
-
-        double base_hz = 0;
-        if (unit_str.empty() || unit_str == u_hz)
-            base_hz = number;
-        else if (unit_str == u_khz)
-            base_hz = number * 1e3;
-        else if (unit_str == u_mhz)
-            base_hz = number * 1e6;
-        else if (unit_str == u_ghz)
-            base_hz = number * 1e9;
-        else
-            throw std::invalid_argument("Unknown frequency unit: " + unit_str);
-
-        switch (target_unit)
-        {
-        case Unit::Hz:
-            return static_cast<int64_t>(base_hz);
-        case Unit::KHz:
-            return static_cast<int64_t>(base_hz / 1e3);
-        case Unit::MHz:
-            return static_cast<int64_t>(base_hz / 1e6);
-        case Unit::GHz:
-            return static_cast<int64_t>(base_hz / 1e9);
-        default:
-            throw std::invalid_argument("Unknown target unit: " + to_string(target_unit));
-        }
-    }
-
-    void CPUFrequency::set_core_frequency(int64_t frequency, int16_t socket)
+        void CPUFrequency::set_core_frequency(int64_t frequency, int16_t socket)
     {
         try
         {
@@ -307,23 +250,6 @@ namespace optkit::frequency
     {
         os << "(" << pair.first << ", " << pair.second << ")";
         return os;
-    }
-    std::string to_string(CPUFrequency::Unit unit)
-    {
-        using Unit = CPUFrequency::Unit;
-        switch (unit)
-        {
-        case Unit::Hz:
-            return "Hz";
-        case Unit::KHz:
-            return "KHz";
-        case Unit::MHz:
-            return "MHz";
-        case Unit::GHz:
-            return "GHz";
-        default:
-            return "Unknown";
-        }
     }
 
 #undef TRAVERSE_CORES

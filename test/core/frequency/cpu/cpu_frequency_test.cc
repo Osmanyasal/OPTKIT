@@ -29,16 +29,43 @@ protected:
 
 TEST_F(CPUFrequencyTest, ConvertFrequencyWithUnit_ShouldWorkCorrectly)
 {
-    EXPECT_EQ(CPUFrequency::convert_frequency_with_unit("3.5GHz"), 3500000000);
-    EXPECT_EQ(CPUFrequency::convert_frequency_with_unit("3500MHz"), 3500000000);
-    EXPECT_EQ(CPUFrequency::convert_frequency_with_unit("3500000KHz"), 3500000000);
-    EXPECT_EQ(CPUFrequency::convert_frequency_with_unit("3500000000"), 3500000000);
+    EXPECT_EQ(convert_frequency_with_unit("3.5GHz"), 3500000000);
+    EXPECT_EQ(convert_frequency_with_unit("3.5ghz"), 3500000000);
+    EXPECT_EQ(convert_frequency_with_unit("3500MHz"), 3500000000);
+    EXPECT_EQ(convert_frequency_with_unit("3500mhz"), 3500000000);
+    EXPECT_EQ(convert_frequency_with_unit("3500000KHz"), 3500000000);
+    EXPECT_EQ(convert_frequency_with_unit("3500000khz"), 3500000000);
+    EXPECT_EQ(convert_frequency_with_unit("3500000000"), 3500000000);
+
+    EXPECT_EQ(convert_frequency_with_unit("3.5GHz", Unit::GHz), 3.5);
+    EXPECT_EQ(convert_frequency_with_unit("3.5ghz", Unit::GHz), 3.5);
+    EXPECT_EQ(convert_frequency_with_unit("3500MHz", Unit::GHz), 3.5);
+    EXPECT_EQ(convert_frequency_with_unit("3500mhz", Unit::GHz), 3.5);
+    EXPECT_EQ(convert_frequency_with_unit("3500000KHz", Unit::GHz), 3.5);
+    EXPECT_EQ(convert_frequency_with_unit("3500000khz", Unit::GHz), 3.5);
+    EXPECT_EQ(convert_frequency_with_unit("3500000000", Unit::GHz), 3.5);
+
+    EXPECT_EQ(convert_frequency_with_unit("3.5GHz", Unit::MHz), 3500);
+    EXPECT_EQ(convert_frequency_with_unit("3.5ghz", Unit::MHz), 3500);
+    EXPECT_EQ(convert_frequency_with_unit("3500MHz", Unit::MHz), 3500);
+    EXPECT_EQ(convert_frequency_with_unit("3500mhz", Unit::MHz), 3500);
+    EXPECT_EQ(convert_frequency_with_unit("3500000KHz", Unit::MHz), 3500);
+    EXPECT_EQ(convert_frequency_with_unit("3500000khz", Unit::MHz), 3500);
+    EXPECT_EQ(convert_frequency_with_unit("3500000000", Unit::MHz), 3500);
+
+    EXPECT_EQ(convert_frequency_with_unit("3.5GHz", Unit::KHz), 3500000);
+    EXPECT_EQ(convert_frequency_with_unit("3.5ghz", Unit::KHz), 3500000);
+    EXPECT_EQ(convert_frequency_with_unit("3500MHz", Unit::KHz), 3500000);
+    EXPECT_EQ(convert_frequency_with_unit("3500mhz", Unit::KHz), 3500000);
+    EXPECT_EQ(convert_frequency_with_unit("3500000KHz", Unit::KHz), 3500000);
+    EXPECT_EQ(convert_frequency_with_unit("3500000khz", Unit::KHz), 3500000);
+    EXPECT_EQ(convert_frequency_with_unit("3500000000", Unit::KHz), 3500000);
 }
 
 TEST_F(CPUFrequencyTest, ConvertFrequencyWithInvalidUnit_ShouldThrow)
 {
-    EXPECT_THROW(CPUFrequency::convert_frequency_with_unit("3.5abc"), std::invalid_argument);
-    EXPECT_THROW(CPUFrequency::convert_frequency_with_unit("abc"), std::invalid_argument);
+    EXPECT_THROW(convert_frequency_with_unit("3.5abc"), std::invalid_argument);
+    EXPECT_THROW(convert_frequency_with_unit("abc"), std::invalid_argument);
 }
 
 TEST_F(CPUFrequencyTest, FrequencyChangeLatency_LessThan10ms)

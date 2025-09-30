@@ -119,8 +119,8 @@ TEST_F(QueryCPUFrequencyTest, CpuinfoMinMaxFreq_ShouldBeValidIfPresent)
     if (!exists("cpuinfo_min_freq") || !exists("cpuinfo_max_freq"))
         GTEST_SKIP() << "cpuinfo min/max not present";
 
-    double min = CPUFrequency::convert_frequency_with_unit(std::to_string(QueryCPUFrequency::get_cpuinfo_min_freq(core)) + "hz", CPUFrequency::Unit::GHz);
-    double max = CPUFrequency::convert_frequency_with_unit(std::to_string(QueryCPUFrequency::get_cpuinfo_max_freq(core)) + "hz", CPUFrequency::Unit::GHz);
+    double min = convert_frequency_with_unit(std::to_string(QueryCPUFrequency::get_cpuinfo_min_freq(core)) + "hz", Unit::GHz);
+    double max = convert_frequency_with_unit(std::to_string(QueryCPUFrequency::get_cpuinfo_max_freq(core)) + "hz", Unit::GHz);
 
     std::cout << "Cpuinfo min: " << min << " Hz, max: " << max << " Hz\n";
 
