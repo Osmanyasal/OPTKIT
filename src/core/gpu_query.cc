@@ -268,7 +268,7 @@ namespace optkit::gpu
         }
 
         // Unknown vendor
-        OPTKIT_WARN("Warp size query not known for this GPU vendor, setting 32 by default!");
+        OPTKIT_CORE_WARN("Warp size query not known for this GPU vendor, setting 32 by default!");
         warp_size = 32; // Safe default
         return false;
     }
@@ -358,7 +358,7 @@ namespace optkit::gpu
                 compute_info.compute_capability_major = std::strtol(version.substr(0, version.find(".")).c_str(), nullptr, 10);
                 compute_info.compute_capability_minor = std::strtol(version.substr(version.find(".") + 1).c_str(), nullptr, 10);
                 compute_info.cores_per_mp = 32; // Default fallback
-                OPTKIT_WARN("nvmlDeviceGetCudaComputeCapability failed: {}, using fallback", nvmlErrorString(result));
+                OPTKIT_CORE_WARN("nvmlDeviceGetCudaComputeCapability failed: {}, using fallback", nvmlErrorString(result));
             }
 
             nvmlDeviceAttributes_t attributes;
@@ -414,22 +414,22 @@ namespace optkit::gpu
                 // Use a placeholder count until proper socket mapping is implemented
                 compute_info.multiprocessor_count = 16; // Conservative estimate
                 compute_info.total_cores = compute_info.multiprocessor_count * compute_info.cores_per_mp;
-                OPTKIT_WARN("AMD multiprocessor count using placeholder - socket mapping needs implementation");
+                OPTKIT_CORE_WARN("AMD multiprocessor count using placeholder - socket mapping needs implementation");
             }
             else
             {
                 is_ok = false;
                 compute_info.multiprocessor_count = 0;
                 compute_info.total_cores = 0;
-                OPTKIT_WARN("AMD GPU device index {} out of bounds (max: {})",
-                            device_index, Query::gpu_handles_amdsmi.size());
+                OPTKIT_CORE_WARN("AMD GPU device index {} out of bounds (max: {})",
+                                 device_index, Query::gpu_handles_amdsmi.size());
             }
 #endif
         }
         else
         {
             is_ok = false;
-            OPTKIT_WARN("Compute info query not implemented for this GPU vendor");
+            OPTKIT_CORE_WARN("Compute info query not implemented for this GPU vendor");
         }
 
         return is_ok;
@@ -460,7 +460,7 @@ namespace optkit::gpu
             else
             {
                 is_ok = false;
-                OPTKIT_WARN("nvmlDeviceGetMemoryBusWidth: {}", nvmlErrorString(result));
+                OPTKIT_CORE_WARN("nvmlDeviceGetMemoryBusWidth: {}", nvmlErrorString(result));
             }
 
             nvmlMemory_t nvml_mem_info;
@@ -479,7 +479,7 @@ namespace optkit::gpu
             else
             {
                 is_ok = false;
-                OPTKIT_WARN("nvmlDeviceGetMemoryInfo: {}", nvmlErrorString(result));
+                OPTKIT_CORE_WARN("nvmlDeviceGetMemoryInfo: {}", nvmlErrorString(result));
             }
 
             // Current memory clock
@@ -497,7 +497,7 @@ namespace optkit::gpu
             else
             {
                 is_ok = false;
-                OPTKIT_WARN("nvmlDeviceGetClockInfo: {}", nvmlErrorString(result));
+                OPTKIT_CORE_WARN("nvmlDeviceGetClockInfo: {}", nvmlErrorString(result));
             }
 
             // Maximum memory clock
@@ -515,7 +515,7 @@ namespace optkit::gpu
             else
             {
                 is_ok = false;
-                OPTKIT_WARN("nvmlDeviceGetMaxClockInfo: {}", nvmlErrorString(result));
+                OPTKIT_CORE_WARN("nvmlDeviceGetMaxClockInfo: {}", nvmlErrorString(result));
             }
 
             // Get supported memory clocks (proper two-step process)
@@ -562,7 +562,7 @@ namespace optkit::gpu
             else
             {
                 is_ok = false;
-                OPTKIT_WARN("Failed to get AMD GPU total memory: {}", _amdsmi_status_to_string(result));
+                OPTKIT_CORE_WARN("Failed to get AMD GPU total memory: {}", _amdsmi_status_to_string(result));
             }
 
             uint32_t used_memory;
@@ -580,7 +580,7 @@ namespace optkit::gpu
             else
             {
                 is_ok = false;
-                OPTKIT_WARN("Failed to get AMD GPU used memory: {}", _amdsmi_status_to_string(result));
+                OPTKIT_CORE_WARN("Failed to get AMD GPU used memory: {}", _amdsmi_status_to_string(result));
             }
             amdsmi_clk_info_t clk_info;
             ROCM_EXEC_IF_SUPPORTS("amdsmi_get_clock_info",
@@ -600,7 +600,7 @@ namespace optkit::gpu
         else
         {
             is_ok = false;
-            OPTKIT_WARN("Memory info query not implemented for this GPU vendor");
+            OPTKIT_CORE_WARN("Memory info query not implemented for this GPU vendor");
         }
         return is_ok;
     }
@@ -629,7 +629,7 @@ namespace optkit::gpu
             else
             {
                 is_ok = false;
-                OPTKIT_WARN("nvmlDeviceGetClockInfo: {}", nvmlErrorString(result));
+                OPTKIT_CORE_WARN("nvmlDeviceGetClockInfo: {}", nvmlErrorString(result));
             }
             NVML_EXEC_IF_SUPPORTS(
                 "nvmlDeviceGetClockInfo",
@@ -644,7 +644,7 @@ namespace optkit::gpu
             else
             {
                 is_ok = false;
-                OPTKIT_WARN("nvmlDeviceGetClockInfo: {}", nvmlErrorString(result));
+                OPTKIT_CORE_WARN("nvmlDeviceGetClockInfo: {}", nvmlErrorString(result));
             }
             NVML_EXEC_IF_SUPPORTS(
                 "nvmlDeviceGetClockInfo",
@@ -659,7 +659,7 @@ namespace optkit::gpu
             else
             {
                 is_ok = false;
-                OPTKIT_WARN("nvmlDeviceGetClockInfo: {}", nvmlErrorString(result));
+                OPTKIT_CORE_WARN("nvmlDeviceGetClockInfo: {}", nvmlErrorString(result));
             }
             NVML_EXEC_IF_SUPPORTS(
                 "nvmlDeviceGetClockInfo",
@@ -674,7 +674,7 @@ namespace optkit::gpu
             else
             {
                 is_ok = false;
-                OPTKIT_WARN("nvmlDeviceGetClockInfo: {}", nvmlErrorString(result));
+                OPTKIT_CORE_WARN("nvmlDeviceGetClockInfo: {}", nvmlErrorString(result));
             }
 
             // Get MAX clocks
@@ -691,7 +691,7 @@ namespace optkit::gpu
             else
             {
                 is_ok = false;
-                OPTKIT_WARN("nvmlDeviceGetMaxClockInfo: {}", nvmlErrorString(result));
+                OPTKIT_CORE_WARN("nvmlDeviceGetMaxClockInfo: {}", nvmlErrorString(result));
             }
 
             NVML_EXEC_IF_SUPPORTS(
@@ -708,7 +708,7 @@ namespace optkit::gpu
             {
                 is_ok = false;
                 clock_info.max_sm_clock_MHz = 0;
-                OPTKIT_WARN("nvmlDeviceGetMaxClockInfo: {}", nvmlErrorString(result));
+                OPTKIT_CORE_WARN("nvmlDeviceGetMaxClockInfo: {}", nvmlErrorString(result));
             }
 
             NVML_EXEC_IF_SUPPORTS(
@@ -724,7 +724,7 @@ namespace optkit::gpu
             else
             {
                 is_ok = false;
-                OPTKIT_WARN("nvmlDeviceGetMaxClockInfo: {}", nvmlErrorString(result));
+                OPTKIT_CORE_WARN("nvmlDeviceGetMaxClockInfo: {}", nvmlErrorString(result));
             }
 
             NVML_EXEC_IF_SUPPORTS(
@@ -740,7 +740,7 @@ namespace optkit::gpu
             else
             {
                 is_ok = false;
-                OPTKIT_WARN("nvmlDeviceGetMaxClockInfo: {}", nvmlErrorString(result));
+                OPTKIT_CORE_WARN("nvmlDeviceGetMaxClockInfo: {}", nvmlErrorString(result));
             }
             clock_info.has_frequency_control = true; // NVIDIA GPUs generally support frequency control
 #endif
@@ -765,7 +765,7 @@ namespace optkit::gpu
             else
             {
                 is_ok = false;
-                OPTKIT_WARN("Failed to get AMD GPU SM clock info: {}", _amdsmi_status_to_string(result));
+                OPTKIT_CORE_WARN("Failed to get AMD GPU SM clock info: {}", _amdsmi_status_to_string(result));
             }
 
             ROCM_EXEC_IF_SUPPORTS("amdsmi_get_clk_freq",
@@ -781,7 +781,7 @@ namespace optkit::gpu
             else
             {
                 is_ok = false;
-                OPTKIT_WARN("Failed to get AMD GPU Graphics clock info: {}", _amdsmi_status_to_string(result));
+                OPTKIT_CORE_WARN("Failed to get AMD GPU Graphics clock info: {}", _amdsmi_status_to_string(result));
             }
 
             ROCM_EXEC_IF_SUPPORTS("amdsmi_get_clk_freq",
@@ -797,7 +797,7 @@ namespace optkit::gpu
             else
             {
                 is_ok = false;
-                OPTKIT_WARN("Failed to get AMD GPU Video clock info: {}", _amdsmi_status_to_string(result));
+                OPTKIT_CORE_WARN("Failed to get AMD GPU Video clock info: {}", _amdsmi_status_to_string(result));
             }
 
             ROCM_EXEC_IF_SUPPORTS("amdsmi_get_clk_freq",
@@ -813,7 +813,7 @@ namespace optkit::gpu
             else
             {
                 is_ok = false;
-                OPTKIT_WARN("Failed to get AMD GPU Memory clock info: {}", _amdsmi_status_to_string(result));
+                OPTKIT_CORE_WARN("Failed to get AMD GPU Memory clock info: {}", _amdsmi_status_to_string(result));
             }
             clock_info.has_frequency_control = true; // AMD GPUs generally support frequency control
 #endif
@@ -881,7 +881,7 @@ namespace optkit::gpu
             {
                 is_ok = false;
                 utilization_info.has_utilization_monitoring = false;
-                OPTKIT_WARN("Failed to get NVIDIA GPU utilization info: {}", std::string(nvmlErrorString(result)));
+                OPTKIT_CORE_WARN("Failed to get NVIDIA GPU utilization info: {}", std::string(nvmlErrorString(result)));
             }
 #endif
         }
@@ -909,7 +909,7 @@ namespace optkit::gpu
             {
                 is_ok = false;
                 utilization_info.has_utilization_monitoring = false;
-                OPTKIT_WARN("Failed to get AMD GPU utilization info: {}", _amdsmi_status_to_string(result));
+                OPTKIT_CORE_WARN("Failed to get AMD GPU utilization info: {}", _amdsmi_status_to_string(result));
             }
 #endif
         }
@@ -941,7 +941,7 @@ namespace optkit::gpu
             }
             else
             {
-                OPTKIT_WARN("nvmlDeviceGetPciInfo: {}", nvmlErrorString(result));
+                OPTKIT_CORE_WARN("nvmlDeviceGetPciInfo: {}", nvmlErrorString(result));
             }
             // Get board ID for multi-GPU detection
             uint32_t boardId;
@@ -952,7 +952,7 @@ namespace optkit::gpu
             }
             else
             {
-                OPTKIT_WARN("nvmlDeviceGetBoardId: {}", nvmlErrorString(result));
+                OPTKIT_CORE_WARN("nvmlDeviceGetBoardId: {}", nvmlErrorString(result));
             }
 #endif
         }
@@ -965,7 +965,7 @@ namespace optkit::gpu
         }
         else
         {
-            OPTKIT_WARN("Compute info query not implemented for this GPU vendor");
+            OPTKIT_CORE_WARN("Compute info query not implemented for this GPU vendor");
             return false;
         }
 
@@ -1001,7 +1001,7 @@ namespace optkit::gpu
             else
             {
                 is_ok = false;
-                OPTKIT_WARN("nvmlDeviceGetPersistenceMode: {}", nvmlErrorString(result));
+                OPTKIT_CORE_WARN("nvmlDeviceGetPersistenceMode: {}", nvmlErrorString(result));
             }
 
             uint32_t arch;
@@ -1026,7 +1026,7 @@ namespace optkit::gpu
             }
             else
             {
-                OPTKIT_WARN("Failed to get AMD GPU ECC status: {}", _amdsmi_status_to_string(result));
+                OPTKIT_CORE_WARN("Failed to get AMD GPU ECC status: {}", _amdsmi_status_to_string(result));
             }
 
             capabilities_info.persistence_mode_enabled = false; // AMD GPUs do not have persistence mode
@@ -1049,7 +1049,7 @@ namespace optkit::gpu
             else
             {
                 is_ok = false;
-                OPTKIT_WARN("Failed to get AMD GPU unified memory capability: {}", _amdsmi_status_to_string(result));
+                OPTKIT_CORE_WARN("Failed to get AMD GPU unified memory capability: {}", _amdsmi_status_to_string(result));
             }
 #endif
         }
@@ -1102,7 +1102,7 @@ namespace optkit::gpu
         else
         {
             is_ok = false;
-            OPTKIT_WARN("Driver version query not supported without NVML or ROCm SMI");
+            OPTKIT_CORE_WARN("Driver version query not supported without NVML or ROCm SMI");
         }
         return is_ok;
     }
@@ -1149,7 +1149,7 @@ namespace optkit::gpu
         else
         {
             is_ok = false;
-            OPTKIT_WARN("Library version query not supported without NVML or ROCm SMI");
+            OPTKIT_CORE_WARN("Library version query not supported without NVML or ROCm SMI");
         }
         return is_ok;
     }
@@ -1174,7 +1174,7 @@ namespace optkit::gpu
         else
         {
             is_ok = false;
-            OPTKIT_WARN("Device count query not supported without NVML or ROCm AMDSMI");
+            OPTKIT_CORE_WARN("Device count query not supported without NVML or ROCm AMDSMI");
         }
         return is_ok;
     }
@@ -1196,7 +1196,7 @@ namespace optkit::gpu
             }
             else
             {
-                OPTKIT_WARN("nvmlDeviceGetPowerUsage: {}", nvmlErrorString(result_nvidia));
+                OPTKIT_CORE_WARN("nvmlDeviceGetPowerUsage: {}", nvmlErrorString(result_nvidia));
                 power_watts = 0.0; // Not supported
                 return false;
             }
@@ -1220,13 +1220,13 @@ namespace optkit::gpu
             }
             else
             {
-                OPTKIT_WARN("amdsmi_get_power_info: {}", _amdsmi_status_to_string(result_amd));
+                OPTKIT_CORE_WARN("amdsmi_get_power_info: {}", _amdsmi_status_to_string(result_amd));
                 power_watts = 0.0; // Not supported
                 return false;
             }
 #endif
         }
-        OPTKIT_WARN("Device power query not supported without NVML or ROCm SMI");
+        OPTKIT_CORE_WARN("Device power query not supported without NVML or ROCm SMI");
         power_watts = 0.0;
         return false;
     }
@@ -1261,7 +1261,7 @@ namespace optkit::gpu
             else
             {
                 is_ok = false;
-                OPTKIT_WARN("nvmlDeviceGetPowerManagementMode: {}", nvmlErrorString(result_nvidia));
+                OPTKIT_CORE_WARN("nvmlDeviceGetPowerManagementMode: {}", nvmlErrorString(result_nvidia));
             }
 
             NVML_EXEC_IF_SUPPORTS(
@@ -1277,7 +1277,7 @@ namespace optkit::gpu
             else
             {
                 is_ok = false;
-                OPTKIT_WARN("nvmlDeviceGetPowerManagementLimit: {}", nvmlErrorString(result_nvidia));
+                OPTKIT_CORE_WARN("nvmlDeviceGetPowerManagementLimit: {}", nvmlErrorString(result_nvidia));
                 limit_watts = 0.0; // Not supported
             }
 
@@ -1296,7 +1296,7 @@ namespace optkit::gpu
             else
             {
                 is_ok = false;
-                OPTKIT_WARN("nvmlDeviceGetPowerManagementLimitConstraints: {}", nvmlErrorString(result_nvidia));
+                OPTKIT_CORE_WARN("nvmlDeviceGetPowerManagementLimitConstraints: {}", nvmlErrorString(result_nvidia));
             }
 
             NVML_EXEC_IF_SUPPORTS(
@@ -1311,7 +1311,7 @@ namespace optkit::gpu
             else
             {
                 is_ok = false;
-                OPTKIT_WARN("nvmlDeviceGetPowerManagementDefaultLimit: {}", nvmlErrorString(result_nvidia));
+                OPTKIT_CORE_WARN("nvmlDeviceGetPowerManagementDefaultLimit: {}", nvmlErrorString(result_nvidia));
             }
 #endif
         }
@@ -1334,7 +1334,7 @@ namespace optkit::gpu
             }
             else
             {
-                OPTKIT_WARN("amdsmi_get_power_info: {}", _amdsmi_status_to_string(result_amd));
+                OPTKIT_CORE_WARN("amdsmi_get_power_info: {}", _amdsmi_status_to_string(result_amd));
                 limit_watts = 0.0; // Not supported
             }
 #endif
@@ -1342,7 +1342,7 @@ namespace optkit::gpu
         else
         {
             limit_watts = 0.0;
-            OPTKIT_WARN("Device power limit query not supported without NVML or ROCm SMI");
+            OPTKIT_CORE_WARN("Device power limit query not supported without NVML or ROCm SMI");
         }
 
         return is_ok;
@@ -1367,7 +1367,7 @@ namespace optkit::gpu
             else
             {
                 temp_celsius = 0.0; // Not supported
-                OPTKIT_WARN("nvmlDeviceGetTemperature: {}", nvmlErrorString(result));
+                OPTKIT_CORE_WARN("nvmlDeviceGetTemperature: {}", nvmlErrorString(result));
             }
 #endif
             return false;
@@ -1394,7 +1394,7 @@ namespace optkit::gpu
             else
             {
                 temp_celsius = 0.0; // Not supported
-                OPTKIT_WARN("amdsmi_get_cpu_socket_temperature: {}", _amdsmi_status_to_string(result));
+                OPTKIT_CORE_WARN("amdsmi_get_cpu_socket_temperature: {}", _amdsmi_status_to_string(result));
             }
 #endif
         }
@@ -1420,7 +1420,7 @@ namespace optkit::gpu
             }
             else
             {
-                OPTKIT_WARN("nvmlDeviceGetName: {}", nvmlErrorString(result));
+                OPTKIT_CORE_WARN("nvmlDeviceGetName: {}", nvmlErrorString(result));
                 return false;
             }
 #endif
@@ -1441,14 +1441,14 @@ namespace optkit::gpu
             }
             else
             {
-                OPTKIT_WARN("amdsmi_get_gpu_board_info: {}", _amdsmi_status_to_string(result));
+                OPTKIT_CORE_WARN("amdsmi_get_gpu_board_info: {}", _amdsmi_status_to_string(result));
                 return false;
             }
 #endif
         }
         else
         {
-            OPTKIT_WARN("Device name query not supported without NVML or ROCm SMI");
+            OPTKIT_CORE_WARN("Device name query not supported without NVML or ROCm SMI");
             return false;
         }
     }
@@ -1501,7 +1501,7 @@ namespace optkit::gpu
 #endif
         }
 
-        OPTKIT_WARN("Unsupported vendor for architecture query");
+        OPTKIT_CORE_WARN("Unsupported vendor for architecture query");
         return 0xFFFFFFFF; // return unknown architecture
     }
 
@@ -1527,7 +1527,7 @@ namespace optkit::gpu
             {
                 is_ok = false;
                 max_temp_celsius = 0;
-                OPTKIT_WARN("Failed to get NVIDIA max temperature threshold: {}", std::string(nvmlErrorString(result)));
+                OPTKIT_CORE_WARN("Failed to get NVIDIA max temperature threshold: {}", std::string(nvmlErrorString(result)));
             }
 #endif
         }
@@ -1552,7 +1552,7 @@ namespace optkit::gpu
             {
                 is_ok = false;
                 max_temp_celsius = 0.0; // Not supported
-                OPTKIT_WARN("amdsmi_get_cpu_socket_temperature: {}", _amdsmi_status_to_string(result));
+                OPTKIT_CORE_WARN("amdsmi_get_cpu_socket_temperature: {}", _amdsmi_status_to_string(result));
             }
 #endif
         }
