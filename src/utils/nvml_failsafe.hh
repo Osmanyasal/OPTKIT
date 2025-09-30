@@ -45,8 +45,10 @@
 #define NVML_DEVICE_ARCH_UNKNOWN 0xFFFFFFFF // Unknown architecture
 #endif
 
-// Define nvmlDeviceAttributes_t if it doesn't exist in older NVML versions
-#if !defined(NVML_DEVICE_ATTRIBUTES_T_DEFINED) && !defined(nvmlDeviceAttributes_t)
+// Define nvmlDeviceAttributes_t only if it doesn't exist in older NVML versions
+// Since most modern CUDA installations have this, we only define it for very old versions
+#if defined(NVML_API_VERSION) && NVML_API_VERSION < 8 // Very old NVML versions
+#ifndef NVML_DEVICE_ATTRIBUTES_T_DEFINED
 #define NVML_DEVICE_ATTRIBUTES_T_DEFINED
 typedef struct nvmlDeviceAttributes_st
 {
@@ -60,6 +62,7 @@ typedef struct nvmlDeviceAttributes_st
     unsigned int computeInstanceSliceCount; //!< Compute instance slice count
     unsigned long long memorySizeMB;        //!< Device memory size (in MiB)
 } nvmlDeviceAttributes_t;
+#endif
 #endif
 
 #endif

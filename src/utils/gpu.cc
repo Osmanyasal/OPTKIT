@@ -165,6 +165,7 @@ namespace optkit::gpu
                ",\"memory_bus_width_bits\":" + std::to_string(info.memory_bus_width_bits) +
                ",\"memory_clock_rate_MHz\":" + std::to_string(info.memory_clock_rate_MHz) +
                ",\"memory_clock_rate_max_MHz\":" + std::to_string(info.memory_clock_rate_max_MHz) +
+               ",\"memory_clock_rate_min_MHz\":" + std::to_string(info.memory_clock_rate_min_MHz) +
                ",\"memory_utilization_percent\":" + std::to_string(info.memory_utilization_percent) + "}";
     }
 

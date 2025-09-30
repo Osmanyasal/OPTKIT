@@ -1,4 +1,3 @@
-
 #include <fstream>
 #include <cstdlib>
 #include <regex>
@@ -519,27 +518,28 @@ namespace optkit::gpu
                 OPTKIT_WARN("nvmlDeviceGetMaxClockInfo: {}", nvmlErrorString(result));
             }
 
-            // Get supported memory clocks (two-step process)
+            // Get supported memory clocks (proper two-step process)
             uint32_t count = 0;
+            // Step 1: Get the count of supported memory clocks
             NVML_EXEC_IF_SUPPORTS(
                 "nvmlDeviceGetSupportedMemoryClocks",
                 nvml_device,
                 result,
                 &count,
-                nullptr);
-            if (OPT_LIKELY(result == NVML_SUCCESS) && count > 0)
+                nullptr); // Pass nullptr to get count
+
+            if (result == NVML_SUCCESS && count > 0)
             {
-                // Allocate memory for the clocks
-                std::vector<uint32_t> clocksMhz;
-                clocksMhz.resize(count);
+                // Step 2: Allocate memory and get the actual clocks
+                std::vector<uint32_t> clocksMhz(count); // Pre-allocate with size
                 NVML_EXEC_IF_SUPPORTS(
                     "nvmlDeviceGetSupportedMemoryClocks",
                     nvml_device,
                     result,
-                    &count,
+                    &count, // Pass the same count variable
                     clocksMhz.data());
 
-                if (OPT_LIKELY(result == NVML_SUCCESS) && !clocksMhz.empty())
+                if (result == NVML_SUCCESS && !clocksMhz.empty())
                 {
                     // Find the minimum memory clock from the supported clocks
                     auto min_clock = *std::min_element(clocksMhz.begin(), clocksMhz.end());
@@ -547,15 +547,19 @@ namespace optkit::gpu
                 }
                 else
                 {
-                    is_ok = false;
-                    OPTKIT_WARN("nvmlDeviceGetSupportedMemoryClocks (data): {}", nvmlErrorString(result));
+                    OPTKIT_CORE_WARN("nvmlDeviceGetSupportedMemoryClocks (data): {}", nvmlErrorString(result));
                     memory_info.memory_clock_rate_min_MHz = 200; // Safe fallback
                 }
             }
+            else if (result == NVML_ERROR_NOT_SUPPORTED)
+            {
+                // Function not supported - this is normal for some GPUs
+                OPTKIT_CORE_WARN("Memory clock enumeration not supported for this GPU");
+                memory_info.memory_clock_rate_min_MHz = 200; // Safe fallback
+            }
             else
             {
-                is_ok = false;
-                OPTKIT_WARN("nvmlDeviceGetSupportedMemoryClocks (count): {}", nvmlErrorString(result));
+                OPTKIT_CORE_WARN("nvmlDeviceGetSupportedMemoryClocks (count): {}", nvmlErrorString(result));
                 memory_info.memory_clock_rate_min_MHz = 200; // Safe fallback
             }
 
