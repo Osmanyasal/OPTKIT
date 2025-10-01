@@ -4,8 +4,9 @@
 #include <string>
 #include <algorithm>
 #include "utils/optimizations/cpu_opt.hh"
-
+#include <vector>
 #include <dlfcn.h>
+#include <unordered_map>
 
 #if OPTKIT_ENV_LIB_NVML
 #include <nvml.h>
@@ -151,6 +152,7 @@ namespace optkit::gpu
         uint32_t memory_clock_rate_MHz;
         uint32_t memory_clock_rate_max_MHz;
         uint32_t memory_clock_rate_min_MHz;
+        std::vector<uint32_t> memory_supported_clock_rates_MHz;
         double memory_utilization_percent;
     };
 
@@ -168,6 +170,8 @@ namespace optkit::gpu
         uint32_t max_video_clock_MHz;
         uint32_t max_graphics_clock_MHz;
         uint32_t max_memory_clock_MHz;
+
+        std::unordered_map<uint32_t, uint32_t> graphics_supported_clock_rates_MHz; // memory_clk - graphics_clk
         bool has_frequency_control;
     };
 

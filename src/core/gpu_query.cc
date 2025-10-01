@@ -519,7 +519,14 @@ namespace optkit::gpu
             }
 
             // Get supported memory clocks (proper two-step process)
-            uint32_t count = 100;
+            uint32_t count = 0;
+            NVML_EXEC_IF_SUPPORTS(
+                "nvmlDeviceGetSupportedMemoryClocks",
+                nvml_device,
+                result,
+                &count,
+                nullptr);
+
             // set max uint32_size
             std::vector<uint32_t> clocksMhz(count, std::numeric_limits<uint32_t>::max());
             NVML_EXEC_IF_SUPPORTS(
@@ -535,6 +542,11 @@ namespace optkit::gpu
                 memory_info.memory_clock_rate_min_MHz = std::min_element(clocksMhz.begin(), clocksMhz.begin() + count) != clocksMhz.end()
                                                             ? *std::min_element(clocksMhz.begin(), clocksMhz.begin() + count)
                                                             : 200; // Safe fallback
+                memory_info.memory_supported_clock_rates_MHz = clocksMhz;
+                for (auto &&i : clocksMhz)
+                {
+                    OPTKIT_CORE_INFO("Supported memory clock: {} MHz", i);
+                }
             }
             else
             {
@@ -742,6 +754,7 @@ namespace optkit::gpu
                 is_ok = false;
                 OPTKIT_CORE_WARN("nvmlDeviceGetMaxClockInfo: {}", nvmlErrorString(result));
             }
+
             clock_info.has_frequency_control = true; // NVIDIA GPUs generally support frequency control
 #endif
         }
