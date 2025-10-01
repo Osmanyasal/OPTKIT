@@ -163,9 +163,6 @@ namespace optkit::gpu
                ",\"free_memory_MBytes\":" + std::to_string(info.free_memory_MBytes) +
                ",\"used_memory_MBytes\":" + std::to_string(info.used_memory_MBytes) +
                ",\"memory_bus_width_bits\":" + std::to_string(info.memory_bus_width_bits) +
-               ",\"memory_clock_rate_MHz\":" + std::to_string(info.memory_clock_rate_MHz) +
-               ",\"memory_clock_rate_max_MHz\":" + std::to_string(info.memory_clock_rate_max_MHz) +
-               ",\"memory_clock_rate_min_MHz\":" + std::to_string(info.memory_clock_rate_min_MHz) +
                ",\"memory_utilization_percent\":" + std::to_string(info.memory_utilization_percent) + "}";
     }
 
@@ -179,6 +176,9 @@ namespace optkit::gpu
                ",\"max_video_clock_MHz\":" + std::to_string(info.max_video_clock_MHz) +
                ",\"max_graphics_clock_MHz\":" + std::to_string(info.max_graphics_clock_MHz) +
                ",\"max_memory_clock_MHz\":" + std::to_string(info.max_memory_clock_MHz) +
+               ",\"min_video_clock_MHz\":" + std::to_string(info.min_video_clock_MHz) +
+               ",\"min_graphics_clock_MHz\":" + std::to_string(info.min_graphics_clock_MHz) +
+               ",\"min_memory_clock_MHz\":" + std::to_string(info.min_memory_clock_MHz) +
                ",\"has_frequency_control\":" + (info.has_frequency_control ? "true" : "false") + "}";
     }
 

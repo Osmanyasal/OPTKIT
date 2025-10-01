@@ -149,10 +149,6 @@ namespace optkit::gpu
         uint64_t free_memory_MBytes;
         uint64_t used_memory_MBytes;
         uint32_t memory_bus_width_bits;
-        uint32_t memory_clock_rate_MHz;
-        uint32_t memory_clock_rate_max_MHz;
-        uint32_t memory_clock_rate_min_MHz;
-        std::vector<uint32_t> memory_supported_clock_rates_MHz;
         double memory_utilization_percent;
     };
 
@@ -171,7 +167,13 @@ namespace optkit::gpu
         uint32_t max_graphics_clock_MHz;
         uint32_t max_memory_clock_MHz;
 
-        std::unordered_map<uint32_t, uint32_t> graphics_supported_clock_rates_MHz; // memory_clk - graphics_clk
+        uint32_t min_sm_clock_MHz;
+        uint32_t min_video_clock_MHz;
+        uint32_t min_graphics_clock_MHz;
+        uint32_t min_memory_clock_MHz;
+
+        std::vector<uint32_t> memory_supported_clock_rates_MHz;
+        std::vector<uint32_t> graphics_supported_clock_rates_MHz;
         bool has_frequency_control;
     };
 

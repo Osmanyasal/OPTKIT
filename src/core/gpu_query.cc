@@ -315,39 +315,72 @@ namespace optkit::gpu
             {
                 compute_info.compute_capability_major = major;
                 compute_info.compute_capability_minor = minor;
+                // Set cores per multiprocessor and multiprocessor count by NVML architecture
+                if (OPT_LIKELY(result == NVML_SUCCESS))
+                {
+                    compute_info.compute_capability_major = major;
+                    compute_info.compute_capability_minor = minor;
 
-                // Set cores per multiprocessor based on compute capability
-                if (major == 2)
-                {
-                    compute_info.cores_per_mp = (minor == 1) ? 48 : 32;
-                }
-                else if (major == 3)
-                {
-                    compute_info.cores_per_mp = 192;
-                }
-                else if (major == 5)
-                {
-                    compute_info.cores_per_mp = 128;
-                }
-                else if (major == 6)
-                {
-                    compute_info.cores_per_mp = (minor == 0) ? 64 : 128;
-                }
-                else if (major == 7)
-                {
-                    compute_info.cores_per_mp = 64;
-                }
-                else if (major == 8)
-                {
-                    compute_info.cores_per_mp = (minor == 6) ? 128 : 64;
-                }
-                else if (major >= 9)
-                {
-                    compute_info.cores_per_mp = 128;
-                }
-                else
-                {
-                    compute_info.cores_per_mp = 32; // Default fallback
+                    // Set cores per multiprocessor based on compute capability (SM version)
+                    switch (major)
+                    {
+                    case 3: // Kepler (SM 3.x)
+                        compute_info.cores_per_mp = 192;
+                        compute_info.multiprocessor_count = 12;
+                        break;
+
+                    case 5: // Maxwell (SM 5.x)
+                        compute_info.cores_per_mp = 128;
+                        compute_info.multiprocessor_count = 16;
+                        break;
+
+                    case 6: // Pascal (SM 6.x)
+                        compute_info.cores_per_mp = 64;
+                        compute_info.multiprocessor_count = 20;
+                        break;
+
+                    case 7: // Volta/Turing (SM 7.x)
+                        compute_info.cores_per_mp = 64;
+                        if (minor == 0) // Volta
+                            compute_info.multiprocessor_count = 80;
+                        else // Turing (7.5)
+                            compute_info.multiprocessor_count = 46;
+                        break;
+
+                    case 8:             // Ampere/Ada (SM 8.x)
+                        if (minor == 9) // Ada
+                        {
+                            compute_info.cores_per_mp = 128;
+                            compute_info.multiprocessor_count = 76;
+                        }
+                        else // Ampere (8.0, 8.6)
+                        {
+                            compute_info.cores_per_mp = 64;
+                            compute_info.multiprocessor_count = 68;
+                        }
+                        break;
+
+                    case 9: // Hopper (SM 9.0)
+                        compute_info.cores_per_mp = 128;
+                        compute_info.multiprocessor_count = 132;
+                        break;
+
+                    case 10: // Blackwell early (SM 10.x)
+                    case 11: // Blackwell (SM 11.x)
+                        compute_info.cores_per_mp = 128;
+                        compute_info.multiprocessor_count = 164;
+                        break;
+
+                    case 12: // Blackwell B2/B3 (SM 12.x) - RTX 5080, 5090
+                        compute_info.cores_per_mp = 128;
+                        compute_info.multiprocessor_count = 170; // Adjust per actual hardware
+                        break;
+
+                    default: // Unknown architecture
+                        compute_info.cores_per_mp = 64;
+                        compute_info.multiprocessor_count = 1;
+                        break;
+                    }
                 }
             }
             else
@@ -357,26 +390,11 @@ namespace optkit::gpu
                 Query::get_library_version(vendor, version);
                 compute_info.compute_capability_major = std::strtol(version.substr(0, version.find(".")).c_str(), nullptr, 10);
                 compute_info.compute_capability_minor = std::strtol(version.substr(version.find(".") + 1).c_str(), nullptr, 10);
-                compute_info.cores_per_mp = 32; // Default fallback
+                compute_info.cores_per_mp = 32;         // Default fallback
+                compute_info.multiprocessor_count = 16; // Conservative fallback
                 OPTKIT_CORE_WARN("nvmlDeviceGetCudaComputeCapability failed: {}, using fallback", nvmlErrorString(result));
             }
-
-            nvmlDeviceAttributes_t attributes;
-            NVML_EXEC_IF_SUPPORTS(
-                "nvmlDeviceGetAttributes",
-                nvml_device,
-                result,
-                &attributes);
-            if (OPT_LIKELY(result == NVML_SUCCESS))
-            {
-                compute_info.multiprocessor_count = attributes.multiprocessorCount;
-                compute_info.total_cores = compute_info.multiprocessor_count * compute_info.cores_per_mp;
-            }
-            else
-            {
-                is_ok = false;
-                OPTKIT_CORE_WARN("nvmlDeviceGetAttributes: {}", nvmlErrorString(result));
-            }
+            compute_info.total_cores = compute_info.multiprocessor_count * compute_info.cores_per_mp;
 
 #endif
         }
@@ -481,78 +499,6 @@ namespace optkit::gpu
                 is_ok = false;
                 OPTKIT_CORE_WARN("nvmlDeviceGetMemoryInfo: {}", nvmlErrorString(result));
             }
-
-            // Current memory clock
-            uint32_t cur_mem_clock_MHz = 0;
-            NVML_EXEC_IF_SUPPORTS(
-                "nvmlDeviceGetClockInfo",
-                nvml_device,
-                result,
-                NVML_CLOCK_MEM,
-                &cur_mem_clock_MHz);
-            if (OPT_LIKELY(result == NVML_SUCCESS))
-            {
-                memory_info.memory_clock_rate_MHz = cur_mem_clock_MHz;
-            }
-            else
-            {
-                is_ok = false;
-                OPTKIT_CORE_WARN("nvmlDeviceGetClockInfo: {}", nvmlErrorString(result));
-            }
-
-            // Maximum memory clock
-            uint32_t max_mem_clock_MHz = 0;
-            NVML_EXEC_IF_SUPPORTS(
-                "nvmlDeviceGetMaxClockInfo",
-                nvml_device,
-                result,
-                NVML_CLOCK_MEM,
-                &max_mem_clock_MHz);
-            if (OPT_LIKELY(result == NVML_SUCCESS))
-            {
-                memory_info.memory_clock_rate_max_MHz = max_mem_clock_MHz;
-            }
-            else
-            {
-                is_ok = false;
-                OPTKIT_CORE_WARN("nvmlDeviceGetMaxClockInfo: {}", nvmlErrorString(result));
-            }
-
-            // Get supported memory clocks (proper two-step process)
-            uint32_t count = 0;
-            NVML_EXEC_IF_SUPPORTS(
-                "nvmlDeviceGetSupportedMemoryClocks",
-                nvml_device,
-                result,
-                &count,
-                nullptr);
-
-            // set max uint32_size
-            std::vector<uint32_t> clocksMhz(count, std::numeric_limits<uint32_t>::max());
-            NVML_EXEC_IF_SUPPORTS(
-                "nvmlDeviceGetSupportedMemoryClocks",
-                nvml_device,
-                result,
-                &count,
-                &clocksMhz[0]);
-
-            if (result == NVML_SUCCESS && !clocksMhz.empty())
-            {
-                // Find the minimum memory clock from the supported clocks
-                memory_info.memory_clock_rate_min_MHz = std::min_element(clocksMhz.begin(), clocksMhz.begin() + count) != clocksMhz.end()
-                                                            ? *std::min_element(clocksMhz.begin(), clocksMhz.begin() + count)
-                                                            : 200; // Safe fallback
-                memory_info.memory_supported_clock_rates_MHz = clocksMhz;
-                for (auto &&i : clocksMhz)
-                {
-                    OPTKIT_CORE_INFO("Supported memory clock: {} MHz", i);
-                }
-            }
-            else
-            {
-                OPTKIT_CORE_WARN("nvmlDeviceGetSupportedMemoryClocks (data): {}", nvmlErrorString(result));
-                memory_info.memory_clock_rate_min_MHz = 200; // Safe fallback
-            }
 #endif
         }
 
@@ -593,18 +539,6 @@ namespace optkit::gpu
             {
                 is_ok = false;
                 OPTKIT_CORE_WARN("Failed to get AMD GPU used memory: {}", _amdsmi_status_to_string(result));
-            }
-            amdsmi_clk_info_t clk_info;
-            ROCM_EXEC_IF_SUPPORTS("amdsmi_get_clock_info",
-                                  rocm_device,
-                                  result,
-                                  AMDSMI_CLK_TYPE_MEM,
-                                  &clk_info);
-            if (result == AMDSMI_STATUS_SUCCESS)
-            {
-                memory_info.memory_clock_rate_max_MHz = clk_info.max_clk; // in MHz
-                memory_info.memory_clock_rate_min_MHz = clk_info.min_clk; // in MHz
-                memory_info.memory_clock_rate_MHz = clk_info.clk;         // in MHz
             }
 
 #endif
@@ -747,12 +681,71 @@ namespace optkit::gpu
                 &clockRate);
             if (OPT_LIKELY(result == NVML_SUCCESS))
             {
-                clock_info.current_video_clock_MHz = clockRate;
+                clock_info.max_video_clock_MHz = clockRate;
             }
             else
             {
                 is_ok = false;
                 OPTKIT_CORE_WARN("nvmlDeviceGetMaxClockInfo: {}", nvmlErrorString(result));
+            }
+
+            // Get min clocks
+            uint32_t supported_graphics_count = 0;
+            uint32_t graphics_clock_mhz = 0;
+            NVML_EXEC_IF_SUPPORTS(
+                "nvmlDeviceGetSupportedGraphicsClocks",
+                device,
+                result,
+                &graphics_clock_mhz,
+                &supported_graphics_count,
+                nullptr);
+            if (result == NVML_SUCCESS && supported_graphics_count > 0)
+            {
+                clock_info.graphics_supported_clock_rates_MHz.resize(supported_graphics_count, 0);
+                NVML_EXEC_IF_SUPPORTS(
+                    "nvmlDeviceGetSupportedGraphicsClocks",
+                    device,
+                    result,
+                    &graphics_clock_mhz,
+                    &supported_graphics_count,
+                    clock_info.graphics_supported_clock_rates_MHz.data());
+
+                clock_info.min_graphics_clock_MHz = *std::min_element(clock_info.graphics_supported_clock_rates_MHz.begin(),
+                                                                      clock_info.graphics_supported_clock_rates_MHz.end());
+            }
+            else
+            {
+                is_ok = false;
+                OPTKIT_CORE_WARN("nvmlDeviceGetSupportedGraphicsClocks (count): {}", nvmlErrorString(result));
+            }
+
+            uint32_t supported_memory_count = 0;
+            uint32_t memory_clock_mhz = 0;
+            NVML_EXEC_IF_SUPPORTS(
+                "nvmlDeviceGetSupportedMemoryClocks",
+                device,
+                result,
+                &memory_clock_mhz,
+                &supported_graphics_count,
+                nullptr);
+            if (result == NVML_SUCCESS && supported_memory_count > 0)
+            {
+                clock_info.memory_supported_clock_rates_MHz.resize(supported_memory_count, 0);
+                NVML_EXEC_IF_SUPPORTS(
+                    "nvmlDeviceGetSupportedMemoryClocks",
+                    device,
+                    result,
+                    &memory_clock_mhz,
+                    &supported_memory_count,
+                    clock_info.memory_supported_clock_rates_MHz.data());
+
+                clock_info.min_memory_clock_MHz = *std::min_element(clock_info.memory_supported_clock_rates_MHz.begin(),
+                                                                    clock_info.memory_supported_clock_rates_MHz.end());
+            }
+            else
+            {
+                is_ok = false;
+                OPTKIT_CORE_WARN("nvmlDeviceGetSupportedMemoryClocks (count): {}", nvmlErrorString(result));
             }
 
             clock_info.has_frequency_control = true; // NVIDIA GPUs generally support frequency control
@@ -765,8 +758,10 @@ namespace optkit::gpu
             // Get clock frequencies
             amdsmi_frequencies_t frequencies;
 
+            auto rocm_device = Query::gpu_handles_amdsmi.at(device_index);
+
             ROCM_EXEC_IF_SUPPORTS("amdsmi_get_clk_freq",
-                                  Query::gpu_handles_amdsmi.at(device_index),
+                                  rocm_device,
                                   result,
                                   AMDSMI_CLK_TYPE_SYS,
                                   &frequencies);
@@ -782,14 +777,18 @@ namespace optkit::gpu
             }
 
             ROCM_EXEC_IF_SUPPORTS("amdsmi_get_clk_freq",
-                                  Query::gpu_handles_amdsmi.at(device_index),
+                                  rocm_device,
                                   result,
                                   AMDSMI_CLK_TYPE_GFX,
                                   &frequencies);
             if (result == AMDSMI_STATUS_SUCCESS && frequencies.num_supported > 0)
             {
                 clock_info.current_graphics_clock_MHz = frequencies.current;
-                clock_info.max_graphics_clock_MHz = frequencies.frequency[frequencies.num_supported - 1];
+                auto max_it = std::max_element(frequencies.frequency,
+                                               frequencies.frequency + frequencies.num_supported);
+                clock_info.max_graphics_clock_MHz = *max_it;
+                clock_info.graphics_supported_clock_rates_MHz = std::vector<uint32_t>(frequencies.frequency,
+                                                                                      frequencies.frequency + frequencies.num_supported);
             }
             else
             {
@@ -798,7 +797,7 @@ namespace optkit::gpu
             }
 
             ROCM_EXEC_IF_SUPPORTS("amdsmi_get_clk_freq",
-                                  Query::gpu_handles_amdsmi.at(device_index),
+                                  rocm_device,
                                   result,
                                   AMDSMI_CLK_TYPE_VCLK0,
                                   &frequencies);
@@ -814,14 +813,19 @@ namespace optkit::gpu
             }
 
             ROCM_EXEC_IF_SUPPORTS("amdsmi_get_clk_freq",
-                                  Query::gpu_handles_amdsmi.at(device_index),
+                                  rocm_device,
                                   result,
                                   AMDSMI_CLK_TYPE_MEM,
                                   &frequencies);
             if (result == AMDSMI_STATUS_SUCCESS && frequencies.num_supported > 0)
             {
                 clock_info.current_memory_clock_MHz = frequencies.current;
-                clock_info.max_memory_clock_MHz = frequencies.frequency[frequencies.num_supported - 1];
+                clock_info.memory_supported_clock_rates_MHz = std::vector<uint32_t>(frequencies.frequency,
+                                                                                    frequencies.frequency + frequencies.num_supported);
+                clock_info.min_memory_clock_MHz = *std::min_element(clock_info.memory_supported_clock_rates_MHz.begin(),
+                                                                    clock_info.memory_supported_clock_rates_MHz.end());
+                clock_info.max_memory_clock_MHz = *std::max_element(clock_info.memory_supported_clock_rates_MHz.begin(),
+                                                                    clock_info.memory_supported_clock_rates_MHz.end());
             }
             else
             {
@@ -829,6 +833,7 @@ namespace optkit::gpu
                 OPTKIT_CORE_WARN("Failed to get AMD GPU Memory clock info: {}", _amdsmi_status_to_string(result));
             }
             clock_info.has_frequency_control = true; // AMD GPUs generally support frequency control
+
 #endif
         }
 
@@ -1017,11 +1022,11 @@ namespace optkit::gpu
                 OPTKIT_CORE_WARN("nvmlDeviceGetPersistenceMode: {}", nvmlErrorString(result));
             }
 
-            uint32_t arch;
-            get_architecture(vendor, device_index, arch);
+            uint32_t major;
+            get_architecture(vendor, device_index, major);
 
             // Unified Memory supported on Kepler (3) and later architectures
-            capabilities_info.supports_unified_memory = (arch >= NVML_DEVICE_ARCH_KEPLER && arch != NVML_DEVICE_ARCH_UNKNOWN);
+            capabilities_info.supports_unified_memory = (major >= NVML_DEVICE_ARCH_KEPLER && major != NVML_DEVICE_ARCH_UNKNOWN);
 #endif
         }
         else if (vendor == GpuVendor::AMD)
@@ -1472,13 +1477,13 @@ namespace optkit::gpu
         if (vendor == GpuVendor::NVIDIA)
         {
 #if OPTKIT_ENV_LIB_NVML
-            uint32_t arch;
+            uint32_t major;
             nvmlDevice_t device = Query::gpu_handles_nvml.at(device_index);
             nvmlReturn_t result_nvidia;
-            NVML_EXEC_IF_SUPPORTS("nvmlDeviceGetArchitecture", device, result_nvidia, &arch);
+            NVML_EXEC_IF_SUPPORTS("nvmlDeviceGetArchitecture", device, result_nvidia, &major);
             if (result_nvidia == NVML_SUCCESS)
             {
-                architecture = static_cast<uint32_t>(arch);
+                architecture = static_cast<uint32_t>(major);
                 return true;
             }
             else
