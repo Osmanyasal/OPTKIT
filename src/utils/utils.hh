@@ -141,10 +141,19 @@ namespace optkit::utils
         ss << "}";
     }
 
+    // Specialization for std::pair<double, double> (e.g., temperature pairs)
+    template <typename T>
+    typename std::enable_if<std::is_same<T, std::pair<double, double>>::value, void>::type
+    format_result_value(std::ostringstream &ss, const T &value)
+    {
+        ss << "{\"gpu\":" << std::fixed << value.first << ",\"mem\":" << std::fixed << value.second << "}";
+    }
+
     // Fallback for unsupported types
     template <typename T>
     typename std::enable_if<!std::is_arithmetic<T>::value &&
-                                !std::is_same<T, std::unordered_map<uint32_t, double>>::value,
+                                !std::is_same<T, std::unordered_map<uint32_t, double>>::value &&
+                                !std::is_same<T, std::pair<double, double>>::value,
                             void>::type
     format_result_value(std::ostringstream &ss, const T &value)
     {
@@ -161,8 +170,13 @@ namespace optkit::utils
     get_dtype_string() { return "double"; }
 
     template <typename T>
+    typename std::enable_if<std::is_same<T, std::pair<double, double>>::value, std::string>::type
+    get_dtype_string() { return "temperature_pair"; }
+
+    template <typename T>
     typename std::enable_if<!std::is_same<T, uint64_t>::value &&
-                                !std::is_same<T, double>::value,
+                                !std::is_same<T, double>::value &&
+                                !std::is_same<T, std::pair<double, double>>::value,
                             std::string>::type
     get_dtype_string() { return "complex"; }
 

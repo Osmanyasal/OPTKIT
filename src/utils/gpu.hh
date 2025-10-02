@@ -196,8 +196,12 @@ namespace optkit::gpu
      */
     struct GpuTemperatureInfo
     {
-        double current_temperature_celsius;
-        double max_temperature_celsius;
+        double current_device_temperature_celsius;
+        double current_memory_temperature_celsius;
+        double max_device_temperature_celsius;
+        double max_memory_temperature_celsius;
+        double min_device_temperature_celsius;
+        double min_memory_temperature_celsius;
         bool has_temperature_monitoring;
     };
 

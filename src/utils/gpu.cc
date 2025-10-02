@@ -195,8 +195,12 @@ namespace optkit::gpu
 
     std::string to_string(const GpuTemperatureInfo &info)
     {
-        return "{\"current_temperature_celsius\":" + std::to_string(info.current_temperature_celsius) +
-               ",\"max_temperature_celsius\":" + std::to_string(info.max_temperature_celsius) +
+        return "{\"current_device_temperature_celsius\":" + std::to_string(info.current_device_temperature_celsius) +
+               ",\"current_memory_temperature_celsius\":" + std::to_string(info.current_memory_temperature_celsius) +
+               ",\"max_device_temperature_celsius\":" + std::to_string(info.max_device_temperature_celsius) +
+               ",\"max_memory_temperature_celsius\":" + std::to_string(info.max_memory_temperature_celsius) +
+               ",\"min_device_temperature_celsius\":" + std::to_string(info.min_device_temperature_celsius) +
+               ",\"min_memory_temperature_celsius\":" + std::to_string(info.min_memory_temperature_celsius) +
                ",\"has_temperature_monitoring\":" + (info.has_temperature_monitoring ? "true" : "false") + "}";
     }
 

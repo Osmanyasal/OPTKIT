@@ -63,4 +63,8 @@ typedef struct nvmlDeviceAttributes_st
 } nvmlDeviceAttributes_t;
 #endif
 
+#ifndef NVML_DEVICE_NAME_V2_BUFFER_SIZE
+#define NVML_DEVICE_NAME_V2_BUFFER_SIZE 96
+#endif
+
 #endif
