@@ -1,7 +1,7 @@
 #include "core/temperature/gpu/profiler.hh"
 namespace optkit::temperature::gpu
 {
-    Profiler::Profiler(const ProfilerConfig &profiler_config, const optkit::metrics::MetricBuilder<double> &mb)
+    Profiler::Profiler(const ProfilerConfig &profiler_config, const optkit::metrics::MetricBuilder<std::pair<double, double>> &mb)
         : BaseProfiler(profiler_config), metric_builder(mb)
     {
         // Define array of vendors to support
@@ -21,24 +21,23 @@ namespace optkit::temperature::gpu
             {
                 for (uint32_t i = 0; i < device_count; i++)
                 {
-                    double temp_celsius;
-                    if (optkit::gpu::Query::get_device_temperature(vendor, i, temp_celsius))
+                    double temp_device_celsius;
+                    double temp_mem_celsius;
+                    if (optkit::gpu::Query::get_device_temperature(vendor, i, temp_device_celsius, temp_mem_celsius))
                     {
-                        last_snapshot[device_index] = temp_celsius;
-                        // std::cout << "Initial snapshot: " << device_index << " -> " << temp_celsius << std::endl;
+                        last_snapshot[device_index] = std::make_pair(temp_device_celsius, temp_mem_celsius);
+                        std::cout << "Initial snapshot: " << device_index << " -> " << temp_device_celsius << "°C (GPU), " << temp_mem_celsius << "°C (Memory)" << std::endl;
                     }
                     else
-                    {
-                        last_snapshot[device_index] = 0.0; // Default for unsupported devices
-                    }
+                        last_snapshot[device_index] = std::make_pair(0.0, 0.0); // Default for unsupported devices
                     device_index++;
                 }
             }
         }
 
-        // Initialize metric builder and add GPU metrics
-        metric_builder = optkit::metrics::MetricBuilder<double>();
-        for (std::unordered_map<uint32_t, double>::const_iterator it = last_snapshot.begin();
+        // Initialize metric builder and add GPU metrics to default
+        metric_builder = optkit::metrics::MetricBuilder<std::pair<double, double>>();
+        for (std::unordered_map<uint32_t, std::pair<double, double>>::const_iterator it = last_snapshot.begin();
              it != last_snapshot.end(); ++it)
         {
             std::vector<uint64_t> init_value;
@@ -63,21 +62,21 @@ namespace optkit::temperature::gpu
 
             if (OPT_UNLIKELY(this->metric_builder.print_events))
                 for (auto &&event : this->event_results)
-                    std::cout << std::fixed << "\t" << event.first << ": " << event.second << "°C" << std::endl;
+                    std::cout << std::fixed << "\t" << event.first << ": " << event.second.first << "°C (GPU), " << event.second.second << "°C (Memory)" << std::endl;
 
             for (auto &&metric : this->metric_results)
                 std::cout << std::fixed << "\t" << metric.first << ": " << metric.second << std::endl;
         }
     }
 
-    std::vector<double> Profiler::read()
+    std::vector<std::pair<double, double>> Profiler::read()
     {
         // Define array of vendors to support (same as constructor)
         std::vector<optkit::gpu::GpuVendor> vendors;
         vendors.push_back(optkit::gpu::GpuVendor::NVIDIA);
         vendors.push_back(optkit::gpu::GpuVendor::AMD);
 
-        std::unordered_map<uint32_t, double> current_snapshot;
+        std::unordered_map<uint32_t, std::pair<double, double>> current_snapshot;
         uint32_t device_index = 0;
 
         // Read temperature from all vendors and their devices
@@ -91,53 +90,58 @@ namespace optkit::temperature::gpu
             {
                 for (uint32_t i = 0; i < device_count; i++)
                 {
-                    double temp_celsius;
-                    if (optkit::gpu::Query::get_device_temperature(vendor, i, temp_celsius))
+                    double temp_device_celsius;
+                    double temp_mem_celsius;
+                    if (optkit::gpu::Query::get_device_temperature(vendor, i, temp_device_celsius, temp_mem_celsius))
                     {
-                        current_snapshot[device_index] = temp_celsius;
+                        current_snapshot[device_index] = std::make_pair(temp_device_celsius, temp_mem_celsius);
+                        std::cout << "Initial snapshot: " << device_index << " -> " << temp_device_celsius << "°C (GPU), " << temp_mem_celsius << "°C (Memory)" << std::endl;
                     }
                     else
-                    {
-                        current_snapshot[device_index] = 0.0; // Default for unsupported devices
-                    }
+                        current_snapshot[device_index] = std::make_pair(0.0, 0.0); // Default for unsupported devices
                     device_index++;
                 }
             }
         }
 
-        std::vector<double> current_temps;
+        std::vector<std::pair<double, double>> current_temps;
         for (const auto &cs : current_snapshot)
         {
             // std::cout << "Current snapshot: " << cs.first << " -> " << cs.second << std::endl;
-            double curr_val = current_snapshot.at(cs.first);
-            double prev_val = last_snapshot.at(cs.first);
+            double curr_gpu_temp_val = current_snapshot.at(cs.first).first;
+            double prev_gpu_temp_val = last_snapshot.at(cs.first).first;
+            double delta_gpu_temp_val = curr_gpu_temp_val - prev_gpu_temp_val;
 
-            double delta = curr_val - prev_val;
-            last_snapshot.at(cs.first) = curr_val;
-            current_temps.push_back(delta); // store the delta
+            double curr_mem_temp_val = current_snapshot.at(cs.first).second;
+            double prev_mem_temp_val = last_snapshot.at(cs.first).second;
+            double delta_mem_temp_val = curr_mem_temp_val - prev_mem_temp_val;
+
+            last_snapshot = current_snapshot;
+            current_temps.push_back(std::make_pair(delta_gpu_temp_val, delta_mem_temp_val)); // store the delta
         }
 
         return current_temps;
     }
 
-    std::unordered_map<std::string, double> Profiler::aggregate()
+    std::unordered_map<std::string, std::pair<double, double>> Profiler::aggregate()
     {
         double total_duration = 0.0;
-        std::unordered_map<std::string, double> aggregated_events;
+        std::unordered_map<std::string, std::pair<double, double>> aggregated_events;
         const std::vector<std::string> &event_names = this->metric_builder.event_names();
 
         for (const auto &entry : read_buffer)
         {
             total_duration += entry.first;
 
-            const std::vector<double> &values = entry.second;
+            const std::vector<std::pair<double, double>> &values = entry.second;
 
             for (size_t j = 0; j < values.size(); ++j)
             {
-                aggregated_events[event_names[j]] += values[j];
+                aggregated_events[event_names[j]].first += values[j].first;   // Sum GPU temps
+                aggregated_events[event_names[j]].second += values[j].second; // Sum Mem temps
             }
         }
-        std::vector<std::pair<std::string, double>> event_value(
+        std::vector<std::pair<std::string, std::pair<double, double>>> event_value(
             aggregated_events.begin(), aggregated_events.end());
 
         this->event_results = event_value;
@@ -150,7 +154,7 @@ namespace optkit::temperature::gpu
     {
         std::stringstream ss;
         ss << "[\n";
-        ss << utils::to_json<double>(this->total_duration_ms, this->config.measurement_type, this->event_results, this->metric_results);
+        ss << utils::to_json<std::pair<double, double>>(this->total_duration_ms, this->config.measurement_type, this->event_results, this->metric_results);
         ss << "]\n";
         return ss.str();
     }
