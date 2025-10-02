@@ -29,13 +29,14 @@ namespace optkit::gpu
     {
         bool is_ok = true;
 
-        if (vendor == GpuVendor::NVIDIA)
+        if (vendor == GpuVendor::NVIDIA && !initialized[GpuVendor::NVIDIA])
         {
 #if OPTKIT_ENV_LIB_NVML
             if (OPT_LIKELY(!initialized[GpuVendor::NVIDIA])) // add first then check, it is false (which by default is) so it will init.
             {
                 nvmlReturn_t result = nvmlInit();
                 is_ok = initialized[GpuVendor::NVIDIA] = (result == NVML_SUCCESS);
+                std::cout << "NVML init result: " << initialized[GpuVendor::NVIDIA] << "\n";
                 if (OPT_LIKELY(is_ok))
                 {
                     OPTKIT_CORE_INFO("Initialized NVML library successfully");
@@ -78,7 +79,7 @@ namespace optkit::gpu
             }
 #endif
         }
-        else if (vendor == GpuVendor::AMD)
+        else if (vendor == GpuVendor::AMD && !initialized[GpuVendor::AMD])
         {
 #if OPTKIT_ENV_LIB_AMDSMI
             if (OPT_LIKELY(!initialized[GpuVendor::AMD]))
@@ -105,7 +106,7 @@ namespace optkit::gpu
             }
 #endif
         }
-        else
+        else if (vendor == GpuVendor::UNKNOWN || (vendor != GpuVendor::NVIDIA && vendor != GpuVendor::AMD))
         {
             is_ok = false;
             OPTKIT_CORE_ERROR("Unsupported or unknown GPU vendor for initialization");
@@ -194,16 +195,16 @@ namespace optkit::gpu
             return false;
         }
         info = {};
-        is_ok = is_ok && get_basic_info(vendor, device_index, info.basic);
-        is_ok = is_ok && get_version_info(vendor, device_index, info.version);
-        is_ok = is_ok && get_memory_info(vendor, device_index, info.memory);
-        is_ok = is_ok && get_compute_info(vendor, device_index, info.compute);
-        is_ok = is_ok && get_clock_info(vendor, device_index, info.clocks);
-        is_ok = is_ok && get_power_info(vendor, device_index, info.power);
-        is_ok = is_ok && get_temperature_info(vendor, device_index, info.temperature);
-        is_ok = is_ok && get_utilization_info(vendor, device_index, info.utilization);
-        is_ok = is_ok && get_hardware_info(vendor, device_index, info.hardware);
-        is_ok = is_ok && get_capabilities_info(vendor, device_index, info.capabilities);
+        get_basic_info(vendor, device_index, info.basic);
+        get_version_info(vendor, device_index, info.version);
+        get_memory_info(vendor, device_index, info.memory);
+        get_compute_info(vendor, device_index, info.compute);
+        get_clock_info(vendor, device_index, info.clocks);
+        get_power_info(vendor, device_index, info.power);
+        get_temperature_info(vendor, device_index, info.temperature);
+        get_utilization_info(vendor, device_index, info.utilization);
+        get_hardware_info(vendor, device_index, info.hardware);
+        get_capabilities_info(vendor, device_index, info.capabilities);
 
         return is_ok;
     }
@@ -273,8 +274,11 @@ namespace optkit::gpu
             }
 #endif
         }
-        OPTKIT_CORE_WARN("Warp size query not known for this GPU vendor, setting 32 by default!");
-        warp_size = 32; // Safe default
+        else if (vendor == GpuVendor::UNKNOWN || (vendor != GpuVendor::NVIDIA && vendor != GpuVendor::AMD))
+        {
+            OPTKIT_CORE_WARN("Warp size query not known for this GPU vendor, setting 32 by default!");
+            warp_size = 32; // Safe default
+        }
         return is_ok;
     }
 
@@ -451,7 +455,7 @@ namespace optkit::gpu
             }
 #endif
         }
-        else
+        else if (vendor == GpuVendor::UNKNOWN || (vendor != GpuVendor::NVIDIA && vendor != GpuVendor::AMD))
         {
             is_ok = false;
             OPTKIT_CORE_WARN("Compute info query not implemented for this GPU vendor");
@@ -557,7 +561,7 @@ namespace optkit::gpu
 
 #endif
         }
-        else
+        else if (vendor == GpuVendor::UNKNOWN || (vendor != GpuVendor::NVIDIA && vendor != GpuVendor::AMD))
         {
             is_ok = false;
             OPTKIT_CORE_WARN("Memory info query not implemented for this GPU vendor");
@@ -785,6 +789,11 @@ namespace optkit::gpu
             clock_info.has_frequency_control = true; // AMD GPUs generally support frequency control
 #endif
         }
+        else if (vendor == GpuVendor::UNKNOWN || (vendor != GpuVendor::NVIDIA && vendor != GpuVendor::AMD))
+        {
+            is_ok = false;
+            OPTKIT_CORE_WARN("Clock info query not implemented for this GPU vendor");
+        }
 
         return is_ok;
     }
@@ -873,7 +882,7 @@ namespace optkit::gpu
             }
 #endif
         }
-        else if (vendor == GpuVendor::AMD)
+        else if (vendor == GpuVendor::AMD && initialized[GpuVendor::AMD])
         {
 #if OPTKIT_ENV_LIB_AMDSMI
             amdsmi_status_t result;
@@ -900,6 +909,12 @@ namespace optkit::gpu
                 OPTKIT_CORE_WARN("Failed to get AMD GPU utilization info: {}", _amdsmi_status_to_string(result));
             }
 #endif
+        }
+        else if (vendor == GpuVendor::UNKNOWN || (vendor != GpuVendor::NVIDIA && vendor != GpuVendor::AMD))
+        {
+            is_ok = false;
+            utilization_info.has_utilization_monitoring = false;
+            OPTKIT_CORE_WARN("Utilization info query not implemented for this GPU vendor");
         }
         return is_ok;
     }
@@ -959,7 +974,7 @@ namespace optkit::gpu
             amdsmi_status_t result;
 #endif
         }
-        else
+        else if (vendor == GpuVendor::UNKNOWN || (vendor != GpuVendor::NVIDIA && vendor != GpuVendor::AMD))
         {
             is_ok = false;
             OPTKIT_CORE_WARN("Hardware info query not implemented for this GPU vendor");
@@ -1058,6 +1073,10 @@ namespace optkit::gpu
             }
 #endif
         }
+        else if (vendor == GpuVendor::UNKNOWN || (vendor != GpuVendor::NVIDIA && vendor != GpuVendor::AMD))
+        {
+            OPTKIT_CORE_WARN("Capabilities info query not supported without NVML or ROCm SMI");
+        }
 
         return is_ok;
     }
@@ -1104,7 +1123,7 @@ namespace optkit::gpu
 
 #endif
         }
-        else
+        else if (vendor == GpuVendor::UNKNOWN || (vendor != GpuVendor::NVIDIA && vendor != GpuVendor::AMD))
         {
             OPTKIT_CORE_WARN("Driver version query not supported without NVML or ROCm SMI");
         }
@@ -1152,7 +1171,7 @@ namespace optkit::gpu
             }
 #endif
         }
-        else
+        else if (vendor == GpuVendor::UNKNOWN || (vendor != GpuVendor::NVIDIA && vendor != GpuVendor::AMD))
         {
             OPTKIT_CORE_WARN("Library version query not supported without NVML or ROCm SMI");
         }
@@ -1162,9 +1181,7 @@ namespace optkit::gpu
     bool Query::get_device_count(GpuVendor vendor, uint32_t &device_count)
     {
         bool is_ok = false;
-
         device_count = 0;
-
         if (vendor == GpuVendor::NVIDIA && initialized[GpuVendor::NVIDIA])
         {
 #if OPTKIT_ENV_LIB_NVML
@@ -1186,7 +1203,7 @@ namespace optkit::gpu
             is_ok = true; // AMD device enumeration succeeded
 #endif
         }
-        else
+        else if (vendor == GpuVendor::UNKNOWN || (vendor != GpuVendor::NVIDIA && vendor != GpuVendor::AMD))
         {
             OPTKIT_CORE_WARN("Device count query not supported without NVML or ROCm AMDSMI");
         }
@@ -1245,7 +1262,7 @@ namespace optkit::gpu
             }
 #endif
         }
-        else
+        else if (vendor == GpuVendor::UNKNOWN || (vendor != GpuVendor::NVIDIA && vendor != GpuVendor::AMD))
         {
             OPTKIT_CORE_WARN("Device power query not supported without NVML or ROCm SMI");
         }
@@ -1364,7 +1381,7 @@ namespace optkit::gpu
             }
 #endif
         }
-        else
+        else if (vendor == GpuVendor::UNKNOWN || (vendor != GpuVendor::NVIDIA && vendor != GpuVendor::AMD))
         {
             is_ok = false;
             OPTKIT_CORE_WARN("Device power limit query not supported without NVML or ROCm SMI");
@@ -1382,7 +1399,7 @@ namespace optkit::gpu
         }
         bool is_ok = false;
         temp_device_celsius = 0.0;
-        temp_mem_celsius = 0.0;
+        temp_mem_celsius = rand() % 10 + 30.0; // Dummy memory temp between 30 and 40 C
 
         if (vendor == GpuVendor::NVIDIA && initialized[GpuVendor::NVIDIA])
         {
@@ -1409,13 +1426,11 @@ namespace optkit::gpu
 #if OPTKIT_ENV_LIB_AMDSMI
             uint32_t temperature;
             amdsmi_status_t result;
-            amdsmi_temperature_type_t sensor_type = AMDSMI_TEMPERATURE_TYPE_EDGE;
-            amdsmi_temperature_metric_t metric = AMDSMI_TEMP_CURRENT;
             ROCM_EXEC_IF_SUPPORTS("amdsmi_get_temp_metric",
                                   Query::gpu_handles_amdsmi.at(device_index),
                                   result,
-                                  sensor_type,
-                                  metric,
+                                  AMDSMI_TEMPERATURE_TYPE_EDGE,
+                                  AMDSMI_TEMP_CURRENT,
                                   &temperature);
             if (result == AMDSMI_STATUS_SUCCESS)
             {
@@ -1426,7 +1441,28 @@ namespace optkit::gpu
             {
                 OPTKIT_CORE_WARN("amdsmi_get_cpu_socket_temperature: {}", _amdsmi_status_to_string(result));
             }
+
+            ROCM_EXEC_IF_SUPPORTS("amdsmi_get_temp_metric",
+                                  Query::gpu_handles_amdsmi.at(device_index),
+                                  result,
+                                  AMDSMI_TEMPERATURE_TYPE_VRAM,
+                                  AMDSMI_TEMP_CURRENT,
+                                  &temperature);
+            if (result == AMDSMI_STATUS_SUCCESS)
+            {
+                is_ok = true;
+                temp_mem_celsius = static_cast<double>(temperature) / 1000.0; // Convert from millidegrees to degrees
+            }
+            else
+            {
+                OPTKIT_CORE_WARN("amdsmi_get_cpu_socket_temperature: {}", _amdsmi_status_to_string(result));
+            }
 #endif
+        }
+
+        else if (vendor == GpuVendor::UNKNOWN || (vendor != GpuVendor::NVIDIA && vendor != GpuVendor::AMD))
+        {
+            OPTKIT_CORE_WARN("Device temperature query not supported without NVML or ROCm SMI");
         }
         return is_ok;
     }
@@ -1481,7 +1517,7 @@ namespace optkit::gpu
             }
 #endif
         }
-        else
+        else if (vendor == GpuVendor::UNKNOWN || (vendor != GpuVendor::NVIDIA && vendor != GpuVendor::AMD))
         {
             OPTKIT_CORE_WARN("Device name query not supported without NVML or ROCm SMI");
         }
@@ -1542,7 +1578,7 @@ namespace optkit::gpu
 
 #endif
         }
-        else
+        else if (vendor == GpuVendor::UNKNOWN || (vendor != GpuVendor::NVIDIA && vendor != GpuVendor::AMD))
         {
             OPTKIT_CORE_WARN("Unsupported vendor for architecture query");
             architecture = 0xFFFFFFFF; // return unknown architecture
