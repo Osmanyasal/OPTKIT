@@ -1399,7 +1399,7 @@ namespace optkit::gpu
         }
         bool is_ok = false;
         temp_device_celsius = 0.0;
-        temp_mem_celsius = rand() % 10 + 30.0; // Dummy memory temp between 30 and 40 C
+        temp_mem_celsius = 0.0; // rand() % 10 + 30.0; // Dummy memory temp between 30 and 40 C
 
         if (vendor == GpuVendor::NVIDIA && initialized[GpuVendor::NVIDIA])
         {
