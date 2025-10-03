@@ -210,13 +210,15 @@ namespace optkit::gpu
                ",\"memory_utilization_percent\":" + std::to_string(info.memory_utilization_percent) +
                ",\"has_utilization_monitoring\":" + (info.has_utilization_monitoring ? "true" : "false") + "}";
     }
-
     std::string to_string(const GpuHardwareInfo &info)
     {
+        std::stringstream ss;
+        ss << "0x" << std::hex << std::uppercase << info.board_id;
+
         return "{\"pci_bus_id\":\"" + info.pci_bus_id + "\"" +
-               ",\"pci_device_id\":" + std::to_string(info.pci_device_id) +
-               ",\"pci_subsystem_id\":" + std::to_string(info.pci_subsystem_id) +
-               ",\"board_id\":" + std::to_string(info.board_id) +
+               ",\"pci_device_id\":0x" + std::to_string(info.pci_device_id) +
+               ",\"pci_subsystem_id\":0x" + std::to_string(info.pci_subsystem_id) +
+               ",\"board_id\":\"" + ss.str() + "\"" +
                ",\"multi_gpu_board\":" + (info.multi_gpu_board ? "true" : "false") + "}";
     }
 

@@ -21,10 +21,20 @@ namespace optkit::gpu
     std::vector<amdsmi_processor_handle> Query::gpu_handles_amdsmi;
 #endif
 
+// Replace the current macro definition with:
+#if OPTKIT_ENV_LIB_NVML && OPTKIT_ENV_LIB_AMDSMI
 #define IS_DEVICE_INDEX_VALID(vendor, device_index)                                    \
     ((vendor == GpuVendor::NVIDIA && device_index < Query::gpu_handles_nvml.size()) || \
      (vendor == GpuVendor::AMD && device_index < Query::gpu_handles_amdsmi.size()))
-
+#elif OPTKIT_ENV_LIB_NVML
+#define IS_DEVICE_INDEX_VALID(vendor, device_index) \
+    (vendor == GpuVendor::NVIDIA && device_index < Query::gpu_handles_nvml.size())
+#elif OPTKIT_ENV_LIB_AMDSMI
+#define IS_DEVICE_INDEX_VALID(vendor, device_index) \
+    (vendor == GpuVendor::AMD && device_index < Query::gpu_handles_amdsmi.size())
+#else
+#define IS_DEVICE_INDEX_VALID(vendor, device_index) (false)
+#endif
     bool Query::init(GpuVendor vendor)
     {
         bool is_ok = true;
