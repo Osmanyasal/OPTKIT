@@ -919,7 +919,6 @@ namespace optkit::gpu
         return is_ok;
     }
 
-    // TODO: fill this function
     bool Query::get_hardware_info(GpuVendor vendor, uint32_t device_index, GpuHardwareInfo &hardware_info)
     {
         if (!IS_DEVICE_INDEX_VALID(vendor, device_index))
@@ -936,16 +935,22 @@ namespace optkit::gpu
 #if OPTKIT_ENV_LIB_NVML
             nvmlReturn_t result;
             nvmlPciInfo_t pci;
-            auto device = Query::gpu_handles_nvml.at(device_index);
+            auto nvml_device = Query::gpu_handles_nvml.at(device_index);
             NVML_EXEC_IF_SUPPORTS(
                 "nvmlDeviceGetPciInfo",
-                device,
+                nvml_device,
                 result,
                 &pci);
             if (OPT_LIKELY(result == NVML_SUCCESS))
             {
                 hardware_info.pci_bus_id = std::string(pci.busId);
-                hardware_info.pci_device_id = pci.pciDeviceId;
+                if (hardware_info.pci_bus_id.empty())
+                {
+                    std::string legacy = pci.busIdLegacy;
+                    if (!legacy.empty())
+                        hardware_info.pci_bus_id = legacy;
+                }
+                hardware_info.pci_device_id = pci.device;
                 hardware_info.pci_subsystem_id = pci.pciSubSystemId;
             }
             else
@@ -955,7 +960,7 @@ namespace optkit::gpu
             }
             // Get board ID for multi-GPU detection
             uint32_t boardId;
-            NVML_EXEC_IF_SUPPORTS("nvmlDeviceGetBoardId", device, result, &boardId);
+            NVML_EXEC_IF_SUPPORTS("nvmlDeviceGetBoardId", nvml_device, result, &boardId);
             if (OPT_LIKELY(result == NVML_SUCCESS))
             {
                 hardware_info.board_id = boardId;
@@ -965,6 +970,18 @@ namespace optkit::gpu
                 is_ok = false;
                 OPTKIT_CORE_WARN("nvmlDeviceGetBoardId: {}", nvmlErrorString(result));
             }
+
+            uint32_t multiGpuBool;
+            NVML_EXEC_IF_SUPPORTS("nvmlDeviceGetMultiGpuBoard", nvml_device, result, &multiGpuBool);
+            if (OPT_LIKELY(result == NVML_SUCCESS))
+            {
+                hardware_info.multi_gpu_board = multiGpuBool > 0;
+            }
+            else
+            {
+                is_ok = false;
+                OPTKIT_CORE_WARN("nvmlDeviceGetMultiGpuBoard: {}", nvmlErrorString(result));
+            }
 #endif
         }
         else if (vendor == GpuVendor::AMD && initialized[GpuVendor::AMD])
@@ -972,6 +989,76 @@ namespace optkit::gpu
 #if OPTKIT_ENV_LIB_AMDSMI
             auto device = Query::gpu_handles_amdsmi.at(device_index);
             amdsmi_status_t result;
+            auto rocm_device = Query::gpu_handles_amdsmi.at(device_index);
+
+            // PCI Bus ID is typically in the format: domain:bus:device.function
+            char bdf[64];
+            uint64_t bdfid;
+            ROCM_EXEC_IF_SUPPORTS("amdsmi_get_gpu_bdf_id", rocm_device, result, &bdfid);
+            if (result == AMDSMI_STATUS_SUCCESS)
+            {
+                snprintf(bdf, sizeof(bdf), "%04lx:%02lx:%02lx.%01lx",
+                         (bdfid >> 16) & 0xFFFF, // domain
+                         (bdfid >> 8) & 0xFF,    // bus
+                         (bdfid >> 3) & 0x1F,    // device
+                         bdfid & 0x07);          // function
+                hardware_info.pci_bus_id = std::string(bdf);
+            }
+            else
+            {
+                is_ok = false;
+                OPTKIT_CORE_WARN("amdsmi_get_gpu_bdf_id: {}", _amdsmi_status_to_string(result));
+            }
+
+            // Device and subsystem IDs
+            uint16_t device_id, subsystem_id;
+            ROCM_EXEC_IF_SUPPORTS("amdsmi_get_gpu_device_id", rocm_device, result, &device_id);
+            if (result == AMDSMI_STATUS_SUCCESS)
+                hardware_info.pci_device_id = device_id;
+            else
+            {
+                is_ok = false;
+                OPTKIT_CORE_WARN("amdsmi_get_gpu_device_id: {}", _amdsmi_status_to_string(result));
+            }
+
+            // Subsystem ID
+            ROCM_EXEC_IF_SUPPORTS("amdsmi_get_gpu_subsystem_id", rocm_device, result, &subsystem_id);
+            if (result == AMDSMI_STATUS_SUCCESS)
+                hardware_info.pci_subsystem_id = subsystem_id;
+            else
+            {
+                is_ok = false;
+                OPTKIT_CORE_WARN("amdsmi_get_gpu_subsystem_id: {}", _amdsmi_status_to_string(result));
+            }
+            // Get ASIC information (similar to board ID)
+            amdsmi_asic_info_t asic_info;
+            result = amdsmi_get_gpu_asic_info(device, &asic_info);
+            if (OPT_LIKELY(result == AMDSMI_STATUS_SUCCESS))
+            {
+                hardware_info.board_id = asic_info.device_id; // Using device_id as a proxy for board ID
+            }
+            else
+            {
+                is_ok = false;
+                OPTKIT_CORE_WARN("amdsmi_get_gpu_asic_info: {}", _amdsmi_status_to_string(result));
+            }
+
+            // AMD doesn't have direct multi-GPU board detection like NVIDIA
+            // But we can check if multiple GPUs share the same board
+            // This would need to be tracked across all devices
+            uint64_t unique_id;
+            ROCM_EXEC_IF_SUPPORTS("amdsmi_get_gpu_unique_id", rocm_device, result, &unique_id);
+            if (OPT_LIKELY(result == AMDSMI_STATUS_SUCCESS))
+            {
+                // Store unique_id for later comparison across devices
+                // Multi-GPU detection would require comparing board serials or unique IDs
+                hardware_info.multi_gpu_board = false; // Default, needs cross-device logic
+            }
+            else
+            {
+                is_ok = false;
+                OPTKIT_CORE_WARN("amdsmi_get_gpu_unique_id: {}", _amdsmi_status_to_string(result));
+            }
 #endif
         }
         else if (vendor == GpuVendor::UNKNOWN || (vendor != GpuVendor::NVIDIA && vendor != GpuVendor::AMD))
@@ -980,7 +1067,6 @@ namespace optkit::gpu
             OPTKIT_CORE_WARN("Hardware info query not implemented for this GPU vendor");
             return false;
         }
-
         return is_ok;
     }
 
