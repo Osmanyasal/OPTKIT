@@ -1,5 +1,7 @@
 #pragma once
 
+#ifdef OPTKIT_ENV_LIB_NVML || OPTKIT_ENV_LIB_AMDSMI
+
 #include <cstdint>
 #include <string>
 #include <sstream>
@@ -282,3 +284,4 @@ namespace optkit::gpu
 } // namespace optkit::gpu
 
 using optkit::gpu::operator<<; // make available to global namespace
+#endif

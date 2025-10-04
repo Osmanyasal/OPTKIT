@@ -53,20 +53,20 @@ namespace optkit::metrics::energy
                 return MetricBuilder<double>{}
                     .add(to_string(CoreEvents::PACKAGE), {0x0})
                     .add(to_string(CoreEvents::DRAM), {0x0})
-                    .build("K-EDP", [](const std::unordered_map<std::string, double> &results)
+                    .build("kilo_edp_edp", [](const std::unordered_map<std::string, double> &results)
                            {
                                double duration_sec = get_event_count(results, "duration_microsec") / 1.0e6;
                                double pkg = get_event_count(results, to_string(CoreEvents::PACKAGE));
                                double dram = get_event_count(results, to_string(CoreEvents::DRAM));
                                return (duration_sec * (pkg + dram)) / 1000; // K-EDP calculation
                            })
-                    .build("K-EDP_pkg", [](const std::unordered_map<std::string, double> &results)
+                    .build("kilo_edp_pkg", [](const std::unordered_map<std::string, double> &results)
                            {
                                double duration_sec = get_event_count(results, "duration_microsec") / 1.0e6;
                                double pkg = get_event_count(results, to_string(CoreEvents::PACKAGE));
                                return (duration_sec * pkg) / 1000; // K-EDP calculation
                            })
-                    .build("K-EDP_dram", [](const std::unordered_map<std::string, double> &results)
+                    .build("kilo_edp_dram", [](const std::unordered_map<std::string, double> &results)
                            {
                                double duration_sec = get_event_count(results, "duration_microsec") / 1.0e6;
                                double dram = get_event_count(results, to_string(CoreEvents::DRAM));
@@ -83,7 +83,7 @@ namespace optkit::metrics::energy
                 return MetricBuilder<double>{}
                     .add(to_string(CoreEvents::PACKAGE), {0x0})
                     .add(to_string(CoreEvents::DRAM), {0x0})
-                    .build("Watt-hour", [](const std::unordered_map<std::string, double> &results)
+                    .build("watt_hour", [](const std::unordered_map<std::string, double> &results)
                            {
                                double pkg = get_event_count(results, to_string(CoreEvents::PACKAGE));
                                double dram = get_event_count(results, to_string(CoreEvents::DRAM));
