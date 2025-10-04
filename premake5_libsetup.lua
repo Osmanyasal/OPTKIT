@@ -67,6 +67,7 @@ function base_project_setup()
         "-g",
         "-fopenmp",
         "-fPIC",
+        "-fno-omit-frame-pointer",
         "-DCONF_LOG_PRINT_GUID_LENGTH=10",
         "-DCONF_LOG_DISABLE_DEBUG=0",
         "-DCONF_LOG_DISABLE_TRACE=0",
@@ -87,6 +88,7 @@ function base_project_setup()
         "-fopenmp",
         "-fPIC",
         "-march=native -funroll-loops -ftree-vectorize",
+        "-fno-omit-frame-pointer",
         -- "-fopt-info-vec",
         "-DCONF_LOG_PRINT_GUID_LENGTH=10",
         "-DCONF_LOG_DISABLE_DEBUG=1",
@@ -108,6 +110,7 @@ function base_project_setup()
         "-fopenmp",
         "-fPIC",
         "-march=native -funroll-loops -ftree-vectorize -fopt-info-vec",
+        "-fno-omit-frame-pointer",
         "-DCONF_LOG_PRINT_GUID_LENGTH=10",
         "-DCONF_LOG_DISABLE_DEBUG=1",
         "-DCONF_LOG_DISABLE_TRACE=1",
@@ -184,7 +187,8 @@ function test_project_setup()
         "-O0",      -- Explicitly no optimization
         "-fopenmp", -- Enable OpenMP if needed
         "-fPIC",    -- Position-independent code,
-        "-DOPTKIT_TESTING=1"
+        "-DOPTKIT_TESTING=1",
+        "-fno-omit-frame-pointer",
     }
 
     filter {}
@@ -200,6 +204,7 @@ function test_project_setup()
         -- "-fopt-info-vec",
         "-fopenmp", -- Enable OpenMP if needed
         "-fPIC",    -- Position-independent code,
-        "-DOPTKIT_TESTING=1"
+        "-fno-omit-frame-pointer",
+        "-DOPTKIT_TESTING=1",
     }
 end
