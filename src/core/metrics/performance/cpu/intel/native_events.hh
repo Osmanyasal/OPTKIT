@@ -2,7 +2,7 @@
 #include "utils/deployment/deployment_config.hh"
 #if OPTKIT_ENV_CPU_INTEL
 #include <string>
-namespace optkit::metrics::cpu::intel
+namespace optkit::metrics::performance::intel
 {
     /**
      * @brief These are the core events to be monitored for metrics. It is expected to exists in every CPUs

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-namespace optkit::metrics::cpu
+namespace optkit::metrics::performance
 {
     /**
      * @brief These are the core events to be monitored for metrics. It is expected to exists in every CPUs

@@ -43,19 +43,16 @@ namespace optkit::energy::rapl
     {
         read_and_store();
 
-        // Convert aggregated data to format expected by metric_builder
-        auto aggregated = aggregate();
+        // domain_str - <socket_id - <rapl_domain - read value>>
+        std::unordered_map<std::string, std::map<int32_t, std::map<optkit::energy::rapl::RaplDomain, double>>> aggregated = aggregate();
 
-        for (auto &&i : aggregated)
+        std::cout << "AGGR ITEM\n";
+        for (auto &&aggr_item : aggregated)
         {
-            std::cout << "EVENT RESULTS_first -> " << i.first << " --\n\t"
-                      << " Event_RESULTS_second: " << i.second << "\n";
+            std::cout << aggr_item.first << " " << aggr_item.second << "\n";
         }
+
         // call it for socket 0 and 1 and so on...
-        for (auto &&i : aggregated)
-        {
-            std::cout << "EVENT NAMES -> " << i.first << "\n";
-        }
         if (OPT_LIKELY(this->config.dump_results_to_file))
             this->save();
 
@@ -63,10 +60,10 @@ namespace optkit::energy::rapl
         {
             if (OPT_UNLIKELY(this->metric_builder.print_events))
                 for (auto &&event : this->event_results)
-                    std::cout << std::fixed << "\t" << event.first << ": " << event.second << std::endl;
+                    std::cout << std::fixed << "event_results: " << event.first << ":" << event.second << std::endl;
 
             for (auto &&metric : this->metric_results)
-                std::cout << std::fixed << "\t" << metric.first << ": " << metric.second << std::endl;
+                std::cout << std::fixed << "metric_results: " << metric << "\n";
         }
         // Close all file descriptions!
         for (auto package = 0u; package < OPTKIT_ENV_CPU_NUM_SOCKETS; package++)
@@ -74,7 +71,7 @@ namespace optkit::energy::rapl
                 ::close(fd_package_domain[package][domain]);
     }
 
-    // returns event_name - socket_id - rapl_domain - reading
+    // returns rapl_domain_str - socket_id - rapl_domain - read value
     std::unordered_map<std::string, std::map<int32_t, std::map<RaplDomain, double>>> Profiler::aggregate()
     {
         double total_duration = 0.0;
@@ -102,7 +99,7 @@ namespace optkit::energy::rapl
 
                     // Aggregate the readings
                     aggregated_events[to_string(domain)][socket_id][domain] += reading;
-                    std::cout << "Aggregating Event: " << to_string(domain) << " Socket: " << socket_id << " Domain: " << domain << " Reading: " << reading << "\n";
+                    std::cout << "Aggregating Event: " << to_string(domain) << " Socket: " << socket_id << " Domain: " << domain << " Reading: " << reading << " total:" << aggregated_events[to_string(domain)][socket_id][domain] << "\n";
                 }
             }
         }
@@ -122,6 +119,7 @@ namespace optkit::energy::rapl
     {
         OPTKIT_CORE_WARN("Rapl is always enabled");
     }
+
     std::map<int32_t, std::map<RaplDomain, double>> Profiler::read()
     {
         std::map<int32_t, std::map<RaplDomain, double>> result;

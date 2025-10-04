@@ -74,7 +74,7 @@ int32_t main(int32_t argc, char **argv)
     // exit(0);
     return 0;
     // OPTKIT_DISK_EVENTS("main", optkit::metrics::disk::core_metrics::AllMetrics());
-    OPTKIT_CPU_EVENTS("main", optkit::metrics::cpu::core_metrics::CPUMaxCapacityBasedUtilization());
+    OPTKIT_CPU_EVENTS("main", optkit::metrics::performance::core_metrics::CPUMaxCapacityBasedUtilization());
     // optkit::metrics::MetricBuilder mb{true, true};
 
     // mb.add(optkit::metrics::cpu::core_metrics::IpC());

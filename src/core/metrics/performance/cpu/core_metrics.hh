@@ -9,7 +9,7 @@
 #include <unordered_map>
 #include <iostream>
 #include "utils/metric_builder.hh"
-namespace optkit::metrics::cpu
+namespace optkit::metrics::performance
 {
     /**
      * @class Metrics
@@ -133,4 +133,4 @@ namespace optkit::metrics::cpu
         CoreMetrics() {}
         ~CoreMetrics() {}
     };
-} // namespace optkit::metrics::cpu
+} // namespace optkit::metrics::performance

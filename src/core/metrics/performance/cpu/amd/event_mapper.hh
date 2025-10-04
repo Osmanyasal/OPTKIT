@@ -12,7 +12,7 @@
  *      https://www.amd.com/content/dam/amd/en/documents/epyc-technical-docs/programmer-references/58550-0.01.pdf (Performance Monitor Counters for AMD Family 1Ah Model 00h- 0Fh Processors)
  *
  */
-namespace optkit::metrics::cpu::amd
+namespace optkit::metrics::performance::amd
 {
     /**
      * @brief Considered only zen1 to zen4. others are not guaranteed.
@@ -21,7 +21,7 @@ namespace optkit::metrics::cpu::amd
     class EventMapper final
     {
     public:
-        static std::vector<uint64_t> get(cpu::CoreEvents event)
+        static std::vector<uint64_t> get(performance::CoreEvents event)
         {
             auto it = core_event_map.find(event);
             if (it != core_event_map.end())
@@ -31,7 +31,7 @@ namespace optkit::metrics::cpu::amd
             OPTKIT_CORE_WARN("EventMapper: No event found for core event: {}", to_string(event));
             return {};
         }
-        static std::vector<uint64_t> get(cpu::amd::NativeEvents event)
+        static std::vector<uint64_t> get(performance::amd::NativeEvents event)
         {
             auto it = native_event_map.find(event);
             if (it != native_event_map.end())
@@ -45,8 +45,8 @@ namespace optkit::metrics::cpu::amd
     private:
         EventMapper() {}
         ~EventMapper() {}
-        static const std::unordered_map<cpu::CoreEvents, std::vector<uint64_t>> core_event_map;          // coreEvent - even nums to monitor.
-        static const std::unordered_map<cpu::amd::NativeEvents, std::vector<uint64_t>> native_event_map; // coreEvent - even nums to monitor.
+        static const std::unordered_map<performance::CoreEvents, std::vector<uint64_t>> core_event_map;          // coreEvent - even nums to monitor.
+        static const std::unordered_map<performance::amd::NativeEvents, std::vector<uint64_t>> native_event_map; // coreEvent - even nums to monitor.
     };
 };
 #endif // OPTKIT_ENV_CPU_AMD

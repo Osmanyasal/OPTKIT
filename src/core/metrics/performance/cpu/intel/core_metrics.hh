@@ -38,7 +38,7 @@
  */
 
 // Warn: to use template initialisation for a certain type, they must be in the same namespace. so do NOT change it.
-namespace optkit::metrics::cpu
+namespace optkit::metrics::performance
 {
     /**
      * @class IntelMetricsImpl
@@ -1065,7 +1065,7 @@ namespace optkit::metrics::cpu
                 std::string no_ops_from_frontend_name = to_string(intel::NativeEvents::IDQ_UOPS_NOT_DELIVERED_CORE);
                 return MetricBuilder<uint64_t>{}
                     .add(dispatch_slots_name, intel::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
-                    .add(no_ops_from_frontend_name, intel::EventMapper::get(cpu::intel::NativeEvents::IDQ_UOPS_NOT_DELIVERED_CORE))
+                    .add(no_ops_from_frontend_name, intel::EventMapper::get(performance::intel::NativeEvents::IDQ_UOPS_NOT_DELIVERED_CORE))
                     .build("FrontendBound__%",
                            [dispatch_slots_name, no_ops_from_frontend_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
@@ -1094,7 +1094,7 @@ namespace optkit::metrics::cpu
                 return MetricBuilder<uint64_t>{}
                     .add(dispatch_slots_name, intel::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
                     .add(uops_issued_name, intel::EventMapper::get(intel::NativeEvents::UOPS_ISSUED))
-                    .add(uops_retired_slots_name, intel::EventMapper::get(cpu::intel::NativeEvents::UOPS_RETIRED_SLOTS))
+                    .add(uops_retired_slots_name, intel::EventMapper::get(performance::intel::NativeEvents::UOPS_RETIRED_SLOTS))
                     .add(recovery_cycles_name, intel::EventMapper::get(intel::NativeEvents::INT_MISC_RECOVERY_CYCLES))
                     .build("BadSpeculation__%",
                            [dispatch_slots_name, uops_issued_name, uops_retired_slots_name, recovery_cycles_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
@@ -1145,7 +1145,7 @@ namespace optkit::metrics::cpu
             // std::string dispatch_slots_name = to_string(CoreEvents::UNHALTED_CORE_CYCLES);
             // std::string smt_stalls_name = to_string(intel::NativeEvents::SMT_STALLS_1);
             // return MetricBuilder<uint64_t>{}
-            //     .add(smt_stalls_name, intel::EventMapper::get(cpu::intel::NativeEvents::SMT_STALLS_1))
+            //     .add(smt_stalls_name, intel::EventMapper::get(performance::intel::NativeEvents::SMT_STALLS_1))
             //     .add(dispatch_slots_name, intel::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
             //     .build("SMTContention",
             //            [dispatch_slots_name, smt_stalls_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
