@@ -1,5 +1,5 @@
 
-#include "core/metrics/cpu/intel/bdw/bdw_recepies.hh"
+#include "core/metrics/performance/cpu/intel/bdw/bdw_recepies.hh"
 
 namespace optkit::metrics::intel::bdw
 {

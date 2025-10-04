@@ -4,7 +4,7 @@
 
 namespace optkit::metrics::energy
 {
-    using core_metrics = CoreMetrics<void>;
-    using core_events = CoreEvents;
+    using cpu_metrics = CoreMetrics<CPUImpl>;
+    using cpu_events = CoreEvents;
 }
 using optkit::metrics::energy::operator<<; // make available to global namespace

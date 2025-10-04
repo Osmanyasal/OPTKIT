@@ -4,8 +4,8 @@
 #include "utils/deployment/deployment_config.hh"
 
 #if OPTKIT_ENV_CPU_INTEL
-#include "core/metrics/cpu/intel/core_metrics.hh"
-#include "core/metrics/cpu/intel/event_mapper.hh"
+#include "core/metrics/performance/cpu/intel/core_metrics.hh"
+#include "core/metrics/performance/cpu/intel/event_mapper.hh"
 namespace optkit::metrics::cpu
 {
     using core_metrics = CoreMetrics<IntelMetricsImpl>;

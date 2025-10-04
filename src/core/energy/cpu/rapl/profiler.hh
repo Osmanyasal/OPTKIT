@@ -58,12 +58,13 @@ namespace optkit::energy::rapl
          */
         virtual std::map<int32_t, std::map<RaplDomain, double>> read() override;
 
-        virtual std::unordered_map<std::string, std::map<int32_t, std::map<RaplDomain, double>>> aggregate() override; // event_name - socket_id - rapl_domain - reading
+        virtual std::unordered_map<std::string, std::map<int32_t, std::map<RaplDomain, double>>> aggregate() override; // event_name - reading_val
 
     private:
-        std::vector<std::vector<int32_t>> fd_package_domain;         // file descriptors [package(socket)][domain]
-        const optkit::metrics::MetricBuilder<double> metric_builder; // metric results
-        std::vector<std::pair<std::string, double>> metric_results;  // metric_name - reading
+        std::vector<std::vector<int32_t>> fd_package_domain; // file descriptors [package(socket)][domain]
+
+        optkit::metrics::MetricBuilder<double> metric_builder;      // metric_data
+        std::vector<std::pair<std::string, double>> metric_results; // calculated metric results
     };
 
     // Overloading << for map with RaplDomain as keys

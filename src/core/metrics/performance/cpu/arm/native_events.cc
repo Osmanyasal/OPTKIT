@@ -1,4 +1,4 @@
-#include "core/metrics/cpu/arm/native_events.hh"
+#include "core/metrics/performance/cpu/arm/native_events.hh"
 #if OPTKIT_ENV_CPU_ARM
 namespace optkit::metrics::cpu::arm
 {

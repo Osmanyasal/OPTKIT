@@ -5,6 +5,7 @@
 #include "core/metrics/performance/cpu/core_metrics.hh"
 #include "core/metrics/performance/cpu/amd/event_mapper.hh"
 #include "core/metrics/performance/cpu/amd/native_events.hh"
+#include "utils/metric_builder.hh"
 
 #if OPTKIT_ENV_CPU_MICROARCH_ZEN
 #define SUPERSCALAR_WIDE 5

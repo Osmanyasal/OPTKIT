@@ -2,10 +2,17 @@
 
 namespace optkit::energy::rapl
 {
-    Profiler::Profiler(const ProfilerConfig &profiler_config, const optkit::metrics::MetricBuilder<std::map<int32_t, std::map<RaplDomain, double>>> &mb) : BaseProfiler{profiler_config}, metric_builder{mb}
+    Profiler::Profiler(const ProfilerConfig &profiler_config, const optkit::metrics::MetricBuilder<double> &mb) : BaseProfiler{profiler_config}, metric_builder{mb}
     {
         auto &packages = optkit::Query::detect_cpu_packages();
         auto &avail_domains = Query::rapl_domain_info(); // Monitor for all available domains
+
+        // Extend the existing metric_builder instead of overwriting it
+        for (auto &&i : avail_domains)
+        {
+            metric_builder.add(i.event, {0x0});
+        }
+
         auto s_type = optkit::utils::read_file("/sys/bus/event_source/devices/power/type");
         auto type = std::atoi(s_type.c_str());
 
@@ -42,7 +49,31 @@ namespace optkit::energy::rapl
     Profiler::~Profiler()
     {
         read_and_store();
-        this->metric_results = this->metric_builder.calculate(aggregate());
+
+        // Convert aggregated data to format expected by metric_builder
+        auto aggregated = aggregate();
+        std::unordered_map<std::string, double> flattened_results;
+
+        // Flatten the complex structure and sum across all packages/domains
+        for (const auto &event_entry : aggregated)
+        {
+            const std::string &event_name = event_entry.first;
+            double total_value = 0.0;
+
+            for (const auto &package_entry : event_entry.second)
+            {
+                for (const auto &domain_entry : package_entry.second)
+                {
+                    total_value += domain_entry.second;
+                }
+            }
+            flattened_results[event_name] = total_value;
+        }
+
+        // Add duration for metric calculations
+        flattened_results["duration_microsec"] = this->total_duration_ms * 1000.0; // Convert ms to microseconds
+
+        this->metric_results = this->metric_builder.calculate(flattened_results);
 
         if (OPT_LIKELY(this->config.dump_results_to_file))
             this->save();

@@ -1,4 +1,4 @@
-#include "core/metrics/cpu/arm/event_mapper.hh"
+#include "core/metrics/performance/cpu/arm/event_mapper.hh"
 #if OPTKIT_ENV_CPU_ARM
 namespace optkit::metrics::cpu::arm
 {

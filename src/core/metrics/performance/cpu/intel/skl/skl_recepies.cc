@@ -1,5 +1,5 @@
 
-#include "core/metrics/cpu/intel/skl/skl_recepies.hh"
+#include "core/metrics/performance/cpu/intel/skl/skl_recepies.hh"
 
 namespace optkit::metrics::intel::skl
 {

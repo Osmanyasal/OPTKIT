@@ -1,4 +1,4 @@
-#include "core/metrics/cpu/intel/event_mapper.hh"
+#include "core/metrics/performance/cpu/intel/event_mapper.hh"
 #if OPTKIT_ENV_CPU_INTEL
 
 #define INTEL_X86_EDGE_BIT 18

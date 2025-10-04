@@ -12,7 +12,7 @@
 #include "utils/metric_builder.hh"
 #include "core/metrics/energy/core_metrics.hh"
 
-namespace optkit::metrics::energy::cpu
+namespace optkit::metrics::energy
 {
     /**
      * @brief Dummy class to indicate CPU energy metrics

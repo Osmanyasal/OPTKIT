@@ -10,7 +10,7 @@
 #include "utils/base_profiler.hh"
 #include "core/pmu/cpu/perf/profiler_config.hh"
 #include "core/pmu/cpu/pmu_event_manager.hh"
-#include "core/metrics/cpu/core_metrics.hh"
+#include "core/metrics/performance/cpu/core_metrics.hh"
 
 namespace optkit::pmu::cpu::perf
 {

@@ -1,4 +1,4 @@
-#include "core/metrics/cpu/intel/native_events.hh"
+#include "core/metrics/performance/cpu/intel/native_events.hh"
 
 #if OPTKIT_ENV_CPU_INTEL
 namespace optkit::metrics::cpu::intel

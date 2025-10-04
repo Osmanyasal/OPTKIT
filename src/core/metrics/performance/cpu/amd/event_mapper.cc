@@ -1,4 +1,4 @@
-#include "core/metrics/cpu/amd/event_mapper.hh"
+#include "core/metrics/performance/cpu/amd/event_mapper.hh"
 #if OPTKIT_ENV_CPU_AMD
 namespace optkit::metrics::cpu::amd
 {

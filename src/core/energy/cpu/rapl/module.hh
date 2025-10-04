@@ -13,14 +13,14 @@
 #if OPTKIT_CONF_RAPL_MACROS_ENABLED == 1
 
 #define OPTKIT_CPU_ENERGY(block_name) \
-    optkit::energy::rapl::Profiler EXPAND_AND_CONCAT(var, __LINE__){{block_name, "cpu_energy", true, optkit::Query::create_folder, !optkit::Query::create_folder}, optkit::metrics::energy::core_metrics::all_metrics()};
+    optkit::energy::rapl::Profiler EXPAND_AND_CONCAT(var, __LINE__){{block_name, "cpu_energy", true, optkit::Query::create_folder, !optkit::Query::create_folder}, optkit::metrics::energy::cpu_metrics::all_metrics()};
 
-#define OPTKIT_CPU_ENERGY_REPEAT(block_name, count)                                                                                                                                                                       \
-    optkit::energy::rapl::Profiler EXPAND_AND_CONCAT(var, __LINE__){{block_name, "cpu_energy", true, optkit::Query::create_folder, !optkit::Query::create_folder}, optkit::metrics::energy::core_metrics::all_metrics()}; \
+#define OPTKIT_CPU_ENERGY_REPEAT(block_name, count)                                                                                                                                                                      \
+    optkit::energy::rapl::Profiler EXPAND_AND_CONCAT(var, __LINE__){{block_name, "cpu_energy", true, optkit::Query::create_folder, !optkit::Query::create_folder}, optkit::metrics::energy::cpu_metrics::all_metrics()}; \
     for (int32_t i = 0; i < count; i++)
 
-#define OPTKIT_CPU_ENERGY_REPEAT_READ_AND_STORE(block_name, count)                                                                                                                                                        \
-    optkit::energy::rapl::Profiler EXPAND_AND_CONCAT(var, __LINE__){{block_name, "cpu_energy", true, optkit::Query::create_folder, !optkit::Query::create_folder}, optkit::metrics::energy::core_metrics::all_metrics()}; \
+#define OPTKIT_CPU_ENERGY_REPEAT_READ_AND_STORE(block_name, count)                                                                                                                                                       \
+    optkit::energy::rapl::Profiler EXPAND_AND_CONCAT(var, __LINE__){{block_name, "cpu_energy", true, optkit::Query::create_folder, !optkit::Query::create_folder}, optkit::metrics::energy::cpu_metrics::all_metrics()}; \
     for (int32_t i = 0; i < count; i++, EXPAND_AND_CONCAT(var, __LINE__).read_and_store())
 
 // Macros with metric_builder parameter
