@@ -17,7 +17,7 @@ inline std::vector<T> generate_vector(size_t n = VECTOR_SIZE)
 
 int32_t main(int32_t argc, char **argv)
 {
-    OPTKIT_INIT({false});
+    OPTKIT_INIT();
     // OPTKIT_HWMON_TEMPERATURE_EVENTS("main", {});
     // OPTKIT_GPU_TEMPERATURE_EVENTS("main gpu temp", {});
     // OPTKIT_GPU_ENERGY_EVENTS("main gpu energy", {});

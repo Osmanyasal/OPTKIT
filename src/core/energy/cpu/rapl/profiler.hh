@@ -63,8 +63,8 @@ namespace optkit::energy::rapl
     private:
         std::vector<std::vector<int32_t>> fd_package_domain; // file descriptors [package(socket)][domain]
 
-        optkit::metrics::MetricBuilder<double> metric_builder;      // metric_data
-        std::vector<std::pair<std::string, double>> metric_results; // metric - value
+        optkit::metrics::MetricBuilder<double> metric_builder;                                    // metric_data
+        std::unordered_map<uint32_t, std::vector<std::pair<std::string, double>>> metric_results; // metric - value
     };
 
     // Overloading << for map with RaplDomain as keys

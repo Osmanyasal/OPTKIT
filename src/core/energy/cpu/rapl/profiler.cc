@@ -45,14 +45,12 @@ namespace optkit::energy::rapl
 
         // socket_id_str - <socket_id - <rapl_domain - read value>>
         std::unordered_map<std::string, std::unordered_map<int32_t, std::unordered_map<optkit::energy::rapl::RaplDomain, double>>> aggregated = aggregate();
-
-        std::cout << "AGGR ITEM\n";
         for (auto &&aggr_item : aggregated)
         {
             std::vector<std::pair<std::string, double>> event_values;
             for (const auto &inner_pair : aggr_item.second)
             {
-                int32_t socket_id = inner_pair.first;
+                // Remove unused variable socket_id
                 for (const auto &domain_pair : inner_pair.second)
                 {
                     RaplDomain domain = domain_pair.first;
@@ -62,12 +60,8 @@ namespace optkit::energy::rapl
             }
             event_values.emplace_back("duration_microsec", this->total_duration_ms * 1000.0); // convert to microseconds
 
-            this->metric_results = this->metric_builder.calculate(
+            this->metric_results[std::strtol(aggr_item.first.c_str(), nullptr, 10)] = this->metric_builder.calculate(
                 std::unordered_map<std::string, double>(event_values.begin(), event_values.end()));
-
-            // traverse event_values
-            for (auto &&ev_val : event_values)
-                std::cout << "!!!!!!! EVENT VALUE: " << ev_val.first << " : " << ev_val.second << "\n";
         }
 
         // call it for socket 0 and 1 and so on...
@@ -78,11 +72,14 @@ namespace optkit::energy::rapl
         {
             if (OPT_UNLIKELY(this->metric_builder.print_events))
                 for (auto &&event : this->event_results)
-                    std::cout << std::fixed << "event_results: " << event.first << ":" << event.second << std::endl;
+                    std::cout << event.second << std::endl;
 
-            std::cout << "Metric Results:\n";
             for (auto &&metric : this->metric_results)
-                std::cout << std::fixed << "\t" << metric.first << ":" << metric.second << "\n";
+            {
+                std::cout << "\tPackage " << metric.first << " Metrics: \n";
+                for (const auto &pair : metric.second)
+                    std::cout << std::fixed << "\t\t" << pair.first << ":" << pair.second << "\n";
+            }
         }
         // Close all file descriptions!
         for (auto package = 0u; package < OPTKIT_ENV_CPU_NUM_SOCKETS; package++)
@@ -95,13 +92,6 @@ namespace optkit::energy::rapl
     {
         double total_duration = 0.0;
         std::unordered_map<std::string, std::unordered_map<int32_t, std::unordered_map<RaplDomain, double>>> aggregated_events;
-        const std::vector<std::string> &event_names = this->metric_builder.event_names();
-
-        for (auto &&i : event_names)
-        {
-            std::cout << "!! EVENT NAMES -> " << i << "\n";
-        }
-
         for (const auto &entry : read_buffer)
         {
             total_duration += entry.first;
@@ -172,9 +162,58 @@ namespace optkit::energy::rapl
     {
         std::stringstream ss;
         ss << "[\n";
-        // based on the insertion order.
-        // ss << optkit::energy::rapl::to_json(this->config.measurement_type, this->read_buffer);
-        ss << "]\n";
+
+        bool first = true;
+
+        // Call utils::to_json for each socket with both events and metrics combined
+        for (const auto &metric_pair : this->metric_results)
+        {
+            int32_t socket_id = metric_pair.first;
+            std::string socket_id_str = std::to_string(socket_id);
+
+            // Convert RAPL domain results to individual event entries
+            std::vector<std::pair<std::string, double>> event_values;
+            for (std::vector<std::pair<std::string, std::unordered_map<int32_t, std::unordered_map<RaplDomain, double>>>>::const_iterator event_it = this->event_results.begin();
+                 event_it != this->event_results.end(); ++event_it)
+            {
+                if (event_it->first == socket_id_str)
+                {
+                    // Extract individual domain values
+                    for (const auto &socket_pair : event_it->second)
+                    {
+                        for (const auto &domain_pair : socket_pair.second)
+                        {
+                            std::string domain_name = to_string(domain_pair.first) + "__Joules";
+                            double domain_value = domain_pair.second;
+                            event_values.emplace_back(domain_name, domain_value);
+                        }
+                    }
+                    break;
+                }
+            }
+
+            // Convert metric results to vector format
+            std::vector<std::pair<std::string, double>> metric_values;
+            for (const auto &metric : metric_pair.second)
+            {
+                metric_values.emplace_back(metric.first, metric.second);
+            }
+
+            if (!first)
+                ss << ",\n";
+            first = false;
+
+            // Generate JSON with both events and metrics for this socket
+            nlohmann::json socket_json = utils::to_json<double>(
+                this->total_duration_ms,
+                this->config.measurement_type,
+                event_values,
+                metric_values,
+                socket_id);
+            ss << socket_json.dump(2);
+        }
+
+        ss << "\n]\n";
         return ss.str();
     }
 
@@ -196,7 +235,7 @@ namespace optkit::energy::rapl
     {
         for (const auto &pair : map)
         {
-            os << "\tPackage " << pair.first << "\n";
+            os << "\tPackage " << pair.first << " Domains:\n";
             for (const auto &innerpair : pair.second)
             {
                 os << "\t\t" << innerpair.first << ": " << innerpair.second << " Joules Consumed.\n";
@@ -204,4 +243,4 @@ namespace optkit::energy::rapl
         }
         return os;
     }
-} // namespace optkit
+}

@@ -58,9 +58,6 @@ namespace optkit::metrics::energy
                                double duration_sec = get_event_count(results, "duration_microsec") / 1.0e6;
                                double pkg = get_event_count(results, to_string(CoreEvents::PACKAGE));
                                double dram = get_event_count(results, to_string(CoreEvents::DRAM));
-                               std::cout << "DURATION SEC: " << duration_sec << "\n";
-                               std::cout << "PKG: " << pkg << "\n";
-                               std::cout << "DRAM: " << dram << "\n";
                                return (duration_sec * (pkg + dram)) / 1000; // K-EDP calculation
                            })
                     .build("K-EDP_pkg", [](const std::unordered_map<std::string, double> &results)
