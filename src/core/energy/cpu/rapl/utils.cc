@@ -3,7 +3,7 @@
 namespace optkit::energy::rapl
 {
 
-    nlohmann::json to_json(const char *event_name, const std::vector<std::pair<double, std::map<int32_t, std::map<RaplDomain, double>>>> &rapl_pair_list)
+    nlohmann::json to_json(const char *event_name, const std::vector<std::pair<double, std::unordered_map<int32_t, std::unordered_map<RaplDomain, double>>>> &rapl_pair_list)
     {
         const std::vector<RaplDomainInfo> &avail_domains = Query::rapl_domain_info();
         nlohmann::json result;
@@ -32,42 +32,6 @@ namespace optkit::energy::rapl
                     }
                 }
                 result["readings"].push_back(packageJson);
-            }
-        }
-        return result;
-    }
-
-    std::map<uint32_t, std::vector<std::pair<double, std::map<int32_t, std::map<RaplDomain, double>>>>> from_json(const std::string &json)
-    {
-        const auto json_obj = nlohmann::json::parse(json);
-        std::map<uint32_t, std::vector<std::pair<double, std::map<int32_t, std::map<RaplDomain, double>>>>> result;
-        std::map<int32_t, std::map<RaplDomain, double>> rapl_map;
-
-        if (json_obj.is_array())
-        {
-            for (const auto &array_elem : json_obj)
-            {
-                for (const auto &packageJson : array_elem["readings"])
-                {
-                    // std::string event_name = packageJson["event_name"];
-                    double duration = packageJson["duration"];
-                    int32_t package_number = packageJson["package_number"];
-
-                    std::map<RaplDomain, double> inner_map;
-                    for (const auto &metricJson : packageJson["metrics_set"])
-                    {
-                        std::string metric_name = metricJson["metric_name"];
-                        double value = metricJson["value"];
-                        // std::string units = metricJson["units"];
-                        // std::string description = metricJson["description"];
-
-                        RaplDomain domain = metric_name_to_rapl_domain(metric_name);
-                        inner_map[domain] = value;
-                    }
-                    rapl_map[package_number] = inner_map;
-                    result[package_number].push_back({duration, rapl_map});
-                    rapl_map.clear();
-                }
             }
         }
         return result;

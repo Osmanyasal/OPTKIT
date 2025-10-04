@@ -29,7 +29,7 @@ namespace optkit::energy::rapl
      * @see BaseProfiler
      * @see ProfilerConfig
      */
-    class Profiler : public BaseProfiler<std::map<int32_t, std::map<RaplDomain, double>>, std::map<int32_t, std::map<RaplDomain, double>>>
+    class Profiler : public BaseProfiler<std::unordered_map<int32_t, std::unordered_map<RaplDomain, double>>, std::unordered_map<int32_t, std::unordered_map<RaplDomain, double>>>
     {
     public:
         Profiler(const ProfilerConfig &profiler_config, const optkit::metrics::MetricBuilder<double> &mb);
@@ -54,23 +54,23 @@ namespace optkit::energy::rapl
         /**
          * @brief Reads the values of all raw_events.
          *
-         * @return std::map<int32_t,std::map<RaplDomain, int32_t>> SocketID - RaplDomain - reading
+         * @return std::unordered_map<int32_t,std::unordered_map<RaplDomain, int32_t>> SocketID - RaplDomain - reading
          */
-        virtual std::map<int32_t, std::map<RaplDomain, double>> read() override;
+        virtual std::unordered_map<int32_t, std::unordered_map<RaplDomain, double>> read() override;
 
-        virtual std::unordered_map<std::string, std::map<int32_t, std::map<RaplDomain, double>>> aggregate() override; // event_name - reading_val
+        virtual std::unordered_map<std::string, std::unordered_map<int32_t, std::unordered_map<RaplDomain, double>>> aggregate() override; // event_name - reading_val
 
     private:
         std::vector<std::vector<int32_t>> fd_package_domain; // file descriptors [package(socket)][domain]
 
-        optkit::metrics::MetricBuilder<double> metric_builder;                       // metric_data
-        std::vector<std::map<int32_t, std::map<RaplDomain, double>>> metric_results; // socket_id - rapl_domain - reading_val
+        optkit::metrics::MetricBuilder<double> metric_builder;      // metric_data
+        std::vector<std::pair<std::string, double>> metric_results; // metric - value
     };
 
     // Overloading << for map with RaplDomain as keys
-    std::string to_string(const std::map<optkit::energy::rapl::RaplDomain, double> &map);
-    std::ostream &operator<<(std::ostream &os, const std::map<optkit::energy::rapl::RaplDomain, double> &map);
-    std::ostream &operator<<(std::ostream &os, const std::map<int32_t, std::map<optkit::energy::rapl::RaplDomain, double>> &map);
+    std::string to_string(const std::unordered_map<optkit::energy::rapl::RaplDomain, double> &map);
+    std::ostream &operator<<(std::ostream &os, const std::unordered_map<optkit::energy::rapl::RaplDomain, double> &map);
+    std::ostream &operator<<(std::ostream &os, const std::unordered_map<int32_t, std::unordered_map<optkit::energy::rapl::RaplDomain, double>> &map);
 
 } // namespace optkit::energy::rapl
 

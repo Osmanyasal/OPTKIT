@@ -35,6 +35,7 @@ namespace optkit::gpu
 #else
 #define IS_DEVICE_INDEX_VALID(vendor, device_index) (false)
 #endif
+
     bool Query::init(GpuVendor vendor)
     {
         bool is_ok = true;

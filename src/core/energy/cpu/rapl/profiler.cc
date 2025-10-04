@@ -43,13 +43,31 @@ namespace optkit::energy::rapl
     {
         read_and_store();
 
-        // domain_str - <socket_id - <rapl_domain - read value>>
-        std::unordered_map<std::string, std::map<int32_t, std::map<optkit::energy::rapl::RaplDomain, double>>> aggregated = aggregate();
+        // socket_id_str - <socket_id - <rapl_domain - read value>>
+        std::unordered_map<std::string, std::unordered_map<int32_t, std::unordered_map<optkit::energy::rapl::RaplDomain, double>>> aggregated = aggregate();
 
         std::cout << "AGGR ITEM\n";
         for (auto &&aggr_item : aggregated)
         {
-            std::cout << aggr_item.first << " " << aggr_item.second << "\n";
+            std::vector<std::pair<std::string, double>> event_values;
+            for (const auto &inner_pair : aggr_item.second)
+            {
+                int32_t socket_id = inner_pair.first;
+                for (const auto &domain_pair : inner_pair.second)
+                {
+                    RaplDomain domain = domain_pair.first;
+                    double reading = domain_pair.second;
+                    event_values.emplace_back(to_string(domain), reading);
+                }
+            }
+            event_values.emplace_back("duration_microsec", this->total_duration_ms * 1000.0); // convert to microseconds
+
+            this->metric_results = this->metric_builder.calculate(
+                std::unordered_map<std::string, double>(event_values.begin(), event_values.end()));
+
+            // traverse event_values
+            for (auto &&ev_val : event_values)
+                std::cout << "!!!!!!! EVENT VALUE: " << ev_val.first << " : " << ev_val.second << "\n";
         }
 
         // call it for socket 0 and 1 and so on...
@@ -62,8 +80,9 @@ namespace optkit::energy::rapl
                 for (auto &&event : this->event_results)
                     std::cout << std::fixed << "event_results: " << event.first << ":" << event.second << std::endl;
 
+            std::cout << "Metric Results:\n";
             for (auto &&metric : this->metric_results)
-                std::cout << std::fixed << "metric_results: " << metric << "\n";
+                std::cout << std::fixed << "\t" << metric.first << ":" << metric.second << "\n";
         }
         // Close all file descriptions!
         for (auto package = 0u; package < OPTKIT_ENV_CPU_NUM_SOCKETS; package++)
@@ -71,11 +90,11 @@ namespace optkit::energy::rapl
                 ::close(fd_package_domain[package][domain]);
     }
 
-    // returns rapl_domain_str - socket_id - rapl_domain - read value
-    std::unordered_map<std::string, std::map<int32_t, std::map<RaplDomain, double>>> Profiler::aggregate()
+    // returns socket_id_str - <socket_id - <rapl_domain - read value>>
+    std::unordered_map<std::string, std::unordered_map<int32_t, std::unordered_map<RaplDomain, double>>> Profiler::aggregate()
     {
         double total_duration = 0.0;
-        std::unordered_map<std::string, std::map<int32_t, std::map<RaplDomain, double>>> aggregated_events;
+        std::unordered_map<std::string, std::unordered_map<int32_t, std::unordered_map<RaplDomain, double>>> aggregated_events;
         const std::vector<std::string> &event_names = this->metric_builder.event_names();
 
         for (auto &&i : event_names)
@@ -86,7 +105,7 @@ namespace optkit::energy::rapl
         for (const auto &entry : read_buffer)
         {
             total_duration += entry.first;
-            const std::map<int32_t, std::map<RaplDomain, double>> &values = entry.second; // socket_id - rapl_domain - reading
+            const std::unordered_map<int32_t, std::unordered_map<RaplDomain, double>> &values = entry.second; // socket_id - rapl_domain - reading
 
             for (const auto &pair : values)
             {
@@ -98,12 +117,12 @@ namespace optkit::energy::rapl
                     double reading = innerpair.second;
 
                     // Aggregate the readings
-                    aggregated_events[to_string(domain)][socket_id][domain] += reading;
-                    std::cout << "Aggregating Event: " << to_string(domain) << " Socket: " << socket_id << " Domain: " << domain << " Reading: " << reading << " total:" << aggregated_events[to_string(domain)][socket_id][domain] << "\n";
+                    aggregated_events[std::to_string(socket_id)][socket_id][domain] += reading;
+                    std::cout << "Aggregating Event: " << to_string(domain) << " Socket: " << socket_id << " Domain: " << domain << " Reading: " << reading << " total:" << aggregated_events[std::to_string(socket_id)][socket_id][domain] << "\n";
                 }
             }
         }
-        std::vector<std::pair<std::string, std::map<int32_t, std::map<RaplDomain, double>>>> event_value(
+        std::vector<std::pair<std::string, std::unordered_map<int32_t, std::unordered_map<RaplDomain, double>>>> event_value(
             aggregated_events.begin(), aggregated_events.end());
 
         this->event_results = std::move(event_value);
@@ -120,9 +139,9 @@ namespace optkit::energy::rapl
         OPTKIT_CORE_WARN("Rapl is always enabled");
     }
 
-    std::map<int32_t, std::map<RaplDomain, double>> Profiler::read()
+    std::unordered_map<int32_t, std::unordered_map<RaplDomain, double>> Profiler::read()
     {
-        std::map<int32_t, std::map<RaplDomain, double>> result;
+        std::unordered_map<int32_t, std::unordered_map<RaplDomain, double>> result;
         int64_t value = 0;
         const auto &avail_domains = Query::rapl_domain_info();
 
@@ -154,26 +173,26 @@ namespace optkit::energy::rapl
         std::stringstream ss;
         ss << "[\n";
         // based on the insertion order.
-        ss << optkit::energy::rapl::to_json(this->config.measurement_type, this->read_buffer);
+        // ss << optkit::energy::rapl::to_json(this->config.measurement_type, this->read_buffer);
         ss << "]\n";
         return ss.str();
     }
 
-    std::string to_string(const std::map<optkit::energy::rapl::RaplDomain, double> &map)
+    std::string to_string(const std::unordered_map<optkit::energy::rapl::RaplDomain, double> &map)
     {
         std::ostringstream oss;
         oss << map;
         return oss.str();
     }
     // Overloading << for map with RaplDomain as keys
-    std::ostream &operator<<(std::ostream &os, const std::map<optkit::energy::rapl::RaplDomain, double> &map)
+    std::ostream &operator<<(std::ostream &os, const std::unordered_map<optkit::energy::rapl::RaplDomain, double> &map)
     {
         for (const auto &item : map)
             os << item.first << ": " << item.second << "\n";
         return os;
     }
 
-    std::ostream &operator<<(std::ostream &os, const std::map<int32_t, std::map<optkit::energy::rapl::RaplDomain, double>> &map)
+    std::ostream &operator<<(std::ostream &os, const std::unordered_map<int32_t, std::unordered_map<optkit::energy::rapl::RaplDomain, double>> &map)
     {
         for (const auto &pair : map)
         {
