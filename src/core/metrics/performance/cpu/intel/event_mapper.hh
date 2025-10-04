@@ -4,8 +4,8 @@
 
 #include <unordered_map>
 #include "utils/utils.hh"
-#include "core/metrics/cpu/core_events.hh"
-#include "core/metrics/cpu/intel/native_events.hh"
+#include "core/metrics/performance/cpu/core_events.hh"
+#include "core/metrics/performance/cpu/intel/native_events.hh"
 
 namespace optkit::metrics::performance::intel
 {

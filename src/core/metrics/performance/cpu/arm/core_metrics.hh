@@ -2,9 +2,9 @@
 #include "utils/deployment/deployment_config.hh"
 #if OPTKIT_ENV_CPU_ARM
 
-#include "core/metrics/cpu/core_metrics.hh"
-#include "core/metrics/cpu/arm/event_mapper.hh"
-#include "core/metrics/cpu/arm/native_events.hh"
+#include "core/metrics/performance/cpu/core_metrics.hh"
+#include "core/metrics/performance/cpu/arm/event_mapper.hh"
+#include "core/metrics/performance/cpu/arm/native_events.hh"
 
 #if OPTKIT_ENV_CPU_MICROARCH_NEOVERSE_V1
 #define SUPERSCALAR_WIDE 8
