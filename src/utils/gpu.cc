@@ -1,6 +1,5 @@
 #include "utils/gpu.hh"
 
-#ifdef OPTKIT_ENV_LIB_NVML || OPTKIT_ENV_LIB_AMDSMI
 namespace optkit::gpu
 {
 #if OPTKIT_ENV_LIB_NVML
@@ -319,5 +318,3 @@ namespace optkit::gpu
     }
 
 } // namespace optkit::gpu
-
-#endif

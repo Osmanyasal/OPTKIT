@@ -1,7 +1,5 @@
 #pragma once
 
-#ifdef OPTKIT_ENV_LIB_NVML || OPTKIT_ENV_LIB_AMDSMI
-
 #include <cstdint>
 #include <string>
 #include <sstream>
@@ -42,6 +40,10 @@ OPT_FORCE_INLINE nvml_fn_t query_nvml_fn(const char *function_name)
 #define NVML_CUDA_DRIVER_VERSION_MINOR(v) (((int32_t)(v) % 1000) / 10)
 #endif
 
+#else
+#define NVML_EXEC_IF_SUPPORTS(NAME_STR, DEVICE, RESULT, ...)
+#define NVML_CUDA_DRIVER_VERSION_MAJOR(v) 0
+#define NVML_CUDA_DRIVER_VERSION_MINOR(v) 0
 #endif
 
 #if OPTKIT_ENV_LIB_AMDSMI
@@ -63,6 +65,9 @@ OPT_FORCE_INLINE amdsmi_fn_t query_amd_smi_fn(const char *function_name)
         else                                                 \
             RESULT = AMDSMI_STATUS_NOT_SUPPORTED;            \
     } while (0)
+
+#else
+#define ROCM_EXEC_IF_SUPPORTS(NAME_STR, DEVICE, RESULT, ...)
 #endif
 
 // vendor IDs from PCI-SIG
@@ -284,4 +289,3 @@ namespace optkit::gpu
 } // namespace optkit::gpu
 
 using optkit::gpu::operator<<; // make available to global namespace
-#endif
