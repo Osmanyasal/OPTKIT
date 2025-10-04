@@ -3,9 +3,9 @@
 #if OPTKIT_ENV_CPU_INTEL
 
 #include "utils/metric_builder.hh"
-#include "core/metrics/cpu/core_metrics.hh"
-#include "core/metrics/cpu/intel/event_mapper.hh"
-#include "core/metrics/cpu/intel/native_events.hh"
+#include "core/metrics/performance/cpu/core_metrics.hh"
+#include "core/metrics/performance/cpu/intel/event_mapper.hh"
+#include "core/metrics/performance/cpu/intel/native_events.hh"
 
 // Intel (decode width)
 #if OPTKIT_ENV_CPU_MICROARCH_P6 || OPTKIT_ENV_CPU_MICROARCH_WSM ||  \
