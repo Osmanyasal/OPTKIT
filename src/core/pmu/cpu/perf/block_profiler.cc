@@ -138,7 +138,7 @@ namespace optkit::pmu::cpu::perf
         std::vector<std::pair<std::string, uint64_t>> event_value(
             aggregated_events.begin(), aggregated_events.end());
 
-        this->event_results = event_value;
+        this->event_results = std::move(event_value);
         this->total_duration_ms = total_duration;
 
         aggregated_events["duration_microsec"] = this->total_duration_ms * 1000.0; // convert to microseconds

@@ -1,4 +1,4 @@
-#include "core/metrics/cpu/core_events.hh"
+#include "core/metrics/performance/cpu/core_events.hh"
 
 namespace optkit::metrics::cpu
 {

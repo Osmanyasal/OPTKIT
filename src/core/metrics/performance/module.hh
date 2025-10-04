@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/metrics/cpu/core_metrics.hh"
+#include "core/metrics/performance/cpu/core_metrics.hh"
 #include "utils/deployment/deployment_config.hh"
 
 #if OPTKIT_ENV_CPU_INTEL
@@ -14,8 +14,8 @@ namespace optkit::metrics::cpu
     using native_events = intel::NativeEvents;
 }
 #elif OPTKIT_ENV_CPU_AMD
-#include "core/metrics/cpu/amd/core_metrics.hh"
-#include "core/metrics/cpu/amd/event_mapper.hh"
+#include "core/metrics/performance/cpu/amd/core_metrics.hh"
+#include "core/metrics/performance/cpu/amd/event_mapper.hh"
 namespace optkit::metrics::cpu
 {
     using core_metrics = CoreMetrics<AMDMetricsImpl>;
@@ -24,8 +24,8 @@ namespace optkit::metrics::cpu
     using native_events = amd::NativeEvents;
 }
 #elif OPTKIT_ENV_CPU_ARM
-#include "core/metrics/cpu/arm/core_metrics.hh"
-#include "core/metrics/cpu/arm/event_mapper.hh"
+#include "core/metrics/performance/cpu/arm/core_metrics.hh"
+#include "core/metrics/performance/cpu/arm/event_mapper.hh"
 namespace optkit::metrics::cpu
 {
     using core_metrics = CoreMetrics<ARMMetricsImpl>;

@@ -2,9 +2,9 @@
 #include "utils/deployment/deployment_config.hh"
 #if OPTKIT_ENV_CPU_AMD
 
-#include "core/metrics/cpu/core_metrics.hh"
-#include "core/metrics/cpu/amd/event_mapper.hh"
-#include "core/metrics/cpu/amd/native_events.hh"
+#include "core/metrics/performance/cpu/core_metrics.hh"
+#include "core/metrics/performance/cpu/amd/event_mapper.hh"
+#include "core/metrics/performance/cpu/amd/native_events.hh"
 
 #if OPTKIT_ENV_CPU_MICROARCH_ZEN
 #define SUPERSCALAR_WIDE 5

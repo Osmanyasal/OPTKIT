@@ -525,13 +525,28 @@ write_cpu_microarch() {
 write_cpu_cache_info() {
     echo "" >> "$SRC_CONFIG_FILE"
     local llc_level=0 llc_name="" llc_size=0
-
     while read -r name value; do
         if [[ -n "$value" && "$value" != 0 ]]; then
             macro="OPTKIT_ENV_CPU_${name//[^A-Za-z0-9]/_}"
-            printf "\t%-$(($ALIGN_WIDTH - 8))s %s\n" "$macro" "$value"
-            echo "#define $macro $value" >> "$SRC_CONFIG_FILE"
-
+            
+            # Check if this is a cache size (includes LEVEL1_ICACHE_SIZE, LEVEL1_DCACHE_SIZE, and LEVEL*_CACHE_SIZE)
+            if [[ "$name" == LEVEL*_CACHE_SIZE || "$name" == LEVEL*_ICACHE_SIZE || "$name" == LEVEL*_DCACHE_SIZE ]]; then
+                macro_total="OPTKIT_ENV_CPU_${name//[^A-Za-z0-9]/_}_TOTAL"
+                value=$(($value / 1024))  # Convert bytes to KB
+                printf "\t%-$(($ALIGN_WIDTH - 8))s %s (KB per instance)\n" "$macro" "$value"
+                echo "#define $macro $value //KB per instance" >> "$SRC_CONFIG_FILE"
+                
+                num_cores=$(grep -m1 'OPTKIT_ENV_CPU_PHYSICAL_CORES_PER_SOCKET' "$SRC_CONFIG_FILE" | awk '{print $3}')
+                value_total=$(($value * num_cores))
+                printf "\t%-$(($ALIGN_WIDTH - 8))s %s (KB per socket)\n" "$macro_total" "$value_total"
+                echo "#define $macro_total $value_total //KB per socket" >> "$SRC_CONFIG_FILE"
+            else
+                # For linesize and assoc, just output the value as-is
+                printf "\t%-$(($ALIGN_WIDTH - 8))s %s\n" "$macro" "$value"
+                echo "#define $macro $value" >> "$SRC_CONFIG_FILE"
+            fi
+            
+            # Track LLC linesize
             if [[ "$name" == LEVEL*_CACHE_LINESIZE ]]; then
                 level_num=$(echo "$name" | grep -oE '[0-9]+')
                 if (( level_num > llc_level )); then
@@ -542,10 +557,10 @@ write_cpu_cache_info() {
             fi
         fi
     done < <(getconf -a | grep CACHE)
-
+    
     if [[ -n "$llc_name" ]]; then
         printf "\t%-$(($ALIGN_WIDTH - 8))s %s\n" "OPTKIT_ENV_CPU_LLC_CACHE_LINESIZE" "$llc_size"
-        echo "#define OPTKIT_ENV_CPU_LLC_CACHE_LINESIZE $llc_name" >> "$SRC_CONFIG_FILE"
+        echo "#define OPTKIT_ENV_CPU_LLC_CACHE_LINESIZE $llc_size" >> "$SRC_CONFIG_FILE"
     fi
 }
 

@@ -4,8 +4,8 @@
 
 #include <unordered_map>
 #include "utils/utils.hh"
-#include "core/metrics/cpu/core_events.hh"
-#include "core/metrics/cpu/amd/native_events.hh"
+#include "core/metrics/performance/cpu/core_events.hh"
+#include "core/metrics/performance/cpu/amd/native_events.hh"
 
 /**
  * @brief metrics are mapped based on the manual:

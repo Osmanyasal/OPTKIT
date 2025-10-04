@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <string>
+#include <sstream>
 #include <algorithm>
 #include "utils/optimizations/cpu_opt.hh"
 #include <vector>

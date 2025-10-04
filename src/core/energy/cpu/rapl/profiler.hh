@@ -11,6 +11,7 @@
 #include "core/query.hh"
 #include "core/energy/cpu/rapl/query.hh"
 #include "core/energy/cpu/rapl/utils.hh"
+#include "utils/metric_builder.hh"
 
 namespace optkit::energy::rapl
 {
@@ -28,10 +29,10 @@ namespace optkit::energy::rapl
      * @see BaseProfiler
      * @see ProfilerConfig
      */
-    class Profiler : public BaseProfiler<std::map<int32_t, std::map<RaplDomain, double>>, double>
+    class Profiler : public BaseProfiler<std::map<int32_t, std::map<RaplDomain, double>>, std::map<int32_t, std::map<RaplDomain, double>>>
     {
     public:
-        Profiler(const ProfilerConfig &profiler_config);
+        Profiler(const ProfilerConfig &profiler_config, const optkit::metrics::MetricBuilder<double> &mb);
         virtual ~Profiler();
 
         /**
@@ -57,10 +58,12 @@ namespace optkit::energy::rapl
          */
         virtual std::map<int32_t, std::map<RaplDomain, double>> read() override;
 
-        virtual std::unordered_map<std::string, double> aggregate() override { return {}; }
+        virtual std::unordered_map<std::string, std::map<int32_t, std::map<RaplDomain, double>>> aggregate() override; // event_name - socket_id - rapl_domain - reading
 
     private:
-        std::vector<std::vector<int32_t>> fd_package_domain; // file descriptors [package(socket)][domain]
+        std::vector<std::vector<int32_t>> fd_package_domain;         // file descriptors [package(socket)][domain]
+        const optkit::metrics::MetricBuilder<double> metric_builder; // metric results
+        std::vector<std::pair<std::string, double>> metric_results;  // metric_name - reading
     };
 
     // Overloading << for map with RaplDomain as keys
