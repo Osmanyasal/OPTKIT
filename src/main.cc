@@ -22,9 +22,9 @@ int32_t main(int32_t argc, char **argv)
     // OPTKIT_GPU_TEMPERATURE_EVENTS("main gpu temp", {});
     // OPTKIT_GPU_ENERGY_EVENTS("main gpu energy", {});
     OPTKIT_CPU_ENERGY("main_block");
-    optkit::gpu::GpuDeviceInfo info;
-    optkit::gpu::Query::device_query(optkit::gpu::GpuVendor::NVIDIA, 0, info);
-    std::cout << info << "\n";
+    // optkit::gpu::GpuDeviceInfo info;
+    // optkit::gpu::Query::device_query(optkit::gpu::GpuVendor::NVIDIA, 0, info);
+    // std::cout << info << "\n";
 
 #if 0
     std::cout << "GPU Device Query Example" << std::endl;
@@ -65,10 +65,12 @@ int32_t main(int32_t argc, char **argv)
     }
 #endif
 
-    sleep(10);
+    sleep(5);
+    var24.read_and_store();
+    sleep(5);
 
-    optkit::gpu::Query::device_query(optkit::gpu::GpuVendor::NVIDIA, 0, info);
-    std::cout << info << "\n";
+    // optkit::gpu::Query::device_query(optkit::gpu::GpuVendor::NVIDIA, 0, info);
+    // std::cout << info << "\n";
     // exit(0);
     return 0;
     // OPTKIT_DISK_EVENTS("main", optkit::metrics::disk::core_metrics::AllMetrics());

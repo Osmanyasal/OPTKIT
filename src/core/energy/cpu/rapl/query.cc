@@ -50,7 +50,7 @@ namespace optkit::energy::rapl
     {
         static std::vector<rapl::RaplDomainInfo> res;
 
-        if (res.empty())
+        if (OPT_LIKELY(res.empty()))
         {
             res.reserve(optkit::utils::count_trailing_zeros(static_cast<int>(rapl::RaplDomain::END))); // max possible domains
 
@@ -90,8 +90,6 @@ namespace optkit::energy::rapl
                 }
                 catch (const std::exception &)
                 {
-                    // silently skip unavailable domains
-                    // could log here if needed
                     std::cerr << "Failed to read RAPL domain info for " << domain_name << "\n";
                 }
             }

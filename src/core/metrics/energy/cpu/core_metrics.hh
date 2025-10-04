@@ -33,6 +33,19 @@ namespace optkit::metrics::energy
     class CoreMetrics<CPUImpl>
     {
     public:
+        static optkit::metrics::MetricBuilder<double> all_domains()
+        {
+            static const optkit::metrics::MetricBuilder<double> mb = []
+            {
+                return MetricBuilder<double>{}
+                    .add(to_string(CoreEvents::PP0), {0x0})
+                    .add(to_string(CoreEvents::PP1), {0x0})
+                    .add(to_string(CoreEvents::PACKAGE), {0x0})
+                    .add(to_string(CoreEvents::PSYS), {0x0})
+                    .add(to_string(CoreEvents::DRAM), {0x0});
+            }();
+            return mb;
+        }
         static optkit::metrics::MetricBuilder<double> k_edp()
         {
             static const optkit::metrics::MetricBuilder<double> mb = []
@@ -85,6 +98,7 @@ namespace optkit::metrics::energy
             static const MetricBuilder<double> mb = []
             {
                 MetricBuilder<double> mb{};
+                mb.add(all_domains());
                 mb.add(k_edp());
                 mb.add(watt_hour());
                 return mb;

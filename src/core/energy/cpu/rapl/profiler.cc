@@ -6,13 +6,6 @@ namespace optkit::energy::rapl
     {
         auto &packages = optkit::Query::detect_cpu_packages();
         auto &avail_domains = Query::rapl_domain_info(); // Monitor for all available domains
-
-        // Extend the existing metric_builder instead of overwriting it
-        for (auto &&i : avail_domains)
-        {
-            metric_builder.add(i.event, {0x0});
-        }
-
         auto s_type = optkit::utils::read_file("/sys/bus/event_source/devices/power/type");
         auto type = std::atoi(s_type.c_str());
 
@@ -52,43 +45,31 @@ namespace optkit::energy::rapl
 
         // Convert aggregated data to format expected by metric_builder
         auto aggregated = aggregate();
-        std::unordered_map<std::string, double> flattened_results;
 
-        // Flatten the complex structure and sum across all packages/domains
-        for (const auto &event_entry : aggregated)
+        for (auto &&i : aggregated)
         {
-            const std::string &event_name = event_entry.first;
-            double total_value = 0.0;
-
-            for (const auto &package_entry : event_entry.second)
-            {
-                for (const auto &domain_entry : package_entry.second)
-                {
-                    total_value += domain_entry.second;
-                }
-            }
-            flattened_results[event_name] = total_value;
+            std::cout << "EVENT RESULTS_first -> " << i.first << " --\n\t"
+                      << " Event_RESULTS_second: " << i.second << "\n";
         }
-
-        // Add duration for metric calculations
-        flattened_results["duration_microsec"] = this->total_duration_ms * 1000.0; // Convert ms to microseconds
-
-        this->metric_results = this->metric_builder.calculate(flattened_results);
-
+        // call it for socket 0 and 1 and so on...
+        for (auto &&i : aggregated)
+        {
+            std::cout << "EVENT NAMES -> " << i.first << "\n";
+        }
         if (OPT_LIKELY(this->config.dump_results_to_file))
             this->save();
 
         if (OPT_LIKELY(this->config.verbose))
         {
-            // Disable the clock.
-            auto end = std::chrono::high_resolution_clock::now();
+            if (OPT_UNLIKELY(this->metric_builder.print_events))
+                for (auto &&event : this->event_results)
+                    std::cout << std::fixed << "\t" << event.first << ": " << event.second << std::endl;
 
-            std::cout << read();
-            auto duration_ms = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000.0f;
-            OPTKIT_CORE_INFO("Duration: {}", duration_ms);
+            for (auto &&metric : this->metric_results)
+                std::cout << std::fixed << "\t" << metric.first << ": " << metric.second << std::endl;
         }
         // Close all file descriptions!
-        for (auto package = 0u; package < optkit::Query::detect_cpu_packages().size(); package++)
+        for (auto package = 0u; package < OPTKIT_ENV_CPU_NUM_SOCKETS; package++)
             for (auto domain = 0u; domain < Query::rapl_domain_info().size(); domain++)
                 ::close(fd_package_domain[package][domain]);
     }
@@ -100,6 +81,11 @@ namespace optkit::energy::rapl
         std::unordered_map<std::string, std::map<int32_t, std::map<RaplDomain, double>>> aggregated_events;
         const std::vector<std::string> &event_names = this->metric_builder.event_names();
 
+        for (auto &&i : event_names)
+        {
+            std::cout << "!! EVENT NAMES -> " << i << "\n";
+        }
+
         for (const auto &entry : read_buffer)
         {
             total_duration += entry.first;
@@ -109,14 +95,14 @@ namespace optkit::energy::rapl
             {
                 int32_t socket_id = pair.first;
 
-                int j = 0;
                 for (const auto &innerpair : pair.second)
                 {
                     RaplDomain domain = innerpair.first;
                     double reading = innerpair.second;
 
                     // Aggregate the readings
-                    aggregated_events[event_names[j++]][socket_id][domain] += reading;
+                    aggregated_events[to_string(domain)][socket_id][domain] += reading;
+                    std::cout << "Aggregating Event: " << to_string(domain) << " Socket: " << socket_id << " Domain: " << domain << " Reading: " << reading << "\n";
                 }
             }
         }
@@ -158,6 +144,7 @@ namespace optkit::energy::rapl
                         ::ioctl(fd, PERF_EVENT_IOC_RESET, 0);
 
                     result[static_cast<int32_t>(package)][selected_domain.domain] = static_cast<double>(value) * selected_domain.scale;
+                    std::cout << "Read Package " << package << " Domain " << selected_domain.event << ": " << result[static_cast<int32_t>(package)][selected_domain.domain] << " " << selected_domain.units << "\n";
                 }
             }
         }
@@ -190,19 +177,12 @@ namespace optkit::energy::rapl
 
     std::ostream &operator<<(std::ostream &os, const std::map<int32_t, std::map<optkit::energy::rapl::RaplDomain, double>> &map)
     {
-        const std::vector<optkit::energy::rapl::RaplDomainInfo> &avail_domains = optkit::energy::rapl::Query::rapl_domain_info();
         for (const auto &pair : map)
         {
             os << "\tPackage " << pair.first << "\n";
             for (const auto &innerpair : pair.second)
             {
-                for (const auto &info : avail_domains)
-                {
-                    if (info.domain == innerpair.first)
-                    {
-                        os << "\t\t" << info.event << ": " << innerpair.second << " " << info.units << " Consumed.\n";
-                    }
-                }
+                os << "\t\t" << innerpair.first << ": " << innerpair.second << " Joules Consumed.\n";
             }
         }
         return os;
