@@ -5,6 +5,7 @@
 #include <memory>
 #include <ostream>
 #include <map>
+#include <set>
 
 #include "utils/utils.hh"
 #include "utils/base_profiler.hh"

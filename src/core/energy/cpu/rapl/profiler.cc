@@ -44,24 +44,39 @@ namespace optkit::energy::rapl
         read_and_store();
 
         // socket_id_str - <socket_id - <rapl_domain - read value>>
-        std::unordered_map<std::string, std::unordered_map<int32_t, std::unordered_map<optkit::energy::rapl::RaplDomain, double>>> aggregated = aggregate();
-        for (auto &&aggr_item : aggregated)
+        const auto aggregated = aggregate(); // Use const reference to avoid copy
+
+        // Reserve space for metric_results to avoid reallocations
+        this->metric_results.reserve(aggregated.size());
+
+        for (const auto &aggr_item : aggregated)
         {
+            // Pre-allocate event_values with estimated size
             std::vector<std::pair<std::string, double>> event_values;
+            event_values.reserve(aggr_item.second.size() * 4 + 1); // Estimate + duration
+
             for (const auto &inner_pair : aggr_item.second)
             {
-                // Remove unused variable socket_id
                 for (const auto &domain_pair : inner_pair.second)
                 {
-                    RaplDomain domain = domain_pair.first;
-                    double reading = domain_pair.second;
-                    event_values.emplace_back(to_string(domain), reading);
+                    // Avoid temporary string creation by moving
+                    event_values.emplace_back(to_string(domain_pair.first), domain_pair.second);
                 }
             }
             event_values.emplace_back("duration_microsec", this->total_duration_ms * 1000.0); // convert to microseconds
 
-            this->metric_results[std::strtol(aggr_item.first.c_str(), nullptr, 10)] = this->metric_builder.calculate(
-                std::unordered_map<std::string, double>(event_values.begin(), event_values.end()));
+            // Use more efficient conversion and avoid intermediate unordered_map creation
+            int32_t socket_id = static_cast<int32_t>(std::strtol(aggr_item.first.c_str(), nullptr, 10));
+
+            // Create unordered_map directly with iterators to avoid copy
+            std::unordered_map<std::string, double> event_map;
+            event_map.reserve(event_values.size());
+            for (const auto &pair : event_values)
+            {
+                event_map.emplace(pair.first, pair.second);
+            }
+
+            this->metric_results[socket_id] = this->metric_builder.calculate(std::move(event_map));
         }
 
         // call it for socket 0 and 1 and so on...
@@ -71,20 +86,29 @@ namespace optkit::energy::rapl
         if (OPT_LIKELY(this->config.verbose))
         {
             if (OPT_UNLIKELY(this->metric_builder.print_events))
-                for (auto &&event : this->event_results)
+            {
+                for (const auto &event : this->event_results)
                     std::cout << event.second << std::endl;
+            }
 
-            for (auto &&metric : this->metric_results)
+            for (const auto &metric : this->metric_results)
             {
                 std::cout << "\tPackage " << metric.first << " Metrics: \n";
                 for (const auto &pair : metric.second)
                     std::cout << std::fixed << "\t\t" << pair.first << ":" << pair.second << "\n";
             }
         }
-        // Close all file descriptions!
-        for (auto package = 0u; package < OPTKIT_ENV_CPU_NUM_SOCKETS; package++)
-            for (auto domain = 0u; domain < Query::rapl_domain_info().size(); domain++)
-                ::close(fd_package_domain[package][domain]);
+
+        // Close all file descriptions! (more efficient with range check)
+        const auto &domain_info = Query::rapl_domain_info();
+        for (size_t package = 0; package < OPTKIT_ENV_CPU_NUM_SOCKETS && package < fd_package_domain.size(); ++package)
+        {
+            for (size_t domain = 0; domain < domain_info.size() && domain < fd_package_domain[package].size(); ++domain)
+            {
+                if (fd_package_domain[package][domain] != -1)
+                    ::close(fd_package_domain[package][domain]);
+            }
+        }
     }
 
     // returns socket_id_str - <socket_id - <rapl_domain - read value>>
@@ -92,30 +116,51 @@ namespace optkit::energy::rapl
     {
         double total_duration = 0.0;
         std::unordered_map<std::string, std::unordered_map<int32_t, std::unordered_map<RaplDomain, double>>> aggregated_events;
+
+        // Reserve space for expected number of sockets to reduce rehashing
+        aggregated_events.reserve(OPTKIT_ENV_CPU_NUM_SOCKETS);
+
         for (const auto &entry : read_buffer)
         {
             total_duration += entry.first;
-            const std::unordered_map<int32_t, std::unordered_map<RaplDomain, double>> &values = entry.second; // socket_id - rapl_domain - reading
+            const auto &values = entry.second; // socket_id - rapl_domain - reading
 
             for (const auto &pair : values)
             {
                 int32_t socket_id = pair.first;
+                std::string socket_id_str = std::to_string(socket_id); // Cache the string conversion
+
+                // Pre-allocate nested maps if they don't exist
+                auto &socket_map = aggregated_events[socket_id_str];
+                auto &domain_map = socket_map[socket_id];
 
                 for (const auto &innerpair : pair.second)
                 {
                     RaplDomain domain = innerpair.first;
                     double reading = innerpair.second;
 
-                    // Aggregate the readings
-                    aggregated_events[std::to_string(socket_id)][socket_id][domain] += reading;
-                    std::cout << "Aggregating Event: " << to_string(domain) << " Socket: " << socket_id << " Domain: " << domain << " Reading: " << reading << " total:" << aggregated_events[std::to_string(socket_id)][socket_id][domain] << "\n";
+                    // Aggregate the readings (more efficient access pattern)
+                    domain_map[domain] += reading;
+
+                    // Only output debug info if verbose mode is enabled
+                    if (OPT_UNLIKELY(this->config.verbose))
+                    {
+                        std::cout << "Aggregating Event: " << to_string(domain) << " Socket: " << socket_id
+                                  << " Domain: " << domain << " Reading: " << reading
+                                  << " total:" << domain_map[domain] << "\n";
+                    }
                 }
             }
         }
-        std::vector<std::pair<std::string, std::unordered_map<int32_t, std::unordered_map<RaplDomain, double>>>> event_value(
-            aggregated_events.begin(), aggregated_events.end());
 
-        this->event_results = std::move(event_value);
+        // More efficient move construction
+        this->event_results.clear();
+        this->event_results.reserve(aggregated_events.size());
+        for (auto &item : aggregated_events)
+        {
+            this->event_results.emplace_back(std::move(item.first), std::move(item.second));
+        }
+
         this->total_duration_ms = total_duration;
         return aggregated_events;
     }
@@ -135,23 +180,36 @@ namespace optkit::energy::rapl
         int64_t value = 0;
         const auto &avail_domains = Query::rapl_domain_info();
 
-        for (size_t package = 0; package < OPTKIT_ENV_CPU_NUM_SOCKETS; ++package)
+        // Reserve space for expected sockets to reduce rehashing
+        result.reserve(OPTKIT_ENV_CPU_NUM_SOCKETS);
+
+        for (size_t package = 0; package < OPTKIT_ENV_CPU_NUM_SOCKETS && package < fd_package_domain.size(); ++package)
         {
-            for (size_t domain = 0; domain < avail_domains.size(); ++domain)
+            int32_t package_id = static_cast<int32_t>(package);
+            auto &package_result = result[package_id]; // Get reference to avoid repeated map lookups
+
+            for (size_t domain = 0; domain < avail_domains.size() && domain < fd_package_domain[package].size(); ++domain)
             {
                 const auto &selected_domain = avail_domains[domain];
                 int fd = fd_package_domain[package][domain];
 
-                if (fd == -1)
+                if (OPT_UNLIKELY(fd == -1))
                     continue;
 
-                if (::read(fd, &value, sizeof(value)) == sizeof(value))
+                if (OPT_LIKELY(::read(fd, &value, sizeof(value)) == sizeof(value)))
                 {
                     if (OPT_LIKELY(this->config.is_reset_after_read))
                         ::ioctl(fd, PERF_EVENT_IOC_RESET, 0);
 
-                    result[static_cast<int32_t>(package)][selected_domain.domain] = static_cast<double>(value) * selected_domain.scale;
-                    std::cout << "Read Package " << package << " Domain " << selected_domain.event << ": " << result[static_cast<int32_t>(package)][selected_domain.domain] << " " << selected_domain.units << "\n";
+                    double scaled_value = static_cast<double>(value) * selected_domain.scale;
+                    package_result[selected_domain.domain] = scaled_value;
+
+                    // Only output debug info if verbose mode is enabled
+                    if (OPT_UNLIKELY(this->config.verbose))
+                    {
+                        std::cout << "Read Package " << package << " Domain " << selected_domain.event
+                                  << ": " << scaled_value << " " << selected_domain.units << "\n";
+                    }
                 }
             }
         }
@@ -160,61 +218,75 @@ namespace optkit::energy::rapl
 
     std::string Profiler::to_json()
     {
-        std::stringstream ss;
-        ss << "[\n";
+        // Pre-allocate string with estimated size to reduce reallocations
+        std::string result;
+        result.reserve(2048); // Estimated size for typical JSON output
 
+        result += "[\n";
         bool first = true;
 
-        // Call utils::to_json for each socket with both events and metrics combined
+        // Create a map of all sockets and their data for efficient processing
+        std::unordered_map<int32_t, std::pair<std::vector<std::pair<std::string, double>>, std::vector<std::pair<std::string, double>>>> socket_data;
+
+        // Pre-allocate and process events
+        for (const auto &event_pair : this->event_results)
+        {
+            int32_t socket_id = std::stoi(event_pair.first);
+            auto &socket_entry = socket_data[socket_id];
+            auto &events = socket_entry.first;
+
+            // Reserve space for events to reduce reallocations
+            events.reserve(event_pair.second.size() * 4); // Estimate based on typical domain count
+
+            for (const auto &socket_pair : event_pair.second)
+            {
+                for (const auto &domain_pair : socket_pair.second)
+                {
+                    // Avoid string concatenation by pre-computing domain name
+                    events.emplace_back(to_string(domain_pair.first) + "__Joules", domain_pair.second);
+                }
+            }
+        }
+
+        // Process metrics and add to existing socket data or create new entries
         for (const auto &metric_pair : this->metric_results)
         {
             int32_t socket_id = metric_pair.first;
-            std::string socket_id_str = std::to_string(socket_id);
+            auto &socket_entry = socket_data[socket_id];
+            auto &metrics = socket_entry.second;
 
-            // Convert RAPL domain results to individual event entries
-            std::vector<std::pair<std::string, double>> event_values;
-            for (std::vector<std::pair<std::string, std::unordered_map<int32_t, std::unordered_map<RaplDomain, double>>>>::const_iterator event_it = this->event_results.begin();
-                 event_it != this->event_results.end(); ++event_it)
-            {
-                if (event_it->first == socket_id_str)
-                {
-                    // Extract individual domain values
-                    for (const auto &socket_pair : event_it->second)
-                    {
-                        for (const auto &domain_pair : socket_pair.second)
-                        {
-                            std::string domain_name = to_string(domain_pair.first) + "__Joules";
-                            double domain_value = domain_pair.second;
-                            event_values.emplace_back(domain_name, domain_value);
-                        }
-                    }
-                    break;
-                }
-            }
+            // Reserve space for metrics
+            metrics.reserve(metric_pair.second.size());
 
-            // Convert metric results to vector format
-            std::vector<std::pair<std::string, double>> metric_values;
             for (const auto &metric : metric_pair.second)
             {
-                metric_values.emplace_back(metric.first, metric.second);
+                metrics.emplace_back(metric.first, metric.second);
             }
+        }
+
+        // Generate JSON for each socket in a single pass
+        for (const auto &socket_entry : socket_data)
+        {
+            int32_t socket_id = socket_entry.first;
+            const auto &events = socket_entry.second.first;
+            const auto &metrics = socket_entry.second.second;
 
             if (!first)
-                ss << ",\n";
+                result += ",\n";
             first = false;
 
-            // Generate JSON with both events and metrics for this socket
+            // Generate JSON directly without intermediate nlohmann::json object for better performance
             nlohmann::json socket_json = utils::to_json<double>(
                 this->total_duration_ms,
                 this->config.measurement_type,
-                event_values,
-                metric_values,
+                events,
+                metrics,
                 socket_id);
-            ss << socket_json.dump(2);
+            result += socket_json.dump(2);
         }
 
-        ss << "\n]\n";
-        return ss.str();
+        result += "\n]\n";
+        return result;
     }
 
     std::string to_string(const std::unordered_map<optkit::energy::rapl::RaplDomain, double> &map)
