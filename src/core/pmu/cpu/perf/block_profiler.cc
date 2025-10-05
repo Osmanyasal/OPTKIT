@@ -20,6 +20,7 @@ namespace optkit::pmu::cpu::perf
             if (fd < 0)
             {
                 OPTKIT_CORE_ERROR("perf_event_open error");
+                this->is_enabled = false;
                 return;
             }
             else
@@ -67,6 +68,7 @@ namespace optkit::pmu::cpu::perf
 
     void BlockProfiler::disable()
     {
+        this->is_enabled = false;
         for (int32_t fd : fd_list)
         {
             ioctl(fd, PERF_EVENT_IOC_DISABLE, 0);
@@ -74,6 +76,7 @@ namespace optkit::pmu::cpu::perf
     }
     void BlockProfiler::enable()
     {
+        this->is_enabled = true;
         for (int32_t fd : fd_list)
         {
             ioctl(fd, PERF_EVENT_IOC_ENABLE, 0);
@@ -82,6 +85,9 @@ namespace optkit::pmu::cpu::perf
 
     void BlockProfiler::reset()
     {
+        if (OPT_UNLIKELY(!is_enabled))
+            return;
+
         for (int32_t fd : fd_list)
         {
             ioctl(fd, PERF_EVENT_IOC_RESET, 0);
@@ -90,6 +96,9 @@ namespace optkit::pmu::cpu::perf
 
     std::string BlockProfiler::to_json()
     {
+        if (OPT_UNLIKELY(!is_enabled))
+            return {};
+
         std::stringstream ss;
         ss << "[\n";
         // based on the insertion order.
@@ -100,6 +109,9 @@ namespace optkit::pmu::cpu::perf
 
     std::vector<uint64_t> BlockProfiler::read()
     {
+        if (OPT_UNLIKELY(!is_enabled))
+            return {};
+
         PMUEventManager::disable_all_events();
 
         std::vector<uint64_t> result;
@@ -118,6 +130,8 @@ namespace optkit::pmu::cpu::perf
     }
     std::unordered_map<std::string, uint64_t> BlockProfiler::aggregate()
     {
+        if (OPT_UNLIKELY(!is_enabled))
+            return {};
         double total_duration = 0.0;
         std::unordered_map<std::string, uint64_t> aggregated_events;
         const std::vector<std::string> &event_names = this->metric_builder.event_names();

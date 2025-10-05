@@ -28,6 +28,7 @@ namespace optkit::pmu::cpu::perf
             if (fd < 0)
             {
                 OPTKIT_CORE_ERROR("perf_event_open error");
+                this->is_enabled = false;
                 return;
             }
             else
@@ -49,7 +50,7 @@ namespace optkit::pmu::cpu::perf
     {
         PMUEventManager::disable_all_events();
 
-        if (is_configured == false)
+        if (!is_configured || !is_enabled)
             return;
 
         this->read_and_store(); // read the last one.
@@ -79,21 +80,27 @@ namespace optkit::pmu::cpu::perf
 
     void BlockGroupProfiler::disable()
     {
+        this->is_enabled = false;
         ioctl(group_leader, PERF_EVENT_IOC_DISABLE, PERF_IOC_FLAG_GROUP);
     }
 
     void BlockGroupProfiler::enable()
     {
+        this->is_enabled = true;
         ioctl(group_leader, PERF_EVENT_IOC_ENABLE, PERF_IOC_FLAG_GROUP);
     }
 
     void BlockGroupProfiler::reset()
     {
+        if (OPT_UNLIKELY(!is_enabled))
+            return;
         ioctl(group_leader, PERF_EVENT_IOC_RESET, PERF_IOC_FLAG_GROUP);
     }
 
     std::vector<uint64_t> BlockGroupProfiler::read()
     {
+        if (OPT_UNLIKELY(!is_enabled))
+            return {};
         PMUEventManager::disable_all_events();
 
         std::vector<uint64_t> result;
@@ -118,6 +125,9 @@ namespace optkit::pmu::cpu::perf
 
     std::string BlockGroupProfiler::to_json()
     {
+        if (OPT_UNLIKELY(!is_enabled))
+            return {};
+
         std::stringstream ss;
         ss << "[\n";
         ss << utils::to_json<uint64_t>(this->total_duration_ms, this->config.measurement_type, this->event_results, this->metric_results);
@@ -127,6 +137,8 @@ namespace optkit::pmu::cpu::perf
 
     std::unordered_map<std::string, uint64_t> BlockGroupProfiler::aggregate()
     {
+        if (OPT_UNLIKELY(!is_enabled))
+            return {};
         double total_duration = 0.0;
         std::unordered_map<std::string, uint64_t> aggregated_events;
         const std::vector<std::string> &event_names = this->metric_builder.event_names();

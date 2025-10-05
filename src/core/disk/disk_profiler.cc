@@ -34,6 +34,8 @@ namespace optkit::disk
     // Read delta counters for the keys_to_read and accumulate into results
     std::vector<uint64_t> IoDiskProfiler::read()
     {
+        if (OPT_UNLIKELY(!is_enabled))
+            return {};
         std::vector<uint64_t> result;
         auto curr_snapshot = read_selected_io_counters();
         const std::vector<std::string> &event_names = this->metric_builder.event_names();
@@ -57,6 +59,8 @@ namespace optkit::disk
 
     std::unordered_map<std::string, uint64_t> IoDiskProfiler::aggregate()
     {
+        if (OPT_UNLIKELY(!is_enabled))
+            return {};
         double total_duration = 0.0;
         std::unordered_map<std::string, uint64_t> aggregated_events;
         const std::vector<std::string> &event_names = this->metric_builder.event_names();
@@ -84,6 +88,8 @@ namespace optkit::disk
 
     std::string IoDiskProfiler::to_json()
     {
+        if (OPT_UNLIKELY(!is_enabled))
+            return {};
         std::stringstream ss;
         ss << "[\n";
         ss << utils::to_json<uint64_t>(this->total_duration_ms, this->config.measurement_type, this->event_results, this->metric_results);
@@ -94,6 +100,8 @@ namespace optkit::disk
     // Your keys of interest
     std::unordered_map<std::string, uint64_t> IoDiskProfiler::read_selected_io_counters()
     {
+        if (OPT_UNLIKELY(!is_enabled))
+            return {};
         std::unordered_map<std::string, uint64_t> results;
         std::unordered_map<std::string, bool> wanted;
         for (const auto &k : this->metric_builder.event_names())
@@ -122,5 +130,4 @@ namespace optkit::disk
 
         return results;
     }
-
 }

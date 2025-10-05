@@ -9,6 +9,7 @@
 #include <cstring>
 #include <algorithm>
 #include <thread>
+#include <atomic>
 #include <unordered_map>
 #include "utils/base_profiler.hh"
 #include "utils/metric_builder.hh"
@@ -32,12 +33,12 @@ namespace optkit::energy::gpu::amd
     {
 
     public:
-        Profiler(const ProfilerConfig &profiler_config, const uint32_t sampling_frequency_sec = 1, const optkit::metrics::MetricBuilder<std::unordered_map<uint32_t, double>> &mb = {});
+        Profiler(const ProfilerConfig &profiler_config, const optkit::metrics::MetricBuilder<double> &mb, const uint32_t sampling_frequency_sec = 1);
         virtual ~Profiler();
 
-        virtual void enable() override {}                             // Already handled by constructor
-        virtual void disable() override { this->is_enabled = false; } // No-op
-        virtual void reset() override {}                              // No-op
+        virtual void enable() override { this->is_enabled = true; }
+        virtual void disable() override { this->is_enabled = false; }
+        virtual void reset() override {} // No-op
 
         // returns device_id - energy (power * delta_time) values in a vector.
         virtual std::unordered_map<uint32_t, double> read() override;
@@ -45,7 +46,7 @@ namespace optkit::energy::gpu::amd
         virtual std::unordered_map<std::string, std::unordered_map<uint32_t, double>> aggregate() override;
 
     private:
-        optkit::metrics::MetricBuilder<std::unordered_map<uint32_t, double>> metric_builder;
+        optkit::metrics::MetricBuilder<double> metric_builder;
         std::unordered_map<uint32_t, double> snapshot; // device-index -> current power drawn in Watts
         std::vector<std::pair<std::string, double>> metric_results;
 
@@ -53,6 +54,5 @@ namespace optkit::energy::gpu::amd
         uint32_t sampling_counter;
         std::thread sampling_thread;
         std::atomic<bool> is_sampling;
-        bool is_enabled;
     };
 } // namespace optkit::energy::gpu::amd

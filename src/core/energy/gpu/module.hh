@@ -7,9 +7,9 @@
 // Select which way (perf or msr) to macro
 #if OPTKIT_CONF_ENERGY_MACROS_ENABLED
 
-#define OPTKIT_GPU_ENERGY_EVENTS(block_name, metric_builder, ...)                                                                                                                                                        \
-    optkit::energy::gpu::nvidia::Profiler EXPAND_AND_CONCAT(nvidia_var, __LINE__){{block_name, "nvidia_gpu_energy", true, optkit::Query::create_folder, !optkit::Query::create_folder}, 1, metric_builder, __VA_ARGS__}; \
-    optkit::energy::gpu::amd::Profiler EXPAND_AND_CONCAT(amd_var, __LINE__) { {block_name, "amd_gpu_energy", true, optkit::Query::create_folder, !optkit::Query::create_folder}, 1, metric_builder, __VA_ARGS__ }
+#define OPTKIT_GPU_ENERGY_EVENTS(block_name, metric_builder, ...)                                                                                                                                                     \
+    optkit::energy::gpu::nvidia::Profiler EXPAND_AND_CONCAT(nvidia_var, __LINE__){{block_name, "nvidia_gpu_energy", true, optkit::Query::create_folder, !optkit::Query::create_folder}, metric_builder, __VA_ARGS__}; \
+    optkit::energy::gpu::amd::Profiler EXPAND_AND_CONCAT(amd_var, __LINE__) { {block_name, "amd_gpu_energy", true, optkit::Query::create_folder, !optkit::Query::create_folder}, metric_builder, __VA_ARGS__ }
 
 #else
 #define OPTKIT_GPU_ENERGY_EVENTS(block_name, metric_builder, ...)

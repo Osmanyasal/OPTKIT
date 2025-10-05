@@ -10,7 +10,6 @@
 #include <iostream>
 #include <cmath>
 #include "utils/metric_builder.hh"
-#include "core/metrics/energy/core_events.hh"
 
 namespace optkit::metrics::energy
 {

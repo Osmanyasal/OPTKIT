@@ -29,16 +29,17 @@ namespace optkit::energy::gpu::nvidia
             }
         }
     }
-    Profiler::Profiler(const ProfilerConfig &profiler_config, const uint32_t sampling_frequency_sec, const optkit::metrics::MetricBuilder<std::unordered_map<uint32_t, double>> &mb)
+    Profiler::Profiler(const ProfilerConfig &profiler_config, const optkit::metrics::MetricBuilder<double> &mb, const uint32_t sampling_frequency_sec)
         : BaseProfiler{profiler_config}, metric_builder{mb}, sampling_frequency_sec{sampling_frequency_sec}, sampling_counter{0}, is_sampling{true}
     {
-
-        metric_builder = {};
-        uint32_t device_count;
-        optkit::gpu::Query::get_device_count(optkit::gpu::GpuVendor::NVIDIA, device_count);
-        for (uint32_t i = 0; i < device_count; i++)
+        auto vendor = optkit::gpu::GpuVendor::NVIDIA;
+        uint32_t device_count = 0;
+        optkit::gpu::Query::get_device_count(vendor, device_count);
+        if (device_count == 0)
         {
-            metric_builder.add("gpu[" + std::to_string(i) + "]", {0x0});
+            std::cout << "No NVIDIA GPUs found. Disabling NVIDIA GPU Energy Profiler.\n";
+            this->is_enabled = false;
+            return;
         }
         this->sampling_thread = std::thread([this]()
                                             {
@@ -53,10 +54,15 @@ namespace optkit::energy::gpu::nvidia
 
     Profiler::~Profiler()
     {
-        this->is_sampling = false;    // stop sampling thread
-        this->sampling_thread.join(); // wait for it to join.
-        this->read_and_store();       // read any remaining samples
-        this->metric_results = this->metric_builder.calculate(aggregate());
+        if (!this->is_enabled)
+            return;
+
+        this->is_sampling = false;             // stop sampling thread
+        this->sampling_thread.join();          // wait for it to join.
+        this->read_and_store();                // read any remaining samples
+        auto aggregated_results = aggregate(); // make sure to aggregate before calculating metrics
+
+        // this->metric_results = this->metric_builder.calculate(aggregate());
 
         if (OPT_LIKELY(Query::create_folder))
             this->save();
@@ -82,12 +88,18 @@ namespace optkit::energy::gpu::nvidia
 
     std::unordered_map<uint32_t, double> Profiler::read()
     {
+        if (!this->is_enabled)
+            return {};
+
         optkit::energy::gpu::nvidia::sampling_function(this->snapshot, this->sampling_frequency_sec);
         return this->snapshot;
     }
 
     std::unordered_map<std::string, std::unordered_map<uint32_t, double>> Profiler::aggregate()
     {
+        if (!this->is_enabled)
+            return {};
+
         double total_duration = 0.0;
         std::unordered_map<std::string, std::unordered_map<uint32_t, double>> aggregated_events;
         const std::vector<std::string> &event_names = this->metric_builder.event_names();
@@ -99,9 +111,11 @@ namespace optkit::energy::gpu::nvidia
 
             for (auto &&i : values)
             {
-                // std::cout << std::fixed << "adding..:" << i.second << " Joules \n";
-                aggregated_events[event_names[i.first]][i.first] += i.second;
-                // std::cout << std::fixed << "Aggregated GPU[" << i.first << "] += " << aggregated_events[event_names[i.first]][i.first] << " Joules\n"; // debug
+                for (auto &&event_name : event_names)
+                {
+                    aggregated_events[event_name][i.first] += i.second;
+                    std::cout << std::fixed << event_name << " Aggregated GPU[" << i.first << "] += " << aggregated_events[event_name][i.first] << " Joules\n"; // debug
+                }
             }
         }
         std::vector<std::pair<std::string, std::unordered_map<uint32_t, double>>> event_value(
@@ -115,6 +129,9 @@ namespace optkit::energy::gpu::nvidia
 
     std::string Profiler::to_json()
     {
+        if (!this->is_enabled)
+            return {};
+
         std::stringstream ss;
         ss << "[\n";
         ss << utils::to_json<std::unordered_map<uint32_t, double>>(this->total_duration_ms, this->config.measurement_type, this->event_results, this->metric_results);

@@ -26,7 +26,7 @@ namespace optkit::temperature::gpu
                     if (optkit::gpu::Query::get_device_temperature(vendor, i, temp_device_celsius, temp_mem_celsius))
                     {
                         last_snapshot[device_index] = std::make_pair(temp_device_celsius, temp_mem_celsius);
-                        std::cout << "Initial snapshot: " << device_index << " -> " << temp_device_celsius << "°C (GPU), " << temp_mem_celsius << "°C (Memory)" << std::endl;
+                        // std::cout << "Initial snapshot: " << device_index << " -> " << temp_device_celsius << "°C (GPU), " << temp_mem_celsius << "°C (Memory)" << std::endl;
                     }
                     else
                         last_snapshot[device_index] = std::make_pair(0.0, 0.0); // Default for unsupported devices
@@ -42,7 +42,7 @@ namespace optkit::temperature::gpu
         {
             std::vector<uint64_t> init_value;
             init_value.push_back(0x0);
-            metric_builder.add("gpu_" + std::to_string(it->first), init_value);
+            metric_builder.add("gpu[" + std::to_string(it->first) + "]", init_value);
         }
     }
 
@@ -71,6 +71,8 @@ namespace optkit::temperature::gpu
 
     std::vector<std::pair<double, double>> Profiler::read()
     {
+        if (OPT_UNLIKELY(!is_enabled))
+            return {};
         // Define array of vendors to support (same as constructor)
         std::vector<optkit::gpu::GpuVendor> vendors;
         vendors.push_back(optkit::gpu::GpuVendor::NVIDIA);
@@ -125,6 +127,8 @@ namespace optkit::temperature::gpu
 
     std::unordered_map<std::string, std::pair<double, double>> Profiler::aggregate()
     {
+        if (OPT_UNLIKELY(!is_enabled))
+            return {};
         double total_duration = 0.0;
         std::unordered_map<std::string, std::pair<double, double>> aggregated_events;
         const std::vector<std::string> &event_names = this->metric_builder.event_names();
@@ -152,6 +156,8 @@ namespace optkit::temperature::gpu
 
     std::string Profiler::to_json()
     {
+        if (OPT_UNLIKELY(!is_enabled))
+            return {};
         std::stringstream ss;
         ss << "[\n";
         ss << utils::to_json<std::pair<double, double>>(this->total_duration_ms, this->config.measurement_type, this->event_results, this->metric_results);

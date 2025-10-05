@@ -23,19 +23,21 @@ namespace optkit::energy::gpu::amd
             }
         }
     }
-    Profiler::Profiler(const ProfilerConfig &profiler_config, const uint32_t sampling_frequency_sec, const optkit::metrics::MetricBuilder<std::unordered_map<uint32_t, double>> &mb)
-        : BaseProfiler{profiler_config}, metric_builder{mb}, sampling_frequency_sec{sampling_frequency_sec}, sampling_counter{0}, is_sampling{true}, is_enabled{true}
+    Profiler::Profiler(const ProfilerConfig &profiler_config, const optkit::metrics::MetricBuilder<double> &mb, const uint32_t sampling_frequency_sec)
+        : BaseProfiler{profiler_config}, metric_builder{mb}, sampling_frequency_sec{sampling_frequency_sec}, sampling_counter{0}, is_sampling{true}
     {
-
-        metric_builder = {};
-        uint32_t device_count;
         auto vendor = optkit::gpu::GpuVendor::AMD;
+        uint32_t device_count = 0;
         optkit::gpu::Query::get_device_count(vendor, device_count);
         if (device_count == 0)
         {
+            std::cout << "No AMD GPUs found. Disabling AMD GPU Energy Profiler.\n";
             this->is_enabled = false;
             return;
         }
+
+        metric_builder = {};
+
         for (uint32_t i = 0; i < device_count; i++)
         {
             metric_builder.add("gpu[" + std::to_string(i) + "]", {0x0});
@@ -70,7 +72,7 @@ namespace optkit::energy::gpu::amd
         this->is_sampling = false;    // stop sampling thread
         this->sampling_thread.join(); // wait for it to join.
         this->read_and_store();       // final read
-        this->metric_results = this->metric_builder.calculate(aggregate());
+        // this->metric_results = this->metric_builder.calculate(aggregate());
 
         if (OPT_LIKELY(Query::create_folder))
             this->save();
@@ -96,12 +98,18 @@ namespace optkit::energy::gpu::amd
 
     std::unordered_map<uint32_t, double> Profiler::read()
     {
+        if (!this->is_enabled)
+            return {};
+
         optkit::energy::gpu::amd::sampling_function(this->snapshot, this->sampling_frequency_sec);
         return this->snapshot;
     }
 
     std::unordered_map<std::string, std::unordered_map<uint32_t, double>> Profiler::aggregate()
     {
+        if (!this->is_enabled)
+            return {};
+
         double total_duration = 0.0;
         std::unordered_map<std::string, std::unordered_map<uint32_t, double>> aggregated_events;
         const std::vector<std::string> &event_names = this->metric_builder.event_names();
@@ -129,6 +137,9 @@ namespace optkit::energy::gpu::amd
 
     std::string Profiler::to_json()
     {
+        if (!this->is_enabled)
+            return {};
+
         std::stringstream ss;
         ss << "[\n";
         ss << utils::to_json<std::unordered_map<uint32_t, double>>(this->total_duration_ms, this->config.measurement_type, this->event_results, this->metric_results);

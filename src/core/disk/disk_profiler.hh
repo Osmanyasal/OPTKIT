@@ -19,9 +19,9 @@ namespace optkit::disk
         IoDiskProfiler(const ProfilerConfig &profiler_config, const optkit::metrics::MetricBuilder<uint64_t> &mb);
         virtual ~IoDiskProfiler();
 
-        virtual void enable() override {}  // Already handled by constructor
-        virtual void disable() override {} // No-op
-        virtual void reset() override {}   // No-op
+        virtual void enable() override { this->is_enabled = true; }
+        virtual void disable() override { this->is_enabled = false; }
+        virtual void reset() override {}
 
         virtual std::vector<uint64_t> read() override;
         virtual std::string to_json() override;

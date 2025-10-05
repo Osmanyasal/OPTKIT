@@ -61,7 +61,8 @@ namespace optkit::temperature::hwmon
 
     std::vector<double> Profiler::read()
     {
-
+        if (OPT_UNLIKELY(!is_enabled))
+            return {};
         auto current_snapshot = read_temperature_sensors();
         std::vector<double> current_temps;
 
@@ -81,6 +82,8 @@ namespace optkit::temperature::hwmon
 
     std::unordered_map<std::string, double> Profiler::aggregate()
     {
+        if (OPT_UNLIKELY(!is_enabled))
+            return {};
         double total_duration = 0.0;
         std::unordered_map<std::string, double> aggregated_events;
         const std::vector<std::string> &event_names = this->metric_builder.event_names();
@@ -107,6 +110,8 @@ namespace optkit::temperature::hwmon
 
     std::string Profiler::to_json()
     {
+        if (OPT_UNLIKELY(!is_enabled))
+            return {};
         std::stringstream ss;
         ss << "[\n";
         ss << utils::to_json<double>(this->total_duration_ms, this->config.measurement_type, this->event_results, this->metric_results);

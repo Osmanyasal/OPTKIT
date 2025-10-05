@@ -11,6 +11,7 @@
 #include <cmath>
 #include "utils/metric_builder.hh"
 #include "core/metrics/energy/core_metrics.hh"
+#include "core/metrics/energy/cpu/core_events.hh"
 
 namespace optkit::metrics::energy
 {
@@ -38,11 +39,11 @@ namespace optkit::metrics::energy
             static const optkit::metrics::MetricBuilder<double> mb = []
             {
                 return MetricBuilder<double>{}
-                    .add(to_string(CoreEvents::PP0), {0x0})
-                    .add(to_string(CoreEvents::PP1), {0x0})
-                    .add(to_string(CoreEvents::PACKAGE), {0x0})
-                    .add(to_string(CoreEvents::PSYS), {0x0})
-                    .add(to_string(CoreEvents::DRAM), {0x0});
+                    .add(to_string(cpu::CoreEvents::PP0), {0x0})
+                    .add(to_string(cpu::CoreEvents::PP1), {0x0})
+                    .add(to_string(cpu::CoreEvents::PACKAGE), {0x0})
+                    .add(to_string(cpu::CoreEvents::PSYS), {0x0})
+                    .add(to_string(cpu::CoreEvents::DRAM), {0x0});
             }();
             return mb;
         }
@@ -51,25 +52,25 @@ namespace optkit::metrics::energy
             static const optkit::metrics::MetricBuilder<double> mb = []
             {
                 return MetricBuilder<double>{}
-                    .add(to_string(CoreEvents::PACKAGE), {0x0})
-                    .add(to_string(CoreEvents::DRAM), {0x0})
+                    .add(to_string(cpu::CoreEvents::PACKAGE), {0x0})
+                    .add(to_string(cpu::CoreEvents::DRAM), {0x0})
                     .build("kilo_edp_edp", [](const std::unordered_map<std::string, double> &results)
                            {
                                double duration_sec = get_event_count(results, "duration_microsec") / 1.0e6;
-                               double pkg = get_event_count(results, to_string(CoreEvents::PACKAGE));
-                               double dram = get_event_count(results, to_string(CoreEvents::DRAM));
+                               double pkg = get_event_count(results, to_string(cpu::CoreEvents::PACKAGE));
+                               double dram = get_event_count(results, to_string(cpu::CoreEvents::DRAM));
                                return (duration_sec * (pkg + dram)) / 1000; // K-EDP calculation
                            })
                     .build("kilo_edp_pkg", [](const std::unordered_map<std::string, double> &results)
                            {
                                double duration_sec = get_event_count(results, "duration_microsec") / 1.0e6;
-                               double pkg = get_event_count(results, to_string(CoreEvents::PACKAGE));
+                               double pkg = get_event_count(results, to_string(cpu::CoreEvents::PACKAGE));
                                return (duration_sec * pkg) / 1000; // K-EDP calculation
                            })
                     .build("kilo_edp_dram", [](const std::unordered_map<std::string, double> &results)
                            {
                                double duration_sec = get_event_count(results, "duration_microsec") / 1.0e6;
-                               double dram = get_event_count(results, to_string(CoreEvents::DRAM));
+                               double dram = get_event_count(results, to_string(cpu::CoreEvents::DRAM));
                                return (duration_sec * dram) / 1000; // K-EDP calculation
                            });
             }();
@@ -81,12 +82,12 @@ namespace optkit::metrics::energy
             static const optkit::metrics::MetricBuilder<double> mb = []
             {
                 return MetricBuilder<double>{}
-                    .add(to_string(CoreEvents::PACKAGE), {0x0})
-                    .add(to_string(CoreEvents::DRAM), {0x0})
+                    .add(to_string(cpu::CoreEvents::PACKAGE), {0x0})
+                    .add(to_string(cpu::CoreEvents::DRAM), {0x0})
                     .build("watt_hour", [](const std::unordered_map<std::string, double> &results)
                            {
-                               double pkg = get_event_count(results, to_string(CoreEvents::PACKAGE));
-                               double dram = get_event_count(results, to_string(CoreEvents::DRAM));
+                               double pkg = get_event_count(results, to_string(cpu::CoreEvents::PACKAGE));
+                               double dram = get_event_count(results, to_string(cpu::CoreEvents::DRAM));
                                return (pkg + dram) / 3600; // Watt-hour calculation = Joules / 3600
                            });
             }();

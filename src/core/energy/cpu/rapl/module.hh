@@ -6,10 +6,6 @@
 #include "core/metrics/energy/module.hh"
 #include "core/query.hh"
 
-/*
-    Static instance is defined because monitoring recursive methods would cause an issue
-*/
-
 #if OPTKIT_CONF_RAPL_MACROS_ENABLED == 1
 
 #define OPTKIT_CPU_ENERGY(block_name) \
@@ -34,6 +30,7 @@
 #define OPTKIT_CPU_ENERGY_REPEAT_READ_AND_STORE_WITH_METRICS(block_name, count, metric_builder)                                                                                     \
     optkit::energy::rapl::Profiler EXPAND_AND_CONCAT(var, __LINE__){{block_name, "cpu_energy", true, optkit::Query::create_folder, !optkit::Query::create_folder}, metric_builder}; \
     for (int32_t i = 0; i < count; i++, EXPAND_AND_CONCAT(var, __LINE__).read_and_store())
+
 #else
 #define OPTKIT_CPU_ENERGY(block_name, metric_builder)
 #define OPTKIT_CPU_ENERGY_REPEAT(block_name, count, metric_builder)

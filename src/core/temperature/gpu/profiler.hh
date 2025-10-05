@@ -22,9 +22,9 @@ namespace optkit::temperature::gpu
         Profiler(const ProfilerConfig &profiler_config, const optkit::metrics::MetricBuilder<std::pair<double, double>> &mb = {});
         virtual ~Profiler();
 
-        virtual void enable() override {}  // Already handled by constructor
-        virtual void disable() override {} // No-op
-        virtual void reset() override {}   // No-op
+        virtual void enable() override { this->is_enabled = true; }
+        virtual void disable() override { this->is_enabled = false; }
+        virtual void reset() override {}
 
         // This read saves deltas, meaning, the change from the previous read. (current_val - prev_val)
         // if you need current values, use the read_temperature_sensors() method directly.

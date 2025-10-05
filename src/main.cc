@@ -17,11 +17,11 @@ inline std::vector<T> generate_vector(size_t n = VECTOR_SIZE)
 
 int32_t main(int32_t argc, char **argv)
 {
-    OPTKIT_INIT();
-    OPTKIT_HWMON_TEMPERATURE_EVENTS("main hwmon", {});
-    OPTKIT_GPU_TEMPERATURE_EVENTS("main gpu temp", {});
-    OPTKIT_GPU_ENERGY_EVENTS("main gpu energy", {});
-    OPTKIT_CPU_ENERGY("main_block");
+    OPTKIT_INIT(false);
+    // OPTKIT_HWMON_TEMPERATURE_EVENTS("main hwmon", {});
+    // OPTKIT_GPU_TEMPERATURE_EVENTS("main gpu temp", {});
+    OPTKIT_GPU_ENERGY_EVENTS("main gpu energy", optkit::metrics::energy::gpu_metrics::all_metrics());
+    // OPTKIT_CPU_ENERGY("main_block");
     // optkit::gpu::GpuDeviceInfo info;
     // optkit::gpu::Query::device_query(optkit::gpu::GpuVendor::NVIDIA, 0, info);
     // std::cout << info << "\n";
@@ -66,7 +66,7 @@ int32_t main(int32_t argc, char **argv)
 #endif
 
     sleep(5);
-    var24.read_and_store();
+    // var24.read_and_store();
     sleep(5);
 
     // optkit::gpu::Query::device_query(optkit::gpu::GpuVendor::NVIDIA, 0, info);
