@@ -50,6 +50,8 @@ namespace optkit::gpu
         static bool get_utilization_info(GpuVendor vendor, uint32_t device_index, GpuUtilizationInfo &utilization_info);
         static bool get_hardware_info(GpuVendor vendor, uint32_t device_index, GpuHardwareInfo &hardware_info);
         static bool get_capabilities_info(GpuVendor vendor, uint32_t device_index, GpuCapabilitiesInfo &capabilities_info);
+
+        // utilities to be called by others
         static bool get_warp_size(GpuVendor vendor, uint32_t device_index, uint32_t &warp_size);
         static bool get_driver_version(GpuVendor vendor, double &driver_version);
         static bool get_library_version(GpuVendor vendor, std::string &library_version);

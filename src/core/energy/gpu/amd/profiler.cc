@@ -67,9 +67,9 @@ namespace optkit::energy::gpu::amd
         if (!this->is_enabled)
             return;
 
-        this->read_and_store();
         this->is_sampling = false;    // stop sampling thread
         this->sampling_thread.join(); // wait for it to join.
+        this->read_and_store();       // final read
         this->metric_results = this->metric_builder.calculate(aggregate());
 
         if (OPT_LIKELY(Query::create_folder))

@@ -52,6 +52,6 @@ namespace optkit::energy::gpu::nvidia
         uint32_t sampling_frequency_sec;
         uint32_t sampling_counter;
         std::thread sampling_thread;
-        bool is_sampling;
+        std::atomic<bool> is_sampling;
     };
 } // namespace optkit::energy::gpu::nvidia
