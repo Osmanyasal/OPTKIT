@@ -135,7 +135,7 @@ namespace optkit::utils
         {
             if (!first)
                 ss << ",";
-            ss << "\"" << it->first << "\":" << std::fixed << it->second;
+            ss << "" << it->first << ":" << std::fixed << it->second;
             first = false;
         }
         ss << "}";
@@ -146,7 +146,7 @@ namespace optkit::utils
     typename std::enable_if<std::is_same<T, std::pair<double, double>>::value, void>::type
     format_result_value(std::ostringstream &ss, const T &value)
     {
-        ss << "{\"gpu\":" << std::fixed << value.first << ",\"mem\":" << std::fixed << value.second << "}";
+        ss << "{gpu:" << std::fixed << value.first << ",mem:" << std::fixed << value.second << "}";
     }
 
     // Fallback for unsupported types
