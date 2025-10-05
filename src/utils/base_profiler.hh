@@ -53,7 +53,7 @@ namespace optkit
     class BaseProfiler
     {
     public:
-        BaseProfiler(const ProfilerConfig &config) : config{config}, total_duration_ms{0}, start{std::chrono::high_resolution_clock::now()}
+        BaseProfiler(const ProfilerConfig &config) : config{config}, total_duration_ms{0}, start{std::chrono::high_resolution_clock::now()}, is_enabled{true}
         {
         }
         virtual ~BaseProfiler() {}
@@ -165,6 +165,7 @@ namespace optkit
          *        represents an event name and its accumulated value. it is filled by aggregate() method.
          */
         std::vector<std::pair<std::string, readvalT>> event_results;
+        bool is_enabled;
     };
 
 } // namespace optkit
