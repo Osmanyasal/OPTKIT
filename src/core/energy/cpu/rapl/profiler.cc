@@ -64,7 +64,6 @@ namespace optkit::energy::rapl
                 std::unordered_map<std::string, double>(event_values.begin(), event_values.end()));
         }
 
-        // call it for socket 0 and 1 and so on...
         if (OPT_LIKELY(this->config.dump_results_to_file))
             this->save();
 
@@ -81,6 +80,7 @@ namespace optkit::energy::rapl
                     std::cout << std::fixed << "\t\t" << pair.first << ":" << pair.second << "\n";
             }
         }
+
         // Close all file descriptions!
         for (auto package = 0u; package < OPTKIT_ENV_CPU_NUM_SOCKETS; package++)
             for (auto domain = 0u; domain < Query::rapl_domain_info().size(); domain++)
@@ -108,7 +108,7 @@ namespace optkit::energy::rapl
 
                     // Aggregate the readings
                     aggregated_events[std::to_string(socket_id)][socket_id][domain] += reading;
-                    std::cout << "Aggregating Event: " << to_string(domain) << " Socket: " << socket_id << " Domain: " << domain << " Reading: " << reading << " total:" << aggregated_events[std::to_string(socket_id)][socket_id][domain] << "\n";
+                    // std::cout << "Aggregating Event: " << to_string(domain) << " Socket: " << socket_id << " Domain: " << domain << " Reading: " << reading << " total:" << aggregated_events[std::to_string(socket_id)][socket_id][domain] << "\n";
                 }
             }
         }
@@ -151,7 +151,7 @@ namespace optkit::energy::rapl
                         ::ioctl(fd, PERF_EVENT_IOC_RESET, 0);
 
                     result[static_cast<int32_t>(package)][selected_domain.domain] = static_cast<double>(value) * selected_domain.scale;
-                    std::cout << "Read Package " << package << " Domain " << selected_domain.event << ": " << result[static_cast<int32_t>(package)][selected_domain.domain] << " " << selected_domain.units << "\n";
+                    // std::cout << "Read Package " << package << " Domain " << selected_domain.event << ": " << result[static_cast<int32_t>(package)][selected_domain.domain] << " " << selected_domain.units << "\n";
                 }
             }
         }
@@ -162,15 +162,12 @@ namespace optkit::energy::rapl
     {
         std::stringstream ss;
         ss << "[\n";
-
         bool first = true;
-        std::set<int32_t> processed_sockets;
 
-        // First, handle sockets with events (regardless of whether they have metrics)
+        // Handle sockets with events (regardless of whether they have metrics)
         for (const auto &event_pair : this->event_results)
         {
             int32_t socket_id = std::stoi(event_pair.first);
-            processed_sockets.insert(socket_id);
 
             // Convert RAPL domain results to individual event entries
             std::vector<std::pair<std::string, double>> event_values;
@@ -208,40 +205,6 @@ namespace optkit::energy::rapl
                 socket_id);
             ss << socket_json.dump(2);
         }
-
-        // Then, handle sockets that have metrics but no events
-        for (const auto &metric_pair : this->metric_results)
-        {
-            int32_t socket_id = metric_pair.first;
-
-            // Skip if we already processed this socket in the events loop
-            if (processed_sockets.find(socket_id) != processed_sockets.end())
-                continue;
-
-            // Empty events vector since this socket has no events
-            std::vector<std::pair<std::string, double>> empty_events;
-
-            // Convert metric results to vector format
-            std::vector<std::pair<std::string, double>> metric_values;
-            for (const auto &metric : metric_pair.second)
-            {
-                metric_values.emplace_back(metric.first, metric.second);
-            }
-
-            if (!first)
-                ss << ",\n";
-            first = false;
-
-            // Generate JSON with only metrics for this socket
-            nlohmann::json socket_json = utils::to_json<double>(
-                this->total_duration_ms,
-                this->config.measurement_type,
-                empty_events,
-                metric_values,
-                socket_id);
-            ss << socket_json.dump(2);
-        }
-
         ss << "\n]\n";
         return ss.str();
     }
