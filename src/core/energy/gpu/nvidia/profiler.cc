@@ -109,7 +109,7 @@ namespace optkit::energy::gpu::nvidia
                 // Store results with device suffix
                 for (const auto &result_pair : device_metrics)
                 {
-                    std::string result_key = result_pair.first + "_" + std::to_string(device_id);
+                    std::string result_key = "gpu_" + std::to_string(device_id) + "_" + result_pair.first;
                     this->metric_results.emplace_back(result_key, result_pair.second);
                 }
             }

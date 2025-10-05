@@ -2,7 +2,7 @@
     {
         "readings": [
             {
-                "duration": 10005.892013184726,
+                "duration": 10005.745049804449,
                 "duration_unit": "ms",
                 "measurement_type": "nvidia_gpu_energy",
                 "measurements": [
@@ -10,33 +10,33 @@
                         "dtype": "double",
                         "name": "gpu_0",
                         "type": "event",
-                        "value": "540.434000",
+                        "value": "546.016000",
                         "value_unit": "None"
                     },
                     {
                         "dtype": "double",
-                        "name": "watt_hour_0",
+                        "name": "gpu_0_watt_hour",
                         "type": "metric",
-                        "value": "0.150121",
+                        "value": "0.151671",
                         "value_unit": "None"
                     },
                     {
                         "dtype": "double",
-                        "name": "kilo_edp_edp_0",
-                        "type": "metric",
-                        "value": "0.000000",
-                        "value_unit": "None"
-                    },
-                    {
-                        "dtype": "double",
-                        "name": "kilo_edp_gpu_0",
+                        "name": "gpu_0_kilo_edp_edp",
                         "type": "metric",
                         "value": "0.000000",
                         "value_unit": "None"
                     },
                     {
                         "dtype": "double",
-                        "name": "kilo_edp_memory_0",
+                        "name": "gpu_0_kilo_edp_gpu",
+                        "type": "metric",
+                        "value": "0.000000",
+                        "value_unit": "None"
+                    },
+                    {
+                        "dtype": "double",
+                        "name": "gpu_0_kilo_edp_memory",
                         "type": "metric",
                         "value": "0.000000",
                         "value_unit": "None"
