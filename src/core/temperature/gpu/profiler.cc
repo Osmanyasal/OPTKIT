@@ -95,7 +95,7 @@ namespace optkit::temperature::gpu
                     if (optkit::gpu::Query::get_device_temperature(vendor, i, temp_device_celsius, temp_mem_celsius))
                     {
                         current_snapshot[device_index] = std::make_pair(temp_device_celsius, temp_mem_celsius);
-                        std::cout << "Initial snapshot: " << device_index << " -> " << temp_device_celsius << "°C (GPU), " << temp_mem_celsius << "°C (Memory)" << std::endl;
+                        // std::cout << "Initial snapshot: " << device_index << " -> " << temp_device_celsius << "°C (GPU), " << temp_mem_celsius << "°C (Memory)" << std::endl;
                     }
                     else
                         current_snapshot[device_index] = std::make_pair(0.0, 0.0); // Default for unsupported devices

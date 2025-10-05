@@ -129,16 +129,14 @@ namespace optkit::utils
     typename std::enable_if<std::is_same<T, std::unordered_map<uint32_t, double>>::value, void>::type
     format_result_value(std::ostringstream &ss, const T &value)
     {
-        ss << "{";
         bool first = true;
         for (typename T::const_iterator it = value.begin(); it != value.end(); ++it)
         {
             if (!first)
                 ss << ",";
-            ss << "" << it->first << ":" << std::fixed << it->second;
+            ss << std::fixed << it->second;
             first = false;
         }
-        ss << "}";
     }
 
     // Specialization for std::pair<double, double> (e.g., temperature pairs)
@@ -171,14 +169,14 @@ namespace optkit::utils
 
     template <typename T>
     typename std::enable_if<std::is_same<T, std::pair<double, double>>::value, std::string>::type
-    get_dtype_string() { return "temperature_pair"; }
+    get_dtype_string() { return "pair<double,double>"; }
 
     template <typename T>
     typename std::enable_if<!std::is_same<T, uint64_t>::value &&
                                 !std::is_same<T, double>::value &&
                                 !std::is_same<T, std::pair<double, double>>::value,
                             std::string>::type
-    get_dtype_string() { return "complex"; }
+    get_dtype_string() { return "double"; }
 
     template <typename resultT>
     nlohmann::json to_json(double duration, const char *metric_name,
