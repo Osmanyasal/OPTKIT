@@ -1,0 +1,49 @@
+[
+    {
+        "readings": [
+            {
+                "duration": 10005.892013184726,
+                "duration_unit": "ms",
+                "measurement_type": "nvidia_gpu_energy",
+                "measurements": [
+                    {
+                        "dtype": "double",
+                        "name": "gpu_0",
+                        "type": "event",
+                        "value": "540.434000",
+                        "value_unit": "None"
+                    },
+                    {
+                        "dtype": "double",
+                        "name": "watt_hour_0",
+                        "type": "metric",
+                        "value": "0.150121",
+                        "value_unit": "None"
+                    },
+                    {
+                        "dtype": "double",
+                        "name": "kilo_edp_edp_0",
+                        "type": "metric",
+                        "value": "0.000000",
+                        "value_unit": "None"
+                    },
+                    {
+                        "dtype": "double",
+                        "name": "kilo_edp_gpu_0",
+                        "type": "metric",
+                        "value": "0.000000",
+                        "value_unit": "None"
+                    },
+                    {
+                        "dtype": "double",
+                        "name": "kilo_edp_memory_0",
+                        "type": "metric",
+                        "value": "0.000000",
+                        "value_unit": "None"
+                    }
+                ],
+                "socket_number": -1
+            }
+        ]
+    }
+]
