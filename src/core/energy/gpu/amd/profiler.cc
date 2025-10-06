@@ -132,7 +132,7 @@ namespace optkit::energy::gpu::amd
                 }
 
             for (auto &&metric : this->metric_results)
-                std::cout << std::fixed << "\t" << metric.first << ": " << metric.second << std::endl;
+                std::cout << std::fixed << metric.first << ": " << metric.second << std::endl;
         }
     }
 
