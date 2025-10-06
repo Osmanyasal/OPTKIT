@@ -33,7 +33,7 @@ namespace optkit::energy::gpu::nvidia
     {
 
     public:
-        Profiler(const ProfilerConfig &profiler_config, const optkit::metrics::MetricBuilder<double> &mb, const uint32_t sampling_frequency_sec = 1);
+        Profiler(const ProfilerConfig &profiler_config, const optkit::metrics::MetricBuilder<double> &mb = {}, const uint32_t sampling_frequency_sec = 1);
         virtual ~Profiler();
 
         virtual void enable() override { this->is_enabled = true; }

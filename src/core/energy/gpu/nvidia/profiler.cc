@@ -78,17 +78,18 @@ namespace optkit::energy::gpu::nvidia
                 std::string metric_type = full_metric_name.substr(0, underscore_pos);
                 std::string device_suffix = full_metric_name.substr(underscore_pos + 1);
                 uint32_t device_id = std::stoul(device_suffix);
+                std::cout << std::fixed << "Parsed metric: " << full_metric_name << " -> Type: " << metric_type << ", Device ID: " << device_id << "\n"; // debug
 
                 // Store energy value for this device under the metric type
                 for (const auto &device_pair : metric_pair.second)
                 {
-                    metrics_by_type[metric_type][device_id] = device_pair.second;
+                    metrics_by_type[metric_type][device_id] = device_pair.second;                                                                   // convert to microseconds
+                    std::cout << std::fixed << "Storing energy: " << metric_type << "_" << device_id << " = " << device_pair.second << " Joules\n"; // debug
                 }
             }
         }
 
         // Calculate metrics for each metric type and store results per device
-        this->metric_results.clear();
         for (const auto &type_pair : metrics_by_type)
         {
             const std::string &metric_type = type_pair.first;
@@ -102,11 +103,9 @@ namespace optkit::energy::gpu::nvidia
                 // Create input map for metric calculation
                 std::unordered_map<std::string, double> device_input;
                 device_input[metric_type] = energy_value;
-
+                device_input["duration_microsec"] = this->total_duration_ms * 1000.0;
                 // Calculate metrics for this device
                 auto device_metrics = this->metric_builder.calculate(device_input);
-
-                // Store results with device suffix
                 for (const auto &result_pair : device_metrics)
                 {
                     std::string result_key = "gpu_" + std::to_string(device_id) + "_" + result_pair.first;
@@ -168,7 +167,7 @@ namespace optkit::energy::gpu::nvidia
                 {
                     std::string key = event_name + "_" + std::to_string(i.first);
                     aggregated_events[key][i.first] += i.second;
-                    std::cout << std::fixed << key << " Aggregated GPU[" << i.first << "] += " << aggregated_events[key][i.first] << " Joules\n"; // debug
+                    std::cout << std::fixed << key << " =" << aggregated_events[key][i.first] << " Joules\n"; // debug
                 }
             }
         }
@@ -177,7 +176,6 @@ namespace optkit::energy::gpu::nvidia
 
         this->event_results = event_value;
         this->total_duration_ms = total_duration;
-
         return aggregated_events;
     }
 

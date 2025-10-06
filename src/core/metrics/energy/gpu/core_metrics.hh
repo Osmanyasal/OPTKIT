@@ -50,7 +50,7 @@ namespace optkit::metrics::energy
             {
                 return MetricBuilder<double>{}
                     .add(to_string(gpu::CoreEvents::GPU), {0x0})
-                    .build("kilo_edp_edp", [](const std::unordered_map<std::string, double> &results)
+                    .build("kilo_edp_total", [](const std::unordered_map<std::string, double> &results)
                            {
                                double duration_sec = get_event_count(results, "duration_microsec") / 1.0e6;
                                double gpu = get_event_count(results, to_string(gpu::CoreEvents::GPU));
