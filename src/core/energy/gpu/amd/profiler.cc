@@ -17,9 +17,15 @@ namespace optkit::energy::gpu::amd
         for (uint32_t i = 0; i < device_count; i++)
         {
             double power_watts = 0.0;
-            if (optkit::gpu::Query::get_device_power(vendor, i, power_watts))
+            if (OPT_LIKELY(optkit::gpu::Query::get_device_power(vendor, i, power_watts)))
             {
-                snapshot[i] = snapshot[i - 1] - (power_watts * sampling_frequency_sec);
+                snapshot[i] = power_watts * sampling_frequency_sec; // power in Watts * time in seconds = energy in Joules
+                // std::cout << "snapshot[" << i << "] = " << snapshot[i] << " Joules\n"; // debug
+            }
+            else
+            {
+                snapshot[i] = 0; // Not supported
+                OPTKIT_WARN("Power monitoring not supported for GPU {}", i);
             }
         }
     }
@@ -35,24 +41,6 @@ namespace optkit::energy::gpu::amd
             this->is_enabled = false;
             return;
         }
-
-        metric_builder = {};
-
-        for (uint32_t i = 0; i < device_count; i++)
-        {
-            metric_builder.add("gpu[" + std::to_string(i) + "]", {0x0});
-        }
-
-        // we need to record the initial energy count to calculate deltas later
-        for (uint32_t i = 0; i < device_count; i++)
-        {
-            double power_watts = 0.0;
-            if (optkit::gpu::Query::get_device_power(vendor, i, power_watts))
-            {
-                snapshot[i] = (power_watts * sampling_frequency_sec);
-            }
-        }
-
         this->sampling_thread = std::thread([this]()
                                             {
                                             while (this->is_sampling)
@@ -61,7 +49,7 @@ namespace optkit::energy::gpu::amd
                                                 this->sampling_counter++;
                                                 std::this_thread::sleep_for(std::chrono::seconds(this->sampling_frequency_sec));
                                             } });
-        OPTKIT_INFO("Initialized NVIDIA GPU Energy Profiler with sampling frequency: {} seconds.", sampling_frequency_sec);
+        OPTKIT_INFO("Initialized AMD GPU Energy Profiler with sampling frequency: {} seconds.", sampling_frequency_sec);
     }
 
     Profiler::~Profiler()
@@ -69,9 +57,61 @@ namespace optkit::energy::gpu::amd
         if (!this->is_enabled)
             return;
 
-        this->is_sampling = false;    // stop sampling thread
-        this->sampling_thread.join(); // wait for it to join.
-        this->read_and_store();       // final read
+        this->is_sampling = false;             // stop sampling thread
+        this->sampling_thread.join();          // wait for it to join.
+        this->read_and_store();                // read any remaining samples
+        auto aggregated_results = aggregate(); // make sure to aggregate before calculating metrics
+
+        // Parse metric names like "gpu_0" into metric type and device ID
+        // Calculate metrics per device, then store with device suffix
+        std::unordered_map<std::string, std::unordered_map<uint32_t, double>> metrics_by_type;
+
+        // Group devices by metric type (e.g., "gpu_0", "gpu_1" -> "gpu")
+        for (const auto &metric_pair : aggregated_results)
+        {
+            const std::string &full_metric_name = metric_pair.first;
+
+            // Find first underscore to separate metric type from device ID
+            size_t underscore_pos = full_metric_name.find('_');
+            if (underscore_pos != std::string::npos)
+            {
+                std::string metric_type = full_metric_name.substr(0, underscore_pos);
+                std::string device_suffix = full_metric_name.substr(underscore_pos + 1);
+                uint32_t device_id = std::stoul(device_suffix);
+
+                // Store energy value for this device under the metric type
+                for (const auto &device_pair : metric_pair.second)
+                {
+                    metrics_by_type[metric_type][device_id] = device_pair.second; // convert to microseconds
+                }
+            }
+        }
+
+        // Calculate metrics for each metric type and store results per device
+        for (const auto &type_pair : metrics_by_type)
+        {
+            const std::string &metric_type = type_pair.first;
+
+            // For each device, create input map and calculate metrics
+            for (const auto &device_pair : type_pair.second)
+            {
+                uint32_t device_id = device_pair.first;
+                double energy_value = device_pair.second;
+
+                // Create input map for metric calculation
+                std::unordered_map<std::string, double> device_input;
+                device_input[metric_type] = energy_value;
+                device_input["duration_microsec"] = this->total_duration_ms * 1000.0;
+                // Calculate metrics for this device
+                auto device_metrics = this->metric_builder.calculate(device_input);
+                for (const auto &result_pair : device_metrics)
+                {
+                    std::string result_key = "gpu_" + std::to_string(device_id) + "_" + result_pair.first;
+                    this->metric_results.emplace_back(result_key, result_pair.second);
+                }
+            }
+        }
+
         // this->metric_results = this->metric_builder.calculate(aggregate());
 
         if (OPT_LIKELY(Query::create_folder))
@@ -121,9 +161,12 @@ namespace optkit::energy::gpu::amd
 
             for (auto &&i : values)
             {
-                // std::cout << std::fixed << "adding..:" << i.second << " Joules \n";
-                aggregated_events[event_names[i.first]][i.first] += i.second;
-                // std::cout << std::fixed << "Aggregated GPU[" << i.first << "] += " << aggregated_events[event_names[i.first]][i.first] << " Joules\n"; // debug
+                for (auto &&event_name : event_names)
+                {
+                    std::string key = event_name + "_" + std::to_string(i.first);
+                    aggregated_events[key][i.first] += i.second;
+                    std::cout << std::fixed << key << " =" << aggregated_events[key][i.first] << " Joules\n"; // debug
+                }
             }
         }
         std::vector<std::pair<std::string, std::unordered_map<uint32_t, double>>> event_value(
@@ -131,7 +174,6 @@ namespace optkit::energy::gpu::amd
 
         this->event_results = event_value;
         this->total_duration_ms = total_duration;
-
         return aggregated_events;
     }
 

@@ -21,12 +21,12 @@ namespace optkit::energy::gpu::amd
     /**
      * @brief AMD GPU Energy Profiler
      *
-     * This profiler measures the energy consumption of AMD GPUs using the AMD ROCm SMI Library.
+     * This profiler measures the energy consumption of AMD GPUs using the AMD ROCm platform.
      * It periodically samples the power usage of each GPU and aggregates the data to provide insights into energy efficiency and usage patterns.
      * The profiler runs a separate sampling thread that collects power readings at a user-defined frequency.
      * It averages the power consumption over the sampling period and can output the results in JSON format.
      *
-     * @note User should call get_read_buffer to get the raw data of power samples taken, which gives eirther instantaneous power or 1 seconds average power consumption. Consult ROCm SMI documentation for more details.
+     * @note User should call get_read_buffer to get the raw data of power samples taken, which gives either instantaneous power or 1 seconds average power consumption. Consult ROCm documentation for more details.
      *
      */
     class Profiler : public BaseProfiler<std::unordered_map<uint32_t, double>, std::unordered_map<uint32_t, double>> // storing device-id, energy in Joules
@@ -52,7 +52,7 @@ namespace optkit::energy::gpu::amd
 
         uint32_t sampling_frequency_sec;
         uint32_t sampling_counter;
-        std::thread sampling_thread;
         std::atomic<bool> is_sampling;
+        std::thread sampling_thread;
     };
 } // namespace optkit::energy::gpu::amd
