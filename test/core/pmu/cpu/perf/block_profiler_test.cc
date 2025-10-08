@@ -3,7 +3,7 @@
 #include "common/module.hh"
 #include "optkit.hh"
 using namespace optkit::metrics;
-using namespace optkit::pmu::performance;
+using namespace optkit::pmu;
 
 TEST(CPUPerfEventsTest, Instructions_1M)
 {
@@ -127,9 +127,9 @@ TEST(CPUPerfEventsTest, EnableDisableEventCounting)
     OPTKIT_CPU_EVENTS_REPEAT("EnableDisableEventCounting", mb, REPEAT)
     {
         if (is_enabled)
-            PMUEventManager::enable_all_events();
+            cpu::PMUEventManager::enable_all_events();
         else
-            PMUEventManager::disable_all_events();
+            cpu::PMUEventManager::disable_all_events();
 
         is_enabled = !is_enabled;
         instructions_million();

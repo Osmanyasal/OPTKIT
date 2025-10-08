@@ -14,9 +14,9 @@ public:
     GPUVendors()
     {
         // init all vendors
-        for (GpuVendor vendor = GpuVendor::BEGIN; vendor < GpuVendor::END; vendor++)
+        for (GpuVendor vendor = GpuVendor::BEGIN; vendor < GpuVendor::END; vendor = static_cast<GpuVendor>(static_cast<int>(vendor) + 1))
         {
-            if (!is_vendor_exists(vendor))
+            if (!Query::is_vendor_exists(vendor))
                 continue;
 
             bool is_vendor_available = Query::init(vendor);
@@ -47,9 +47,9 @@ public:
 TEST(GpuQueryTest, InitializationAndShutdown)
 {
     // init
-    for (GpuVendor vendor = GpuVendor::BEGIN; vendor < GpuVendor::END; vendor++)
+    for (GpuVendor vendor = GpuVendor::BEGIN; vendor < GpuVendor::END; vendor = static_cast<GpuVendor>(static_cast<int>(vendor) + 1))
     {
-        if (!is_vendor_exists(vendor))
+        if (!Query::is_vendor_exists(vendor))
             continue;
 
         bool is_vendor_available = Query::init(vendor);
@@ -67,9 +67,9 @@ TEST(GpuQueryTest, InitializationAndShutdown)
         }
     }
     // shutdown
-    for (GpuVendor vendor = GpuVendor::BEGIN; vendor < GpuVendor::END; vendor++)
+    for (GpuVendor vendor = GpuVendor::BEGIN; vendor < GpuVendor::END; vendor = static_cast<GpuVendor>(static_cast<int>(vendor) + 1))
     {
-        if (!is_vendor_exists(vendor))
+        if (!Query::is_vendor_exists(vendor))
             continue;
 
         if (Query::shutdown(vendor))
@@ -85,9 +85,9 @@ TEST(GpuQueryTest, InitializationAndShutdown)
 
 TEST(GpuQueryTest, MultipleInitializationsSafe)
 {
-    for (GpuVendor vendor = GpuVendor::BEGIN; vendor < GpuVendor::END; vendor++)
+    for (GpuVendor vendor = GpuVendor::BEGIN; vendor < GpuVendor::END; vendor = static_cast<GpuVendor>(static_cast<int>(vendor) + 1))
     {
-        if (!is_vendor_exists(vendor))
+        if (!Query::is_vendor_exists(vendor))
             continue;
         bool result1 = Query::init(vendor);
         bool result2 = Query::init(vendor);

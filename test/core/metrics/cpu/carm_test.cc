@@ -8,7 +8,7 @@ using namespace optkit::metrics;
 TEST(CARMTest, AI)
 {
     sleep(1);
-    OPTKIT_CPU_EVENTS("AI", cpu::core_metrics::AI());
+    OPTKIT_CPU_EVENTS("AI", performance::core_metrics::AI());
 
     std::vector<double> v1 = generate_vector<double>(); // 1 million elements
     std::vector<double> v2 = generate_vector<double>(); // 1 million elements
@@ -29,7 +29,7 @@ TEST(CARMTest, FLOPs)
     std::vector<double> v2 = generate_vector<double>(); // 1 million elements
     std::vector<double> v3 = generate_vector<double>(); // 1 million elements
 
-    OPTKIT_CPU_EVENTS("GFLOPs", cpu::core_metrics::GFLOPs());
+    OPTKIT_CPU_EVENTS("GFLOPs", performance::core_metrics::GFLOPs());
     for (int i = 0; i < VECTOR_SIZE; i++)
     {
         v3[i] = v1[i] * 2.0 + v2[i];
