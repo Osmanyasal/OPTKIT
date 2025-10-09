@@ -27,9 +27,22 @@ namespace optkit
         else
         {
             optkit::pmu::cpu::QueryPMU::init(); // pmf init
-            for (optkit::gpu::GpuVendor i = optkit::gpu::GpuVendor::BEGIN; i != optkit::gpu::GpuVendor::END; i = static_cast<optkit::gpu::GpuVendor>(static_cast<uint8_t>(i) + 1))
+
+            // init all gpu vendors
+            for (optkit::gpu::GpuVendor vendor = optkit::gpu::GpuVendor::BEGIN; vendor < optkit::gpu::GpuVendor::END; vendor = static_cast<optkit::gpu::GpuVendor>(static_cast<int>(vendor) + 1))
             {
-                optkit::gpu::Query::init(i); // gpu init
+                bool is_vendor_available = optkit::gpu::Query::init(vendor);
+                if (is_vendor_available)
+                {
+                    if (!optkit::gpu::Query::is_device_exists(vendor))
+                    {
+                        std::cout << "Device doesn't exists for vendor:" << to_string(vendor) << "\n";
+                        optkit::gpu::Query::shutdown(vendor);
+                        continue;
+                    }
+                    available_gpu_vendors.push_back(vendor);
+                    std::cout << "Initialized vendor " << to_string(vendor) << " successfully." << std::endl;
+                }
             }
             optkit::temperature::hwmon::Profiler::init(); // discover hwmon temperatures.
 
@@ -227,9 +240,12 @@ namespace optkit
                 }
             }
         }
-        for (optkit::gpu::GpuVendor i = optkit::gpu::GpuVendor::BEGIN; i != optkit::gpu::GpuVendor::END; i = static_cast<optkit::gpu::GpuVendor>(static_cast<uint8_t>(i) + 1))
+        for (const auto &vendor : available_gpu_vendors)
         {
-            optkit::gpu::Query::shutdown(i); // gpu shutdown
+            if (optkit::gpu::Query::shutdown(vendor))
+                std::cout << "Shutdown vendor " << to_string(vendor) << " successfully." << std::endl;
+            else
+                std::cout << "Failed to shutdown vendor " << to_string(vendor) << "." << std::endl;
         }
         optkit::pmu::cpu::QueryPMU::destroy();
         optkit::utils::logger::BaseLogger::shutdown(); // logger shutdown.

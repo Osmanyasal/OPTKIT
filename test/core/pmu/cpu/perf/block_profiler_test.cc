@@ -19,7 +19,7 @@ TEST(CPUPerfEventsTest, Instructions_1M)
         instructions_million();
     }
     auto aggregated_results = var17.aggregate();
-    auto result = aggregated_results.at(to_string(performance::core_events::INST_RETIRED)) / (double)REPEAT;
+    auto result = mb.calculate(aggregated_results)[0].second; //  aggregated_results.at(to_string(performance::core_events::INST_RETIRED)) / (double)REPEAT;
     EXPECT_NEAR(expected_result, result, expected_result * ERROR_RATE);
 }
 TEST(CPUPerfEventsTest, BranchInst1500K)
@@ -36,7 +36,7 @@ TEST(CPUPerfEventsTest, BranchInst1500K)
         branches();
     }
     auto aggregated_results = var34.aggregate();
-    auto result = aggregated_results.at(to_string(performance::core_events::BRANCH_INST_RETIRED)) / (double)REPEAT;
+    auto result = mb.calculate(aggregated_results)[0].second; //  aggregated_results.at(to_string(performance::core_events::BRANCH_INST_RETIRED)) / (double)REPEAT;
     EXPECT_NEAR(expected_result, result, expected_result * ERROR_RATE);
 }
 
@@ -55,7 +55,7 @@ TEST(CPUPerfEventsTest, BranchMisp250K)
     }
 
     auto aggregated_results = var52.aggregate();
-    auto result = aggregated_results.at(to_string(performance::core_events::BRANCH_MISP_RETIRED)) / (double)REPEAT;
+    auto result = mb.calculate(aggregated_results)[0].second;               //  aggregated_results.at(to_string(performance::core_events::BRANCH_MISP_RETIRED)) / (double)REPEAT;
     EXPECT_NEAR(expected_result, result, expected_result * ERROR_RATE * 5); // error rate -> 25%
 }
 
@@ -112,7 +112,7 @@ TEST(CPUPerfEventsTest, ReadsAndAccumulatesEventData)
     }
     total /= (double)REPEAT;
     auto aggregated_results = var106.aggregate();
-    auto result = aggregated_results.at(to_string(performance::core_events::INST_RETIRED)) / (double)REPEAT;
+    auto result = mb.calculate(aggregated_results)[0].second; // aggregated_results.at(to_string(performance::core_events::INST_RETIRED)) / (double)REPEAT;
     EXPECT_NEAR(total, result, total * ERROR_RATE);
 }
 TEST(CPUPerfEventsTest, EnableDisableEventCounting)
@@ -135,6 +135,6 @@ TEST(CPUPerfEventsTest, EnableDisableEventCounting)
         instructions_million();
     }
     auto aggregated_results = var127.aggregate();
-    auto result = aggregated_results.at(to_string(performance::core_events::INST_RETIRED)) / (double)REPEAT;
+    auto result = mb.calculate(aggregated_results)[0].second; //  aggregated_results.at(to_string(performance::core_events::INST_RETIRED)) / (double)REPEAT;
     EXPECT_NEAR(expected_result, result, expected_result * ERROR_RATE);
 }

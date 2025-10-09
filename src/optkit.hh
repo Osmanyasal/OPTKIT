@@ -30,6 +30,7 @@ namespace optkit
 
     private:
         const OPTKIT_CONFIG config;
+        std::vector<optkit::gpu::GpuVendor> available_gpu_vendors;
     };
 }
 

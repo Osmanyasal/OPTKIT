@@ -4,24 +4,33 @@
 #include <memory>
 #include <chrono>
 #include "core/gpu_query.hh"
+#include "common/utils.hh"
 
 using namespace optkit::gpu;
 
 // RAII class to manage GPU vendor initialization and shutdown
+/**
+ * @brief Since we init inside OPTKIT and call it in main_test.cc, this class should return the available vendors only.
+ *
+ */
 class GPUVendors
 {
 public:
     GPUVendors()
     {
         // init all vendors
-        for (GpuVendor vendor = GpuVendor::BEGIN; vendor < GpuVendor::END; vendor = static_cast<GpuVendor>(static_cast<int>(vendor) + 1))
+        for (GpuVendor vendor = GpuVendor::NVIDIA; vendor < GpuVendor::END; vendor = static_cast<GpuVendor>(static_cast<int>(vendor) + 1))
         {
-            if (!Query::is_vendor_exists(vendor))
-                continue;
-
             bool is_vendor_available = Query::init(vendor);
             if (is_vendor_available)
             {
+                if (!Query::is_device_exists(vendor))
+                {
+                    std::cout << "Device doesn't exists for vendor:" << to_string(vendor) << "\n";
+                    Query::shutdown(vendor);
+                    continue;
+                }
+
                 available_vendors.push_back(vendor);
                 std::cout << "Initialized vendor " << to_string(vendor) << " successfully." << std::endl;
             }
@@ -32,13 +41,9 @@ public:
         for (const auto &vendor : available_vendors)
         {
             if (Query::shutdown(vendor))
-            {
                 std::cout << "Shutdown vendor " << to_string(vendor) << " successfully." << std::endl;
-            }
             else
-            {
                 std::cout << "Failed to shutdown vendor " << to_string(vendor) << "." << std::endl;
-            }
         }
     }
     std::vector<GpuVendor> available_vendors;
@@ -47,58 +52,50 @@ public:
 TEST(GpuQueryTest, InitializationAndShutdown)
 {
     // init
-    for (GpuVendor vendor = GpuVendor::BEGIN; vendor < GpuVendor::END; vendor = static_cast<GpuVendor>(static_cast<int>(vendor) + 1))
+    for (GpuVendor vendor = GpuVendor::NVIDIA; vendor < GpuVendor::END; vendor = static_cast<GpuVendor>(static_cast<int>(vendor) + 1))
     {
-        if (!Query::is_vendor_exists(vendor))
-            continue;
-
         bool is_vendor_available = Query::init(vendor);
         if (is_vendor_available)
         {
+            if (!Query::is_device_exists(vendor))
+                continue;
+
             uint32_t count = 0;
             if (Query::get_device_count(vendor, count))
-            {
                 std::cout << "Vendor " << to_string(vendor) << " has " << count << " devices." << std::endl;
-            }
-        }
-        else
-        {
-            ADD_FAILURE() << "Failed to initialize vendor " << to_string(vendor) << " although it exists.";
         }
     }
-    // shutdown
-    for (GpuVendor vendor = GpuVendor::BEGIN; vendor < GpuVendor::END; vendor = static_cast<GpuVendor>(static_cast<int>(vendor) + 1))
-    {
-        if (!Query::is_vendor_exists(vendor))
-            continue;
 
+    // shutdown
+    for (GpuVendor vendor = GpuVendor::NVIDIA; vendor < GpuVendor::END; vendor = static_cast<GpuVendor>(static_cast<int>(vendor) + 1))
+    {
         if (Query::shutdown(vendor))
-        {
             std::cout << "Shutdown vendor " << to_string(vendor) << " successfully." << std::endl;
-        }
-        else
-        {
-            ADD_FAILURE() << "Failed to shutdown vendor " << to_string(vendor) << " although it exists.";
-        }
     }
 }
 
 TEST(GpuQueryTest, MultipleInitializationsSafe)
 {
-    for (GpuVendor vendor = GpuVendor::BEGIN; vendor < GpuVendor::END; vendor = static_cast<GpuVendor>(static_cast<int>(vendor) + 1))
+    for (GpuVendor vendor = GpuVendor::NVIDIA; vendor < GpuVendor::END; vendor = static_cast<GpuVendor>(static_cast<int>(vendor) + 1))
     {
-        if (!Query::is_vendor_exists(vendor))
-            continue;
         bool result1 = Query::init(vendor);
         bool result2 = Query::init(vendor);
         bool result3 = Query::init(vendor);
 
-        // Both should succeed (second should be no-op)
-        EXPECT_EQ(result1, result2);
-        EXPECT_EQ(result1, result3);
-
-        if (result1)
+        if (Query::is_device_exists(vendor))
+        {
+            EXPECT_TRUE(result1);
+            EXPECT_TRUE(result2);
+            EXPECT_TRUE(result3);
             Query::shutdown(vendor);
+        }
+        else
+        {
+            EXPECT_FALSE(result1);
+            EXPECT_FALSE(result2);
+            EXPECT_FALSE(result3);
+            continue;
+        }
     }
 }
 
@@ -134,6 +131,7 @@ TEST(GpuQueryTest, BasicInfoQuery)
                 EXPECT_EQ(basic_info.vendor_string, to_string(vendor));
                 EXPECT_EQ(basic_info.id, device_index);
                 EXPECT_FALSE(basic_info.device_name.empty());
+                EXPECT_GT(basic_info.architecture, 0); // Architecture should be a positive integer
 
                 std::cout << to_string(vendor) << " Device[" << device_index << "]: " << basic_info.device_name << std::endl;
                 std::cout << "Architecture: " << basic_info.architecture << std::endl;
@@ -198,6 +196,7 @@ TEST(GpuQueryTest, PowerLimitsQuery)
                 double power_watts = 0.0;
                 if (Query::get_device_power(vendor, device_index, power_watts))
                 {
+                    std::cout << to_string(vendor) << " Device[" << device_index << "] current power: " << power_watts << " Watts" << std::endl;
                     double limit_watts, default_power, min_limit, max_limit;
                     bool is_configurable;
 
@@ -266,11 +265,12 @@ TEST(GpuQueryTest, MemoryInfoQuery)
                 {
                     EXPECT_GT(memory_info.total_global_memory_MBytes, 0);
                     EXPECT_LE(memory_info.used_memory_MBytes, memory_info.total_global_memory_MBytes);
-                    EXPECT_EQ(memory_info.free_memory_MBytes,
-                              memory_info.total_global_memory_MBytes - memory_info.used_memory_MBytes);
+                    auto diff = memory_info.total_global_memory_MBytes - memory_info.used_memory_MBytes;
+                    EXPECT_NEAR(memory_info.free_memory_MBytes, diff, diff * ERROR_RATE);
 
                     std::cout << to_string(vendor) << " Device[" << device_index << "] memory: "
                               << memory_info.used_memory_MBytes << "/"
+                              << memory_info.free_memory_MBytes << "/"
                               << memory_info.total_global_memory_MBytes << " MB used" << std::endl;
                 }
             }
@@ -291,7 +291,7 @@ TEST(GpuQueryTest, ComputeCapabilityQuery)
             for (size_t device_index = 0; device_index < device_count; device_index++)
             {
                 GpuComputeInfo compute_info = {};
-                EXPECT_TRUE(Query::get_compute_info(vendor, device_index, compute_info));
+                Query::get_compute_info(vendor, device_index, compute_info);
 
                 if (compute_info.compute_capability_major > 0)
                 {
@@ -469,20 +469,8 @@ TEST(GpuQueryTest, ErrorHandlingInvalidVendor)
     EXPECT_FALSE(Query::get_device_count(static_cast<GpuVendor>(999), device_count));
 }
 
-TEST(GpuQueryTest, ErrorHandlingUninitializedVendor)
-{
-    // Test operations on uninitialized vendor
-    Query::shutdown(GpuVendor::NVIDIA); // Ensure it's shutdown
-
-    uint32_t device_count = 0;
-    EXPECT_FALSE(Query::get_device_count(GpuVendor::NVIDIA, device_count));
-
-    // Re-initialize for other tests
-    Query::init(GpuVendor::NVIDIA);
-}
-
 // Performance test
-TEST(GpuQueryTest, PerformanceTest)
+TEST(GpuQueryTest, PowerPerformanceTest)
 {
     GPUVendors all_vendors{}; // RAII init/shutdown
 

@@ -19,7 +19,7 @@ TEST(CPUPerfGroupEventsTest, Instructions_1M)
         instructions_million();
     }
     auto aggregated_results = var17.aggregate();
-    auto result = aggregated_results.at(to_string(performance::core_events::INST_RETIRED)) / (double)REPEAT;
+    auto result = mb.calculate(aggregated_results)[0].second; // aggregated_results.at(to_string(performance::core_events::INST_RETIRED)) / (double)REPEAT;
     EXPECT_NEAR(expected_result, result, expected_result * ERROR_RATE);
 }
 TEST(CPUPerfGroupEventsTest, BranchInst1500K)
@@ -36,7 +36,7 @@ TEST(CPUPerfGroupEventsTest, BranchInst1500K)
         branches();
     }
     auto aggregated_results = var34.aggregate();
-    auto result = aggregated_results.at(to_string(performance::core_events::BRANCH_INST_RETIRED)) / (double)REPEAT;
+    auto result = mb.calculate(aggregated_results)[0].second; // aggregated_results.at(to_string(performance::core_events::BRANCH_INST_RETIRED)) / (double)REPEAT;
     EXPECT_NEAR(expected_result, result, expected_result * ERROR_RATE);
 }
 
@@ -55,7 +55,7 @@ TEST(CPUPerfGroupEventsTest, BranchMisp250K)
     }
 
     auto aggregated_results = var52.aggregate();
-    auto result = aggregated_results.at(to_string(performance::core_events::BRANCH_MISP_RETIRED)) / (double)REPEAT;
+    auto result = mb.calculate(aggregated_results)[0].second;               // aggregated_results.at(to_string(performance::core_events::BRANCH_MISP_RETIRED)) / (double)REPEAT;
     EXPECT_NEAR(expected_result, result, expected_result * ERROR_RATE * 5); // error rate -> 25%
 }
 
@@ -143,7 +143,7 @@ TEST(CPUPerfGroupEventsTest, EnableDisableEventCounting)
 
 TEST(CPUPerfGroupEventsTest, AddMoreEventsThanGroupLimitTest)
 {
-    size_t expected_result = 500'000; // apprx
+    // size_t expected_result = 500'000; // apprx
     MetricBuilder<uint64_t> mb{false};
     mb.add(to_string(performance::core_events::INST_RETIRED), performance::event_mapper::get(performance::core_events::INST_RETIRED))
         .build(to_string(performance::core_events::INST_RETIRED), [](const auto &map) -> double

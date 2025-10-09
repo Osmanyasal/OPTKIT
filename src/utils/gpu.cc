@@ -50,6 +50,7 @@ namespace optkit::gpu
         case GpuVendor::IMAGINATION_POWERVR:
             return "Imagination PowerVR";
         case GpuVendor::UNKNOWN:
+            return "Unknown";
         default:
             return "Unknown";
         }

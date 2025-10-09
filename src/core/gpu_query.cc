@@ -139,7 +139,7 @@ namespace optkit::gpu
         return is_ok;
     }
 
-    bool Query::is_vendor_exists(GpuVendor vendor)
+    bool Query::is_device_exists(GpuVendor vendor)
     {
         if (vendor == GpuVendor::NVIDIA)
         {
@@ -179,6 +179,8 @@ namespace optkit::gpu
                 OPTKIT_CORE_ERROR("Failed to shutdown NVML library: {}", nvmlErrorString(result));
             }
         }
+        else // if not initialized, consider it as success
+            is_ok = true;
 #endif
         return is_ok;
     }
@@ -204,6 +206,8 @@ namespace optkit::gpu
                 OPTKIT_CORE_ERROR("Failed to shutdown ROCm SMI library: {}", _amdsmi_status_to_string(result));
             }
         }
+        else // if not initialized, consider it as success
+            is_ok = true;
 #endif
         return is_ok;
     }
