@@ -23,7 +23,7 @@ namespace optkit::metrics::temperature
     class CoreMetrics
     {
     public:
-        static optkit::metrics::MetricBuilder<double> AllMetrics()
+        static optkit::metrics::MetricBuilder<double> all_metrics()
         {
             return optkit::metrics::MetricBuilder<double>{}
                 .add(to_string(CoreEvents::CPU), {0x0})

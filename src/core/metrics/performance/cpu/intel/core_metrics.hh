@@ -54,14 +54,14 @@ namespace optkit::metrics::performance
     {
     public:
         // CPU Utilization
-        static const MetricBuilder<uint64_t> CPUMaxCapacityBasedUtilization()
+        static const MetricBuilder<uint64_t> cpu_max_capacity_based_utilization()
         {
             static const MetricBuilder<uint64_t> metric = []
             {
                 std::string unhalted_core_cycles_name = to_string(CoreEvents::UNHALTED_CORE_CYCLES);
                 return MetricBuilder<uint64_t>{}
                     .add(unhalted_core_cycles_name, intel::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
-                    .build("CPUMaxCapacityBasedUtilization__%",
+                    .build("cpu_max_capacity_based_utilization__%",
                            [unhalted_core_cycles_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
                                static const double max_cycles = OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS * frequency::QueryCPUFrequency::get_cpuinfo_max_freq() * 1000; // KHz to Hz
@@ -78,7 +78,7 @@ namespace optkit::metrics::performance
         } ///< 100 * (UNHALTED_CLK_CYCLES / (OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS * max_freq_khz * 1000  * duration_sec)))
 
         // Native Metric implementations (not included in CoreMetrics)
-        static const MetricBuilder<uint64_t> &L1HitRatio()
+        static const MetricBuilder<uint64_t> &l1_hit_ratio()
         {
 
             static const MetricBuilder<uint64_t> metric = []
@@ -88,7 +88,7 @@ namespace optkit::metrics::performance
                 return MetricBuilder<uint64_t>{}
                     .add(l1_misses_name, intel::EventMapper::get(CoreEvents::L1_MISSES))
                     .add(l1_hits_name, intel::EventMapper::get(CoreEvents::L1_HITS))
-                    .build("L1HitRatio__%",
+                    .build("l1_hit_ratio__%",
                            [l1_hits_name, l1_misses_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
                                uint64_t l1_hits = get_event_count(counts, l1_hits_name);
@@ -103,7 +103,7 @@ namespace optkit::metrics::performance
             return metric;
         }
         // Native Metric implementations (not included in CoreMetrics)
-        static const MetricBuilder<uint64_t> &L2HitRatio()
+        static const MetricBuilder<uint64_t> &l2_hit_ratio()
         {
 
             static const MetricBuilder<uint64_t> metric = []
@@ -113,7 +113,7 @@ namespace optkit::metrics::performance
                 return MetricBuilder<uint64_t>{}
                     .add(l2_misses_name, intel::EventMapper::get(CoreEvents::L2_MISSES))
                     .add(l2_hits_name, intel::EventMapper::get(CoreEvents::L2_HITS))
-                    .build("L2HitRatio__%",
+                    .build("l2_hit_ratio__%",
                            [l2_hits_name, l2_misses_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
                                uint64_t l2_hits = get_event_count(counts, l2_hits_name);
@@ -128,7 +128,7 @@ namespace optkit::metrics::performance
             return metric;
         }
 
-        static const MetricBuilder<uint64_t> &L3HitRatio()
+        static const MetricBuilder<uint64_t> &l3_hit_ratio()
         {
 
             static const MetricBuilder<uint64_t> metric = []
@@ -146,7 +146,7 @@ namespace optkit::metrics::performance
 #else
                     .add(l3_hits_name, intel::EventMapper::get(CoreEvents::L3_HITS))
 #endif
-                    .build("L3HitRatio__%",
+                    .build("l3_hit_ratio__%",
                            [l3_hits_name, l3_misses_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
                                uint64_t l3_hits = get_event_count(counts, l3_hits_name);
@@ -168,7 +168,7 @@ namespace optkit::metrics::performance
         // CoreMetrics Implementation
 
         // Cache miss per kilo instruction (MPKI)
-        static const MetricBuilder<uint64_t> &L1MPKI()
+        static const MetricBuilder<uint64_t> &l1_mpki()
         {
 
             static const MetricBuilder<uint64_t> metric = []
@@ -178,7 +178,7 @@ namespace optkit::metrics::performance
                 return MetricBuilder<uint64_t>{}
                     .add(l1_misses_name, intel::EventMapper::get(CoreEvents::L1_MISSES))
                     .add(inst_retired_name, intel::EventMapper::get(CoreEvents::INST_RETIRED))
-                    .build("L1MPKI",
+                    .build("l1_mpki",
                            [l1_misses_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
                                uint64_t l1_misses = get_event_count(counts, l1_misses_name);
@@ -193,7 +193,7 @@ namespace optkit::metrics::performance
             return metric;
         }
 
-        static const MetricBuilder<uint64_t> &L2MPKI()
+        static const MetricBuilder<uint64_t> &l2_mpki()
         {
             static const MetricBuilder<uint64_t> metric = []
             {
@@ -203,7 +203,7 @@ namespace optkit::metrics::performance
                 return MetricBuilder<uint64_t>{}
                     .add(l2_misses_name, intel::EventMapper::get(CoreEvents::L2_MISSES))
                     .add(inst_retired_name, intel::EventMapper::get(CoreEvents::INST_RETIRED))
-                    .build("L2MPKI",
+                    .build("l2_mpki",
                            [l2_misses_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
                                uint64_t l2_misses = get_event_count(counts, l2_misses_name);
@@ -218,7 +218,7 @@ namespace optkit::metrics::performance
             return metric;
         }
 
-        static const MetricBuilder<uint64_t> &L3MPKI()
+        static const MetricBuilder<uint64_t> &l3_mpki()
         {
 
             static const MetricBuilder<uint64_t> metric = []
@@ -229,7 +229,7 @@ namespace optkit::metrics::performance
                 return MetricBuilder<uint64_t>{}
                     .add(l3_misses_name, intel::EventMapper::get(CoreEvents::L3_MISSES))
                     .add(inst_retired_name, intel::EventMapper::get(CoreEvents::INST_RETIRED))
-                    .build("L3MPKI",
+                    .build("l3_mpki",
                            [l3_misses_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
                                uint64_t l3_misses = get_event_count(counts, l3_misses_name);
@@ -245,7 +245,7 @@ namespace optkit::metrics::performance
         }
 
         // Branch
-        static const MetricBuilder<uint64_t> &BranchMisprRatio()
+        static const MetricBuilder<uint64_t> &branch_mispr_ratio()
         {
 
             static const MetricBuilder<uint64_t> metric = []
@@ -256,7 +256,7 @@ namespace optkit::metrics::performance
                 return MetricBuilder<uint64_t>{}
                     .add(branch_inst_retired_name, intel::EventMapper::get(CoreEvents::BRANCH_INST_RETIRED))
                     .add(branch_misp_retired_name, intel::EventMapper::get(CoreEvents::BRANCH_MISP_RETIRED))
-                    .build("BranchMisprRatio",
+                    .build("branch_mispr_ratio",
                            [branch_misp_retired_name, branch_inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
                                uint64_t branch_misp = get_event_count(counts, branch_misp_retired_name);
@@ -272,7 +272,7 @@ namespace optkit::metrics::performance
         }
 
         // ITLB MPKI metrics
-        static const MetricBuilder<uint64_t> &ITLBMPKI()
+        static const MetricBuilder<uint64_t> &itlb_mpki()
         {
 
             static const MetricBuilder<uint64_t> metric = []
@@ -283,7 +283,7 @@ namespace optkit::metrics::performance
                 return MetricBuilder<uint64_t>{}
                     .add(itlb_misses_name, intel::EventMapper::get(CoreEvents::ITLB_MISSES))
                     .add(inst_retired_name, intel::EventMapper::get(CoreEvents::INST_RETIRED))
-                    .build("ITLBMPKI",
+                    .build("itlb_mpki",
                            [itlb_misses_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
                                uint64_t itlb_misses = get_event_count(counts, itlb_misses_name);
@@ -298,7 +298,7 @@ namespace optkit::metrics::performance
         }
 
         // DTLB MPKI metrics
-        static const MetricBuilder<uint64_t> &DTLBMPKI()
+        static const MetricBuilder<uint64_t> &dtlb_mpki()
         {
 
             static const MetricBuilder<uint64_t> metric = []
@@ -309,7 +309,7 @@ namespace optkit::metrics::performance
                 return MetricBuilder<uint64_t>{}
                     .add(dtlb_misses_name, intel::EventMapper::get(CoreEvents::DTLB_MISSES))
                     .add(inst_retired_name, intel::EventMapper::get(CoreEvents::INST_RETIRED))
-                    .build("DTLBMPKI",
+                    .build("dtlb_mpki",
                            [dtlb_misses_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
                                uint64_t itlb_misses = get_event_count(counts, dtlb_misses_name);
@@ -324,7 +324,7 @@ namespace optkit::metrics::performance
         }
 
         // TLB MPKI metrics
-        static const MetricBuilder<uint64_t> &TLBMPKI()
+        static const MetricBuilder<uint64_t> &tlb_mpki()
         {
 
             static const MetricBuilder<uint64_t> metric = []
@@ -337,7 +337,7 @@ namespace optkit::metrics::performance
                     .add(itlb_misses_name, intel::EventMapper::get(CoreEvents::DTLB_MISSES))
                     .add(dtlb_misses_name, intel::EventMapper::get(CoreEvents::ITLB_MISSES))
                     .add(inst_retired_name, intel::EventMapper::get(CoreEvents::INST_RETIRED))
-                    .build("TLBMPKI",
+                    .build("tlb_mpki",
                            [itlb_misses_name, dtlb_misses_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
                                uint64_t itlb_misses = get_event_count(counts, itlb_misses_name);
@@ -353,13 +353,13 @@ namespace optkit::metrics::performance
         }
 
         // Latency and parallelism metrics
-        static const MetricBuilder<uint64_t> &LoadMissLatency()
+        static const MetricBuilder<uint64_t> &load_miss_latency()
         {
             static const MetricBuilder<uint64_t> empty{};
             return empty;
         }
 
-        static const MetricBuilder<uint64_t> &IpC()
+        static const MetricBuilder<uint64_t> &ipc()
         {
 
             static const MetricBuilder<uint64_t> metric = []
@@ -370,7 +370,7 @@ namespace optkit::metrics::performance
                 return MetricBuilder<uint64_t>{}
                     .add(inst_retired_name, intel::EventMapper::get(CoreEvents::INST_RETIRED))
                     .add(unhalted_core_cycles_name, intel::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
-                    .build("IpC", [inst_retired_name, unhalted_core_cycles_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                    .build("ipc", [inst_retired_name, unhalted_core_cycles_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
                            uint64_t inst_retired = get_event_count(counts,inst_retired_name);
                            uint64_t unhalted_core_cycles = get_event_count(counts,unhalted_core_cycles_name);
@@ -383,7 +383,7 @@ namespace optkit::metrics::performance
         }
 
         // #if !OPTKIT_ENV_CPU_MICROARCH_KNL // NOT KNL
-        static const MetricBuilder<uint64_t> &ILP()
+        static const MetricBuilder<uint64_t> &ilp()
         {
 
             static const MetricBuilder<uint64_t> metric = []
@@ -408,21 +408,21 @@ namespace optkit::metrics::performance
             return metric;
         }
 
-        static const MetricBuilder<uint64_t> &MLP()
+        static const MetricBuilder<uint64_t> &mlp()
         {
             static const MetricBuilder<uint64_t> empty{};
             return empty;
         }
 
         // DRAM bandwidth
-        static const MetricBuilder<uint64_t> &DRAMBandwidthGBs()
+        static const MetricBuilder<uint64_t> &dram_bandwidth_gbs()
         {
             static const MetricBuilder<uint64_t> empty{};
             return empty;
         }
 
         // Instruction per event
-        static const MetricBuilder<uint64_t> &IpCall()
+        static const MetricBuilder<uint64_t> &ip_call()
         {
 
             static const MetricBuilder<uint64_t> metric = []
@@ -432,7 +432,7 @@ namespace optkit::metrics::performance
                 return MetricBuilder<uint64_t>{}
                     .add(inst_retired_name, intel::EventMapper::get(CoreEvents::INST_RETIRED))
                     .add(inst_retired_near_call_name, intel::EventMapper::get(intel::NativeEvents::BR_INST_RETIRED_NEAR_CALL))
-                    .build("IpCall",
+                    .build("ip_call",
                            [inst_retired_name, inst_retired_near_call_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
                                uint64_t inst_retired = get_event_count(counts, inst_retired_name);
@@ -447,7 +447,7 @@ namespace optkit::metrics::performance
             return metric;
         }
 
-        static const MetricBuilder<uint64_t> &IpBranch()
+        static const MetricBuilder<uint64_t> &ip_branch()
         {
 
             static const MetricBuilder<uint64_t> metric = []
@@ -457,7 +457,7 @@ namespace optkit::metrics::performance
                 return MetricBuilder<uint64_t>{}
                     .add(inst_retired_name, intel::EventMapper::get(CoreEvents::INST_RETIRED))
                     .add(branch_inst_retired_name, intel::EventMapper::get(CoreEvents::BRANCH_INST_RETIRED))
-                    .build("IpBranch",
+                    .build("ip_branch",
                            [branch_inst_retired_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
                                uint64_t inst_retired = get_event_count(counts, inst_retired_name);
@@ -472,7 +472,7 @@ namespace optkit::metrics::performance
             return metric;
         }
 
-        static const MetricBuilder<uint64_t> &IpMemLoad()
+        static const MetricBuilder<uint64_t> &ip_mem_load()
         {
 
             static const MetricBuilder<uint64_t> metric = []
@@ -497,7 +497,7 @@ namespace optkit::metrics::performance
             return metric;
         }
 
-        static const MetricBuilder<uint64_t> &IpMemStore()
+        static const MetricBuilder<uint64_t> &ip_mem_store()
         {
 
             static const MetricBuilder<uint64_t> metric = []
@@ -522,7 +522,7 @@ namespace optkit::metrics::performance
             return metric;
         }
 
-        static const MetricBuilder<uint64_t> &IpMispredict()
+        static const MetricBuilder<uint64_t> &ip_mispredict()
         {
 
             static const MetricBuilder<uint64_t> metric = []
@@ -532,7 +532,7 @@ namespace optkit::metrics::performance
                 return MetricBuilder<uint64_t>{}
                     .add(inst_retired_name, intel::EventMapper::get(CoreEvents::INST_RETIRED))
                     .add(branch_misp_retired_name, intel::EventMapper::get(CoreEvents::BRANCH_MISP_RETIRED))
-                    .build("IpMispredict",
+                    .build("ip_mispredict",
                            [branch_misp_retired_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
                                uint64_t inst_retired = get_event_count(counts, inst_retired_name);
@@ -548,7 +548,7 @@ namespace optkit::metrics::performance
         }
 
         // Floating-point operation metrics
-        static const MetricBuilder<uint64_t> &IpFLOP()
+        static const MetricBuilder<uint64_t> &ip_flop()
         {
 
             static const MetricBuilder<uint64_t> metric = []
@@ -573,7 +573,7 @@ namespace optkit::metrics::performance
                     .add(inst_packed_256_single_name, intel::EventMapper::get(intel::NativeEvents::FP_ARITH_INST_RETIRED_256B_PACKED_SINGLE))
                     .add(inst_packed_512_double_name, intel::EventMapper::get(intel::NativeEvents::FP_ARITH_INST_RETIRED_512B_PACKED_DOUBLE))
                     .add(inst_packed_512_single_name, intel::EventMapper::get(intel::NativeEvents::FP_ARITH_INST_RETIRED_512B_PACKED_SINGLE))
-                    .build("IpFLOP",
+                    .build("ip_flop",
                            [inst_retired_name, retired_scalar_sp_any_name, retired_scalar_dp_any_name,
                             inst_packed_128_double_name, inst_packed_128_single_name,
                             inst_packed_256_double_name, inst_packed_256_single_name,
@@ -608,7 +608,7 @@ namespace optkit::metrics::performance
             return metric;
         }
 
-        static const MetricBuilder<uint64_t> &GFLOPs()
+        static const MetricBuilder<uint64_t> &gflops()
         {
 
             static const MetricBuilder<uint64_t> metric = []
@@ -631,7 +631,7 @@ namespace optkit::metrics::performance
                     .add(inst_packed_256_single_name, intel::EventMapper::get(intel::NativeEvents::FP_ARITH_INST_RETIRED_256B_PACKED_SINGLE))
                     .add(inst_packed_512_double_name, intel::EventMapper::get(intel::NativeEvents::FP_ARITH_INST_RETIRED_512B_PACKED_DOUBLE))
                     .add(inst_packed_512_single_name, intel::EventMapper::get(intel::NativeEvents::FP_ARITH_INST_RETIRED_512B_PACKED_SINGLE))
-                    .build("GFLOPs",
+                    .build("gflops",
                            [retired_scalar_sp_any_name, retired_scalar_dp_any_name,
                             inst_packed_128_double_name, inst_packed_128_single_name,
                             inst_packed_256_double_name, inst_packed_256_single_name,
@@ -666,7 +666,7 @@ namespace optkit::metrics::performance
             return metric;
         }
 
-        static const MetricBuilder<uint64_t> &AI()
+        static const MetricBuilder<uint64_t> &ai()
         {
 
             static const MetricBuilder<uint64_t> metric = []
@@ -691,7 +691,7 @@ namespace optkit::metrics::performance
                     .add(inst_packed_256_single_name, intel::EventMapper::get(intel::NativeEvents::FP_ARITH_INST_RETIRED_256B_PACKED_SINGLE))
                     .add(inst_packed_512_double_name, intel::EventMapper::get(intel::NativeEvents::FP_ARITH_INST_RETIRED_512B_PACKED_DOUBLE))
                     .add(inst_packed_512_single_name, intel::EventMapper::get(intel::NativeEvents::FP_ARITH_INST_RETIRED_512B_PACKED_SINGLE))
-                    .build("AI",
+                    .build("ai",
                            [mem_inst_retired_name, retired_scalar_sp_any_name, retired_scalar_dp_any_name,
                             inst_packed_128_double_name, inst_packed_128_single_name,
                             inst_packed_256_double_name, inst_packed_256_single_name,
@@ -730,7 +730,7 @@ namespace optkit::metrics::performance
             return metric;
         }
 
-        static const MetricBuilder<uint64_t> &IpAVXAnyFLOP()
+        static const MetricBuilder<uint64_t> &ip_avx_any_flop()
         {
 
             static const MetricBuilder<uint64_t> metric = []
@@ -751,7 +751,7 @@ namespace optkit::metrics::performance
                     .add(inst_packed_256_single_name, intel::EventMapper::get(intel::NativeEvents::FP_ARITH_INST_RETIRED_256B_PACKED_SINGLE))
                     .add(inst_packed_512_double_name, intel::EventMapper::get(intel::NativeEvents::FP_ARITH_INST_RETIRED_512B_PACKED_DOUBLE))
                     .add(inst_packed_512_single_name, intel::EventMapper::get(intel::NativeEvents::FP_ARITH_INST_RETIRED_512B_PACKED_SINGLE))
-                    .build("IpAVXAnyFLOP",
+                    .build("ip_avx_any_flop",
                            [inst_retired_name,
                             inst_packed_128_double_name, inst_packed_128_single_name,
                             inst_packed_256_double_name, inst_packed_256_single_name,
@@ -782,7 +782,7 @@ namespace optkit::metrics::performance
             return metric;
         }
 
-        static const MetricBuilder<uint64_t> &IpArith()
+        static const MetricBuilder<uint64_t> &ip_arith()
         {
 
             static const MetricBuilder<uint64_t> metric = []
@@ -794,7 +794,7 @@ namespace optkit::metrics::performance
                     .add(inst_retired_name, intel::EventMapper::get(CoreEvents::INST_RETIRED))
                     .add(inst_retired_scalar_name, intel::EventMapper::get(intel::NativeEvents::FP_ARITH_INST_RETIRED_SCALAR))
                     .add(inst_retired_vector_name, intel::EventMapper::get(intel::NativeEvents::FP_ARITH_INST_RETIRED_VECTOR))
-                    .build("IpArith",
+                    .build("ip_arith",
                            [inst_retired_name, inst_retired_scalar_name, inst_retired_vector_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
                                uint64_t inst_retired = get_event_count(counts, inst_retired_name);
@@ -810,7 +810,7 @@ namespace optkit::metrics::performance
             return metric;
         }
 
-        static const MetricBuilder<uint64_t> &IpArithScalarSP()
+        static const MetricBuilder<uint64_t> &ip_arith_scalar_sp()
         {
 
             static const MetricBuilder<uint64_t> metric = []
@@ -820,7 +820,7 @@ namespace optkit::metrics::performance
                 return MetricBuilder<uint64_t>{}
                     .add(inst_retired_name, intel::EventMapper::get(CoreEvents::INST_RETIRED))
                     .add(inst_scalar_single_name, intel::EventMapper::get(intel::NativeEvents::FP_ARITH_INST_RETIRED_SCALAR_SINGLE))
-                    .build("IpArithScalarSP",
+                    .build("ip_arith_scalar_sp",
                            [inst_scalar_single_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
                                uint64_t inst_retired = get_event_count(counts, inst_retired_name);
@@ -835,7 +835,7 @@ namespace optkit::metrics::performance
             return metric;
         }
 
-        static const MetricBuilder<uint64_t> &IpArithScalarDP()
+        static const MetricBuilder<uint64_t> &ip_arith_scalar_dp()
         {
 
             static const MetricBuilder<uint64_t> metric = []
@@ -845,7 +845,7 @@ namespace optkit::metrics::performance
                 return MetricBuilder<uint64_t>{}
                     .add(inst_retired_name, intel::EventMapper::get(CoreEvents::INST_RETIRED))
                     .add(inst_scalar_double_name, intel::EventMapper::get(intel::NativeEvents::FP_ARITH_INST_RETIRED_SCALAR_DOUBLE))
-                    .build("IpArithScalarDP",
+                    .build("ip_arith_scalar_dp",
                            [inst_scalar_double_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
                                uint64_t inst_retired = get_event_count(counts, inst_retired_name);
@@ -860,7 +860,7 @@ namespace optkit::metrics::performance
             return metric;
         }
 
-        static const MetricBuilder<uint64_t> &IpArithAVX128()
+        static const MetricBuilder<uint64_t> &ip_arith_avx128()
         {
 
             static const MetricBuilder<uint64_t> metric = []
@@ -872,7 +872,7 @@ namespace optkit::metrics::performance
                     .add(inst_retired_name, intel::EventMapper::get(CoreEvents::INST_RETIRED))
                     .add(inst_packed_128_double_name, intel::EventMapper::get(intel::NativeEvents::FP_ARITH_INST_RETIRED_128B_PACKED_DOUBLE))
                     .add(inst_packed_128_single_name, intel::EventMapper::get(intel::NativeEvents::FP_ARITH_INST_RETIRED_128B_PACKED_SINGLE))
-                    .build("IpArithAVX128",
+                    .build("ip_arith_avx128",
                            [inst_packed_128_double_name, inst_packed_128_single_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
                                uint64_t inst_retired = get_event_count(counts, inst_retired_name);
@@ -889,7 +889,7 @@ namespace optkit::metrics::performance
             return metric;
         }
 
-        static const MetricBuilder<uint64_t> &IpArithAVX256()
+        static const MetricBuilder<uint64_t> &ip_arith_avx256()
         {
 
             static const MetricBuilder<uint64_t> metric = []
@@ -901,7 +901,7 @@ namespace optkit::metrics::performance
                     .add(inst_retired_name, intel::EventMapper::get(CoreEvents::INST_RETIRED))
                     .add(inst_packed_256_double_name, intel::EventMapper::get(intel::NativeEvents::FP_ARITH_INST_RETIRED_256B_PACKED_DOUBLE))
                     .add(inst_packed_256_single_name, intel::EventMapper::get(intel::NativeEvents::FP_ARITH_INST_RETIRED_256B_PACKED_SINGLE))
-                    .build("IpArithAVX256",
+                    .build("ip_arith_avx256",
                            [inst_packed_256_double_name, inst_packed_256_single_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
                                uint64_t inst_retired = get_event_count(counts, inst_retired_name);
@@ -918,7 +918,7 @@ namespace optkit::metrics::performance
             return metric;
         }
 
-        static const MetricBuilder<uint64_t> &IpArithAVX512()
+        static const MetricBuilder<uint64_t> &ip_arith_avx512()
         {
 
             static const MetricBuilder<uint64_t> metric = []
@@ -930,7 +930,7 @@ namespace optkit::metrics::performance
                     .add(inst_retired_name, intel::EventMapper::get(CoreEvents::INST_RETIRED))
                     .add(inst_packed_512_double_name, intel::EventMapper::get(intel::NativeEvents::FP_ARITH_INST_RETIRED_512B_PACKED_DOUBLE))
                     .add(inst_packed_512_single_name, intel::EventMapper::get(intel::NativeEvents::FP_ARITH_INST_RETIRED_512B_PACKED_SINGLE))
-                    .build("IpArithAVX512",
+                    .build("ip_arith_avx512",
                            [inst_packed_512_double_name, inst_packed_512_single_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
                                uint64_t inst_retired = get_event_count(counts, inst_retired_name);
@@ -947,7 +947,7 @@ namespace optkit::metrics::performance
             return metric;
         }
 
-        static const MetricBuilder<uint64_t> &ScalarArithpVector()
+        static const MetricBuilder<uint64_t> &scalar_arithp_vector()
         {
 
             static const MetricBuilder<uint64_t> metric = []
@@ -957,7 +957,7 @@ namespace optkit::metrics::performance
                 return MetricBuilder<uint64_t>{}
                     .add(inst_vector_name, intel::EventMapper::get(intel::NativeEvents::FP_ARITH_INST_RETIRED_VECTOR))
                     .add(inst_scalar_name, intel::EventMapper::get(intel::NativeEvents::FP_ARITH_INST_RETIRED_SCALAR))
-                    .build("ScalarArithpVector",
+                    .build("scalar_arithp_vector",
                            [inst_vector_name, inst_scalar_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
                                uint64_t inst_vector = get_event_count(counts, inst_vector_name);
@@ -971,7 +971,7 @@ namespace optkit::metrics::performance
             return metric;
         }
 
-        static const MetricBuilder<uint64_t> &IpArithVectorAny()
+        static const MetricBuilder<uint64_t> &ip_arith_vector_any()
         {
 
             static const MetricBuilder<uint64_t> metric = []
@@ -1023,14 +1023,14 @@ namespace optkit::metrics::performance
             return metric;
         }
 
-        static const MetricBuilder<uint64_t> &ScalarpArithVector()
+        static const MetricBuilder<uint64_t> &scalarp_arith_vector()
         {
             static const MetricBuilder<uint64_t> empty{};
             return empty;
         }
 
         // Software prefetch
-        static const MetricBuilder<uint64_t> &IpSWPF()
+        static const MetricBuilder<uint64_t> &ip_swpf()
         {
 
             static const MetricBuilder<uint64_t> metric = []
@@ -1040,7 +1040,7 @@ namespace optkit::metrics::performance
                 return MetricBuilder<uint64_t>{}
                     .add(inst_retired_name, intel::EventMapper::get(CoreEvents::INST_RETIRED))
                     .add(sw_load_prefetch_name, intel::EventMapper::get(CoreEvents::SW_LOAD_PREFETCH_ACCESS))
-                    .build("IpSWPF",
+                    .build("ip_swpf",
                            [sw_load_prefetch_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
                                uint64_t inst_retired = get_event_count(counts, inst_retired_name);
@@ -1056,7 +1056,7 @@ namespace optkit::metrics::performance
         }
 
         // Topdown (Pipeline Utilisation) Analysis L1
-        static const MetricBuilder<uint64_t> &FrontendBound()
+        static const MetricBuilder<uint64_t> &frontend_bound()
         {
 
             static const MetricBuilder<uint64_t> metric = []
@@ -1066,7 +1066,7 @@ namespace optkit::metrics::performance
                 return MetricBuilder<uint64_t>{}
                     .add(dispatch_slots_name, intel::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
                     .add(no_ops_from_frontend_name, intel::EventMapper::get(performance::intel::NativeEvents::IDQ_UOPS_NOT_DELIVERED_CORE))
-                    .build("FrontendBound__%",
+                    .build("frontend_bound__%",
                            [dispatch_slots_name, no_ops_from_frontend_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
                                uint64_t dispatch_slots = SUPERSCALAR_WIDE * get_event_count(counts, dispatch_slots_name);
@@ -1081,7 +1081,7 @@ namespace optkit::metrics::performance
             return metric;
         }
 
-        static const MetricBuilder<uint64_t> &BadSpeculation()
+        static const MetricBuilder<uint64_t> &bad_speculation()
         {
 
             static const MetricBuilder<uint64_t> metric = []
@@ -1096,7 +1096,7 @@ namespace optkit::metrics::performance
                     .add(uops_issued_name, intel::EventMapper::get(intel::NativeEvents::UOPS_ISSUED))
                     .add(uops_retired_slots_name, intel::EventMapper::get(performance::intel::NativeEvents::UOPS_RETIRED_SLOTS))
                     .add(recovery_cycles_name, intel::EventMapper::get(intel::NativeEvents::INT_MISC_RECOVERY_CYCLES))
-                    .build("BadSpeculation__%",
+                    .build("bad_speculation__%",
                            [dispatch_slots_name, uops_issued_name, uops_retired_slots_name, recovery_cycles_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
                                uint64_t dispatch_slots = SUPERSCALAR_WIDE * get_event_count(counts, dispatch_slots_name);
@@ -1113,7 +1113,7 @@ namespace optkit::metrics::performance
             return metric;
         }
 
-        static const MetricBuilder<uint64_t> &Retiring()
+        static const MetricBuilder<uint64_t> &retiring()
         {
 
             static const MetricBuilder<uint64_t> metric = []
@@ -1140,14 +1140,14 @@ namespace optkit::metrics::performance
         }
 
         static const MetricBuilder<uint64_t> &
-        SMTContention()
+        smt_contention()
         {
             // std::string dispatch_slots_name = to_string(CoreEvents::UNHALTED_CORE_CYCLES);
             // std::string smt_stalls_name = to_string(intel::NativeEvents::SMT_STALLS_1);
             // return MetricBuilder<uint64_t>{}
             //     .add(smt_stalls_name, intel::EventMapper::get(performance::intel::NativeEvents::SMT_STALLS_1))
             //     .add(dispatch_slots_name, intel::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
-            //     .build("SMTContention",
+            //     .build("smt_contention",
             //            [dispatch_slots_name, smt_stalls_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
             //            {
             //                uint64_t smt_stalls = get_event_count(counts,smt_stalls_name);
@@ -1162,7 +1162,7 @@ namespace optkit::metrics::performance
             return empty;
         }
 
-        static const MetricBuilder<uint64_t> &BackendBound()
+        static const MetricBuilder<uint64_t> &backend_bound()
         {
 
             static const MetricBuilder<uint64_t> metric = []
@@ -1179,7 +1179,7 @@ namespace optkit::metrics::performance
                     .add(uops_issued_name, intel::EventMapper::get(intel::NativeEvents::UOPS_ISSUED))
                     .add(uops_retired_slots_name, intel::EventMapper::get(intel::NativeEvents::UOPS_RETIRED_SLOTS))
                     .add(recovery_cycles_name, intel::EventMapper::get(intel::NativeEvents::INT_MISC_RECOVERY_CYCLES))
-                    .build("BackendBound__%",
+                    .build("backend_bound__%",
                            [dispatch_slots_name, no_ops_from_frontend_name, uops_issued_name, uops_retired_slots_name, recovery_cycles_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
                                uint64_t dispatch_slots = SUPERSCALAR_WIDE * get_event_count(counts, dispatch_slots_name);
@@ -1198,7 +1198,7 @@ namespace optkit::metrics::performance
             return metric;
         }
         // Topdown (Pipeline Utilisation) Analysis L1
-        static const MetricBuilder<uint64_t> &FrontendBound_Latency()
+        static const MetricBuilder<uint64_t> &frontend_bound_latency()
         {
 
             static const MetricBuilder<uint64_t> metric = []
@@ -1211,7 +1211,7 @@ namespace optkit::metrics::performance
                     .add(clocks_name, intel::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
                     .add(no_ops_from_frontend_name, intel::EventMapper::get(intel::NativeEvents::IDQ_UOPS_NOT_DELIVERED_CORE))
                     .add(uops_not_delivered_cycles_name, intel::EventMapper::get(intel::NativeEvents::IDQ_UOPS_NOT_DELIVERED_CYCLES_0))
-                    .build("FrontendBound_Latency__%",
+                    .build("frontend_bound_latency__%",
                            [clocks_name, no_ops_from_frontend_name, uops_not_delivered_cycles_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
                                uint64_t clocks = get_event_count(counts, clocks_name);
@@ -1229,7 +1229,7 @@ namespace optkit::metrics::performance
             return metric;
         }
 
-        static const MetricBuilder<uint64_t> &FrontendBound_BW()
+        static const MetricBuilder<uint64_t> &frontend_bound_bw()
         {
 
             static const MetricBuilder<uint64_t> metric = []
@@ -1240,7 +1240,7 @@ namespace optkit::metrics::performance
                 return MetricBuilder<uint64_t>{}
                     .add(clocks_name, intel::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
                     .add(uops_not_delivered_cycles_name, intel::EventMapper::get(intel::NativeEvents::IDQ_UOPS_NOT_DELIVERED_CYCLES_0))
-                    .build("FrontendBound_BW__%",
+                    .build("frontend_bound_bw__%",
                            [clocks_name, uops_not_delivered_cycles_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
                                uint64_t clocks = get_event_count(counts, clocks_name);
@@ -1254,7 +1254,7 @@ namespace optkit::metrics::performance
             return metric;
         }
 
-        static const MetricBuilder<uint64_t> &BadSpeculation_Mispredicts()
+        static const MetricBuilder<uint64_t> &bad_speculation_mispredicts()
         {
 
             static const MetricBuilder<uint64_t> metric = []
@@ -1273,7 +1273,7 @@ namespace optkit::metrics::performance
                     .add(uops_issued_name, intel::EventMapper::get(intel::NativeEvents::UOPS_ISSUED))
                     .add(uops_retired_slots_name, intel::EventMapper::get(intel::NativeEvents::UOPS_RETIRED_SLOTS))
                     .add(recovery_cycles_name, intel::EventMapper::get(intel::NativeEvents::INT_MISC_RECOVERY_CYCLES))
-                    .build("BadSpeculation_Mispredicts__%",
+                    .build("bad_speculation_mispredicts__%",
                            [dispatch_slots_name, branch_misp_retired_name, machine_clears_count_name, uops_issued_name, uops_retired_slots_name, recovery_cycles_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
                                uint64_t dispatch_slots = SUPERSCALAR_WIDE * get_event_count(counts, dispatch_slots_name);
@@ -1293,7 +1293,7 @@ namespace optkit::metrics::performance
             }();
             return metric;
         }
-        static const MetricBuilder<uint64_t> &BadSpeculation_PipelineRestarts()
+        static const MetricBuilder<uint64_t> &bad_speculation_pipeline_restarts()
         {
 
             static const MetricBuilder<uint64_t> metric = []
@@ -1312,7 +1312,7 @@ namespace optkit::metrics::performance
                     .add(uops_issued_name, intel::EventMapper::get(intel::NativeEvents::UOPS_ISSUED))
                     .add(uops_retired_slots_name, intel::EventMapper::get(intel::NativeEvents::UOPS_RETIRED_SLOTS))
                     .add(recovery_cycles_name, intel::EventMapper::get(intel::NativeEvents::INT_MISC_RECOVERY_CYCLES))
-                    .build("BadSpeculation_PipelineRestarts__%",
+                    .build("bad_speculation_pipeline_restarts__%",
                            [dispatch_slots_name, branch_misp_retired_name, machine_clears_count_name, uops_issued_name, uops_retired_slots_name, recovery_cycles_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
                                uint64_t dispatch_slots = SUPERSCALAR_WIDE * get_event_count(counts, dispatch_slots_name);
@@ -1333,7 +1333,7 @@ namespace optkit::metrics::performance
             return metric;
         }
 
-        static const MetricBuilder<uint64_t> &BackendEndbound_Memory()
+        static const MetricBuilder<uint64_t> &backend_bound_memory()
         {
 
             static const MetricBuilder<uint64_t> metric = []
@@ -1350,7 +1350,7 @@ namespace optkit::metrics::performance
                     .add(stalls_l2_miss_name, intel::EventMapper::get(intel::NativeEvents::STALLS_L2_MISS))
                     .add(stalls_l3_miss_name, intel::EventMapper::get(intel::NativeEvents::STALLS_L3_MISS))
                     .add(resource_stalls_sb_name, intel::EventMapper::get(intel::NativeEvents::RESOURCE_STALLS_SB))
-                    .build("BackendEndbound_Memory__%",
+                    .build("backend_bound_memory__%",
                            [unhalted_cycles_name, stalls_l1d_miss_name, stalls_l2_miss_name, stalls_l3_miss_name, resource_stalls_sb_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
                                uint64_t unhalted_cycles = get_event_count(counts, unhalted_cycles_name);
@@ -1371,7 +1371,7 @@ namespace optkit::metrics::performance
             return metric;
         }
 
-        static const MetricBuilder<uint64_t> &BackendEndbound_CPU()
+        static const MetricBuilder<uint64_t> &backend_bound_cpu()
         {
 
             static const MetricBuilder<uint64_t> metric = []
@@ -1388,7 +1388,7 @@ namespace optkit::metrics::performance
                     .add(stalls_l2_miss_name, intel::EventMapper::get(intel::NativeEvents::STALLS_L2_MISS))
                     .add(stalls_l3_miss_name, intel::EventMapper::get(intel::NativeEvents::STALLS_L3_MISS))
                     .add(resource_stalls_sb_name, intel::EventMapper::get(intel::NativeEvents::RESOURCE_STALLS_SB))
-                    .build("BackendEndbound_CPU__%",
+                    .build("backend_bound_cpu__%",
                            [unhalted_cycles_name, stalls_l1d_miss_name, stalls_l2_miss_name, stalls_l3_miss_name, resource_stalls_sb_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
                                uint64_t unhalted_cycles = get_event_count(counts, unhalted_cycles_name);
@@ -1410,7 +1410,7 @@ namespace optkit::metrics::performance
             return metric;
         }
 
-        static const MetricBuilder<uint64_t> &Retiring_Fastpath()
+        static const MetricBuilder<uint64_t> &retiring_fastpath()
         {
 
             static const MetricBuilder<uint64_t> metric = []
@@ -1425,7 +1425,7 @@ namespace optkit::metrics::performance
                     .add(uops_retired_slots_name, intel::EventMapper::get(intel::NativeEvents::UOPS_RETIRED_SLOTS))
                     .add(idq_ms_uops_name, intel::EventMapper::get(intel::NativeEvents::IDQ_MS_UOPS))
                     .add(uops_issued_name, intel::EventMapper::get(intel::NativeEvents::UOPS_ISSUED))
-                    .build("Retiring_Fastpath__%",
+                    .build("retiring_fastpath__%",
                            [dispatch_slots_name, uops_retired_slots_name, idq_ms_uops_name, uops_issued_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
                                uint64_t dispatch_slots = SUPERSCALAR_WIDE * get_event_count(counts, dispatch_slots_name);
@@ -1443,7 +1443,7 @@ namespace optkit::metrics::performance
             return metric;
         }
 
-        static const MetricBuilder<uint64_t> &Retiring_Microcode()
+        static const MetricBuilder<uint64_t> &retiring_microcode()
         {
 
             static const MetricBuilder<uint64_t> metric = []
@@ -1458,7 +1458,7 @@ namespace optkit::metrics::performance
                     .add(uops_retired_slots_name, intel::EventMapper::get(intel::NativeEvents::UOPS_RETIRED_SLOTS))
                     .add(idq_ms_uops_name, intel::EventMapper::get(intel::NativeEvents::IDQ_MS_UOPS))
                     .add(uops_issued_name, intel::EventMapper::get(intel::NativeEvents::UOPS_ISSUED))
-                    .build("Retiring_Microcode__%",
+                    .build("retiring_microcode__%",
                            [dispatch_slots_name, uops_retired_slots_name, idq_ms_uops_name, uops_issued_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
                                uint64_t dispatch_slots = SUPERSCALAR_WIDE * get_event_count(counts, dispatch_slots_name);
@@ -1478,226 +1478,226 @@ namespace optkit::metrics::performance
         // Aggregated Metrics
 
         // Roofline model metrics
-        static const MetricBuilder<uint64_t> &CARM()
+        static const MetricBuilder<uint64_t> &carm()
         {
             static const MetricBuilder<uint64_t> mb = []
             {
                 MetricBuilder<uint64_t> mb{};
-                mb.add(AI());
-                mb.add(GFLOPs());
+                mb.add(ai());
+                mb.add(gflops());
                 return mb;
             }();
             return mb;
         }
 
         // Topdown (Pipeline Utilisation) Analysis L1
-        static const MetricBuilder<uint64_t> &TopdownL1()
+        static const MetricBuilder<uint64_t> &topdown_l1()
         {
             static const MetricBuilder<uint64_t> mb = []
             {
                 MetricBuilder<uint64_t> mb{};
-                mb.add(FrontendBound());
-                mb.add(BackendBound());
-                mb.add(Retiring());
-                mb.add(BadSpeculation());
-                mb.add(SMTContention());
+                mb.add(frontend_bound());
+                mb.add(backend_bound());
+                mb.add(retiring());
+                mb.add(bad_speculation());
+                mb.add(smt_contention());
                 return mb;
             }();
             return mb;
         }
 
-        static const MetricBuilder<uint64_t> &TopdownL2()
+        static const MetricBuilder<uint64_t> &topdown_l2()
         {
             static const MetricBuilder<uint64_t> mb = []
             {
                 MetricBuilder<uint64_t> mb{};
-                mb.add(TopdownL2_FE());
-                mb.add(TopdownL2_BE());
-                mb.add(TopdownL2_Retiring());
-                mb.add(TopdownL2_BadSpec());
+                mb.add(topdown_l2_fe());
+                mb.add(topdown_l2_be());
+                mb.add(topdown_l2_retiring());
+                mb.add(topdown_l2_bad_spec());
                 return mb;
             }();
             return mb;
         }
 
-        static const MetricBuilder<uint64_t> &TopdownL2_FE()
+        static const MetricBuilder<uint64_t> &topdown_l2_fe()
         {
             static const MetricBuilder<uint64_t> mb = []
             {
                 MetricBuilder<uint64_t> mb{};
-                mb.add(FrontendBound_Latency());
-                mb.add(FrontendBound_BW());
+                mb.add(frontend_bound_latency());
+                mb.add(frontend_bound_bw());
                 return mb;
             }();
             return mb;
         }
 
-        static const MetricBuilder<uint64_t> &TopdownL2_BE()
+        static const MetricBuilder<uint64_t> &topdown_l2_be()
         {
             static const MetricBuilder<uint64_t> mb = []
             {
                 MetricBuilder<uint64_t> mb{};
-                mb.add(BackendEndbound_Memory());
-                mb.add(BackendEndbound_CPU());
+                mb.add(backend_bound_memory());
+                mb.add(backend_bound_cpu());
                 return mb;
             }();
             return mb;
         }
 
-        static const MetricBuilder<uint64_t> &TopdownL2_Retiring()
+        static const MetricBuilder<uint64_t> &topdown_l2_retiring()
         {
             static const MetricBuilder<uint64_t> mb = []
             {
                 MetricBuilder<uint64_t> mb{};
-                mb.add(Retiring_Fastpath());
-                mb.add(Retiring_Microcode());
+                mb.add(retiring_fastpath());
+                mb.add(retiring_microcode());
                 return mb;
             }();
             return mb;
         }
 
-        static const MetricBuilder<uint64_t> &TopdownL2_BadSpec()
+        static const MetricBuilder<uint64_t> &topdown_l2_bad_spec()
         {
             static const MetricBuilder<uint64_t> mb = []
             {
                 MetricBuilder<uint64_t> mb{};
-                mb.add(BadSpeculation_Mispredicts());
-                mb.add(BadSpeculation_PipelineRestarts());
+                mb.add(bad_speculation_mispredicts());
+                mb.add(bad_speculation_pipeline_restarts());
                 return mb;
             }();
             return mb;
         }
 
-        static const MetricBuilder<uint64_t> &AllTopdown()
+        static const MetricBuilder<uint64_t> &all_topdown()
         {
             static const MetricBuilder<uint64_t> mb = []
             {
                 MetricBuilder<uint64_t> mb{};
-                mb.add(TopdownL1());
-                mb.add(TopdownL2());
+                mb.add(topdown_l1());
+                mb.add(topdown_l2());
                 return mb;
             }();
             return mb;
         }
 
         // Aggregate all cache miss metrics
-        static const MetricBuilder<uint64_t> &AllMPKI()
+        static const MetricBuilder<uint64_t> &all_mpki()
         {
             static const MetricBuilder<uint64_t> mb = []
             {
                 MetricBuilder<uint64_t> mb{};
-                mb.add(L1MPKI());
-                mb.add(L2MPKI());
-                mb.add(L3MPKI());
+                mb.add(l1_mpki());
+                mb.add(l2_mpki());
+                mb.add(l3_mpki());
                 return mb;
             }();
             return mb;
         }
 
-        static const MetricBuilder<uint64_t> &AllCacheHitRatio()
+        static const MetricBuilder<uint64_t> &all_cache_hit_ratio()
         {
             static const MetricBuilder<uint64_t> mb = []
             {
                 MetricBuilder<uint64_t> mb{};
-                mb.add(L2HitRatio());
-                mb.add(L3HitRatio());
+                mb.add(l2_hit_ratio());
+                mb.add(l3_hit_ratio());
                 return mb;
             }();
             return mb;
         }
 
         // Aggregate all STLB MPKI metrics
-        static const MetricBuilder<uint64_t> &AllSTLBMPKI()
+        static const MetricBuilder<uint64_t> &AllStlb_mpki()
         {
             static const MetricBuilder<uint64_t> mb = []
             {
                 MetricBuilder<uint64_t> mb{};
-                mb.add(TLBMPKI());
-                mb.add(ITLBMPKI());
-                mb.add(DTLBMPKI());
+                mb.add(tlb_mpki());
+                mb.add(itlb_mpki());
+                mb.add(dtlb_mpki());
                 return mb;
             }();
             return mb;
         }
 
         // Aggregate all latency and parallelism metrics
-        static const MetricBuilder<uint64_t> &AllLatencyAndParallelism()
+        static const MetricBuilder<uint64_t> &all_latency_and_parallelism()
         {
             static const MetricBuilder<uint64_t> mb = []
             {
                 MetricBuilder<uint64_t> mb{};
-                mb.add(LoadMissLatency());
-                mb.add(ILP());
-                mb.add(MLP());
+                mb.add(load_miss_latency());
+                mb.add(ilp());
+                mb.add(mlp());
                 return mb;
             }();
             return mb;
         }
 
         // Aggregate all DRAM bandwidth metrics
-        static const MetricBuilder<uint64_t> &AllDRAMBandwidth()
+        static const MetricBuilder<uint64_t> &all_dram_bandwidth()
         {
             static const MetricBuilder<uint64_t> mb = []
             {
                 MetricBuilder<uint64_t> mb{};
-                mb.add(DRAMBandwidthGBs());
+                mb.add(dram_bandwidth_gbs());
                 return mb;
             }();
             return mb;
         }
 
         // Aggregate all instruction-per-event metrics
-        static const MetricBuilder<uint64_t> &AllIpMetrics()
+        static const MetricBuilder<uint64_t> &all_ip_metrics()
         {
             static const MetricBuilder<uint64_t> mb = []
             {
                 MetricBuilder<uint64_t> mb{};
-                mb.add(IpC());
-                mb.add(IpCall());
-                mb.add(IpAVXAnyFLOP());
-                mb.add(IpArithScalarSP());
-                mb.add(IpArithScalarDP());
-                mb.add(IpArithAVX128());
-                mb.add(IpArithAVX256());
-                mb.add(IpArithAVX512());
-                mb.add(IpArithVectorAny());
-                mb.add(ScalarpArithVector());
-                mb.add(IpBranch());
-                mb.add(IpMemLoad());
-                mb.add(IpMemStore());
-                mb.add(IpMispredict());
-                mb.add(IpFLOP());
-                mb.add(IpArith());
-                mb.add(IpSWPF());
+                mb.add(ipc());
+                mb.add(ip_call());
+                mb.add(ip_avx_any_flop());
+                mb.add(ip_arith_scalar_sp());
+                mb.add(ip_arith_scalar_dp());
+                mb.add(ip_arith_avx128());
+                mb.add(ip_arith_avx256());
+                mb.add(ip_arith_avx512());
+                mb.add(ip_arith_vector_any());
+                mb.add(scalarp_arith_vector());
+                mb.add(ip_branch());
+                mb.add(ip_mem_load());
+                mb.add(ip_mem_store());
+                mb.add(ip_mispredict());
+                mb.add(ip_flop());
+                mb.add(ip_arith());
+                mb.add(ip_swpf());
                 return mb;
             }();
             return mb;
         }
 
         // Aggregate all branch-related metrics
-        static const MetricBuilder<uint64_t> &AllBranchMetrics()
+        static const MetricBuilder<uint64_t> &all_branch_metrics()
         {
             static const MetricBuilder<uint64_t> mb = []
             {
                 MetricBuilder<uint64_t> mb{};
-                mb.add(BranchMisprRatio());
+                mb.add(branch_mispr_ratio());
                 return mb;
             }();
             return mb;
         }
 
-        static const MetricBuilder<uint64_t> &AllMetrics()
+        static const MetricBuilder<uint64_t> &all_metrics()
         {
             static const MetricBuilder<uint64_t> mb = []
             {
                 MetricBuilder<uint64_t> mb{};
-                mb.add(AllMPKI());
-                mb.add(AllSTLBMPKI());
-                mb.add(AllLatencyAndParallelism());
-                mb.add(AllDRAMBandwidth());
-                mb.add(AllIpMetrics());
-                mb.add(AllBranchMetrics());
-                mb.add(AllTopdown());
+                mb.add(all_mpki());
+                mb.add(AllStlb_mpki());
+                mb.add(all_latency_and_parallelism());
+                mb.add(all_dram_bandwidth());
+                mb.add(all_ip_metrics());
+                mb.add(all_branch_metrics());
+                mb.add(all_topdown());
                 return mb;
             }();
             return mb;
