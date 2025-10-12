@@ -81,7 +81,7 @@ function base_project_setup()
     filter "configurations:Release"
     optimize "On"
     symbols "Off"
-    defines { "OPTKIT_MODE_NDEBUG" }
+    defines {}
     buildoptions {
         "-Wall",
         "-O2",

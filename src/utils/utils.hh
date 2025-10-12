@@ -91,21 +91,29 @@ namespace optkit::utils
     class BlockTimer
     {
     public:
-        BlockTimer(const std::string &block_name) : block_name(block_name)
+        BlockTimer(const std::string &block_name, double &duration_ms, bool verbose = false) : block_name(block_name), duration_ms(duration_ms), verbose(verbose)
         {
-            OPTKIT_CORE_INFO("BLOCK :{} is being measured..", this->block_name);
+            if (OPT_LIKELY(verbose))
+            {
+                OPTKIT_INFO("BLOCK :{} is being measured..", this->block_name);
+            }
             start = std::chrono::high_resolution_clock::now();
         }
         ~BlockTimer()
         {
             auto end = std::chrono::high_resolution_clock::now();
-            auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000.0f;
-            OPTKIT_CORE_INFO("block :{} execution time : {}ms", this->block_name, duration);
+            duration_ms = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000.0f;
+            if (OPT_LIKELY(verbose))
+            {
+                OPTKIT_INFO("block :{} execution time : {}ms", this->block_name, duration_ms);
+            }
         }
 
     private:
         const std::string block_name;
         std::chrono::high_resolution_clock::time_point start;
+        double &duration_ms;
+        bool verbose;
     };
 
     extern std::string EXECUTION_FOLDER_NAME;
