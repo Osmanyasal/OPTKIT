@@ -8,30 +8,30 @@
 #include "core/metrics/performance/cpu/intel/event_mapper.hh"
 namespace optkit::metrics::performance
 {
-    using core_metrics = CoreMetrics<IntelMetricsImpl>;
-    using event_mapper = intel::EventMapper;
-    using core_events = CoreEvents;
-    using native_events = intel::NativeEvents;
+    using cpu_metrics = CoreMetrics<IntelMetricsImpl>;
+    using cpu_mapper = intel::EventMapper;
+    using cpu_events = CoreEvents;
+    using cpu_native_events = intel::NativeEvents;
 }
 #elif OPTKIT_ENV_CPU_AMD
 #include "core/metrics/performance/cpu/amd/core_metrics.hh"
 #include "core/metrics/performance/cpu/amd/event_mapper.hh"
 namespace optkit::metrics::performance
 {
-    using core_metrics = CoreMetrics<AMDMetricsImpl>;
-    using event_mapper = amd::EventMapper;
-    using core_events = CoreEvents;
-    using native_events = amd::NativeEvents;
+    using cpu_metrics = CoreMetrics<AMDMetricsImpl>;
+    using cpu_mapper = amd::EventMapper;
+    using cpu_events = CoreEvents;
+    using cpu_native_events = amd::NativeEvents;
 }
 #elif OPTKIT_ENV_CPU_ARM
 #include "core/metrics/performance/cpu/arm/core_metrics.hh"
 #include "core/metrics/performance/cpu/arm/event_mapper.hh"
 namespace optkit::metrics::performance
 {
-    using core_metrics = CoreMetrics<ARMMetricsImpl>;
-    using event_mapper = arm::EventMapper;
-    using core_events = CoreEvents;
-    using native_events = arm::NativeEvents;
+    using cpu_metrics = CoreMetrics<ARMMetricsImpl>;
+    using cpu_mapper = arm::EventMapper;
+    using cpu_events = CoreEvents;
+    using cpu_native_events = arm::NativeEvents;
 }
 #elif OPTKIT_ENV_CPU_RISCV
 #elif OPTKIT_ENV_CPU_MIPS

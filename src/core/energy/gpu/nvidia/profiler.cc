@@ -78,13 +78,13 @@ namespace optkit::energy::gpu::nvidia
                 std::string metric_type = full_metric_name.substr(0, underscore_pos);
                 std::string device_suffix = full_metric_name.substr(underscore_pos + 1);
                 uint32_t device_id = std::stoul(device_suffix);
-                std::cout << std::fixed << "Parsed metric: " << full_metric_name << " -> Type: " << metric_type << ", Device ID: " << device_id << "\n"; // debug
+                // std::cout << std::fixed << "Parsed metric: " << full_metric_name << " -> Type: " << metric_type << ", Device ID: " << device_id << "\n"; // debug
 
                 // Store energy value for this device under the metric type
                 for (const auto &device_pair : metric_pair.second)
                 {
-                    metrics_by_type[metric_type][device_id] = device_pair.second;                                                                   // convert to microseconds
-                    std::cout << std::fixed << "Storing energy: " << metric_type << "_" << device_id << " = " << device_pair.second << " Joules\n"; // debug
+                    metrics_by_type[metric_type][device_id] = device_pair.second; // convert to microseconds
+                    // std::cout << std::fixed << "Storing energy: " << metric_type << "_" << device_id << " = " << device_pair.second << " Joules\n"; // debug
                 }
             }
         }
@@ -129,12 +129,13 @@ namespace optkit::energy::gpu::nvidia
                 for (auto &&event : this->event_results)
                 {
                     for (auto &&device : event.second)
-                        std::cout << "GPU[" << device.first << "]=" << device.second << " Joules ";
+                        std::cout << "\tGPU[" << device.first << "]=" << device.second << " Joules ";
                     std::cout << std::endl;
                 }
 
+            std::cout << "\tMetrics: \n";
             for (auto &&metric : this->metric_results)
-                std::cout << std::fixed << metric.first << ": " << metric.second << std::endl;
+                std::cout << std::fixed << "\t\t" << metric.first << ": " << metric.second << std::endl;
         }
     }
 
@@ -167,7 +168,7 @@ namespace optkit::energy::gpu::nvidia
                 {
                     std::string key = event_name + "_" + std::to_string(i.first);
                     aggregated_events[key][i.first] += i.second;
-                    std::cout << std::fixed << key << " =" << aggregated_events[key][i.first] << " Joules\n"; // debug
+                    // std::cout << std::fixed << key << " =" << aggregated_events[key][i.first] << " Joules\n"; // debug
                 }
             }
         }

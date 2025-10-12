@@ -2,13 +2,13 @@
 
 namespace optkit::pmu::cpu
 {
-    pfm_pmu_info_t QueryPMU::default_architectural_pmu;
+    pfm_pmu_info_t Query::default_architectural_pmu;
 
-    void QueryPMU::init()
+    void Query::init()
     {
         if (pfm_initialize() == PFM_SUCCESS)
         {
-            memset(&QueryPMU::default_architectural_pmu, 0, sizeof(pfm_pmu_info_t));
+            memset(&Query::default_architectural_pmu, 0, sizeof(pfm_pmu_info_t));
             OPTKIT_CORE_INFO("pfm initialized successfully!");
         }
         else
@@ -18,12 +18,12 @@ namespace optkit::pmu::cpu
         }
     }
 
-    void QueryPMU::destroy()
+    void Query::destroy()
     {
         pfm_terminate();
     }
 
-    pfm_pmu_info_t QueryPMU::pmu_info(int32_t pmu_id)
+    pfm_pmu_info_t Query::pmu_info(int32_t pmu_id)
     {
         pfm_pmu_info_t pmu_info;
         memset(&pmu_info, 0, sizeof(pfm_pmu_info_t));
@@ -32,21 +32,21 @@ namespace optkit::pmu::cpu
         return pmu_info;
     }
 
-    pfm_pmu_info_t QueryPMU::default_pmu_info()
+    pfm_pmu_info_t Query::default_pmu_info()
     {
 
-        if (OPT_LIKELY(QueryPMU::default_architectural_pmu.is_dfl))
-            return QueryPMU::default_architectural_pmu;
+        if (OPT_LIKELY(Query::default_architectural_pmu.is_dfl))
+            return Query::default_architectural_pmu;
 
-        std::vector<int32_t> pmu_ids = QueryPMU::avail_pmu_ids();
+        std::vector<int32_t> pmu_ids = Query::avail_pmu_ids();
         for (auto pmu_id : pmu_ids)
         {
-            pfm_pmu_info_t info = QueryPMU::pmu_info(pmu_id);
+            pfm_pmu_info_t info = Query::pmu_info(pmu_id);
             if (info.is_dfl || info.type == PFM_PMU_TYPE_CORE)
             {
                 info.is_dfl = true; // make it default!
-                QueryPMU::default_architectural_pmu = info;
-                return QueryPMU::default_architectural_pmu;
+                Query::default_architectural_pmu = info;
+                return Query::default_architectural_pmu;
             }
         }
         // If not found return defaul pmu_info
@@ -56,7 +56,7 @@ namespace optkit::pmu::cpu
         return pmu_info;
     }
 
-    void QueryPMU::list_avail_events(int32_t pmu_id)
+    void Query::list_avail_events(int32_t pmu_id)
     {
 
         pfm_event_info_t info;
@@ -86,7 +86,7 @@ namespace optkit::pmu::cpu
                 std::cout << (pinfo.is_present ? "Active" : "Supported") << " Event: " << pinfo.name << "::" << info.name << std::endl;
         }
     }
-    pfm_event_info_t QueryPMU::event_detail(int32_t pmu_id, uint32_t event_code)
+    pfm_event_info_t Query::event_detail(int32_t pmu_id, uint32_t event_code)
     {
         pfm_event_info_t info;
         pfm_pmu_info_t pinfo;
@@ -121,26 +121,26 @@ namespace optkit::pmu::cpu
         return info;
     }
 
-    void QueryPMU::list_avail_pmus()
+    void Query::list_avail_pmus()
     {
         std::cout << "[INFO] Listing Available PMUs...." << std::endl;
         int32_t i = 0;
         pfm_for_all_pmus(i)
         {
-            pfm_pmu_info_t pmu_info = QueryPMU::pmu_info(i);
+            pfm_pmu_info_t pmu_info = Query::pmu_info(i);
             if (pmu_info.is_present)
                 std::cout << pmu_info << std::endl;
         }
     }
 
-    std::vector<int32_t> QueryPMU::avail_pmu_ids()
+    std::vector<int32_t> Query::avail_pmu_ids()
     {
         std::vector<int32_t> avail_pmu_ids;
 
         int32_t i = 0;
         pfm_for_all_pmus(i)
         {
-            if (QueryPMU::pmu_info(i).is_present)
+            if (Query::pmu_info(i).is_present)
                 avail_pmu_ids.push_back(i);
         }
 

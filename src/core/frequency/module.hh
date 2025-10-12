@@ -1,8 +1,8 @@
 #pragma once
 
 #include "utils/deployment/deployment_config.hh"
-#include "core/frequency/cpu/cpu_frequency.hh"
-#include "core/frequency/cpu/query_cpu_frequency.hh"
+#include "core/frequency/cpu/frequency.hh"
+#include "core/frequency/cpu/query.hh"
 
 #if OPTKIT_CONF_FREQ_MACROS_ENABLED
 

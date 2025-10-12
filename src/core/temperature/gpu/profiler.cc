@@ -64,8 +64,9 @@ namespace optkit::temperature::gpu
                 for (auto &&event : this->event_results)
                     std::cout << std::fixed << "\t" << event.first << ": " << event.second.first << "°C (GPU), " << event.second.second << "°C (Memory)" << std::endl;
 
+            std::cout << "\tMetrics: \n";
             for (auto &&metric : this->metric_results)
-                std::cout << std::fixed << "\t" << metric.first << ": " << metric.second << std::endl;
+                std::cout << std::fixed << "\t\t" << metric.first << ": " << metric.second << std::endl;
         }
     }
 

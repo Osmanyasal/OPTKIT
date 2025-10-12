@@ -131,8 +131,9 @@ namespace optkit::energy::gpu::amd
                     std::cout << std::endl;
                 }
 
+            std::cout << "\tMetrics: \n";
             for (auto &&metric : this->metric_results)
-                std::cout << std::fixed << metric.first << ": " << metric.second << std::endl;
+                std::cout << std::fixed << "\t\t" << metric.first << ": " << metric.second << std::endl;
         }
     }
 
@@ -165,7 +166,7 @@ namespace optkit::energy::gpu::amd
                 {
                     std::string key = event_name + "_" + std::to_string(i.first);
                     aggregated_events[key][i.first] += i.second;
-                    std::cout << std::fixed << key << " =" << aggregated_events[key][i.first] << " Joules\n"; // debug
+                    // std::cout << std::fixed << key << " =" << aggregated_events[key][i.first] << " Joules\n"; // debug
                 }
             }
         }

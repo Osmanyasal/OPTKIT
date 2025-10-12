@@ -6,11 +6,11 @@
 
 #include "utils/utils.hh"
 #include "core/query.hh"
-#include "core/frequency/cpu/query_cpu_frequency.hh"
+#include "core/frequency/cpu/query.hh"
 #include "core/frequency/msrs.hh"
 #include "core/frequency/utils.hh"
 
-namespace optkit::frequency
+namespace optkit::frequency::cpu
 {
 
     /**
@@ -32,6 +32,8 @@ namespace optkit::frequency
      * - Convert frequency units (Hz ↔ kHz ↔ MHz ↔ GHz).
      * - Restore default uncore frequency limits.
      *
+     * Users must provide and interpret frequencies in kHz.
+     *
      * ### Example Frequencies:
      * - 800000 kHz → 800 MHz (0.8 GHz)
      * - 2400000 kHz → 2400 MHz (2.4 GHz)
@@ -40,7 +42,7 @@ namespace optkit::frequency
      * @note Most operations require elevated privileges (e.g., root) to access sysfs or MSR interfaces.
      */
 
-    class CPUFrequency final
+    class Frequency final
     {
     public:
         static void set_core_frequency(int64_t frequency, int16_t socket);
@@ -59,12 +61,12 @@ namespace optkit::frequency
         static void reset_core_frequency(int16_t socket);
 
     private:
-        CPUFrequency() = delete;
-        ~CPUFrequency() = delete;
+        Frequency() = delete;
+        ~Frequency() = delete;
     };
 
     std::string to_string(const std::pair<int64_t, int64_t> &pair);
     std::ostream &operator<<(std::ostream &os, const std::pair<int64_t, int64_t> &pair);
 }
 
-using optkit::frequency::operator<<; // make available to global namespace
+using optkit::frequency::cpu::operator<<; // make available to global namespace

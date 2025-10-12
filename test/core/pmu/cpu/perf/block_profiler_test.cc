@@ -10,16 +10,16 @@ TEST(CPUPerfEventsTest, Instructions_1M)
     int32_t expected_result = 1'000'000;
 
     MetricBuilder<uint64_t> mb{false};
-    mb.add(to_string(performance::core_events::INST_RETIRED), performance::event_mapper::get(performance::core_events::INST_RETIRED))
-        .build(to_string(performance::core_events::INST_RETIRED), [](const auto &map) -> double
-               { return get_event_count(map, to_string(performance::core_events::INST_RETIRED)) / (double)REPEAT; });
+    mb.add(to_string(performance::cpu_events::INST_RETIRED), performance::cpu_mapper::get(performance::cpu_events::INST_RETIRED))
+        .build(to_string(performance::cpu_events::INST_RETIRED), [](const auto &map) -> double
+               { return get_event_count(map, to_string(performance::cpu_events::INST_RETIRED)) / (double)REPEAT; });
 
     OPTKIT_CPU_EVENTS_REPEAT("Instructions_1M", mb, REPEAT)
     {
         instructions_million();
     }
     auto aggregated_results = var17.aggregate();
-    auto result = mb.calculate(aggregated_results)[0].second; //  aggregated_results.at(to_string(performance::core_events::INST_RETIRED)) / (double)REPEAT;
+    auto result = mb.calculate(aggregated_results)[0].second; //  aggregated_results.at(to_string(performance::cpu_events::INST_RETIRED)) / (double)REPEAT;
     EXPECT_NEAR(expected_result, result, expected_result * ERROR_RATE);
 }
 TEST(CPUPerfEventsTest, BranchInst1500K)
@@ -27,16 +27,16 @@ TEST(CPUPerfEventsTest, BranchInst1500K)
     int32_t expected_result = 1'500'000;
 
     MetricBuilder<uint64_t> mb{false};
-    mb.add(to_string(performance::core_events::BRANCH_INST_RETIRED), performance::event_mapper::get(performance::core_events::BRANCH_INST_RETIRED))
-        .build(to_string(performance::core_events::BRANCH_INST_RETIRED), [](const auto &map) -> double
-               { return get_event_count(map, to_string(performance::core_events::BRANCH_INST_RETIRED)) / (double)REPEAT; });
+    mb.add(to_string(performance::cpu_events::BRANCH_INST_RETIRED), performance::cpu_mapper::get(performance::cpu_events::BRANCH_INST_RETIRED))
+        .build(to_string(performance::cpu_events::BRANCH_INST_RETIRED), [](const auto &map) -> double
+               { return get_event_count(map, to_string(performance::cpu_events::BRANCH_INST_RETIRED)) / (double)REPEAT; });
 
     OPTKIT_CPU_EVENTS_REPEAT("BranchInst1500K", mb, REPEAT)
     {
         branches();
     }
     auto aggregated_results = var34.aggregate();
-    auto result = mb.calculate(aggregated_results)[0].second; //  aggregated_results.at(to_string(performance::core_events::BRANCH_INST_RETIRED)) / (double)REPEAT;
+    auto result = mb.calculate(aggregated_results)[0].second; //  aggregated_results.at(to_string(performance::cpu_events::BRANCH_INST_RETIRED)) / (double)REPEAT;
     EXPECT_NEAR(expected_result, result, expected_result * ERROR_RATE);
 }
 
@@ -45,9 +45,9 @@ TEST(CPUPerfEventsTest, BranchMisp250K)
     int32_t expected_result = 250'000;
 
     MetricBuilder<uint64_t> mb{false};
-    mb.add(to_string(performance::core_events::BRANCH_MISP_RETIRED), performance::event_mapper::get(performance::core_events::BRANCH_MISP_RETIRED))
-        .build(to_string(performance::core_events::BRANCH_MISP_RETIRED), [](const auto &map) -> double
-               { return get_event_count(map, to_string(performance::core_events::BRANCH_MISP_RETIRED)) / (double)REPEAT; });
+    mb.add(to_string(performance::cpu_events::BRANCH_MISP_RETIRED), performance::cpu_mapper::get(performance::cpu_events::BRANCH_MISP_RETIRED))
+        .build(to_string(performance::cpu_events::BRANCH_MISP_RETIRED), [](const auto &map) -> double
+               { return get_event_count(map, to_string(performance::cpu_events::BRANCH_MISP_RETIRED)) / (double)REPEAT; });
 
     OPTKIT_CPU_EVENTS_REPEAT("BranchMisp250K", mb, REPEAT)
     {
@@ -55,7 +55,7 @@ TEST(CPUPerfEventsTest, BranchMisp250K)
     }
 
     auto aggregated_results = var52.aggregate();
-    auto result = mb.calculate(aggregated_results)[0].second;               //  aggregated_results.at(to_string(performance::core_events::BRANCH_MISP_RETIRED)) / (double)REPEAT;
+    auto result = mb.calculate(aggregated_results)[0].second;               //  aggregated_results.at(to_string(performance::cpu_events::BRANCH_MISP_RETIRED)) / (double)REPEAT;
     EXPECT_NEAR(expected_result, result, expected_result * ERROR_RATE * 5); // error rate -> 25%
 }
 
@@ -64,11 +64,11 @@ TEST(CPUPerfEventsTest, RetiredFlopAny1M)
     size_t expected_result = 1'000'000;
     MetricBuilder<uint64_t> mb{false};
 #if OPTKIT_ENV_CPU_AMD
-    mb.add(to_string(performance::core_events::RETIRED_VECTOR), performance::event_mapper::get(performance::core_events::RETIRED_VECTOR))
-        .build(to_string(performance::core_events::RETIRED_VECTOR), [](const auto &map) -> double
-               { return get_event_count(map, to_string(performance::core_events::RETIRED_VECTOR)) / (double)REPEAT; });
+    mb.add(to_string(performance::cpu_events::RETIRED_VECTOR), performance::cpu_mapper::get(performance::cpu_events::RETIRED_VECTOR))
+        .build(to_string(performance::cpu_events::RETIRED_VECTOR), [](const auto &map) -> double
+               { return get_event_count(map, to_string(performance::cpu_events::RETIRED_VECTOR)) / (double)REPEAT; });
 #else // OPTKIT_ENV_CPU_INTEL
-    mb.add(to_string(performance::native_events::FP_ARITH_INST_RETIRED_SCALAR), performance::event_mapper::get(performance::native_events::FP_ARITH_INST_RETIRED_SCALAR))
+    mb.add(to_string(performance::native_events::FP_ARITH_INST_RETIRED_SCALAR), performance::cpu_mapper::get(performance::native_events::FP_ARITH_INST_RETIRED_SCALAR))
         .build(to_string(performance::native_events::FP_ARITH_INST_RETIRED_SCALAR), [](const auto &map) -> double
                { return get_event_count(map, to_string(performance::native_events::FP_ARITH_INST_RETIRED_SCALAR)) / (double)REPEAT; });
 #endif
@@ -89,7 +89,7 @@ TEST(CPUPerfEventsTest, RetiredFlopAny1M)
     }
     auto aggregated_results = var83.aggregate();
 #if OPTKIT_ENV_CPU_AMD
-    auto result = aggregated_results.at(to_string(performance::core_events::RETIRED_VECTOR)) / (double)REPEAT;
+    auto result = aggregated_results.at(to_string(performance::cpu_events::RETIRED_VECTOR)) / (double)REPEAT;
 #else
     auto result = aggregated_results.at(to_string(performance::native_events::FP_ARITH_INST_RETIRED_SCALAR)) / (double)REPEAT;
 #endif
@@ -99,9 +99,9 @@ TEST(CPUPerfEventsTest, RetiredFlopAny1M)
 TEST(CPUPerfEventsTest, ReadsAndAccumulatesEventData)
 {
     MetricBuilder<uint64_t> mb{false};
-    mb.add(to_string(performance::core_events::INST_RETIRED), performance::event_mapper::get(performance::core_events::INST_RETIRED))
-        .build(to_string(performance::core_events::INST_RETIRED), [](const auto &map) -> double
-               { return get_event_count(map, to_string(performance::core_events::INST_RETIRED)) / (double)REPEAT; });
+    mb.add(to_string(performance::cpu_events::INST_RETIRED), performance::cpu_mapper::get(performance::cpu_events::INST_RETIRED))
+        .build(to_string(performance::cpu_events::INST_RETIRED), [](const auto &map) -> double
+               { return get_event_count(map, to_string(performance::cpu_events::INST_RETIRED)) / (double)REPEAT; });
     double total = 0;
     OPTKIT_CPU_EVENTS_REPEAT("ReadsAndAccumulatesEventData", mb, REPEAT)
     {
@@ -112,16 +112,16 @@ TEST(CPUPerfEventsTest, ReadsAndAccumulatesEventData)
     }
     total /= (double)REPEAT;
     auto aggregated_results = var106.aggregate();
-    auto result = mb.calculate(aggregated_results)[0].second; // aggregated_results.at(to_string(performance::core_events::INST_RETIRED)) / (double)REPEAT;
+    auto result = mb.calculate(aggregated_results)[0].second; // aggregated_results.at(to_string(performance::cpu_events::INST_RETIRED)) / (double)REPEAT;
     EXPECT_NEAR(total, result, total * ERROR_RATE);
 }
 TEST(CPUPerfEventsTest, EnableDisableEventCounting)
 {
     size_t expected_result = 500'000; // apprx
     MetricBuilder<uint64_t> mb{false};
-    mb.add(to_string(performance::core_events::INST_RETIRED), performance::event_mapper::get(performance::core_events::INST_RETIRED))
-        .build(to_string(performance::core_events::INST_RETIRED), [](const auto &map) -> double
-               { return get_event_count(map, to_string(performance::core_events::INST_RETIRED)) / (double)REPEAT; });
+    mb.add(to_string(performance::cpu_events::INST_RETIRED), performance::cpu_mapper::get(performance::cpu_events::INST_RETIRED))
+        .build(to_string(performance::cpu_events::INST_RETIRED), [](const auto &map) -> double
+               { return get_event_count(map, to_string(performance::cpu_events::INST_RETIRED)) / (double)REPEAT; });
 
     bool is_enabled = true;
     OPTKIT_CPU_EVENTS_REPEAT("EnableDisableEventCounting", mb, REPEAT)
@@ -135,6 +135,6 @@ TEST(CPUPerfEventsTest, EnableDisableEventCounting)
         instructions_million();
     }
     auto aggregated_results = var127.aggregate();
-    auto result = mb.calculate(aggregated_results)[0].second; //  aggregated_results.at(to_string(performance::core_events::INST_RETIRED)) / (double)REPEAT;
+    auto result = mb.calculate(aggregated_results)[0].second; //  aggregated_results.at(to_string(performance::cpu_events::INST_RETIRED)) / (double)REPEAT;
     EXPECT_NEAR(expected_result, result, expected_result * ERROR_RATE);
 }

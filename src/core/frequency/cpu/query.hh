@@ -4,7 +4,7 @@
 #include <string>
 #include "utils/utils.hh"
 
-namespace optkit::frequency
+namespace optkit::frequency::cpu
 {
 
     /**
@@ -17,7 +17,7 @@ namespace optkit::frequency
      *  1200000   -> 1200 MHz  (1.2 GHz)
      *  4600000   -> 4600 MHz  (4.6 GHz)
      */
-    class QueryCPUFrequency final
+    class Query final
     {
     public:
         static std::vector<int64_t> get_scaling_available_frequencies(int32_t core = 0);
@@ -35,8 +35,8 @@ namespace optkit::frequency
         static int64_t get_cpuinfo_min_freq(int32_t core = 0);
 
     private:
-        QueryCPUFrequency() = delete;
-        ~QueryCPUFrequency() = delete;
+        Query() = delete;
+        ~Query() = delete;
     };
 
 } // namespace optkit::frequency

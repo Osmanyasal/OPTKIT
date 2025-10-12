@@ -47,8 +47,8 @@ namespace optkit::pmu::cpu::perf
             int32_t cpu = -1, // any cpu
             const char *measurement_type = "cpu_pmu",
             bool is_reset_after_read = true,
-            bool dump_results_to_file = Query::create_folder,
-            bool verbose = !Query::create_folder);
+            bool dump_results_to_file = optkit::Query::create_folder,
+            bool verbose = !optkit::Query::create_folder);
 
         PerfProfilerConfig(
             const char *block_name,
@@ -58,8 +58,8 @@ namespace optkit::pmu::cpu::perf
             int32_t cpu = -1, // any cpu
             const char *measurement_type = "cpu_pmu",
             bool is_reset_after_read = true,
-            bool dump_results_to_file = Query::create_folder,
-            bool verbose = !Query::create_folder);
+            bool dump_results_to_file = optkit::Query::create_folder,
+            bool verbose = !optkit::Query::create_folder);
 
         virtual ~PerfProfilerConfig() {}
 

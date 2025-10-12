@@ -41,7 +41,7 @@ namespace optkit::temperature::hwmon
         static std::unordered_map<std::string, std::string> sensor_paths; // sensor_name -> hwmon_path
 
     public:
-        Profiler(const ProfilerConfig &profiler_config, const optkit::metrics::MetricBuilder<double> &mb);
+        Profiler(const ProfilerConfig &profiler_config, const optkit::metrics::MetricBuilder<double> &mb = {});
         virtual ~Profiler();
 
         virtual void enable() override { this->is_enabled = true; }

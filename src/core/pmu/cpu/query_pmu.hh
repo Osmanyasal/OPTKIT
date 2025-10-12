@@ -21,7 +21,7 @@ namespace optkit::pmu::cpu
      * Don't forget to call init() before using it and destroy() when you're done with it.<br>
      * These 2 method calls can be done at the beginning and end of the application.
      */
-    class QueryPMU final
+    class Query final
     {
     public:
         /**
@@ -88,8 +88,8 @@ namespace optkit::pmu::cpu
         static std::vector<int32_t> avail_pmu_ids();
 
     private:
-        QueryPMU() = delete;
-        ~QueryPMU() = delete;
+        Query() = delete;
+        ~Query() = delete;
 
     private:
         static pfm_pmu_info_t default_architectural_pmu;

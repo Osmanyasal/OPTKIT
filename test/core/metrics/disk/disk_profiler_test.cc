@@ -32,9 +32,9 @@ protected:
 TEST_F(DiskProfiler, Write82KCharsAtOnce)
 {
     MetricBuilder<uint64_t> mb{};
-    mb.add(core_metrics::AllMetrics());
+    mb.add(core_metrics::all_metrics());
 
-    OPTKIT_DISK_EVENTS("Write82KCharsAtOnce", mb);
+    OPTKIT_DISK_EVENTS_WITH_METRICS("Write82KCharsAtOnce", mb);
 
     optkit::utils::write_file(write_path, std::string(WRITE_SIZE * 2, 'M'));
 
@@ -46,9 +46,9 @@ TEST_F(DiskProfiler, Write82KCharsAtOnce)
 TEST_F(DiskProfiler, Write82KCharsDivided)
 {
     MetricBuilder<uint64_t> mb{};
-    mb.add(core_metrics::AllMetrics());
+    mb.add(core_metrics::all_metrics());
 
-    OPTKIT_DISK_EVENTS("Write82KCharsDivided", mb);
+    OPTKIT_DISK_EVENTS_WITH_METRICS("Write82KCharsDivided", mb);
 
     optkit::utils::write_file(write_path, std::string(WRITE_SIZE, 'A'));
     optkit::utils::write_file(write_path, std::string(WRITE_SIZE, 'B'));
@@ -63,9 +63,9 @@ TEST_F(DiskProfiler, Read41KChars)
     optkit::utils::write_file(read_path, std::string(WRITE_SIZE, 'X'));
 
     MetricBuilder<uint64_t> mb{};
-    mb.add(core_metrics::AllMetrics());
+    mb.add(core_metrics::all_metrics());
 
-    OPTKIT_DISK_EVENTS("Read41KChars", mb);
+    OPTKIT_DISK_EVENTS_WITH_METRICS("Read41KChars", mb);
     {
         std::string data = optkit::utils::read_file(read_path);
         ASSERT_FALSE(data.empty());
@@ -79,9 +79,9 @@ TEST_F(DiskProfiler, Read41KChars)
 TEST_F(DiskProfiler, SustainedWrite5Sec)
 {
     MetricBuilder<uint64_t> mb{};
-    mb.add(core_metrics::AllMetrics());
+    mb.add(core_metrics::all_metrics());
 
-    OPTKIT_DISK_EVENTS("SustainedWrite5Sec", mb);
+    OPTKIT_DISK_EVENTS_WITH_METRICS("SustainedWrite5Sec", mb);
 
     const std::string payload(WRITE_SIZE, 'Z');
     auto start = std::chrono::steady_clock::now();

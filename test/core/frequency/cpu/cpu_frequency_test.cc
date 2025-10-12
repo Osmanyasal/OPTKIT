@@ -4,13 +4,13 @@
 #include <vector>
 #include <regex>
 
-#include "core/frequency/cpu/cpu_frequency.hh"
+#include "core/frequency/cpu/frequency.hh"
 #include "core/query.hh"
 
 #include "common/utils.hh"
 #include "utils/utils.hh"
 using namespace optkit::frequency;
-
+using namespace optkit::frequency::cpu;
 class CPUFrequencyTest : public ::testing::Test
 {
 protected:
@@ -74,7 +74,7 @@ TEST_F(CPUFrequencyTest, FrequencyChangeLatency_LessThan10ms)
     auto start = std::chrono::high_resolution_clock::now();
     for (size_t i = 0; i < OPTKIT_ENV_CPU_NUM_SOCKETS; i++)
     {
-        CPUFrequency::set_core_frequency(QueryCPUFrequency::get_cpuinfo_max_freq(0), i);
+        Frequency::set_core_frequency(Query::get_cpuinfo_max_freq(0), i);
     }
     auto end = std::chrono::high_resolution_clock::now();
 
@@ -83,7 +83,7 @@ TEST_F(CPUFrequencyTest, FrequencyChangeLatency_LessThan10ms)
 
     for (size_t i = 0; i < OPTKIT_ENV_CPU_NUM_SOCKETS; i++)
     {
-        CPUFrequency::reset_core_frequency(i);
+        Frequency::reset_core_frequency(i);
     }
     EXPECT_LT(duration.count(), 10); // Should be < 10ms
 }
@@ -91,21 +91,21 @@ TEST_F(CPUFrequencyTest, FrequencyChangeLatency_LessThan10ms)
 TEST_F(CPUFrequencyTest, InvalidSocketNumbers)
 {
     // Test with socket = -1, 999, etc.
-    EXPECT_EQ(CPUFrequency::get_core_frequency(-1), -1);
-    CPUFrequency::set_core_frequency(QueryCPUFrequency::get_cpuinfo_max_freq(0), -1); // Expect OPTKIT ERROR
+    EXPECT_EQ(Frequency::get_core_frequency(-1), -1);
+    Frequency::set_core_frequency(Query::get_cpuinfo_max_freq(0), -1); // Expect OPTKIT ERROR
 }
 
 TEST_F(CPUFrequencyTest, InvalidCPUNumbers)
 {
     // Test with cpu = -1, 9999, offline cores
-    EXPECT_EQ(CPUFrequency::get_core_frequency(-1), -1);
+    EXPECT_EQ(Frequency::get_core_frequency(-1), -1);
 }
 
 TEST_F(CPUFrequencyTest, FrequencyOutOfRange)
 {
     // Test frequencies way below min or above max
-    CPUFrequency::set_core_frequency(1, socket);
-    CPUFrequency::set_core_frequency(999999999999, socket);
+    Frequency::set_core_frequency(1, socket);
+    Frequency::set_core_frequency(999999999999, socket);
 }
 
 //
@@ -117,7 +117,7 @@ TEST_F(CPUFrequencyTest, GetCoreFrequency_ShouldReturnPositiveIfAvailable)
     if (!exists("scaling_cur_freq"))
         GTEST_SKIP() << "scaling_cur_freq not available";
 
-    int64_t freq = CPUFrequency::get_core_frequency(cpu);
+    int64_t freq = Frequency::get_core_frequency(cpu);
     std::cout << "Core " << cpu << " freq: " << freq << " KHz\n";
     EXPECT_GT(freq, 0);
 }
@@ -127,7 +127,7 @@ TEST_F(CPUFrequencyTest, GetCoreFrequencies_ShouldReturnListIfAvailable)
     if (!exists("scaling_cur_freq"))
         GTEST_SKIP() << "cpufreq not available";
 
-    auto freqs = CPUFrequency::get_core_frequencies(socket);
+    auto freqs = Frequency::get_core_frequencies(socket);
     ASSERT_FALSE(freqs.empty());
     for (auto f : freqs)
     {
@@ -141,7 +141,7 @@ TEST_F(CPUFrequencyTest, GetCoreFrequencyRange_ShouldBeValidIfAvailable)
     if (!exists("scaling_cur_freq"))
         GTEST_SKIP() << "cpufreq not available";
 
-    auto freqs = CPUFrequency::get_core_frequency(0, 3, socket);
+    auto freqs = Frequency::get_core_frequency(0, 3, socket);
     ASSERT_FALSE(freqs.empty());
     for (auto f : freqs)
     {
@@ -166,8 +166,8 @@ TEST_F(CPUFrequencyTest, SetAndResetCoreFrequencySweepAllSockets)
         size_t total_freq_tests = 0;
         double accepted_freq = 0;
 
-        int64_t min_freq = QueryCPUFrequency::get_cpuinfo_min_freq(cores.front());
-        int64_t max_freq = QueryCPUFrequency::get_cpuinfo_max_freq(cores.front());
+        int64_t min_freq = Query::get_cpuinfo_min_freq(cores.front());
+        int64_t max_freq = Query::get_cpuinfo_max_freq(cores.front());
 
         if (min_freq <= 0 || max_freq <= 0 || min_freq >= max_freq)
         {
@@ -182,11 +182,11 @@ TEST_F(CPUFrequencyTest, SetAndResetCoreFrequencySweepAllSockets)
         for (int64_t freq = start_freq; freq <= max_freq; freq += step)
         {
             std::cout << "\tSetting all cores on socket " << socket << " to " << freq / 1.0e6 << " GHz\n";
-            CPUFrequency::set_core_frequency(freq, socket);
+            Frequency::set_core_frequency(freq, socket);
 
             std::this_thread::sleep_for(wait_time);
 
-            auto read_freqs = CPUFrequency::get_core_frequencies(socket);
+            auto read_freqs = Frequency::get_core_frequencies(socket);
             int64_t sum_freq = 0;
             for (size_t i = 0; i < read_freqs.size(); ++i)
             {
@@ -214,7 +214,7 @@ TEST_F(CPUFrequencyTest, SetAndResetCoreFrequencySweepAllSockets)
         EXPECT_TRUE(acceptance_rate >= 75.0); // 75% freqs must be accepted to pass.
 
         // Reset all core frequencies for socket
-        CPUFrequency::reset_core_frequency(socket);
+        Frequency::reset_core_frequency(socket);
         std::this_thread::sleep_for(wait_time);
 
         std::cout << "[Socket " << socket << "] Verifying reset...\n";
@@ -222,8 +222,8 @@ TEST_F(CPUFrequencyTest, SetAndResetCoreFrequencySweepAllSockets)
         int64_t total_min = 0, total_max = 0;
         for (int32_t cpu : cores)
         {
-            total_min += QueryCPUFrequency::get_scaling_min_limit(cpu);
-            total_max += QueryCPUFrequency::get_scaling_max_limit(cpu);
+            total_min += Query::get_scaling_min_limit(cpu);
+            total_max += Query::get_scaling_max_limit(cpu);
         }
 
         double avg_min = static_cast<double>(total_min) / static_cast<int64_t>(cores.size());
@@ -246,7 +246,7 @@ TEST_F(CPUFrequencyTest, GetUncoreFrequency_ShouldReturnPositiveIfMSRAvailable)
 {
     try
     {
-        int64_t freq = CPUFrequency::get_uncore_frequency(socket);
+        int64_t freq = Frequency::get_uncore_frequency(socket);
         std::cout << "Uncore frequency: " << freq << " KHz\n";
         EXPECT_GT(freq, 0);
     }
@@ -260,7 +260,7 @@ TEST_F(CPUFrequencyTest, GetUncoreMinMax_ShouldReturnValidValues)
 {
     try
     {
-        auto [min, max] = CPUFrequency::get_uncore_min_max(socket);
+        auto [min, max] = Frequency::get_uncore_min_max(socket);
         std::cout << "Uncore min: " << min << " KHz, max: " << max << " KHz\n";
         EXPECT_GE(min, 0);
         EXPECT_GE(max, 0);
@@ -276,15 +276,15 @@ TEST_F(CPUFrequencyTest, DISABLED_SetAndResetUncoreFrequency)
 {
     try
     {
-        auto [min, max] = CPUFrequency::get_uncore_min_max(socket);
+        auto [min, max] = Frequency::get_uncore_min_max(socket);
         int64_t test_freq = (min + max) / 2;
 
-        CPUFrequency::set_uncore_frequency(test_freq, socket);
-        int64_t current = CPUFrequency::get_uncore_frequency(socket);
+        Frequency::set_uncore_frequency(test_freq, socket);
+        int64_t current = Frequency::get_uncore_frequency(socket);
         std::cout << "Set uncore frequency: " << current << " KHz\n";
 
-        CPUFrequency::reset_uncore_frequency(socket);
-        int64_t reset = CPUFrequency::get_uncore_frequency(socket);
+        Frequency::reset_uncore_frequency(socket);
+        int64_t reset = Frequency::get_uncore_frequency(socket);
         std::cout << "Reset uncore frequency: " << reset << " KHz\n";
 
         EXPECT_GT(current, 0);

@@ -1,6 +1,6 @@
-#include "core/frequency/cpu/query_cpu_frequency.hh"
+#include "core/frequency/cpu/query.hh"
 
-namespace optkit::frequency
+namespace optkit::frequency::cpu
 {
 
     // Socket id - cpus belonging to that socket
@@ -15,7 +15,7 @@ namespace optkit::frequency
     else                                                 \
         for (int32_t __cpu : package_info.at(socket))
 
-    std::vector<int64_t> QueryCPUFrequency::get_scaling_available_frequencies(int32_t core)
+    std::vector<int64_t> Query::get_scaling_available_frequencies(int32_t core)
     {
         std::vector<int64_t> frequencies;
         std::string avail_freqs = optkit::utils::read_file("/sys/devices/system/cpu/cpu" + std::to_string(core) + "/cpufreq/scaling_available_frequencies");
@@ -28,7 +28,7 @@ namespace optkit::frequency
         return frequencies;
     }
 
-    int64_t QueryCPUFrequency::get_bios_limit(int32_t core)
+    int64_t Query::get_bios_limit(int32_t core)
     {
         try
         {
@@ -47,7 +47,7 @@ namespace optkit::frequency
         }
     }
 
-    std::string QueryCPUFrequency::get_scaling_driver(int32_t core)
+    std::string Query::get_scaling_driver(int32_t core)
     {
         try
         {
@@ -67,7 +67,7 @@ namespace optkit::frequency
         }
     }
 
-    std::string QueryCPUFrequency::get_scaling_governor(int32_t core)
+    std::string Query::get_scaling_governor(int32_t core)
     {
         try
         {
@@ -86,7 +86,7 @@ namespace optkit::frequency
             return "";
         }
     }
-    void QueryCPUFrequency::set_scaling_governor(const std::string &governor, int32_t socket)
+    void Query::set_scaling_governor(const std::string &governor, int32_t socket)
     {
         try
         {
@@ -133,7 +133,7 @@ namespace optkit::frequency
         }
     }
 
-    void QueryCPUFrequency::set_scaling_governor_percore(const std::string &governor, int32_t core)
+    void Query::set_scaling_governor_percore(const std::string &governor, int32_t core)
     {
         try
         {
@@ -171,7 +171,7 @@ namespace optkit::frequency
         }
     }
 
-    std::vector<std::string> QueryCPUFrequency::get_available_governors(int32_t core)
+    std::vector<std::string> Query::get_available_governors(int32_t core)
     {
         try
         {
@@ -191,7 +191,7 @@ namespace optkit::frequency
         }
     }
 
-    int64_t QueryCPUFrequency::get_scaling_max_limit(int32_t core)
+    int64_t Query::get_scaling_max_limit(int32_t core)
     {
         try
         {
@@ -209,7 +209,7 @@ namespace optkit::frequency
         }
     }
 
-    int64_t QueryCPUFrequency::get_scaling_min_limit(int32_t core)
+    int64_t Query::get_scaling_min_limit(int32_t core)
     {
         try
         {
@@ -227,7 +227,7 @@ namespace optkit::frequency
         }
     }
 
-    int64_t QueryCPUFrequency::get_cpuinfo_max_freq(int32_t core)
+    int64_t Query::get_cpuinfo_max_freq(int32_t core)
     {
         try
         {
@@ -245,7 +245,7 @@ namespace optkit::frequency
         }
     }
 
-    int64_t QueryCPUFrequency::get_cpuinfo_min_freq(int32_t core)
+    int64_t Query::get_cpuinfo_min_freq(int32_t core)
     {
         try
         {

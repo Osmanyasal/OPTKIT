@@ -19,8 +19,8 @@ make -j$(nproc) config=release optkit_static  # for static
 make -j$(nproc) config=release optkit_dynamic  # for dynamic 
 
 ## To Run Tests:
-make -j$(nproc) config=test optkit_static
-make -j$(nproc) config=debug optkit_test
+make -j$(nproc) config=test optkit_static ## this converts some private or protected fields to public and being tested
+make -j$(nproc) config=debug optkit_test  ## no optimization in tests, raw results are viewed.
 ./bin/Debug/optkit_test
 
 ## 🔍 List All Available Tests
@@ -212,12 +212,12 @@ Each feature in OPTKIT is implemented using only a few classes, with numerous mo
 OPTKIT uses the `perf_event_open` system call to monitor both PMU (Performance Monitoring Unit) events and RAPL energy metrics without needing additional *root* privileges, provided that global configurations are all set. It relies on:
 
 - `perf_event_open` linux kernel call for both energy and performance monitoring.
-- `msr-safe` library for direct CPU MSR access (low level)
 - `libpfm4` for PMU-related queries and event code database
 - `sysfs` for modifying CPU core frequencies
 - `googletest` for comprehensive unit testing
 - `spdlog` for advanced logging capabilities
 - `bash` and `python3` for various utility tools
+- `msr-safe (optional)` library for direct CPU MSR access (low level)
 
 ### Architecture Support
 
@@ -263,20 +263,32 @@ By combining both `perf_event_open` and `msr-safe`, OPTKIT offers a comprehensiv
 ```cpp
 #include <optkit.hh>
 int main(){ 
-    OPTKIT_RUNTIME; // Init OPTKIT
-    OPTKIT_FREQ_GOVERNOR; // Embedded Freq Governor 
-    OPTKIT_RUNTIME_DATA_COLLECTOR; // Runtime data collector mode 
+  
+    OPTKIT_INIT();  // it will create json files for each block and prints results there.
+    OPTKIT_INIT(false); // it won't create json files, prints std::cout instead
     
-    // ****** Energy Monitoring ********* //
-    OPTKIT_CPU_ENERGY(var_name, block_name);
-    OPTKIT_GPU_ENERGY(var_name, block_name);
+    // ****** CPU Energy Monitoring ********* //
+    OPTKIT_CPU_ENERGY("block_name"); 
     
     // ****** PMU Event Monitoring ********* //
-    OPTKIT_CPU_EVENTS(block_name, event_name, {{"event_name", event_code},...});
-    OPTKIT_CPU_BLOCK_EVENTS(block_name, event_name, {{"event_name", event_code},...});
+    OPTKIT_CPU_EVENTS("block_name", optkit::metrics::performance::cpu_metrics::*);
+    OPTKIT_CPU_EVENTS("block_name", optkit::metrics::performance::cpu_metrics::*);
+    OPTKIT_CPU_BLOCK_EVENTS("block_name", optkit::metrics::performance::cpu_metrics::*);
 
-    OPTKIT_GPU_EVENTS(block_name, event_name, {{"event_name", event_code},...});
-    OPTKIT_GPU_BLOCK_EVENTS(block_name, event_name, {{"event_name", event_code},...});
+    // ****** GPU Event Monitoring ********* //
+    OPTKIT_GPU_EVENTS("block_name", optkit::metrics::performance::gpu_metrics::*);
+
+    // ****** GPU Energy Monitoring ******** //
+    OPTKIT_GPU_ENERGY_EVENTS("block_name");
+    OPTKIT_GPU_ENERGY_EVENTS_WITH_METRICS("block_name", optkit::metrics::energy::gpu_metrics::*);
+
+    // ****** DISK Event Monitoring ********* //
+    OPTKIT_DISK_EVENTS("block_name");
+    OPTKIT_DISK_EVENTS_WITH_METRICS("block_name", optkit::metrics::disk::core_metrics::*);
+
+    // ****** Temperature Monitoring ********* //
+    OPTKIT_GPU_TEMPERATURE_EVENTS("block_name");
+    OPTKIT_HWMON_TEMPERATURE_EVENTS("block_name"); 
     
     // ****** Frequency Setting ********* //
     OPTKIT_SET_CPU_FREQUENCY(core_freq, uncore_freq, socket);
@@ -295,16 +307,13 @@ int main(){
     OPTKIT_RESET_GPU_CORE_FREQUENCY(socket);
     OPTKIT_RESET_GPU_UNCORE_FREQUENCY(socket);   
     
-    // ****** High Level Performance Measurements ********* //
-    // OPTKIT_TMA_ANALYSIS(block_name, var_name, LXMetric::XXX);
-    // OPTKIT_COMPUTATIONAL_INTENSITY(block_name, var_name);
-    // OPTKIT_CACHE_INTENSITY(block_name, var_name);
-    // OPTKIT_DRAM_INTENSITY(block_name, var_name);
-    
+
     // ****** Queries ********* //
-    Query::<anything>; 
-    QueryFreq::<anything>;
-    QueryPMU::<anything>; 
+    optkit::Query::*; 
+    optkit::gpu::Query::*; 
+    optkit::pmu::cpu::Query::*
+    optkit::frequency::cpu::Query::*
+    optkit::frequency::gpu::Query::*
 }
 ```
 

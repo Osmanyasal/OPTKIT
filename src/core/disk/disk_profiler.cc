@@ -18,7 +18,7 @@ namespace optkit::disk
 
         if (OPT_LIKELY(this->config.verbose))
         {
-            std::cout << std::fixed << "\033[1;35m"
+            std::cout << std::fixed << "\033[1;33m"
                       << "Block: " << this->config.block_name << "\033[0m"
                       << " [" << this->total_duration_ms << "ms] Measured\n";
 
@@ -26,8 +26,9 @@ namespace optkit::disk
                 for (auto &&event : this->event_results)
                     std::cout << std::fixed << "\t" << event.first << ": " << event.second << std::endl;
 
+            std::cout << "\tMetrics: \n";
             for (auto &&metric : this->metric_results)
-                std::cout << std::fixed << "\t" << metric.first << ": " << metric.second << std::endl;
+                std::cout << std::fixed << "\t\t" << metric.first << ": " << metric.second << std::endl;
         }
     }
 

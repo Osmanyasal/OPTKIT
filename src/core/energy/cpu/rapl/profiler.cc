@@ -69,6 +69,10 @@ namespace optkit::energy::rapl
 
         if (OPT_LIKELY(this->config.verbose))
         {
+            std::cout << std::fixed << "\033[1;33m" // Yellow for temperature
+                      << "Block: " << this->config.block_name << "\033[0m"
+                      << " [" << this->total_duration_ms << "ms] Measured\n";
+
             if (OPT_UNLIKELY(this->metric_builder.print_events))
                 for (auto &&event : this->event_results)
                     std::cout << event.second << std::endl;
