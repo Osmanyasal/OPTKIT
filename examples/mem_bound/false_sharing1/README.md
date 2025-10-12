@@ -1,4 +1,9 @@
-[<img src="../../../img/FalseSharing1.png">](https://www.youtube.com/watch?v=uRmQSHsZoxE&list=PLRWO2AL1QAV6bJAU2kgB4xfodGID43Y5d)
+### Watch the Video
+
+[![Watch the video](https://img.youtube.com/vi/uRmQSHsZoxE/0.jpg)](https://www.youtube.com/watch?v=uRmQSHsZoxE)
+
+> Click the image above to play the video.
+
 
 
 This lab assignment focuses on improving performance by eliminating false sharing. In this lab, we
