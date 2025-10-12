@@ -64,7 +64,7 @@ namespace optkit::metrics::performance
                     .build("cpu_max_capacity_based_utilization__%",
                            [unhalted_core_cycles_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
-                               static const double max_cycles = OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS * frequency::cpu::Frequency::get_cpuinfo_max_freq() * 1000; // KHz to Hz
+                               static const double max_cycles = OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS * frequency::cpu::Query::get_cpuinfo_max_freq() * 1000; // KHz to Hz
                                uint64_t unhalted_core_cycles = get_event_count(counts, unhalted_core_cycles_name);
                                double duration_sec = get_event_count(counts, "duration_microsec") / 1.0e6;
 
