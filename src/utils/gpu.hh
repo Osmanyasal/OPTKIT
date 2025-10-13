@@ -181,7 +181,7 @@ namespace optkit::gpu
         uint32_t min_memory_clock_MHz;
 
         std::vector<uint32_t> memory_supported_clock_rates_MHz;
-        std::vector<uint32_t> graphics_supported_clock_rates_MHz;
+        std::unordered_map<uint32_t, std::vector<uint32_t>> graphics_supported_clock_rates_MHz; // for each memory clock, what are the supported graphics clocks
         bool has_frequency_control;
     };
 

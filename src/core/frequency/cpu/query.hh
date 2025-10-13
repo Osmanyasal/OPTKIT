@@ -10,7 +10,7 @@ namespace optkit::frequency::cpu
     /**
      * @brief All frequency values are in kilohertz (kHz), consistent with Linux cpufreq interface.
      *
-     * Users must provide and interpret frequencies in kHz.
+     * Users must provide and interpret frequencies in kHz. One can use convert_frequency_with_unit() utility to convert from other units.
      *
      * Examples:
      *   800000   -> 800 MHz   (0.8 GHz)

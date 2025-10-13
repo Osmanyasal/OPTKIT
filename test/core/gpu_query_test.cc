@@ -469,6 +469,15 @@ TEST(GpuQueryTest, ErrorHandlingInvalidVendor)
     EXPECT_FALSE(Query::get_device_count(static_cast<GpuVendor>(999), device_count));
 }
 
+TEST(GpuQueryTest, ErrorHandlingUninitializedVendor)
+{
+    // Test operations on uninitialized vendor
+    Query::shutdown(GpuVendor::NVIDIA); // Ensure it's shutdown
+
+    uint32_t device_count = 0;
+    EXPECT_FALSE(Query::get_device_count(GpuVendor::NVIDIA, device_count));
+}
+
 // Performance test
 TEST(GpuQueryTest, PowerPerformanceTest)
 {
@@ -494,6 +503,292 @@ TEST(GpuQueryTest, PowerPerformanceTest)
             std::cout << to_string(vendor) << ": 100 power queries took "
                       << duration.count() << " microseconds" << std::endl;
             EXPECT_LT(duration.count(), 1000000); // Should complete within 1 second
+        }
+    }
+}
+
+// Clock frequency control tests
+TEST(GpuQueryTest, ClockResetTest)
+{
+    GPUVendors all_vendors{}; // RAII init/shutdown
+
+    for (const auto &vendor : all_vendors.available_vendors)
+    {
+        uint32_t device_count = 0;
+        if (Query::get_device_count(vendor, device_count) && device_count > 0)
+        {
+            for (uint32_t device_index = 0; device_index < device_count; ++device_index)
+            {
+                GpuClockInfo clock_info_before = {};
+                if (!Query::get_clock_info(vendor, device_index, clock_info_before))
+                {
+                    std::cout << to_string(vendor) << " Device[" << device_index
+                              << "] does not support clock info query" << std::endl;
+                    continue;
+                }
+
+                if (!clock_info_before.has_frequency_control)
+                {
+                    std::cout << to_string(vendor) << " Device[" << device_index
+                              << "] does not support frequency control" << std::endl;
+                    continue;
+                }
+
+                std::cout << "\n=== Testing Clock Reset for " << to_string(vendor)
+                          << " Device[" << device_index << "] ===" << std::endl;
+
+                std::cout << "Graphics clock before reset: "
+                          << clock_info_before.current_graphics_clock_MHz << " MHz" << std::endl;
+                std::cout << "Memory clock before reset: "
+                          << clock_info_before.current_memory_clock_MHz << " MHz" << std::endl;
+                // Try to reset clocks
+                bool reset_success = Query::reset_clock(vendor, device_index);
+
+                if (reset_success)
+                {
+                    std::cout << "Clock reset successful" << std::endl;
+
+                    // Give hardware time to settle
+                    usleep(500000); // 500ms
+
+                    GpuClockInfo clock_info_after = {};
+                    EXPECT_TRUE(Query::get_clock_info(vendor, device_index, clock_info_after));
+
+                    std::cout << "Graphics clock after reset: "
+                              << clock_info_after.current_graphics_clock_MHz << " MHz" << std::endl;
+                    std::cout << "Memory clock after reset: "
+                              << clock_info_after.current_memory_clock_MHz << " MHz" << std::endl;
+                }
+                else
+                {
+                    std::cout << "Clock reset not supported or failed (may require elevated privileges)" << std::endl;
+                }
+            }
+        }
+    }
+}
+
+TEST(GpuQueryTest, ClockSetAndVerifyTest)
+{
+    GPUVendors all_vendors{};              // RAII init/shutdown
+    const uint32_t TOLERANCE_MHZ = 50;     // Allow 50 MHz tolerance for clock setting
+    const double SUCCESS_THRESHOLD = 0.90; // Require 90% success rate
+
+    for (const auto &vendor : all_vendors.available_vendors)
+    {
+        uint32_t device_count = 0;
+        if (Query::get_device_count(vendor, device_count) && device_count > 0)
+        {
+            for (uint32_t device_index = 0; device_index < device_count; ++device_index)
+            {
+                GpuClockInfo clock_info = {};
+                if (!Query::get_clock_info(vendor, device_index, clock_info))
+                {
+                    std::cout << to_string(vendor) << " Device[" << device_index
+                              << "] does not support clock info query" << std::endl;
+                    continue;
+                }
+
+                if (!clock_info.has_frequency_control)
+                {
+                    std::cout << to_string(vendor) << " Device[" << device_index
+                              << "] does not support frequency control" << std::endl;
+                    continue;
+                }
+
+                if (clock_info.memory_supported_clock_rates_MHz.empty() ||
+                    clock_info.graphics_supported_clock_rates_MHz.empty())
+                {
+                    std::cout << to_string(vendor) << " Device[" << device_index
+                              << "] has no supported clock rates available" << std::endl;
+                    continue;
+                }
+
+                std::cout << "\n=== Testing Clock Setting for " << to_string(vendor)
+                          << " Device[" << device_index << "] ===" << std::endl;
+
+                // Save original clocks
+                uint32_t original_graphics_clk = clock_info.current_graphics_clock_MHz;
+                uint32_t original_memory_clk = clock_info.current_memory_clock_MHz;
+
+                std::cout << "Original clocks - Graphics: " << original_graphics_clk
+                          << " MHz, Memory: " << original_memory_clk << " MHz" << std::endl;
+
+                uint32_t total_tests = 0;
+                uint32_t successful_sets = 0;
+
+                // Test each memory clock with its associated graphics clocks
+                for (const auto &mem_gfx_pair : clock_info.graphics_supported_clock_rates_MHz)
+                {
+                    uint32_t mem_clk = mem_gfx_pair.first;
+                    const std::vector<uint32_t> &gfx_clks = mem_gfx_pair.second;
+
+                    std::cout << "\nTesting Memory Clock: " << mem_clk << " MHz with "
+                              << gfx_clks.size() << " graphics clock(s)" << std::endl;
+
+                    for (const auto &gfx_clk : gfx_clks)
+                    {
+                        total_tests++;
+
+                        // Set the clock
+                        bool set_result = Query::set_clock(vendor, device_index, mem_clk, gfx_clk);
+
+                        if (!set_result)
+                        {
+                            std::cout << "  [FAILED] Could not set clocks to Mem=" << mem_clk
+                                      << " MHz, Gfx=" << gfx_clk << " MHz" << std::endl;
+                            continue;
+                        }
+
+                        // Give hardware time to apply the setting
+                        usleep(300000); // 300ms
+
+                        // Verify the setting
+                        GpuClockInfo verify_clock_info = {};
+                        if (!Query::get_clock_info(vendor, device_index, verify_clock_info))
+                        {
+                            std::cout << "  [FAILED] Could not query clock info after setting" << std::endl;
+                            continue;
+                        }
+
+                        uint32_t actual_gfx = verify_clock_info.current_graphics_clock_MHz;
+                        uint32_t actual_mem = verify_clock_info.current_memory_clock_MHz;
+
+                        // Check if clocks are within tolerance
+                        bool gfx_match = (actual_gfx >= gfx_clk - TOLERANCE_MHZ) &&
+                                         (actual_gfx <= gfx_clk + TOLERANCE_MHZ);
+                        bool mem_match = (actual_mem >= mem_clk - TOLERANCE_MHZ) &&
+                                         (actual_mem <= mem_clk + TOLERANCE_MHZ);
+
+                        if (gfx_match && mem_match)
+                        {
+                            successful_sets++;
+                            std::cout << "  [PASS] Set and verified - Mem=" << mem_clk
+                                      << " MHz (actual: " << actual_mem << "), Gfx=" << gfx_clk
+                                      << " MHz (actual: " << actual_gfx << ")" << std::endl;
+                        }
+                        else
+                        {
+                            std::cout << "  [FAIL] Set but verification failed - Requested: Mem="
+                                      << mem_clk << " MHz, Gfx=" << gfx_clk << " MHz, Got: Mem="
+                                      << actual_mem << " MHz, Gfx=" << actual_gfx << " MHz" << std::endl;
+                        }
+                    }
+                }
+
+                // Calculate success rate
+                double success_rate = (total_tests > 0) ? (static_cast<double>(successful_sets) / static_cast<double>(total_tests)) : 0.0;
+
+                std::cout << "\n=== Clock Setting Test Results ===" << std::endl;
+                std::cout << "Total tests: " << total_tests << std::endl;
+                std::cout << "Successful: " << successful_sets << std::endl;
+                std::cout << "Success rate: " << (success_rate * 100.0) << "%" << std::endl;
+
+                // Restore original clocks
+                std::cout << "\nRestoring original clocks..." << std::endl;
+                bool restore_result = Query::set_clock(vendor, device_index,
+                                                       original_memory_clk, original_graphics_clk);
+                if (restore_result)
+                {
+                    usleep(300000); // 300ms
+                    GpuClockInfo final_clock_info = {};
+                    Query::get_clock_info(vendor, device_index, final_clock_info);
+                    std::cout << "Restored clocks - Graphics: "
+                              << final_clock_info.current_graphics_clock_MHz
+                              << " MHz, Memory: " << final_clock_info.current_memory_clock_MHz
+                              << " MHz" << std::endl;
+                }
+                else
+                {
+                    std::cout << "Failed to restore original clocks" << std::endl;
+                    // Try reset as fallback
+                    Query::reset_clock(vendor, device_index);
+                }
+
+                // Assert that we met the success threshold
+                if (total_tests > 0)
+                {
+                    EXPECT_GE(success_rate, SUCCESS_THRESHOLD)
+                        << "Clock setting success rate " << (success_rate * 100.0)
+                        << "% is below threshold " << (SUCCESS_THRESHOLD * 100.0) << "%";
+                }
+            }
+        }
+    }
+}
+
+TEST(GpuQueryTest, ClockBoundaryTest)
+{
+    GPUVendors all_vendors{}; // RAII init/shutdown
+
+    for (const auto &vendor : all_vendors.available_vendors)
+    {
+        uint32_t device_count = 0;
+        if (Query::get_device_count(vendor, device_count) && device_count > 0)
+        {
+            for (uint32_t device_index = 0; device_index < device_count; ++device_index)
+            {
+                GpuClockInfo clock_info = {};
+                if (!Query::get_clock_info(vendor, device_index, clock_info) ||
+                    !clock_info.has_frequency_control)
+                {
+                    continue;
+                }
+
+                std::cout << "\n=== Testing Clock Boundaries for " << to_string(vendor)
+                          << " Device[" << device_index << "] ===" << std::endl;
+
+                // Save original clocks
+                uint32_t original_graphics_clk = clock_info.current_graphics_clock_MHz;
+                uint32_t original_memory_clk = clock_info.current_memory_clock_MHz;
+
+                // Test minimum clocks
+                if (clock_info.min_graphics_clock_MHz > 0 && clock_info.min_memory_clock_MHz > 0)
+                {
+                    std::cout << "Testing minimum clocks: Mem=" << clock_info.min_memory_clock_MHz
+                              << " MHz, Gfx=" << clock_info.min_graphics_clock_MHz << " MHz" << std::endl;
+
+                    bool min_result = Query::set_clock(vendor, device_index,
+                                                       clock_info.min_memory_clock_MHz,
+                                                       clock_info.min_graphics_clock_MHz);
+                    if (min_result)
+                    {
+                        usleep(100000);
+                        GpuClockInfo verify_info = {};
+                        Query::get_clock_info(vendor, device_index, verify_info);
+                        std::cout << "Actual clocks: Mem=" << verify_info.current_memory_clock_MHz
+                                  << " MHz, Gfx=" << verify_info.current_graphics_clock_MHz << " MHz" << std::endl;
+                    }
+                }
+
+                // Test maximum clocks
+                if (clock_info.max_graphics_clock_MHz > 0 && clock_info.max_memory_clock_MHz > 0)
+                {
+                    std::cout << "Testing maximum clocks: Mem=" << clock_info.max_memory_clock_MHz
+                              << " MHz, Gfx=" << clock_info.max_graphics_clock_MHz << " MHz" << std::endl;
+
+                    bool max_result = Query::set_clock(vendor, device_index,
+                                                       clock_info.max_memory_clock_MHz,
+                                                       clock_info.max_graphics_clock_MHz);
+                    if (max_result)
+                    {
+                        usleep(100000);
+                        GpuClockInfo verify_info = {};
+                        Query::get_clock_info(vendor, device_index, verify_info);
+                        std::cout << "Actual clocks: Mem=" << verify_info.current_memory_clock_MHz
+                                  << " MHz, Gfx=" << verify_info.current_graphics_clock_MHz << " MHz" << std::endl;
+                    }
+                }
+
+                // Test invalid clocks (should fail gracefully)
+                std::cout << "Testing invalid clocks (should fail)" << std::endl;
+                bool invalid_result = Query::set_clock(vendor, device_index, 999999, 999999);
+                EXPECT_FALSE(invalid_result) << "Setting invalid clock frequencies should fail";
+
+                // Restore original clocks
+                Query::set_clock(vendor, device_index, original_memory_clk, original_graphics_clk);
+                usleep(100000);
+            }
         }
     }
 }

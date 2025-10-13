@@ -18,12 +18,18 @@ inline std::vector<T> generate_vector(size_t n = VECTOR_SIZE)
 int32_t main(int32_t argc, char **argv)
 {
     OPTKIT_INIT(false);
+    std::cout << "GPU Device Query Example" << std::endl;
+    std::cout << "========================" << std::endl;
+
+    optkit::gpu::GpuClockInfo clock_info;
+    optkit::gpu::Query::get_clock_info(optkit::gpu::GpuVendor::NVIDIA, 0, clock_info);
+    std::cout << "Clock Version:" << clock_info << "\n";
     // OPTKIT_HWMON_TEMPERATURE_EVENTS("main hwmon", {});
-    OPTKIT_DISK_EVENTS("disk");
-    OPTKIT_GPU_ENERGY_EVENTS("gpu_energy");
-    OPTKIT_CPU_ENERGY("cpu_energy");
-    OPTKIT_GPU_TEMPERATURE_EVENTS("gpu_temp");
-    OPTKIT_HWMON_TEMPERATURE_EVENTS("hwmon_temp");
+    // OPTKIT_DISK_EVENTS("disk");
+    // OPTKIT_GPU_ENERGY_EVENTS("gpu_energy");
+    // OPTKIT_CPU_ENERGY("cpu_energy");
+    // OPTKIT_GPU_TEMPERATURE_EVENTS("gpu_temp");
+    // OPTKIT_HWMON_TEMPERATURE_EVENTS("hwmon_temp");
     // OPTKIT_CPU_ENERGY("main_block");
     // optkit::gpu::GpuDeviceInfo info;
     // optkit::gpu::Query::device_query(optkit::gpu::GpuVendor::NVIDIA, 0, info);

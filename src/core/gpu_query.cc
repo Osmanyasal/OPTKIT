@@ -243,6 +243,112 @@ namespace optkit::gpu
         return is_ok;
     }
 
+    bool Query::reset_clock(GpuVendor vendor, uint32_t device_index)
+    {
+        bool is_ok = false;
+        if (!IS_DEVICE_INDEX_VALID(vendor, device_index))
+        {
+            OPTKIT_CORE_ERROR("Invalid device index {} for vendor {}", device_index, to_string(vendor));
+            return false;
+        }
+#if OPTKIT_ENV_LIB_NVML
+        if (vendor == GpuVendor::NVIDIA && initialized[GpuVendor::NVIDIA])
+        {
+            auto nvml_device = Query::gpu_handles_nvml.at(device_index);
+            nvmlReturn_t result;
+
+            NVML_EXEC_IF_SUPPORTS(
+                "nvmlDeviceResetApplicationsClocks",
+                nvml_device,
+                result);
+            if (result == NVML_SUCCESS)
+            {
+                is_ok = true;
+                OPTKIT_CORE_INFO("Resetting clocks to default for device index {} of vendor {}", device_index, to_string(vendor));
+            }
+            else
+            {
+                OPTKIT_CORE_ERROR("Failed to reset clocks: {}", nvmlErrorString(result));
+            }
+        }
+#endif
+
+#if OPTKIT_ENV_LIB_AMDSMI
+        if (vendor == GpuVendor::AMD && initialized[GpuVendor::AMD])
+        {
+        }
+#endif
+        return is_ok;
+    }
+
+    bool Query::set_clock(GpuVendor vendor, uint32_t device_index, uint32_t mem_clk_mhz, uint32_t graphics_clk_mhz)
+    {
+        bool is_ok = false;
+        if (!IS_DEVICE_INDEX_VALID(vendor, device_index))
+        {
+            OPTKIT_CORE_ERROR("Invalid device index {} for vendor {}", device_index, to_string(vendor));
+            return false;
+        }
+#if OPTKIT_ENV_LIB_NVML
+        if (vendor == GpuVendor::NVIDIA && initialized[GpuVendor::NVIDIA])
+        {
+            GpuClockInfo & clock_info;
+            auto nvml_device = Query::gpu_handles_nvml.at(device_index);
+            nvmlReturn_t result;
+
+            if (get_clock_info(vendor, device_index, clock_info))
+            {
+                if (clock_info.has_frequency_control)
+                {
+                    if (clock_info.graphics_supported_clock_rates_MHz.find(mem_clk_mhz) != clock_info.graphics_supported_clock_rates_MHz.end())
+                    {
+                        const auto &supported_graphics_clks = clock_info.graphics_supported_clock_rates_MHz.at(mem_clk_mhz);
+                        if (std::find(supported_graphics_clks.begin(), supported_graphics_clks.end(), graphics_clk_mhz) != supported_graphics_clks.end())
+                        {
+                            // To be implemented: set the clocks using NVML APIs
+                            // nvmlReturn_t result = nvmlDeviceSetApplicationsClocks(nvml_device, mem_clk_mhz, graphics_clk_mhz);
+                            NVML_EXEC_IF_SUPPORTS(
+                                "nvmlDeviceSetApplicationsClocks",
+                                nvml_device,
+                                result,
+                                mem_clk_mhz,
+                                graphics_clk_mhz);
+                            if (result == NVML_SUCCESS)
+                            {
+                                is_ok = true;
+                                OPTKIT_CORE_INFO("Setting clocks to Memory={} MHz, Graphics={} MHz for device index {} of vendor {}", mem_clk_mhz, graphics_clk_mhz, device_index, to_string(vendor));
+                            }
+                            else
+                            {
+                                OPTKIT_CORE_ERROR("Failed to set clocks: {}", nvmlErrorString(result));
+                            }
+                        }
+                        else
+                        {
+                            OPTKIT_CORE_ERROR("Requested graphics clock {} MHz not supported for memory clock {} MHz", graphics_clk_mhz, mem_clk_mhz);
+                        }
+                    }
+                    else
+                    {
+                        OPTKIT_CORE_ERROR("Requested memory clock {} MHz not supported", mem_clk_mhz);
+                    }
+                }
+                else
+                {
+                    OPTKIT_CORE_WARN("GPU does not support frequency control");
+                }
+            }
+#endif
+
+#if OPTKIT_ENV_LIB_AMDSMI
+            if (vendor == GpuVendor::AMD && initialized[GpuVendor::AMD])
+            {
+            }
+#endif
+            return is_ok;
+        }
+    }
+
     bool Query::get_warp_size(GpuVendor vendor, uint32_t device_index, uint32_t &warp_size)
     {
         if (!IS_DEVICE_INDEX_VALID(vendor, device_index))
@@ -747,6 +853,62 @@ namespace optkit::gpu
                 is_ok = false;
                 OPTKIT_CORE_WARN("nvmlDeviceGetMaxClockInfo: {}", nvmlErrorString(result));
             }
+
+            unsigned int possible_mem_count = 0;
+            NVML_EXEC_IF_SUPPORTS(
+                "nvmlDeviceGetSupportedMemoryClocks",
+                device,
+                result,
+                &possible_mem_count,
+                nullptr);
+            std::cout << "Here possible mem count: " << possible_mem_count << "\n";
+            clock_info.memory_supported_clock_rates_MHz.resize(possible_mem_count);
+            NVML_EXEC_IF_SUPPORTS(
+                "nvmlDeviceGetSupportedMemoryClocks",
+                device,
+                result,
+                &possible_mem_count,
+                clock_info.memory_supported_clock_rates_MHz.data(),
+                nullptr);
+            if (OPT_LIKELY(result == NVML_SUCCESS))
+            {
+                clock_info.min_memory_clock_MHz = *std::min_element(clock_info.memory_supported_clock_rates_MHz.begin(), clock_info.memory_supported_clock_rates_MHz.end());
+                for (auto &&mem_clk : clock_info.memory_supported_clock_rates_MHz)
+                {
+                    unsigned int gfxCount = 0;
+                    NVML_EXEC_IF_SUPPORTS(
+                        "nvmlDeviceGetSupportedGraphicsClocks",
+                        device,
+                        result,
+                        mem_clk,
+                        &gfxCount,
+                        nullptr);
+                    std::vector<uint32_t> gfxClocksMHz(gfxCount);
+                    NVML_EXEC_IF_SUPPORTS(
+                        "nvmlDeviceGetSupportedGraphicsClocks",
+                        device,
+                        result,
+                        mem_clk,
+                        &gfxCount,
+                        gfxClocksMHz.data());
+                    if (OPT_LIKELY(result == NVML_SUCCESS))
+                    {
+                        clock_info.graphics_supported_clock_rates_MHz[mem_clk] = gfxClocksMHz;
+                        clock_info.min_graphics_clock_MHz = *std::min_element(gfxClocksMHz.begin(), gfxClocksMHz.end());
+                    }
+                    else
+                    {
+                        is_ok = false;
+                        OPTKIT_CORE_WARN("nvmlDeviceGetSupportedGraphicsClocks: {}", nvmlErrorString(result));
+                    }
+                }
+            }
+            else
+            {
+                is_ok = false;
+                OPTKIT_CORE_WARN("nvmlDeviceGetSupportedMemoryClocks: {}", nvmlErrorString(result));
+            }
+
             clock_info.has_frequency_control = true; // NVIDIA GPUs generally support frequency control
 #endif
         }
@@ -1830,5 +1992,4 @@ namespace optkit::gpu
         }
         return is_ok;
     }
-
 }

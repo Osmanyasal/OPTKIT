@@ -180,7 +180,47 @@ namespace optkit::gpu
                ",\"min_video_clock_MHz\":" + std::to_string(info.min_video_clock_MHz) +
                ",\"min_graphics_clock_MHz\":" + std::to_string(info.min_graphics_clock_MHz) +
                ",\"min_memory_clock_MHz\":" + std::to_string(info.min_memory_clock_MHz) +
-               ",\"has_frequency_control\":" + (info.has_frequency_control ? "true" : "false") + "}";
+               ",\"memory_supported_clock_rates_MHz\":" +
+               // print supported memory clocks
+               [&]()
+        {
+            std::string mem_clks = "[";
+            for (size_t i = 0; i < info.memory_supported_clock_rates_MHz.size(); ++i)
+            {
+                mem_clks += std::to_string(info.memory_supported_clock_rates_MHz[i]);
+                if (i != info.memory_supported_clock_rates_MHz.size() - 1)
+                    mem_clks += ",";
+            }
+            mem_clks += "]";
+            return mem_clks;
+        }() +
+               ",\"graphics_supported_clock_rates_MHz\":" +
+               // print supported graphics clocks for each memory clock
+               [&]()
+        {
+            std::string gfx_clks = "{";
+            size_t mem_clk_index = 0;
+            for (const auto &mem_gfx_pair : info.graphics_supported_clock_rates_MHz)
+            {
+                const auto &mem_clk = mem_gfx_pair.first;
+                const auto &gfx_clks_vec = mem_gfx_pair.second;
+
+                gfx_clks += "\"" + std::to_string(mem_clk) + "\":[";
+                for (size_t i = 0; i < gfx_clks_vec.size(); ++i)
+                {
+                    gfx_clks += std::to_string(gfx_clks_vec[i]);
+                    if (i != gfx_clks_vec.size() - 1)
+                        gfx_clks += ",";
+                }
+                gfx_clks += "]";
+                if (mem_clk_index != info.graphics_supported_clock_rates_MHz.size() - 1)
+                    gfx_clks += ",";
+                ++mem_clk_index;
+            }
+            gfx_clks += "}";
+            return gfx_clks;
+        }() + ",\"has_frequency_control\":" +
+               (info.has_frequency_control ? "true" : "false") + "}";
     }
 
     std::string to_string(const GpuPowerInfo &info)

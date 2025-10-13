@@ -17,12 +17,12 @@
 namespace optkit::gpu
 {
     /**
-     * @brief GPU energy measurement capabilities and queries
+     * @brief GPU measurement capabilities and queries
      *
      * This class provides methods to initialize GPU monitoring libraries, query various GPU properties,
      * and retrieve detailed information about GPU devices from different vendors such as NVIDIA and AMD.
      * It supports querying basic information, version details, compute capabilities, memory statistics,
-     * clock speeds, power usage, temperature readings, performance metrics, hardware specifics, and capabilities
+     * clock speeds, power usage, temperature readings, performance metrics, hardware specifics, and capabilities along with altering device settings.
      *
      * it has C style static methods and return values are passed by reference.
      * All methods return bool to indicate success or failure of the query. By default it returns false, if query is made successfully, it returns true.
@@ -52,7 +52,10 @@ namespace optkit::gpu
         static bool get_hardware_info(GpuVendor vendor, uint32_t device_index, GpuHardwareInfo &hardware_info);
         static bool get_capabilities_info(GpuVendor vendor, uint32_t device_index, GpuCapabilitiesInfo &capabilities_info);
 
-        // utilities to be called by others
+        static bool set_clock(GpuVendor vendor, uint32_t device_index, uint32_t mem_clk_mhz, uint32_t graphics_clk_mhz);
+        static bool reset_clock(GpuVendor vendor, uint32_t device_index);
+
+        // utilities to be called by above methods.
         static bool get_warp_size(GpuVendor vendor, uint32_t device_index, uint32_t &warp_size);
         static bool get_driver_version(GpuVendor vendor, double &driver_version);
         static bool get_library_version(GpuVendor vendor, std::string &library_version);
