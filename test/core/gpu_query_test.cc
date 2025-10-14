@@ -40,12 +40,25 @@ public:
     {
         for (const auto &vendor : available_vendors)
         {
+            uint32_t device_count = 0;
+            if (Query::get_device_count(vendor, device_count) && device_count > 0)
+            {
+                for (uint32_t device_index = 0; device_index < device_count; ++device_index)
+                {
+                    bool reset_success = Query::reset_clock(vendor, device_index);
+                    if (reset_success)
+                        std::cout << "Clock reset successful" << std::endl;
+                    else
+                        std::cout << "Clock reset not supported or failed (may require elevated privileges)" << std::endl;
+                }
+            }
             if (Query::shutdown(vendor))
                 std::cout << "Shutdown vendor " << to_string(vendor) << " successfully." << std::endl;
             else
                 std::cout << "Failed to shutdown vendor " << to_string(vendor) << "." << std::endl;
         }
     }
+
     std::vector<GpuVendor> available_vendors;
 };
 

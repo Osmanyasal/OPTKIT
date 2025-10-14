@@ -177,6 +177,7 @@ namespace optkit::gpu
                ",\"max_video_clock_MHz\":" + std::to_string(info.max_video_clock_MHz) +
                ",\"max_graphics_clock_MHz\":" + std::to_string(info.max_graphics_clock_MHz) +
                ",\"max_memory_clock_MHz\":" + std::to_string(info.max_memory_clock_MHz) +
+               ",\"min_sm_clock_MHz\":" + std::to_string(info.min_sm_clock_MHz) +
                ",\"min_video_clock_MHz\":" + std::to_string(info.min_video_clock_MHz) +
                ",\"min_graphics_clock_MHz\":" + std::to_string(info.min_graphics_clock_MHz) +
                ",\"min_memory_clock_MHz\":" + std::to_string(info.min_memory_clock_MHz) +
