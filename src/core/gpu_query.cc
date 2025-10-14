@@ -1251,7 +1251,7 @@ namespace optkit::gpu
                     if (!legacy.empty())
                         hardware_info.pci_bus_id = legacy;
                 }
-                hardware_info.pci_device_id = pci.device;
+                hardware_info.pci_device_id = pci.pciDeviceId;
                 hardware_info.pci_subsystem_id = pci.pciSubSystemId;
             }
             else
@@ -1482,7 +1482,7 @@ namespace optkit::gpu
                 is_ok = true;
                 int32_t major = NVML_CUDA_DRIVER_VERSION_MAJOR(version);
                 int32_t minor = NVML_CUDA_DRIVER_VERSION_MINOR(version);
-                driver_version = major + minor;
+                driver_version = major + minor / 10.0; // major.minor as double
             }
             else
             {

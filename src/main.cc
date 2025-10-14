@@ -21,9 +21,9 @@ int32_t main(int32_t argc, char **argv)
     std::cout << "GPU Device Query Example" << std::endl;
     std::cout << "========================" << std::endl;
 
-    optkit::gpu::GpuClockInfo clock_info;
-    optkit::gpu::Query::get_clock_info(optkit::gpu::GpuVendor::NVIDIA, 0, clock_info);
-    std::cout << "Clock Version:" << clock_info << "\n";
+    // optkit::gpu::GpuClockInfo clock_info;
+    // optkit::gpu::Query::get_clock_info(optkit::gpu::GpuVendor::NVIDIA, 0, clock_info);
+    // std::cout << "Clock Version:" << clock_info << "\n";
     // OPTKIT_HWMON_TEMPERATURE_EVENTS("main hwmon", {});
     // OPTKIT_DISK_EVENTS("disk");
     // OPTKIT_GPU_ENERGY_EVENTS("gpu_energy");
@@ -34,24 +34,23 @@ int32_t main(int32_t argc, char **argv)
     // optkit::gpu::GpuDeviceInfo info;
     // optkit::gpu::Query::device_query(optkit::gpu::GpuVendor::NVIDIA, 0, info);
     // std::cout << info << "\n";
-#if 0
     std::cout << "GPU Device Query Example" << std::endl;
     std::cout << "========================" << std::endl;
 
-    std::cout << "Driver version:" << optkit::gpu::Query::get_driver_version() << std::endl;
-    std::cout << "Library version:" << optkit::gpu::Query::get_library_version() << std::endl;
-
     // Get device count
-    uint32_t device_count = optkit::gpu::Query::get_device_count();
-    std::cout << "Found " << device_count << " GPU device(s)" << std::endl;
-    std::cout << "Architecture: " << optkit::gpu::Query::get_gpu_architecture(0) << std::endl;
+    uint32_t device_count;
+    optkit::gpu::Query::get_device_count(optkit::gpu::GpuVendor::NVIDIA, device_count);
+    // std::cout << "Found " << device_count << " GPU device(s)" << std::endl;
+    // std::cout << "Architecture: " << optkit::gpu::Query::get_gpu_architecture(0) << std::endl;
 
     // Query each device
     for (uint32_t i = 0; i < device_count; i++)
     {
-        optkit::gpu::GpuDeviceInfo device_query = optkit::gpu::Query::device_query(static_cast<int32_t>(i));
+        optkit::gpu::GpuDeviceInfo device_query;
+        optkit::gpu::Query::device_query(optkit::gpu::GpuVendor::NVIDIA, static_cast<int32_t>(i), device_query);
         std::cout << device_query << "\n";
     }
+#if 0
 
     // GPU Query Methods Test
     std::cout << "=== GPU Query Methods Test ===" << std::endl;

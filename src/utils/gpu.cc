@@ -252,16 +252,22 @@ namespace optkit::gpu
                ",\"memory_utilization_percent\":" + std::to_string(info.memory_utilization_percent) +
                ",\"has_utilization_monitoring\":" + (info.has_utilization_monitoring ? "true" : "false") + "}";
     }
+
     std::string to_string(const GpuHardwareInfo &info)
     {
         std::stringstream ss;
-        ss << "0x" << std::hex << std::uppercase << info.board_id;
 
-        return "{\"pci_bus_id\":\"" + info.pci_bus_id + "\"" +
-               ",\"pci_device_id\":0x" + std::to_string(info.pci_device_id) +
-               ",\"pci_subsystem_id\":0x" + std::to_string(info.pci_subsystem_id) +
-               ",\"board_id\":\"" + ss.str() + "\"" +
-               ",\"multi_gpu_board\":" + (info.multi_gpu_board ? "true" : "false") + "}";
+        // Set the stream to output integers in uppercase hexadecimal format
+        ss << std::hex << std::uppercase;
+
+        ss << "{\"pci_bus_id\":\"" << info.pci_bus_id << "\""
+           << ",\"pci_device_id\":\"0x" << info.pci_device_id << "\""
+           << ",\"pci_subsystem_id\":\"0x" << info.pci_subsystem_id << "\""
+           << ",\"board_id\":\"0x" << info.board_id << "\""
+           << ",\"multi_gpu_board\":" << (info.multi_gpu_board ? "true" : "false")
+           << "}";
+
+        return ss.str();
     }
 
     std::string to_string(const GpuCapabilitiesInfo &info)
