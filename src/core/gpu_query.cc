@@ -35,7 +35,7 @@ namespace optkit::gpu
 #else
 #define IS_DEVICE_INDEX_VALID(vendor, device_index) (false)
 #endif
-    static const std::unordered_map<std::string, unsigned int> gpu_sm_lookup = {
+    static const std::unordered_map<std::string, uint32_t> gpu_sm_lookup = {
         // Fermi
         {"Tesla C2050", 14},
         {"Tesla C2070", 14},
@@ -87,26 +87,15 @@ namespace optkit::gpu
 
         // Grace Hopper
         {"GH200", 144}};
-    std::string normalize_gpu_name(const std::string &name)
+    uint32_t lookup_sm_count(const std::string &name)
     {
-        std::string normalized = name;
-
-        // Remove "NVIDIA GeForce " prefix if present
-        const std::string prefix = "NVIDIA GeForce ";
-        if (normalized.find(prefix) == 0)
-            normalized = normalized.substr(prefix.size());
-
-        // Optional: remove "Ti", "Super" suffixes
-        if (normalized.size() > 2 && normalized.substr(normalized.size() - 2) == "Ti")
-            normalized = normalized.substr(0, normalized.size() - 2);
-        if (normalized.size() > 5 && normalized.substr(normalized.size() - 5) == "Super")
-            normalized = normalized.substr(0, normalized.size() - 5);
-
-        // Trim whitespace
-        normalized.erase(0, normalized.find_first_not_of(' '));
-        normalized.erase(normalized.find_last_not_of(' ') + 1);
-
-        return normalized;
+        // Iterate over table keys and check if name contains the key
+        for (const auto &kv : gpu_sm_lookup)
+        {
+            if (name.find(kv.first) != std::string::npos)
+                return kv.second;
+        }
+        return 0; // Not found
     }
 
     bool Query::init(GpuVendor vendor)
@@ -728,10 +717,10 @@ namespace optkit::gpu
                     char name_buf[NVML_DEVICE_NAME_BUFFER_SIZE];
                     if (nvmlDeviceGetName(nvml_device, name_buf, sizeof(name_buf)) == NVML_SUCCESS)
                     {
-                        std::string name = normalize_gpu_name(std::string(name_buf));
-                        auto it = gpu_sm_lookup.find(name);
-                        if (it != gpu_sm_lookup.end())
-                            compute_info.multiprocessor_count = it->second;
+                        std::string name{name_buf};
+                        uint32_t sm_count = lookup_sm_count(name);
+                        if (sm_count > 0)
+                            compute_info.multiprocessor_count = sm_count;
                         else
                         {
                             OPTKIT_CORE_WARN("GPU name '{}' not found in SM lookup table", name);
