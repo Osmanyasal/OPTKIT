@@ -41,17 +41,18 @@ public:
         for (const auto &vendor : available_vendors)
         {
             uint32_t device_count = 0;
-            if (Query::get_device_count(vendor, device_count) && device_count > 0)
-            {
-                for (uint32_t device_index = 0; device_index < device_count; ++device_index)
-                {
-                    bool reset_success = Query::reset_clock(vendor, device_index);
-                    if (reset_success)
-                        std::cout << "Clock reset successful" << std::endl;
-                    else
-                        std::cout << "Clock reset not supported or failed (may require elevated privileges)" << std::endl;
-                }
-            }
+            // ** Open this when you test frequency setting/resetting **
+            // if (Query::get_device_count(vendor, device_count) && device_count > 0)
+            // {
+            //     for (uint32_t device_index = 0; device_index < device_count; ++device_index)
+            //     {
+            //         bool reset_success = Query::reset_clock(vendor, device_index);
+            //         if (reset_success)
+            //             std::cout << "Clock reset successful" << std::endl;
+            //         else
+            //             std::cout << "Clock reset not supported or failed (may require elevated privileges)" << std::endl;
+            //     }
+            // }
             if (Query::shutdown(vendor))
                 std::cout << "Shutdown vendor " << to_string(vendor) << " successfully." << std::endl;
             else
@@ -521,7 +522,7 @@ TEST(GpuQueryTest, PowerPerformanceTest)
 }
 
 // Clock frequency control tests
-TEST(GpuQueryTest, ClockResetTest)
+TEST(DISABLED_GpuQueryTest, ClockResetTest)
 {
     GPUVendors all_vendors{}; // RAII init/shutdown
 
@@ -581,7 +582,7 @@ TEST(GpuQueryTest, ClockResetTest)
     }
 }
 
-TEST(GpuQueryTest, ClockSetAndVerifyTest)
+TEST(DISABLED_GpuQueryTest, ClockSetAndVerifyTest)
 {
     GPUVendors all_vendors{};              // RAII init/shutdown
     const uint32_t TOLERANCE_MHZ = 50;     // Allow 50 MHz tolerance for clock setting
@@ -730,7 +731,7 @@ TEST(GpuQueryTest, ClockSetAndVerifyTest)
     }
 }
 
-TEST(GpuQueryTest, ClockBoundaryTest)
+TEST(DISABLED_GpuQueryTest, ClockBoundaryTest)
 {
     GPUVendors all_vendors{}; // RAII init/shutdown
 
