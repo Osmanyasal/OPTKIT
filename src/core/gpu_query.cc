@@ -35,6 +35,79 @@ namespace optkit::gpu
 #else
 #define IS_DEVICE_INDEX_VALID(vendor, device_index) (false)
 #endif
+    static const std::unordered_map<std::string, unsigned int> gpu_sm_lookup = {
+        // Fermi
+        {"Tesla C2050", 14},
+        {"Tesla C2070", 14},
+        {"Quadro 6000", 14},
+
+        // Kepler
+        {"Tesla K20", 15},
+        {"Tesla K40", 15},
+        {"Tesla K80", 15},
+        {"Quadro K5000", 15},
+
+        // Maxwell
+        {"GTX 980", 16},
+        {"GTX 970", 13},
+        {"Titan X (Maxwell)", 24},
+
+        // Pascal
+        {"GTX 1080", 20},
+        {"GTX 1070", 15},
+        {"GTX 1060", 10},
+        {"Titan X (Pascal)", 28},
+
+        // Volta
+        {"Tesla V100", 80},
+        {"Titan V", 80},
+
+        // Turing
+        {"RTX 2080", 46},
+        {"RTX 2070", 36},
+        {"RTX 2060", 30},
+        {"Titan RTX", 72},
+
+        // Ampere
+        {"RTX 3090", 82},
+        {"RTX 3080", 68},
+        {"RTX 3070", 46},
+        {"RTX 3060", 30},
+        {"A100", 108},
+
+        // Hopper
+        {"H100", 144},
+
+        // Blackwell
+        {"RTX 5090", 192},
+        {"RTX 5080", 144},
+        {"RTX 5070 Ti", 96},
+        {"RTX 5070", 96},
+        {"RTX Pro 6000", 192},
+
+        // Grace Hopper
+        {"GH200", 144}};
+    std::string normalize_gpu_name(const std::string &name)
+    {
+        std::string normalized = name;
+
+        // Remove "NVIDIA GeForce " prefix if present
+        const std::string prefix = "NVIDIA GeForce ";
+        if (normalized.find(prefix) == 0)
+            normalized = normalized.substr(prefix.size());
+
+        // Optional: remove "Ti", "Super" suffixes
+        if (normalized.size() > 2 && normalized.substr(normalized.size() - 2) == "Ti")
+            normalized = normalized.substr(0, normalized.size() - 2);
+        if (normalized.size() > 5 && normalized.substr(normalized.size() - 5) == "Super")
+            normalized = normalized.substr(0, normalized.size() - 5);
+
+        // Trim whitespace
+        normalized.erase(0, normalized.find_first_not_of(' '));
+        normalized.erase(normalized.find_last_not_of(' ') + 1);
+
+        return normalized;
+    }
 
     bool Query::init(GpuVendor vendor)
     {
@@ -639,8 +712,44 @@ namespace optkit::gpu
             }
             else
             {
-                is_ok = false;
                 OPTKIT_CORE_WARN("nvmlDeviceGetAttributes: {}", nvmlErrorString(result));
+                NVML_EXEC_IF_SUPPORTS(
+                    "nvmlDeviceGetMultiProcessorCount",
+                    nvml_device,
+                    result,
+                    &compute_info.multiprocessor_count);
+
+                if (result == NVML_SUCCESS)
+                    compute_info.total_cores = compute_info.multiprocessor_count * compute_info.cores_per_mp;
+                else
+                {
+                    OPTKIT_CORE_WARN("nvmlDeviceGetMultiProcessorCount: {}", nvmlErrorString(result));
+                    OPTKIT_CORE_INFO("Fallbacking to lookup table");
+                    char name_buf[NVML_DEVICE_NAME_BUFFER_SIZE];
+                    if (nvmlDeviceGetName(nvml_device, name_buf, sizeof(name_buf)) == NVML_SUCCESS)
+                    {
+                        std::string name = normalize_gpu_name(std::string(name_buf));
+                        auto it = gpu_sm_lookup.find(name);
+                        if (it != gpu_sm_lookup.end())
+                            compute_info.multiprocessor_count = it->second;
+                        else
+                        {
+                            OPTKIT_CORE_WARN("GPU name '{}' not found in SM lookup table", name);
+                            compute_info.multiprocessor_count = 0;
+                        }
+
+                        compute_info.total_cores = compute_info.multiprocessor_count * compute_info.cores_per_mp;
+                        if (compute_info.multiprocessor_count == 0)
+                            is_ok = false;
+                    }
+                    else
+                    {
+                        OPTKIT_CORE_WARN("Failed to get device name for fallback lookup");
+                        compute_info.multiprocessor_count = 0;
+                        compute_info.total_cores = 0;
+                        is_ok = false;
+                    }
+                }
             }
 
 #endif
