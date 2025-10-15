@@ -57,6 +57,10 @@ namespace optkit::gpu
         {"GTX 1070", 15},
         {"GTX 1060", 10},
         {"Titan X (Pascal)", 28},
+        {"GTX 1650", 14},
+        {"GTX 1650 Super", 16},
+        {"GTX 1660", 22},
+        {"GTX 1660 Ti", 24},
 
         // Volta
         {"Tesla V100", 80},
