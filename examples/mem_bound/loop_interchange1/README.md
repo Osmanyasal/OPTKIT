@@ -144,3 +144,87 @@ This **1.51x speedup** demonstrates several important optimization principles:
 
 This example demonstrates that even with the same algorithmic complexity, understanding hardware characteristics and memory hierarchy can lead to substantial performance improvements in memory-bound applications.
 
+### CARM (Compute-Arithmetic Intensity-Roofline Model) Analysis
+
+CARM provides insights into computational efficiency and memory bandwidth utilization, helping identify whether applications are compute-bound or memory-bound.
+
+#### CARM Metrics Comparison
+
+| Version | Memory Instructions | Retired FLOPs | GFLOPS | Arithmetic Intensity (AI) | Execution Time |
+|---------|-------------------|---------------|---------|---------------------------|----------------|
+| **Original** | 5.12 billion | 3.36 billion | 4.09 | 0.082 | 823.2 ms |
+| **Optimized** | 5.15 billion | 3.36 billion | 5.00 | 0.082 | 672.4 ms |
+
+#### Performance Analysis
+
+**GFLOPS Improvement**:
+```
+Original:  4.09 GFLOPS
+Optimized: 5.00 GFLOPS (+22% computational throughput)
+```
+**Impact**: The optimized version achieved **22% higher computational throughput** while performing the same number of floating-point operations, indicating more efficient execution.
+
+**Arithmetic Intensity (AI)**:
+```
+Original:  AI = 0.082 FLOPs/Byte
+Optimized: AI = 0.082 FLOPs/Byte (essentially unchanged)
+```
+**Analysis**: The arithmetic intensity remains nearly identical, confirming that both versions perform the same computational work per byte of memory accessed. This validates that our optimization doesn't change the fundamental algorithm but improves execution efficiency.
+
+**Memory Instructions**:
+```
+Original:  5.12 billion memory instructions
+Optimized: 5.15 billion memory instructions (+0.6% increase)
+```
+**Insight**: Despite a slight increase in memory instruction count, the optimized version runs significantly faster due to better cache utilization patterns.
+
+#### Roofline Model Interpretation
+
+**Memory-Bound Workload Identification**:
+- **Low AI (0.082)**: Matrix multiplication with AI < 1.0 indicates this is a **memory-bound workload**
+- **Cache Optimization Impact**: For memory-bound applications, cache efficiency improvements directly translate to performance gains
+- **Bandwidth Utilization**: Better cache hit rates mean more effective use of available memory bandwidth
+
+**Performance Ceiling Analysis**:
+```
+Theoretical Peak Performance = Memory Bandwidth × Arithmetic Intensity
+Actual Performance = 5.00 GFLOPS (optimized version)
+
+Performance Improvement Route: Cache optimization → Better memory bandwidth utilization → Higher sustained GFLOPS
+```
+
+#### CARM Insights for Matrix Operations
+
+1. **Memory-Bound Nature Confirmed**: 
+   - AI = 0.082 indicates ~12 memory operations per floating-point operation
+   - Performance improvement comes from reducing memory latency, not increasing computation
+
+2. **Cache Optimization Effectiveness**:
+   - Same FLOP count (3.36B) but 22% higher GFLOPS → better memory subsystem utilization
+   - Memory instruction count stayed nearly constant → optimization didn't reduce memory operations but improved their efficiency
+
+3. **Scalability Implications**:
+   - For larger matrices, cache blocking becomes even more critical
+   - AI remains low for matrix multiplication, making memory optimization the primary performance lever
+
+#### Real-World Performance Engineering Lessons
+
+**From CARM Metrics**:
+- **GFLOPS increase (4.09 → 5.00)** validates that cache optimizations improve sustained performance
+- **Constant AI (0.082)** confirms algorithmic equivalence
+- **Memory instruction stability** shows optimization doesn't reduce work but improves efficiency
+
+**Optimization Strategy Validation**:
+1. ✅ **Target Memory-Bound Workloads**: AI < 1.0 indicates memory optimization potential
+2. ✅ **Focus on Cache Efficiency**: Higher GFLOPS with same FLOP count proves cache impact
+3. ✅ **Measure Sustained Performance**: GFLOPS improvements reflect real-world application performance
+4. ✅ **Validate Algorithmic Correctness**: Constant AI ensures no computational shortcuts
+
+**CARM-Guided Optimization Workflow**:
+1. **Measure baseline AI** → Identify if memory-bound (AI < 1) or compute-bound (AI > 10)
+2. **For memory-bound**: Focus on cache optimization, data layout, blocking
+3. **Monitor GFLOPS**: Sustained throughput improvement indicates successful optimization
+4. **Verify AI consistency**: Ensures optimization maintains algorithmic correctness
+
+This CARM analysis confirms that our **cache-focused optimizations** were the correct approach for this **memory-bound matrix multiplication workload**, achieving measurable performance improvements through better memory subsystem utilization rather than algorithmic changes.
+
