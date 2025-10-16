@@ -1,4 +1,4 @@
-#include "solution.hh"
+#include "solution_patch.hh"
 
 std::size_t solution_patch(const std::vector<uint32_t> &data, int thread_count)
 {
