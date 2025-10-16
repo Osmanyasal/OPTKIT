@@ -317,6 +317,161 @@ int main(){
 }
 ```
 
+
+## 📊 Supported Metrics in OptKit
+
+This document lists all currently supported performance and energy metrics in **OptKit**.  
+Each metric is implemented via a `MetricBuilder<T>` function and categorized by domain.
+
+---
+
+### 🧠 CPU Utilization
+
+| Metric | Description |
+|--------|--------------|
+| **cpu_max_capacity_based_utilization** | `100 * (UNHALTED_CLK_CYCLES / (OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS * max_freq_khz * 1000 * duration_sec))` — CPU utilization normalized by maximum frequency and logical cores. |
+
+---
+
+### 🧮 Cache Metrics
+
+| Metric | Description |
+|--------|--------------|
+| **l1_mpki** | `1000 * L1_MISSES / INST_RETIRED` — L1 cache true misses per kilo instruction. |
+| **l2_mpki** | `1000 * L2_MISSES / INST_RETIRED` — L2 cache true misses per kilo instruction. |
+| **l3_mpki** | `1000 * L3_MISSES / INST_RETIRED` — L3 cache true misses per kilo instruction. |
+| **l1_hit_ratio** | `100 * (L1_CACHE_ACCESSES - L1_MISSES) / L1_CACHE_ACCESSES` — L1 cache hit ratio. |
+| **l2_hit_ratio** | `100 * (L2_CACHE_ACCESSES - L2_MISSES) / L2_CACHE_ACCESSES` — L2 cache hit ratio. |
+| **l3_hit_ratio** | `100 * (L3_CACHE_ACCESSES - L3_MISSES) / L3_CACHE_ACCESSES` — L3 cache hit ratio. |
+
+---
+
+### 🧭 Branch Metrics
+
+| Metric | Description |
+|--------|--------------|
+| **branch_mispr_ratio** | `BR_MISP_RETIRED.ALL_BRANCHES / BR_INST_RETIRED.ALL_BRANCHES` — Ratio of all branches that mispredict. |
+
+---
+
+### 🧩 TLB Metrics
+
+| Metric | Description |
+|--------|--------------|
+| **itlb_mpki** | `1000 * ITLB_MISSES.WALK_COMPLETED / INST_RETIRED` — ITLB miss per kilo instruction. |
+| **dtlb_mpki** | `1000 * DTLB_MISSES.WALK_COMPLETED / INST_RETIRED` — DTLB miss per kilo instruction. |
+| **tlb_mpki** | `1000 * TLB_MISSES.WALK_COMPLETED / INST_RETIRED` — Combined TLB MPKI. |
+
+---
+
+### ⚙️ Latency & Parallelism
+
+| Metric | Description |
+|--------|--------------|
+| **load_miss_latency** | `L1D_PEND_MISS.PENDING / MEM_LD_COMPLETED.L1_MISS_ANY` — Average latency for L1 D-cache miss demand load operations (in core cycles). |
+| **ilp** | `UOPS_EXECUTED.THREAD / ((is_smt_enabled? 2 : 1 ) * UOPS_EXECUTED.CORE_CYCLES_GE1)` — Instruction-level parallelism per core. |
+| **mlp** | `L1D_PEND_MISS.PENDING / L1D_PEND_MISS.PENDING_CYCLES` — Memory-level parallelism per thread. |
+
+---
+
+### 💾 DRAM Bandwidth
+
+| Metric | Description |
+|--------|--------------|
+| **dram_bandwidth_gbs** | `(64 * (RD + WR)) / (Time * 1GB)` — DRAM bandwidth in GB/s. |
+
+---
+
+### 🧱 Instruction-per-Event Metrics
+
+| Metric | Description |
+|--------|--------------|
+| **ipc** | `INST_RETIRED / UNHALTED_CLK_CYCLES` — Instructions per cycle. |
+| **ip_call** | `INST_RETIRED / BR_INST_RETIRED.NEAR_CALL` — Instructions per near call. |
+| **ip_branch** | `INST_RETIRED / BR_INST_RETIRED.ALL_BRANCHES` — Instructions per branch. |
+| **ip_mem_load** | `INST_RETIRED / MEM_INST_RETIRED.ALL_LOADS_PS` — Instructions per memory load. |
+| **ip_mem_store** | `INST_RETIRED / MEM_INST_RETIRED.ALL_STORES_PS` — Instructions per memory store. |
+| **ip_mispredict** | `INST_RETIRED / BR_MISP_RETIRED.ALL_BRANCHES` — Instructions per misprediction. |
+
+---
+
+### 🧮 Floating-Point & Vector Metrics
+
+| Metric | Description |
+|--------|--------------|
+| **ip_flop** | Instructions per FP operation. |
+| **ip_avx_any_flop** | Instructions per vector floating point operation. |
+| **gflops** | GFLOPs per second — floating point performance. |
+| **ai** | FLOP/Byte — arithmetic intensity. |
+| **ip_arith_scalar_sp** | Instructions per scalar single-precision FP op. |
+| **ip_arith_scalar_dp** | Instructions per scalar double-precision FP op. |
+| **ip_arith_avx128** | Instructions per 128-bit vector FP op. |
+| **ip_arith_avx256** | Instructions per 256-bit vector FP op. |
+| **ip_arith_avx512** | Instructions per 512-bit vector FP op. |
+| **ip_arith_vector_any** | Instructions per vector FP op (any width). |
+| **scalarp_arith_vector** | Scalar FP per vector FP operation. |
+
+---
+
+### 🧠 Software Prefetch
+
+| Metric | Description |
+|--------|--------------|
+| **ip_swpf** | `INST_RETIRED / SW_PREFETCH_ACCESS.T0:u0xF` — Instructions per software prefetch. |
+
+---
+
+### 🚦 Topdown (Pipeline Utilization) — Level 1
+
+| Metric | Description |
+|--------|--------------|
+| **frontend_bound** | Fraction of slots not delivered by frontend. |
+| **bad_speculation** | Fraction of slots wasted due to speculation. |
+| **backend_bound** | Fraction of slots where backend could not accept µops. |
+| **retiring** | Fraction of slots retired successfully. |
+| **smt_contention** | Fraction of unused dispatch slots due to SMT contention. |
+
+---
+
+### ⚙️ Topdown — Level 2
+
+| Metric | Description |
+|--------|--------------|
+| **frontend_bound_latency** | Portion of FrontendBound due to cache/TLB latency. |
+| **frontend_bound_bw** | Portion of FrontendBound due to decode/queue bandwidth limits. |
+| **bad_speculation_mispredicts** | Portion of BadSpeculation from branch mispredicts. |
+| **bad_speculation_pipeline_restarts** | Portion of BadSpeculation from pipeline clears. |
+| **backend_bound_memory** | Portion of BackendBound due to memory issues. |
+| **backend_bound_cpu** | Portion of BackendBound due to core (non-memory) issues. |
+| **retiring_fastpath** | Portion of Retiring serviced via fast-path execution. |
+| **retiring_microcode** | Portion of Retiring from microcode or complex assists. |
+
+---
+
+### 🧩 Aggregated & Composite Metrics
+
+| Metric | Description |
+|--------|--------------|
+| **all_mpki** | Combined MPKI across all cache levels. |
+| **all_cache_hit_ratio** | Combined cache hit ratios. |
+| **all_stlb_mpki** | Aggregated STLB MPKI. |
+| **all_latency_and_parallelism** | Combined latency and parallelism metrics. |
+| **all_dram_bandwidth** | Combined DRAM bandwidth metrics. |
+| **all_ip_metrics** | Combined instruction-per-event metrics. |
+| **all_branch_metrics** | Combined branch metrics. |
+| **carm** | Cache-Aware Roofline Model metric set. |
+| **topdown_l1** | Aggregated L1 topdown metrics. |
+| **topdown_l2_fe** | L2 frontend metrics. |
+| **topdown_l2_be** | L2 backend metrics. |
+| **topdown_l2_retiring** | L2 retiring subset. |
+| **topdown_l2_bad_spec** | L2 bad speculation subset. |
+| **topdown_l2** | Full L2 topdown view. |
+| **all_topdown** | Combined Topdown (L1 + L2). |
+| **all_metrics** | Full OptKit metric set (all categories). |
+
+---
+
+
 ## Directory Structure
 
 Project structure and explanations are given below.
