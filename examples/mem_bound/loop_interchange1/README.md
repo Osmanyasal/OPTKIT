@@ -20,35 +20,37 @@ The binary representation of the power significantly reduces the number of matri
 
 Note that since compilers easily recognises matrix multiplications and replace the current code with the most optimized version, I compiled with -O0 (no optimizations) to see the effect of loop interchange & blocking here.
 
+**Matrix Configuration**: 500×500 matrices, 5 benchmark iterations, matrix power computations
+
 ### Benchmark Results
 
-| Version | Execution Time | Instructions Retired | L1 MPKI | L2 MPKI | L3 MPKI | Performance Gain |
-|---------|---------------|---------------------|---------|---------|---------|------------------|
-| **Original** | 10,554.6 ms | 105.4 billion | 0.645 | 0.0065 | 0.000009 | Baseline |
-| **Optimized** | 7,014.6 ms | 75.9 billion | 0.287 | 0.0073 | 0.000012 | **1.51x speedup** |
+| Version | Execution Time | Memory Instructions | Retired FLOPs | GFLOPS | Arithmetic Intensity | Performance Gain |
+|---------|---------------|-------------------|---------------|--------|-------------------|------------------|
+| **Original** | 77,502 ms | 883.2 billion | 26.3 billion | 0.339 | 0.0037 | Baseline |
+| **Optimized** | 53,699 ms | 629.9 billion | 26.3 billion | 0.489 | 0.0052 | **1.44x speedup** |
 
-### Cache Performance Analysis
+### Memory Performance Analysis
 
-#### L1 Cache Misses Per Kilo-Instructions (L1 MPKI)
+#### Memory Instruction Reduction
 ```
-Original:  0.645 MPKI  →  67.9M total L1 misses
-Optimized: 0.287 MPKI  →  21.8M total L1 misses (68% reduction)
+Original:  883.2 billion memory instructions
+Optimized: 629.9 billion memory instructions (28.7% reduction)
 ```
-**Impact**: The optimized version achieved a **68% reduction** in L1 cache misses, indicating significantly better data locality and cache utilization.
+**Impact**: The optimized version achieved a **28.7% reduction** in memory operations, indicating significantly better memory access efficiency and cache utilization.
 
-#### L2 Cache Performance
+#### Computational Throughput Improvement
 ```
-Original:  0.0065 MPKI →  685K total L2 misses
-Optimized: 0.0073 MPKI →  557K total L2 misses (19% reduction)
+Original:  0.339 GFLOPS
+Optimized: 0.489 GFLOPS (44.2% improvement)
 ```
-**Impact**: L2 cache performance improved by 19%, though the MPKI appears slightly higher due to the different instruction mix.
+**Impact**: Despite performing the same 26.3 billion floating-point operations, the optimized version achieved **44% higher computational throughput** due to more efficient memory access patterns.
 
-#### L3 Cache Performance
+#### Arithmetic Intensity Enhancement
 ```
-Original:  0.000009 MPKI →  999 total L3 misses
-Optimized: 0.000012 MPKI →  916 total L3 misses (8% reduction)
+Original:  AI = 0.0037 FLOPs/memory instruction
+Optimized: AI = 0.0052 FLOPs/memory instruction (40.5% improvement)
 ```
-**Impact**: Minimal L3 cache impact, which is expected since the optimization primarily affects L1 cache behavior.
+**Impact**: The optimization improved the ratio of computation to memory access by **40.5%**, indicating more efficient use of loaded data and better cache locality.
 
 ### Algorithmic Improvements
 

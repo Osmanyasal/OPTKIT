@@ -1,6 +1,6 @@
 ## Overview
 
-**Examples are taken from https://github.com/dendibakh/perf-ninja**
+**Some examples are taken from https://github.com/dendibakh/perf-ninja**
 
 **Problem Analysis:** OPTKIT was used to pinpoint the known performance bottleneck in the initial code.
 

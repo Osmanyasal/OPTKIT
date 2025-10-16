@@ -51,8 +51,8 @@ int main()
         optkit::utils::BlockTimer block_timer("solution", first_duration_ms);
         // OPTKIT_CPU_EVENTS("solution", optkit::metrics::performance::cpu_metrics::topdown_l1());
         // OPTKIT_CPU_EVENTS("solution", optkit::metrics::performance::cpu_metrics::topdown_l2());
-        // OPTKIT_CPU_EVENTS("solution", optkit::metrics::performance::cpu_metrics::carm());
-        OPTKIT_CPU_EVENTS("solution", optkit::metrics::performance::cpu_metrics::all_mpki());
+        OPTKIT_CPU_EVENTS("solution", optkit::metrics::performance::cpu_metrics::carm());
+        // OPTKIT_CPU_EVENTS("solution", optkit::metrics::performance::cpu_metrics::all_mpki());
         for (int i = 0; i < LOOP_INTERCHANGE1_BENCH_ITER; i++)
         {
             init(*a);
@@ -92,8 +92,8 @@ int main()
         optkit::utils::BlockTimer block_timer("patch solution", second_duration_ms);
         // OPTKIT_CPU_EVENTS("patch solution", optkit::metrics::performance::cpu_metrics::topdown_l1());
         // OPTKIT_CPU_EVENTS("patch solution", optkit::metrics::performance::cpu_metrics::topdown_l2());
-        // OPTKIT_CPU_EVENTS("patch solution", optkit::metrics::performance::cpu_metrics::carm());
-        OPTKIT_CPU_EVENTS("patch solution", optkit::metrics::performance::cpu_metrics::all_mpki());
+        // OPTKIT_CPU_EVENTS("patch solution", optkit::metrics::performance::cpu_metrics::all_mpki());
+        OPTKIT_CPU_EVENTS("patch solution", optkit::metrics::performance::cpu_metrics::carm());
 
         for (int i = 0; i < LOOP_INTERCHANGE1_BENCH_ITER; i++)
         {
