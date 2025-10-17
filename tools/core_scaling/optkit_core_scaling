@@ -1,5 +1,29 @@
 #!/bin/bash
 
+# Help function
+print_help() {
+    cat <<EOF
+Usage: $0 [OPTIONS] -c COMMAND [ARGS...]
+
+Options:
+  -s, --socket SOCKET_NUM   Specify socket to use (can be used multiple times, default 0)
+  -c, --command COMMAND     Command to execute with CPU binding
+  --strategy STRATEGY       Core allocation strategy [balanced|sequential]
+  --help                    Display this help message
+
+Strategies:
+  balanced     Distribute threads evenly across sockets (default)
+  sequential   Fill complete sockets before using next socket
+
+EOF
+    # Show socket information
+    echo "-------"
+    for socket in "${!SOCKET_CPUS[@]}"; do
+        echo "Socket $socket CPUs: ${SOCKET_CPUS[$socket]}"
+    done | sort -n
+    echo "-------"
+}
+
 # Initialize variables
 declare -A SOCKET_CPUS
 declare -a sockets
@@ -63,30 +87,6 @@ get_sequential_cores() {
     local threads=$1
     local -n _all_cores=$2
     printf "%s" "${_all_cores[*]:0:$threads}" | tr ' ' ','
-}
-
-# Help function
-print_help() {
-    cat <<EOF
-Usage: $0 [OPTIONS] -c COMMAND [ARGS...]
-
-Options:
-  -s, --socket SOCKET_NUM   Specify socket to use (can be used multiple times, default 0)
-  -c, --command COMMAND     Command to execute with CPU binding
-  --strategy STRATEGY       Core allocation strategy [balanced|sequential]
-  --help                    Display this help message
-
-Strategies:
-  balanced     Distribute threads evenly across sockets (default)
-  sequential   Fill complete sockets before using next socket
-
-EOF
-    # Show socket information
-    echo "-------"
-    for socket in "${!SOCKET_CPUS[@]}"; do
-        echo "Socket $socket CPUs: ${SOCKET_CPUS[$socket]}"
-    done | sort -n
-    echo "-------"
 }
 
 # Main benchmark function

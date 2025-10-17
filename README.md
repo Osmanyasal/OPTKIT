@@ -316,12 +316,35 @@ int main(){
     optkit::frequency::gpu::Query::*
 }
 ```
-
-
 ## 📊 Supported Metrics in OptKit
 
 This document lists all currently supported performance and energy metrics in **OptKit**.  
-Each metric is implemented via a `MetricBuilder<T>` function and categorized by domain.
+Each metric is implemented via a `MetricBuilder<T>` function and categorized by domain. Althoguh we support many important metrics, users of the library are free to implement their own metrics and pass to a Profiler.
+
+```cpp
+// ✅ Example: MetricBuilder to build IPC metric for intel architectures.
+static const MetricBuilder<uint64_t> &ipc()
+{
+    static const MetricBuilder<uint64_t> metric = []
+    {
+        std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
+        std::string unhalted_core_cycles_name = to_string(CoreEvents::UNHALTED_CORE_CYCLES);
+
+        return MetricBuilder<uint64_t>{}
+            .add(inst_retired_name, intel::EventMapper::get(CoreEvents::INST_RETIRED)) // event_name -- event_code
+            .add(unhalted_core_cycles_name, intel::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
+            .build("ipc", [inst_retired_name, unhalted_core_cycles_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                    {
+                    uint64_t inst_retired = get_event_count(counts,inst_retired_name);
+                    uint64_t unhalted_core_cycles = get_event_count(counts,unhalted_core_cycles_name);
+
+                    if (unhalted_core_cycles == 0)
+                            return std::numeric_limits<double>::quiet_NaN();
+                    return static_cast<double>(inst_retired) / static_cast<double>(unhalted_core_cycles); });
+    }();
+    return metric;
+}
+```
 
 ---
 
