@@ -81,7 +81,10 @@ function system_init()
         local spdlog_compile = ""
         spdlog_compile = spdlog_compile .. 'echo "[CHECK SPDLOG]";\n'
         spdlog_compile = spdlog_compile .. 'if [ ! -f "' .. LIB_SPD_PATH .. '/build/libspdlog.a" ]; then\n'
-        spdlog_compile = spdlog_compile .. '    cd ' .. LIB_SPD_PATH .. ' && ./compile.sh;\n'
+        spdlog_compile = spdlog_compile ..
+            '    cd ' ..
+            LIB_SPD_PATH ..
+            ' && git checkout v1.x && mkdir -p build && cd build && cmake .. -DSPDLOG_BUILD_SHARED=OFF -DSPDLOG_BUILD_EXAMPLES=OFF -DSPDLOG_BUILD_BENCH=OFF -DSPDLOG_BUILD_TESTS=OFF && cmake --build .;\n'
         spdlog_compile = spdlog_compile .. 'fi &&\n'
         spdlog_compile = spdlog_compile .. 'echo "[✅ COMPILE SPDLOG]" || echo "[❌ COMPILE SPDLOG ERROR]"'
         os.execute(spdlog_compile)
@@ -91,7 +94,7 @@ function system_init()
         local libpfm_compile = ""
         libpfm_compile = libpfm_compile .. 'echo "[CHECK LIBPFM]";\n'
         libpfm_compile = libpfm_compile .. 'if [ ! -f "' .. LIB_PFM_PATH .. '/lib/libpfm.a" ]; then\n'
-        libpfm_compile = libpfm_compile .. '    cd ' .. LIB_PFM_PATH .. ' && ./compile.sh;\n'
+        libpfm_compile = libpfm_compile .. '    cd ' .. LIB_PFM_PATH .. ' && make clean && make;\n'
         libpfm_compile = libpfm_compile .. 'fi &&\n'
         libpfm_compile = libpfm_compile .. 'echo "[✅ COMPILE LIBPFM]" || echo "[❌ COMPILE LIBPFM ERROR]"'
         os.execute(libpfm_compile)

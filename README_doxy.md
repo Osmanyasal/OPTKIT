@@ -1,5 +1,10 @@
 <div id="user-content-toc" align=center>
-  <ul>
+## To run 🚀 
+```
+git clone --recurse-submodules https://github.com/Osmanyasal/OPTKIT.git
+cd ./OPTKIT
+make
+```
     <summary><h1 style="display: inline-block;">Optimizer Toolkit-Core</h1></summary>
   </ul>
 </div>
@@ -41,7 +46,7 @@
 
 ## To run 🚀 
 ```
-git clone --recurse-submodules https://github.com/Osmanyasal/Optimizer-Toolkit-Core.git
+git clone --recurse-submodules https://github.com/Osmanyasal/OPTKIT.git
 cd ./Optimizer-Toolkit-Core
 make
 ```
