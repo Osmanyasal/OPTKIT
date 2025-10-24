@@ -39,11 +39,7 @@ namespace optkit::temperature::gpu
         metric_builder = optkit::metrics::MetricBuilder<std::pair<double, double>>();
         for (std::unordered_map<uint32_t, std::pair<double, double>>::const_iterator it = last_snapshot.begin();
              it != last_snapshot.end(); ++it)
-        {
-            std::vector<uint64_t> init_value;
-            init_value.push_back(0x0);
-            metric_builder.add("gpu[" + std::to_string(it->first) + "]", init_value);
-        }
+            metric_builder.add("gpu[" + std::to_string(it->first) + "]", {0x0});
     }
 
     Profiler::~Profiler()
