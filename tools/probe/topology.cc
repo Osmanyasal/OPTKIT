@@ -20,8 +20,8 @@ struct CacheInstance
     std::string source;
 };
 
-using Topology = std::map<std::pair<int, int>, std::vector<int>>;
-using CacheHierarchy = std::map<int, std::map<int, std::map<std::string, std::vector<CacheInstance>>>>;
+using Topology = std::map<std::pair<int, int>, std::vector<int>>;                                       // socket -> core -> list of CPUs
+using CacheHierarchy = std::map<int, std::map<int, std::map<std::string, std::vector<CacheInstance>>>>; // socket -> level -> type -> list of CacheInstances
 
 Topology get_system_topology()
 {
