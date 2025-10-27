@@ -13,7 +13,7 @@ OPT_FORCE_INLINE std::string _amdsmi_status_to_string(amdsmi_status_t status)
     return "Unknown error";
 }
 
-// AMD GPU architecture constants - define them if not available
+// AMD GPU architecture constants for AMDSMI - define them if not available
 #ifndef AMDSMI_DEVICE_ARCH_GCN_1_0
 #define AMDSMI_DEVICE_ARCH_GCN_1_0 1 // Southern Islands (HD 7000 series)
 #endif
