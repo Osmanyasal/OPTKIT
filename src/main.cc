@@ -21,9 +21,9 @@ int32_t main(int32_t argc, char **argv)
     std::cout << "GPU Device Query Example" << std::endl;
     std::cout << "========================" << std::endl;
 
-    optkit::gpu::GpuComputeInfo compute_info;
-    optkit::gpu::Query::get_compute_info(optkit::gpu::GpuVendor::NVIDIA, 0, compute_info);
-    std::cout << "Compute Info:" << compute_info << "\n";
+    optkit::gpu::GpuDeviceInfo device_info;
+    optkit::gpu::Query::get_device_info(optkit::gpu::GpuVendor::AMD, 0, device_info);
+    std::cout << "Device Info:" << device_info << "\n";
 
     // optkit::gpu::GpuClockInfo clock_info;
     // optkit::gpu::Query::get_clock_info(optkit::gpu::GpuVendor::NVIDIA, 0, clock_info);
