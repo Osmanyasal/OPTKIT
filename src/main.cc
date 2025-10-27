@@ -22,7 +22,7 @@ int32_t main(int32_t argc, char **argv)
     std::cout << "========================" << std::endl;
 
     optkit::gpu::GpuDeviceInfo device_info;
-    optkit::gpu::Query::get_device_info(optkit::gpu::GpuVendor::AMD, 0, device_info);
+    optkit::gpu::Query::device_query(optkit::gpu::GpuVendor::AMD, 0, device_info);
     std::cout << "Device Info:" << device_info << "\n";
 
     // optkit::gpu::GpuClockInfo clock_info;
