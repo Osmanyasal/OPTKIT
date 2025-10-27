@@ -25,7 +25,18 @@ check_header() {
     local macro_name=$(basename "$header" | sed 's/\.[^.]*$//' | tr '[:lower:]' '[:upper:]')
 
     printf "%-${ALIGN_WIDTH}s" "Checking header <$header>:"
-    echo "#include <$header>" | "$CXX_COMPILER" -E -x c++ - $INCLUDE_DIRS $extra_include > /dev/null 2>&1
+    
+    # If extra_include is specified, use strict checking (only specified paths)
+    # Otherwise, use normal system-wide search
+    if [ -n "$extra_include" ]; then
+        # Strict mode: only check specified include paths, not system-wide ROCm installations
+        echo "#include <$header>" | "$CXX_COMPILER" -E -x c++ - -nostdinc++ $extra_include $INCLUDE_DIRS \
+            -isystem /usr/include -isystem /usr/include/x86_64-linux-gnu -isystem /usr/include/c++/11 \
+            -isystem /usr/include/x86_64-linux-gnu/c++/11 > /dev/null 2>&1
+    else
+        # Normal mode: search globally including system paths
+        echo "#include <$header>" | "$CXX_COMPILER" -E -x c++ - $INCLUDE_DIRS > /dev/null 2>&1
+    fi
 
     if [ $? -eq 0 ]; then
         echo " ✅"
