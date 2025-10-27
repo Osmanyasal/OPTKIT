@@ -47,9 +47,7 @@ function base_project_setup()
         end
         libdirs { "/opt/rocm/lib" }
         links { "amd_smi" }
-    end
-    
-    if dynamic_lib_exists("rocm_smi64") or dynamic_lib_exists("rocm_smi") then
+    elseif dynamic_lib_exists("rocm_smi64") or dynamic_lib_exists("rocm_smi") then
         local rocm_include = get_rocm_include()
         if rocm_include then
             includedirs { rocm_include }
@@ -179,6 +177,13 @@ function test_project_setup()
         end
         libdirs { "/opt/rocm/lib" }
         links { "amd_smi" }
+    elseif dynamic_lib_exists("rocm_smi64") or dynamic_lib_exists("rocm_smi") then
+        local rocm_include = get_rocm_include()
+        if rocm_include then
+            includedirs { rocm_include }
+        end
+        libdirs { "/opt/rocm/lib" }
+        links { "rocm_smi64" }
     end
 
     -- filter "configurations:Release"
