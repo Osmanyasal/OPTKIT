@@ -150,28 +150,3 @@ inline uint32_t _map_amd_device_id_to_arch(uint32_t device_id)
         return AMD_DEVICE_ARCH_UNKNOWN;
     }
 }
-
-#if OPTKIT_ENV_LIB_ROCM_SMI
-OPT_FORCE_INLINE std::string _rocm_smi_status_to_string(rsmi_status_t status)
-{
-    const char *status_str = nullptr;
-    if (rsmi_status_string(status, &status_str) == RSMI_STATUS_SUCCESS && status_str)
-    {
-        return std::string(status_str);
-    }
-    return "Unknown error";
-}
-
-#elif OPTKIT_ENV_LIB_AMDSMI
-
-OPT_FORCE_INLINE std::string _amdsmi_status_to_string(amdsmi_status_t status)
-{
-    const char *status_str = nullptr;
-    if (amdsmi_status_code_to_string(status, &status_str) == AMD_STATUS_SUCCESS && status_str)
-    {
-        return std::string(status_str);
-    }
-    return "Unknown error";
-}
-
-#endif

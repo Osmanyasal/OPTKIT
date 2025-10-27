@@ -59,6 +59,16 @@ OPT_FORCE_INLINE amdsmi_fn_t query_amd_smi_fn(const char *function_name)
     return lib ? (amdsmi_fn_t)dlsym(lib, function_name) : nullptr;
 }
 
+OPT_FORCE_INLINE std::string _amdsmi_status_to_string(amdsmi_status_t status)
+{
+    const char *status_str = nullptr;
+    if (amdsmi_status_code_to_string(status, &status_str) == AMDSMI_STATUS_SUCCESS && status_str)
+    {
+        return std::string(status_str);
+    }
+    return "Unknown error";
+}
+
 #define ROCM_EXEC_IF_SUPPORTS(NAME_STR, DEVICE, RESULT, ...) \
     do                                                       \
     {                                                        \
@@ -77,6 +87,16 @@ OPT_FORCE_INLINE rsmi_fn_t query_rocm_smi_fn(const char *function_name)
 {
     static void *lib = dlopen("librocm_smi64.so", RTLD_NOW | RTLD_NOLOAD);
     return lib ? (rsmi_fn_t)dlsym(lib, function_name) : nullptr;
+}
+
+OPT_FORCE_INLINE std::string _rocm_smi_status_to_string(rsmi_status_t status)
+{
+    const char *status_str = nullptr;
+    if (rsmi_status_string(status, &status_str) == RSMI_STATUS_SUCCESS && status_str)
+    {
+        return std::string(status_str);
+    }
+    return "Unknown error";
 }
 
 #define ROCM_EXEC_IF_SUPPORTS(NAME_STR, DEVICE, RESULT, ...) \
