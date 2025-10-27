@@ -129,8 +129,6 @@ end
 function get_nvml_include()
     if os.isdir("/usr/local/cuda/include") then
         return "/usr/local/cuda/include"
-    elseif os.isdir("/usr/local/cuda-12.9/include") then
-        return "/usr/local/cuda-12.9/include"
     end
     return nil
 end
@@ -138,20 +136,57 @@ end
 function get_rocm_include()
     if os.isdir("/opt/rocm/include") then
         return "/opt/rocm/include"
-    elseif os.isdir("/opt/rocm-5.7.1/include") then
-        return "/opt/rocm-5.7.1/include"
     end
     return nil
 end
 
 function dynamic_lib_exists(libname)
+    -- First, try ldconfig (system-registered libraries)
     local pipe = io.popen("ldconfig -p 2>/dev/null | grep lib" .. libname .. ".so")
-    if not pipe then return false end
-
-    local result = pipe:read("*a")
-    pipe:close()
-
-    return result ~= nil and result ~= ""
+    if pipe then
+        local result = pipe:read("*a")
+        pipe:close()
+        if result ~= nil and result ~= "" then
+            return true
+        end
+    end
+    
+    -- If not found in ldconfig, check common ROCm/CUDA library paths
+    local search_paths = {
+        "/opt/rocm/lib",
+        "/usr/local/cuda/lib64",
+        "/usr/lib/x86_64-linux-gnu",
+    }
+    
+    -- Also check LD_LIBRARY_PATH if set
+    local ld_library_path = os.getenv("LD_LIBRARY_PATH")
+    if ld_library_path then
+        for path in string.gmatch(ld_library_path, "[^:]+") do
+            table.insert(search_paths, path)
+        end
+    end
+    
+    -- Search for the library in these paths
+    for _, path in ipairs(search_paths) do
+        local lib_patterns = {
+            path .. "/lib" .. libname .. ".so",
+            path .. "/lib" .. libname .. ".so.*",
+        }
+        
+        for _, pattern in ipairs(lib_patterns) do
+            local check_cmd = "ls " .. pattern .. " 2>/dev/null"
+            local check_pipe = io.popen(check_cmd)
+            if check_pipe then
+                local check_result = check_pipe:read("*a")
+                check_pipe:close()
+                if check_result ~= nil and check_result ~= "" then
+                    return true
+                end
+            end
+        end
+    end
+    
+    return false
 end
 
 function static_lib_exists(libname)
