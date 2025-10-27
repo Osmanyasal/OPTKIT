@@ -29,23 +29,33 @@ check_header() {
     # If extra_include is specified, use strict checking (only specified paths)
     # Otherwise, use normal system-wide search
     if [ -n "$extra_include" ]; then
-        # Strict mode: only check specified include paths, not system-wide ROCm installations
-        echo "#include <$header>" | "$CXX_COMPILER" -E -x c++ - -nostdinc++ $extra_include $INCLUDE_DIRS \
-            -isystem /usr/include -isystem /usr/include/x86_64-linux-gnu -isystem /usr/include/c++/11 \
-            -isystem /usr/include/x86_64-linux-gnu/c++/11 > /dev/null 2>&1
+        # Strict mode: Extract the include directory and check if file exists there
+        # This avoids any compiler magic that might find files in unexpected places
+        local include_dir=$(echo "$extra_include" | sed 's/-I//')
+        local full_path="${include_dir}/${header}"
+        
+        if [ -f "$full_path" ]; then
+            echo " ✅"
+            echo "#define OPTKIT_ENV_LIB_${macro_name} 1" >> "$SRC_CONFIG_FILE"
+            return 0
+        else
+            echo " ❌"
+            echo "#define OPTKIT_ENV_LIB_${macro_name} 0" >> "$SRC_CONFIG_FILE"
+            return 1
+        fi
     else
         # Normal mode: search globally including system paths
         echo "#include <$header>" | "$CXX_COMPILER" -E -x c++ - $INCLUDE_DIRS > /dev/null 2>&1
-    fi
-
-    if [ $? -eq 0 ]; then
-        echo " ✅"
-        echo "#define OPTKIT_ENV_LIB_${macro_name} 1" >> "$SRC_CONFIG_FILE"
-        return 0  # Success
-    else
-        echo "#define OPTKIT_ENV_LIB_${macro_name} 0" >> "$SRC_CONFIG_FILE"
-        echo " ❌"
-        return 1  # Failure
+        
+        if [ $? -eq 0 ]; then
+            echo " ✅"
+            echo "#define OPTKIT_ENV_LIB_${macro_name} 1" >> "$SRC_CONFIG_FILE"
+            return 0  # Success
+        else
+            echo "#define OPTKIT_ENV_LIB_${macro_name} 0" >> "$SRC_CONFIG_FILE"
+            echo " ❌"
+            return 1  # Failure
+        fi
     fi
 }
 
