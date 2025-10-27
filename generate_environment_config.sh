@@ -21,10 +21,11 @@ print_status() {
 # Utility: Header check if exists or not
 check_header() {
     local header="$1"
+    local extra_include="${2:-}"  # Optional additional include path
     local macro_name=$(basename "$header" | sed 's/\.[^.]*$//' | tr '[:lower:]' '[:upper:]')
 
     printf "%-${ALIGN_WIDTH}s" "Checking header <$header>:"
-    echo "#include <$header>" | "$CXX_COMPILER" -E -x c++ - $INCLUDE_DIRS > /dev/null 2>&1
+    echo "#include <$header>" | "$CXX_COMPILER" -E -x c++ - $INCLUDE_DIRS $extra_include > /dev/null 2>&1
 
     if [ $? -eq 0 ]; then
         echo " ✅"
@@ -41,12 +42,14 @@ write_headers() {
     echo -e "\n// Headers" >> "$SRC_CONFIG_FILE"
     check_header "linux/perf_event.h"
     check_header "msr_safe.h"
-    check_header "/usr/local/cuda/include/nvml.h"
+    
+    # Check NVML (CUDA)
+    check_header "nvml.h" "-I/usr/local/cuda/include"
     
     # Check AMDSMI first, fallback to ROCm SMI if it fails
-    if ! check_header "/opt/rocm/include/amd_smi/amdsmi.h"; then
+    if ! check_header "amd_smi/amdsmi.h" "-I/opt/rocm/include"; then
         # AMDSMI failed, try ROCm SMI as fallback
-        check_header "/opt/rocm/include/rocm_smi/rocm_smi.h"
+        check_header "rocm_smi/rocm_smi.h" "-I/opt/rocm/include"
     else
         # AMDSMI succeeded, set ROCm SMI to 0
         echo "#define OPTKIT_ENV_LIB_ROCM_SMI 0" >> "$SRC_CONFIG_FILE"
