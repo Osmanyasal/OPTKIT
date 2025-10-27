@@ -24,7 +24,7 @@ check_header() {
     local macro_name=$(basename "$header" | sed 's/\.[^.]*$//' | tr '[:lower:]' '[:upper:]')
 
     printf "%-${ALIGN_WIDTH}s" "Checking header <$header>:"
-    echo "#include <$header>" | "$CXX_COMPILER" -E -x c++ - $INCLUDE_DIRS - > /dev/null 2>&1
+    echo "#include <$header>" | "$CXX_COMPILER" -E -x c++ - $INCLUDE_DIRS > /dev/null 2>&1
 
     if [ $? -eq 0 ]; then
         echo " ✅"
