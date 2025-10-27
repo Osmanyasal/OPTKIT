@@ -79,6 +79,8 @@ namespace optkit::gpu
 #if OPTKIT_ENV_LIB_AMDSMI
         static std::vector<amdsmi_socket_handle> socket_handles_amdsmi;
         static std::vector<amdsmi_processor_handle> gpu_handles_amdsmi;
+#elif OPTKIT_ENV_LIB_ROCM_SMI
+        static std::vector<uint32_t> gpu_handles_rocm_smi; // ROCm SMI uses device indices
 #endif
 
     private:

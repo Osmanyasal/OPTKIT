@@ -29,9 +29,11 @@ check_header() {
     if [ $? -eq 0 ]; then
         echo " ✅"
         echo "#define OPTKIT_ENV_LIB_${macro_name} 1" >> "$SRC_CONFIG_FILE"
+        return 0  # Success
     else
         echo "#define OPTKIT_ENV_LIB_${macro_name} 0" >> "$SRC_CONFIG_FILE"
         echo " ❌"
+        return 1  # Failure
     fi
 }
 
@@ -40,7 +42,15 @@ write_headers() {
     check_header "linux/perf_event.h"
     check_header "msr_safe.h"
     check_header "/usr/local/cuda/include/nvml.h"
-    check_header "/opt/rocm/include/amd_smi/amdsmi.h" 
+    
+    # Check AMDSMI first, fallback to ROCm SMI if it fails
+    if ! check_header "/opt/rocm/include/amd_smi/amdsmi.h"; then
+        # AMDSMI failed, try ROCm SMI as fallback
+        check_header "/opt/rocm/include/rocm_smi/rocm_smi.h"
+    else
+        # AMDSMI succeeded, set ROCm SMI to 0
+        echo "#define OPTKIT_ENV_LIB_ROCM_SMI 0" >> "$SRC_CONFIG_FILE"
+    fi
 }
 
 write_compiler_macro() {

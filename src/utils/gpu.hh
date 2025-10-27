@@ -46,9 +46,12 @@ OPT_FORCE_INLINE nvml_fn_t query_nvml_fn(const char *function_name)
 #define NVML_CUDA_DRIVER_VERSION_MINOR(v) 0
 #endif
 
+#if OPTKIT_ENV_LIB_AMDSMI || OPTKIT_ENV_LIB_ROCM_SMI
+
 #if OPTKIT_ENV_LIB_AMDSMI
 #include <amd_smi/amdsmi.h>
 #include "utils/amd_smi_failsafe.hh"
+
 using amdsmi_fn_t = amdsmi_status_t (*)(amdsmi_processor_handle, ...);
 OPT_FORCE_INLINE amdsmi_fn_t query_amd_smi_fn(const char *function_name)
 {
@@ -65,6 +68,28 @@ OPT_FORCE_INLINE amdsmi_fn_t query_amd_smi_fn(const char *function_name)
         else                                                 \
             RESULT = AMDSMI_STATUS_NOT_SUPPORTED;            \
     } while (0)
+
+#elif OPTKIT_ENV_LIB_ROCM_SMI
+#include <rocm_smi/rocm_smi.h>
+#include "utils/rocm_smi_failsafe.hh"
+
+using rsmi_fn_t = rsmi_status_t (*)(uint32_t, ...);
+OPT_FORCE_INLINE rsmi_fn_t query_rocm_smi_fn(const char *function_name)
+{
+    static void *lib = dlopen("librocm_smi64.so", RTLD_NOW | RTLD_NOLOAD);
+    return lib ? (rsmi_fn_t)dlsym(lib, function_name) : nullptr;
+}
+
+#define ROCM_EXEC_IF_SUPPORTS(NAME_STR, DEVICE, RESULT, ...) \
+    do                                                       \
+    {                                                        \
+        static rsmi_fn_t fn = query_rocm_smi_fn(NAME_STR);   \
+        if (fn)                                              \
+            RESULT = fn(DEVICE, __VA_ARGS__);                \
+        else                                                 \
+            RESULT = RSMI_STATUS_NOT_SUPPORTED;              \
+    } while (0)
+#endif
 
 #else
 #define ROCM_EXEC_IF_SUPPORTS(NAME_STR, DEVICE, RESULT, ...)
