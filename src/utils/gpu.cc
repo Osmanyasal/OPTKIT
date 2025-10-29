@@ -135,7 +135,7 @@ namespace optkit::gpu
     {
         return "{\"id\":" + std::to_string(info.id) +
                ",\"device_name\":\"" + info.device_name + "\"" +
-               ",\"architecture\":\"" + std::to_string((int32_t)info.architecture) + "\"" +
+               ",\"architecture\":\"" + std::to_string(info.architecture) + "\"" +
                ",\"vendor\":\"" + to_string(info.vendor) + "\"" +
                ",\"vendor_string\":\"" + info.vendor_string + "\"" +
                ",\"is_integrated\":" + (info.is_integrated ? "true" : "false") + "}";
