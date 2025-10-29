@@ -41,28 +41,87 @@ make -j$(nproc) config=debug optkit_test  ## no optimization in tests, raw resul
 ### Features
 
 ```bash
-# Show CPU or GPU topology
-optkit topology
-optkit topology cpu
-optkit topology gpu
+OPTKIT - Performance and Energy Profiling & Optimization Tool
 
-# List PMU events for CPU or GPU
-optkit list events cpu
-optkit list events gpu
+USAGE:
+    optkit <COMMAND> [OPTIONS] [-- <PROGRAM>]
 
-# List metrics available on CPU or GPU
-optkit list metrics cpu
-optkit list metrics gpu
+COMMANDS:
+    topology [cpu|gpu]              Show system topology
+    list <TYPE> [cpu|gpu]           List available components
+    stat [OPTIONS] -- <PROGRAM>     Run single-shot profiling (like perf stat)
 
-# Run benchmarks with scaling options
-optkit bench -- ./my_program
-optkit bench freq-scaling -- ./my_program
-optkit bench core-scaling -- ./my_program
-optkit bench affinity --strategy=[compact|scatter|numa|manual] -- ./my_program
+TOPOLOGY:
+    optkit topology                 Show complete system topology
+    optkit topology cpu             Show CPU topology only
+    optkit topology gpu             Show GPU topology only
 
-# Set frequencies and other system parameters manually or via config
-optkit setenv core-freq=1800000 uncore-freq=1200000
-optkit setenv --config ./env.config
+LIST:
+    optkit list [all|cpu|gpu]           List all PMU capabilities
+    optkit list [all|cpu|gpu] pmu       List available PMU info
+    optkit list [all|cpu|gpu] events    List available PMU events
+    optkit list [all|cpu|gpu] metrics   List available metrics
+
+PROFILING (stat):
+    Single execution profiling - runs program once and collects metrics
+    
+    optkit stat -- <program>                                 Default profiling
+    optkit stat -e <event> -- <program>                      Profile specific event
+    optkit stat -m <metric> -- <program>                     Profile specific metric
+    optkit stat -e <event> -m <metric> -- <program>          Profile event + metric
+
+BENCHMARKING (--bench):
+    Multiple execution analysis - runs program multiple times with different configurations
+    
+    optkit stat --bench freq-scaling -- <program>            Frequency scaling analysis
+    optkit stat --bench core-scaling -- <program>            Core scaling analysis
+    optkit stat --affinity <STRATEGY> -- <program>           Affinity analysis
+
+    Options can be interleaved:
+    optkit stat --bench freq-scaling -e cycles -m ipc -- <program>
+
+AFFINITY STRATEGIES:
+    --affinity compact              Pack threads on fewer cores (cache locality)
+    --affinity scatter              Spread threads across cores (avoid contention)
+    --affinity numa                 NUMA-aware placement (memory locality)
+    --affinity manual               Manual affinity control
+
+EXAMPLES:
+    # Topology queries
+    optkit topology
+    optkit topology cpu
+    optkit topology gpu
+
+    # List capabilities
+    optkit list all
+    optkit list cpu all
+    optkit list cpu events
+    optkit list cpu metrics
+    optkit list gpu all
+    optkit list gpu events
+    optkit list gpu metrics
+
+    # Single-shot profiling (executes once)
+    optkit stat -- ./my_program
+    optkit stat -e cycles -e instructions -- ./app
+    optkit stat -m ipc -m cache-miss-rate -- ./benchmark
+
+    # Benchmark analysis (executes multiple times)
+    optkit stat --bench freq-scaling -- ./compute_heavy
+    optkit stat --bench core-scaling -- ./parallel_app
+    optkit stat --affinity scatter -- ./threaded_app
+    optkit stat --affinity numa -- ./parallel_workload
+
+    # Interleaved options (benchmark + specific profiling)
+    optkit stat --bench freq-scaling -e cycles -m ipc -- ./program --input data.txt
+    optkit stat -e cache-misses -m energy --bench core-scaling -- ./app
+    optkit stat --affinity compact -e instructions -m ipc -- ./multithreaded
+
+NOTE:
+    - 'stat' without --bench or --affinity: Single execution, collects specified events/metrics
+    - 'stat' with --bench or --affinity: Multiple executions with varying configurations
+      (e.g., different frequencies, core counts, affinity patterns)
+
 ```
 
 ### Usage Examples

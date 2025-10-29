@@ -26,6 +26,7 @@ TOPOLOGY:
 
 LIST:
     optkit list [all|cpu|gpu]           List all PMU capabilities
+    optkit list [all|cpu|gpu] pmu       List available PMU info
     optkit list [all|cpu|gpu] events    List available PMU events
     optkit list [all|cpu|gpu] metrics   List available metrics
 
@@ -128,7 +129,8 @@ enum class ListType
 {
     ALL,
     EVENTS,
-    METRICS
+    METRICS,
+    PMU
 };
 
 struct CommandArgs
@@ -232,6 +234,8 @@ inline std::string to_string(ListType list_type)
         return "EVENTS";
     case ListType::METRICS:
         return "METRICS";
+    case ListType::PMU:
+        return "PMU";
     default:
         return "UNKNOWN";
     }

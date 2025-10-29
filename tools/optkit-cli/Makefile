@@ -34,7 +34,7 @@ endif
 
 # Targets
 TARGET = optkit
-SOURCES = optkit.cc utils.cc topology.cc list.cc
+SOURCES = optkit.cc utils.cc topology.cc list.cc stat.cc
 OBJECTS = $(SOURCES:.cc=.o)
 
 # Default target

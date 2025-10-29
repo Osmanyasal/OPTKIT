@@ -86,6 +86,48 @@ namespace optkit::pmu::cpu
                 std::cout << (pinfo.is_present ? "Active" : "Supported") << " Event: " << pinfo.name << "::" << info.name << std::endl;
         }
     }
+
+    std::vector<std::string> Query::get_avail_events(int32_t pmu_id)
+    {
+        std::vector<std::string> events;
+        pfm_event_info_t info;
+        pfm_pmu_info_t pinfo;
+        int32_t i, ret;
+
+        memset(&info, 0, sizeof(info));
+        memset(&pinfo, 0, sizeof(pinfo));
+
+        info.size = sizeof(info);
+        pinfo.size = sizeof(pinfo);
+
+        ret = pfm_get_pmu_info((pfm_pmu_t)pmu_id, &pinfo);
+        if (ret != PFM_SUCCESS)
+        {
+            OPTKIT_CORE_ERROR("Cannot get PMU info for pmu_id: {}", pmu_id);
+            return events;
+        }
+
+        for (i = pinfo.first_event; i != -1; i = pfm_get_event_next(i))
+        {
+            ret = pfm_get_event_info(i, pfm_os_t::PFM_OS_NONE, &info);
+            if (ret != PFM_SUCCESS)
+            {
+                OPTKIT_CORE_ERROR("Cannot get event info for event index: {}", i);
+                continue;
+            }
+
+            // Only include events that are present on current hardware
+            if (!pinfo.is_present)
+                continue;
+
+            // Format: "pmu_name::event_name"
+            std::string event_name = std::string(pinfo.name) + "::" + std::string(info.name);
+            events.push_back(event_name);
+        }
+
+        return events;
+    }
+
     pfm_event_info_t Query::event_detail(int32_t pmu_id, uint32_t event_code)
     {
         pfm_event_info_t info;

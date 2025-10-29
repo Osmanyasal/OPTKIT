@@ -984,7 +984,7 @@ namespace optkit::metrics::performance
             return mb;
         }
 
-        static const MetricBuilder<uint64_t> &AllStlb_mpki()
+        static const MetricBuilder<uint64_t> &all_stlb_mpki()
         {
             static const MetricBuilder<uint64_t> mb = []
             {
@@ -1058,7 +1058,7 @@ namespace optkit::metrics::performance
             {
                 MetricBuilder<uint64_t> mb{};
                 mb.add(all_mpki());
-                mb.add(AllStlb_mpki());
+                mb.add(all_stlb_mpki());
                 mb.add(all_latency_and_parallelism());
                 mb.add(all_dram_bandwidth());
                 mb.add(all_ip_metrics());

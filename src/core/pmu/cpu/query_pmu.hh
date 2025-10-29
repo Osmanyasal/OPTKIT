@@ -63,6 +63,15 @@ namespace optkit::pmu::cpu
         static void list_avail_events(int32_t pmu_id);
 
         /**
+         * @brief Get available events as a vector of event name strings.
+         *
+         * @param pmu_id The PMU ID to get events for.
+         * @return std::vector<std::string> containing event names in format "pmu_name::event_name"
+         * @see list_avail_events(), avail_pmu_ids()
+         */
+        static std::vector<std::string> get_avail_events(int32_t pmu_id);
+
+        /**
          * @brief Get the event detail object.
          *
          * @param pmu_id The PMU ID to get event details for.

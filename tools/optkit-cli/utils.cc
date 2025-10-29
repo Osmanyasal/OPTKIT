@@ -22,7 +22,9 @@ ListType parse_list_type(const std::string &type)
     static const std::unordered_map<std::string, ListType> list_map = {
         {"all", ListType::ALL},
         {"events", ListType::EVENTS},
-        {"metrics", ListType::METRICS}};
+        {"metrics", ListType::METRICS},
+        {"pmu", ListType::PMU},
+    };
 
     auto it = list_map.find(type);
     return (it != list_map.end()) ? it->second : ListType::ALL;
@@ -108,15 +110,9 @@ CommandArgs parse_arguments(int argc, char **argv)
 
     case Command::LIST:
         if (tokens.size() > 1)
-        {
-            std::cout << "tokens[1]: " << tokens[1] << std::endl;
             args.target = parse_target(tokens[1]);
-        }
         if (tokens.size() > 2)
-        {
-            std::cout << "tokens[2]: " << tokens[2] << std::endl;
             args.list_type = parse_list_type(tokens[2]);
-        }
         break;
 
     case Command::STAT:
@@ -166,102 +162,6 @@ CommandArgs parse_arguments(int argc, char **argv)
     }
 
     return args;
-}
-
-void execute_stat_command(const CommandArgs &args)
-{
-    if (args.program_args.empty())
-    {
-        std::cerr << "Error: No program specified for profiling\n";
-        std::cerr << "Usage: optkit stat [OPTIONS] -- <program> [args...]\n";
-        return;
-    }
-
-    // Determine if this is single-shot profiling or benchmark
-    bool is_benchmark = (args.bench_type != BenchType::DEFAULT);
-
-    if (is_benchmark)
-    {
-        std::cout << "Running benchmark: ";
-        switch (args.bench_type)
-        {
-        case BenchType::FREQ_SCALING:
-            std::cout << "Frequency Scaling Analysis (multiple executions)\n";
-            break;
-        case BenchType::CORE_SCALING:
-            std::cout << "Core Scaling Analysis (multiple executions)\n";
-            break;
-        case BenchType::AFFINITY:
-            std::cout << "Affinity Analysis (multiple executions, strategy: ";
-            switch (args.affinity_strategy)
-            {
-            case AffinityStrategy::COMPACT:
-                std::cout << "compact";
-                break;
-            case AffinityStrategy::SCATTER:
-                std::cout << "scatter";
-                break;
-            case AffinityStrategy::NUMA:
-                std::cout << "numa";
-                break;
-            case AffinityStrategy::MANUAL:
-                std::cout << "manual";
-                break;
-            }
-            std::cout << ")\n";
-            break;
-        default:
-            break;
-        }
-    }
-    else
-    {
-        std::cout << "Running single-shot profiling (like perf stat)\n";
-    }
-
-    // Display events if specified
-    if (!args.events.empty())
-    {
-        std::cout << "Events: ";
-        for (size_t i = 0; i < args.events.size(); ++i)
-        {
-            if (i > 0)
-                std::cout << ", ";
-            std::cout << args.events[i];
-        }
-        std::cout << "\n";
-    }
-
-    // Display metrics if specified
-    if (!args.metrics.empty())
-    {
-        std::cout << "Metrics: ";
-        for (size_t i = 0; i < args.metrics.size(); ++i)
-        {
-            if (i > 0)
-                std::cout << ", ";
-            std::cout << args.metrics[i];
-        }
-        std::cout << "\n";
-    }
-
-    std::cout << "Program: ";
-    for (const auto &arg : args.program_args)
-    {
-        std::cout << arg << " ";
-    }
-    std::cout << "\n";
-
-    if (is_benchmark)
-    {
-        std::cout << "\n[Will execute program multiple times with varying configurations]\n";
-    }
-    else
-    {
-        std::cout << "\n[Will execute program once and collect metrics]\n";
-    }
-
-    // TODO: Execute profiling/benchmark with OPTKIT
 }
 
 void execute_command(const CommandArgs &args)
