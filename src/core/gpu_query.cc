@@ -236,6 +236,11 @@ namespace optkit::gpu
         return is_ok;
     }
 
+    bool Query::is_init(GpuVendor vendor)
+    {
+        return initialized.find(vendor) != initialized.end() && initialized[vendor];
+    }
+
     bool Query::shutdown(GpuVendor vendor)
     {
         bool is_ok = true;
@@ -704,25 +709,25 @@ namespace optkit::gpu
                 switch (architecture)
                 {
                 // GCN architectures use 64-thread wavefronts
-                case AMDSMI_DEVICE_ARCH_GCN_1_0:
-                case AMDSMI_DEVICE_ARCH_GCN_2_0:
-                case AMDSMI_DEVICE_ARCH_GCN_3_0:
-                case AMDSMI_DEVICE_ARCH_GCN_4_0:
-                case AMDSMI_DEVICE_ARCH_GCN_5_0:
+                case AMD_DEVICE_ARCH_GCN_1_0:
+                case AMD_DEVICE_ARCH_GCN_2_0:
+                case AMD_DEVICE_ARCH_GCN_3_0:
+                case AMD_DEVICE_ARCH_GCN_4_0:
+                case AMD_DEVICE_ARCH_GCN_5_0:
                     warp_size = 64;
                     break;
 
                 // RDNA architectures use 32-thread wavefronts (with dual-issue)
-                case AMDSMI_DEVICE_ARCH_RDNA_1_0:
-                case AMDSMI_DEVICE_ARCH_RDNA_2_0:
-                case AMDSMI_DEVICE_ARCH_RDNA_3_0:
+                case AMD_DEVICE_ARCH_RDNA_1_0:
+                case AMD_DEVICE_ARCH_RDNA_2_0:
+                case AMD_DEVICE_ARCH_RDNA_3_0:
                     warp_size = 32; // Note: RDNA can also execute 64-thread wavefronts
                     break;
 
                 // CDNA architectures use 64-thread wavefronts
-                case AMDSMI_DEVICE_ARCH_CDNA_1_0:
-                case AMDSMI_DEVICE_ARCH_CDNA_2_0:
-                case AMDSMI_DEVICE_ARCH_CDNA_3_0:
+                case AMD_DEVICE_ARCH_CDNA_1_0:
+                case AMD_DEVICE_ARCH_CDNA_2_0:
+                case AMD_DEVICE_ARCH_CDNA_3_0:
                     warp_size = 64;
                     break;
 
@@ -2579,7 +2584,7 @@ namespace optkit::gpu
             else
             {
                 OPTKIT_CORE_WARN("amdsmi_get_gpu_asic_info: {}", _amdsmi_status_to_string(result_amdsmi));
-                architecture = AMDSMI_DEVICE_ARCH_UNKNOWN;
+                architecture = AMD_DEVICE_ARCH_UNKNOWN;
             }
 
 #elif OPTKIT_ENV_LIB_ROCM_SMI

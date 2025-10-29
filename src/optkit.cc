@@ -26,25 +26,36 @@ namespace optkit
         }
         else
         {
-            optkit::pmu::cpu::Query::init(); // pmf init
 
-            // init all gpu vendors
-            for (optkit::gpu::GpuVendor vendor = optkit::gpu::GpuVendor::BEGIN; vendor < optkit::gpu::GpuVendor::END; vendor = static_cast<optkit::gpu::GpuVendor>(static_cast<int>(vendor) + 1))
-            {
-                bool is_vendor_available = optkit::gpu::Query::init(vendor);
-                if (is_vendor_available)
-                {
-                    if (!optkit::gpu::Query::is_device_exists(vendor))
-                    {
-                        std::cout << "Device doesn't exists for vendor:" << to_string(vendor) << "\n";
-                        optkit::gpu::Query::shutdown(vendor);
-                        continue;
-                    }
-                    available_gpu_vendors.push_back(vendor);
-                    std::cout << "Initialized vendor " << to_string(vendor) << " successfully." << std::endl;
-                }
-            }
-            optkit::temperature::hwmon::Profiler::init(); // discover hwmon temperatures.
+#if OPTKIT_CONF_RAPL_MACROS_ENABLED
+            OPTKIT_CORE_INFO("OPTKIT_CONF_RAPL_MACROS_ENABLED: OK");
+#else
+            OPTKIT_CORE_WARN("OPTKIT_CONF_RAPL_MACROS_ENABLED: NOT ENABLED");
+#endif
+
+#if OPTKIT_CONF_FREQ_MACROS_ENABLED
+            OPTKIT_CORE_INFO("OPTKIT_CONF_FREQ_MACROS_ENABLED: OK");
+#else
+            OPTKIT_CORE_WARN("OPTKIT_CONF_FREQ_MACROS_ENABLED: NOT ENABLED");
+#endif
+
+#if OPTKIT_CONF_PMU_MACROS_ENABLED
+            OPTKIT_CORE_INFO("OPTKIT_CONF_PMU_MACROS_ENABLED: OK");
+#else
+            OPTKIT_CORE_WARN("OPTKIT_CONF_PMU_MACROS_ENABLED: NOT ENABLED");
+#endif
+
+#if OPTKIT_CONF_PMU_USE_PERF
+            OPTKIT_CORE_INFO("OPTKIT_CONF_PMU_USE_PERF: OK");
+#else
+            OPTKIT_CORE_WARN("OPTKIT_CONF_PMU_USE_PERF: NOT ENABLED");
+#endif
+
+#if OPTKIT_CONF_PMU_USE_MSR
+            OPTKIT_CORE_INFO("OPTKIT_CONF_PMU_USE_MSR: OK");
+#else
+            OPTKIT_CORE_WARN("OPTKIT_CONF_PMU_USE_MSR: NOT ENABLED");
+#endif
 
             Query::create_folder = config.create_folder;
             if (OPT_LIKELY(Query::create_folder))
@@ -60,147 +71,27 @@ namespace optkit
                 OPTKIT_CORE_INFO("File creation skipped!");
             }
 
-            process_env_variables();
+            // pmf init
+            optkit::pmu::cpu::Query::init();
 
-            // reverse the scaling governor to the default one
-            if (OPT_LIKELY(config.init_cpu_frequency))
+            // try to init all gpu vendors
+            for (optkit::gpu::GpuVendor vendor = optkit::gpu::GpuVendor::BEGIN; vendor < optkit::gpu::GpuVendor::END; vendor = static_cast<optkit::gpu::GpuVendor>(static_cast<int>(vendor) + 1))
             {
-                // set cpufreq governor based on the available drivers. if it is new, set it to performance and warn the user.
-                for (int i = 0; i < OPTKIT_ENV_CPU_NUM_SOCKETS; i++)
+                if (optkit::gpu::Query::init(vendor))
                 {
-                    std::string driver = frequency::cpu::Query::get_scaling_driver(i);
-                    // if driver is old like acpi-cpufreq, then set governor to userspace else set governor to performance
-                    if (driver == "acpi-cpufreq")
+                    if (!optkit::gpu::Query::is_device_exists(vendor))
                     {
-                        OPTKIT_CORE_INFO("Detected old cpufreq driver '{}' for socket {}. Setting governor to userspace", driver, i);
-                        frequency::cpu::Query::set_scaling_governor("userspace", i);
-                        OPTKIT_CORE_INFO("Current cpufreq governor for socket {}: {}", i, frequency::cpu::Query::get_scaling_governor(i));
+                        std::cout << "Device doesn't exists for vendor:" << to_string(vendor) << "\n";
+                        optkit::gpu::Query::shutdown(vendor);
+                        continue;
                     }
-                    else
-                    {
-                        OPTKIT_CORE_INFO("Detected new cpufreq driver '{}' for socket {}. Setting governor to performance", driver, i);
-                        frequency::cpu::Query::set_scaling_governor("performance", i);
-                        OPTKIT_CORE_INFO("Current cpufreq governor for socket {}: {}", i, frequency::cpu::Query::get_scaling_governor(i));
-                    }
+                    std::cout << "Initialized vendor: " << to_string(vendor) << " successfully." << std::endl;
                 }
             }
+
+            // discover hwmon temperatures.
+            optkit::temperature::hwmon::Profiler::init();
         }
-    }
-
-    void OPTKIT::process_env_variables()
-    {
-        const char *socket0__enabled = std::getenv("OPTKIT_SOCKET0__ENABLED");
-        const char *socket0__core_freq = std::getenv("OPTKIT_SOCKET0__CORE_FREQ");
-        const char *socket0__uncore_freq = std::getenv("OPTKIT_SOCKET0__UNCORE_FREQ");
-
-        const char *socket1__enabled = std::getenv("OPTKIT_SOCKET1__ENABLED");
-        const char *socket1__core_freq = std::getenv("OPTKIT_SOCKET1__CORE_FREQ");
-        const char *socket1__uncore_freq = std::getenv("OPTKIT_SOCKET1__UNCORE_FREQ");
-
-        if (socket0__enabled == nullptr && socket1__enabled == nullptr)
-        {
-            OPTKIT_CORE_INFO("OPTKIT_SOCKET0__ENABLED and OPTKIT_SOCKET1__ENABLED are not specified");
-        }
-        else
-        {
-
-            if (socket0__enabled != nullptr)
-            {
-                Query::OPTKIT_SOCKET0__ENABLED = true;
-
-                if (socket0__core_freq != nullptr)
-                {
-                    Query::OPTKIT_SOCKET0__CORE_FREQ = std::atol(socket0__core_freq);
-                    optkit::frequency::cpu::Frequency::set_core_frequency(Query::OPTKIT_SOCKET0__CORE_FREQ, 0);
-                    OPTKIT_CORE_INFO("---env read--- OPTKIT_SOCKET0__CORE_FREQ:{} ", Query::OPTKIT_SOCKET0__CORE_FREQ);
-                }
-                else
-                {
-                    OPTKIT_CORE_INFO("OPTKIT_SOCKET0__CORE_FREQ is not specified");
-                }
-
-                if (socket0__uncore_freq != nullptr)
-                {
-
-#if OPTKIT_ENV_CPU_INTEL
-                    Query::OPTKIT_SOCKET0__UNCORE_FREQ = std::atol(socket0__uncore_freq);
-                    optkit::frequency::cpu::Frequency::set_uncore_frequency(Query::OPTKIT_SOCKET0__UNCORE_FREQ, 0);
-                    OPTKIT_CORE_INFO("---env read--- OPTKIT_SOCKET0__UNCORE_FREQ:{} ", Query::OPTKIT_SOCKET0__UNCORE_FREQ);
-#endif
-                }
-                else
-                {
-                    OPTKIT_CORE_INFO("OPTKIT_SOCKET0__UNCORE_FREQ is not specified");
-                }
-            }
-            else
-            {
-                OPTKIT_CORE_INFO("OPTKIT_SOCKET0__ENABLED is not specified");
-            }
-
-            if (socket1__enabled != nullptr)
-            {
-                Query::OPTKIT_SOCKET1__ENABLED = true;
-
-                if (socket1__core_freq != nullptr)
-                {
-                    Query::OPTKIT_SOCKET1__CORE_FREQ = std::atol(socket1__core_freq);
-                    optkit::frequency::cpu::Frequency::set_core_frequency(Query::OPTKIT_SOCKET1__CORE_FREQ, 1);
-                    OPTKIT_CORE_INFO("---env read--- OPTKIT_SOCKET1__CORE_FREQ:{} ", Query::OPTKIT_SOCKET1__CORE_FREQ);
-                }
-                else
-                {
-                    OPTKIT_CORE_INFO("OPTKIT_SOCKET1__CORE_FREQ is not specified");
-                }
-
-                if (socket1__uncore_freq != nullptr)
-                {
-
-#if OPTKIT_ENV_CPU_INTEL
-                    Query::OPTKIT_SOCKET1__UNCORE_FREQ = std::atol(socket1__uncore_freq);
-                    optkit::frequency::cpu::Frequency::set_uncore_frequency(Query::OPTKIT_SOCKET1__UNCORE_FREQ, 1);
-                    OPTKIT_CORE_INFO("---env read--- OPTKIT_SOCKET1__UNCORE_FREQ:{} ", Query::OPTKIT_SOCKET1__UNCORE_FREQ);
-#endif
-                }
-                else
-                {
-                    OPTKIT_CORE_INFO("OPTKIT_SOCKET1__UNCORE_FREQ is not specified");
-                }
-            }
-            else
-            {
-                OPTKIT_CORE_INFO("OPTKIT_SOCKET1__ENABLED is not specified");
-            }
-        }
-#if OPTKIT_CONF_RAPL_MACROS_ENABLED
-        OPTKIT_CORE_INFO("OPTKIT_CONF_RAPL_MACROS_ENABLED: OK");
-#else
-        OPTKIT_CORE_WARN("OPTKIT_CONF_RAPL_MACROS_ENABLED: NOT ENABLED");
-#endif
-
-#if OPTKIT_CONF_FREQ_MACROS_ENABLED
-        OPTKIT_CORE_INFO("OPTKIT_CONF_FREQ_MACROS_ENABLED: OK");
-#else
-        OPTKIT_CORE_WARN("OPTKIT_CONF_FREQ_MACROS_ENABLED: NOT ENABLED");
-#endif
-
-#if OPTKIT_CONF_PMU_MACROS_ENABLED
-        OPTKIT_CORE_INFO("OPTKIT_CONF_PMU_MACROS_ENABLED: OK");
-#else
-        OPTKIT_CORE_WARN("OPTKIT_CONF_PMU_MACROS_ENABLED: NOT ENABLED");
-#endif
-
-#if OPTKIT_CONF_PMU_USE_PERF
-        OPTKIT_CORE_INFO("OPTKIT_CONF_PMU_USE_PERF: OK");
-#else
-        OPTKIT_CORE_WARN("OPTKIT_CONF_PMU_USE_PERF: NOT ENABLED");
-#endif
-
-#if OPTKIT_CONF_PMU_USE_MSR
-        OPTKIT_CORE_INFO("OPTKIT_CONF_PMU_USE_MSR: OK");
-#else
-        OPTKIT_CORE_WARN("OPTKIT_CONF_PMU_USE_MSR: NOT ENABLED");
-#endif
     }
 
     /**
@@ -212,38 +103,14 @@ namespace optkit
      */
     OPTKIT::~OPTKIT()
     {
-        // reverse the scaling governor to the default one
-        if (OPT_LIKELY(config.init_cpu_frequency))
+        // try to shutdown all gpu vendors
+        for (optkit::gpu::GpuVendor vendor = optkit::gpu::GpuVendor::BEGIN; vendor < optkit::gpu::GpuVendor::END; vendor = static_cast<optkit::gpu::GpuVendor>(static_cast<int>(vendor) + 1))
         {
-            for (int i = 0; i < OPTKIT_ENV_CPU_NUM_SOCKETS; i++)
+            if (optkit::gpu::Query::is_init(vendor))
             {
-                std::string driver = frequency::cpu::Query::get_scaling_driver(i);
-                if (driver == "acpi-cpufreq")
-                {
-                    OPTKIT_CORE_INFO("Reverting cpufreq driver '{}' for socket {} to ondemand", driver, i);
-                    frequency::cpu::Query::set_scaling_governor("ondemand", i);
-                    OPTKIT_CORE_INFO("Current cpufreq governor for socket {}: {}", i, frequency::cpu::Query::get_scaling_governor(i));
-
-                    OPTKIT_CORE_INFO("Resetting CPU optkit and uncore frequencies for socket {}", i);
-                    frequency::cpu::Frequency::reset_core_frequency(i);
-                    frequency::cpu::Frequency::reset_uncore_frequency(i);
-                }
-                else
-                {
-                    OPTKIT_CORE_INFO("Reverting cpufreq driver '{}' for socket {} to powersave", driver, i);
-                    frequency::cpu::Query::set_scaling_governor("powersave", i);
-                    OPTKIT_CORE_INFO("Current cpufreq governor for socket {}: {}", i, frequency::cpu::Query::get_scaling_governor(i));
-
-                    OPTKIT_CORE_INFO("Resetting CPU optkit and uncore frequencies for socket {}", i);
-                    frequency::cpu::Frequency::reset_core_frequency(i);
-                    frequency::cpu::Frequency::reset_uncore_frequency(i);
-                }
-            }
-        }
-        for (const auto &vendor : available_gpu_vendors)
-        {
-            if (optkit::gpu::Query::shutdown(vendor))
+                optkit::gpu::Query::shutdown(vendor);
                 std::cout << "Shutdown vendor " << to_string(vendor) << " successfully." << std::endl;
+            }
             else
                 std::cout << "Failed to shutdown vendor " << to_string(vendor) << "." << std::endl;
         }

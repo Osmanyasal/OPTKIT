@@ -3,57 +3,12 @@
 #include <algorithm>
 #include "utils.hh"
 
-void print_help()
-{
-    std::cout << R"(
-OPTKIT - Performance and Energy Profiling Tool
-
-USAGE:
-    optkit <COMMAND> [OPTIONS] [-- <PROGRAM>]
-
-COMMANDS:
-    topology [cpu|gpu]              Show system topology
-    list <TYPE> [cpu|gpu]           List available components
-    bench [TYPE] [OPTIONS] -- <PROGRAM>  Run benchmark
-
-TOPOLOGY:
-    optkit topology                 Show complete system topology
-    optkit topology cpu             Show CPU topology
-    optkit topology gpu             Show GPU topology
-
-LIST:
-    optkit list pmu                 List PMU capabilities
-    optkit list events [cpu|gpu]    List available PMU events
-    optkit list metrics [cpu|gpu]   List available metrics
-
-BENCHMARK:
-    optkit bench -- <program>                              Default benchmark
-    optkit bench freq-scaling -- <program>                 Frequency scaling analysis
-    optkit bench core-scaling -- <program>                 Core scaling analysis
-    optkit bench affinity [--strategy=STRATEGY] -- <program>  Affinity analysis
-
-AFFINITY STRATEGIES:
-    --strategy=compact              Pack threads on fewer cores
-    --strategy=scatter              Spread threads across cores
-    --strategy=numa                 NUMA-aware placement
-    --strategy=manual               Manual affinity control
-
-EXAMPLES:
-    optkit topology cpu
-    optkit list events cpu
-    optkit bench -- ./my_program
-    optkit bench freq-scaling -- ./benchmark
-    optkit bench affinity --strategy=scatter -- ./parallel_app
-
-)";
-}
-
 Command parse_command(const std::string &cmd)
 {
     static const std::unordered_map<std::string, Command> command_map = {
         {"topology", Command::TOPOLOGY},
         {"list", Command::LIST},
-        {"bench", Command::BENCH},
+        {"stat", Command::STAT},
         {"help", Command::HELP},
         {"--help", Command::HELP},
         {"-h", Command::HELP}};
@@ -100,10 +55,10 @@ CommandArgs parse_arguments(int argc, char **argv)
     CommandArgs args;
     std::vector<std::string> tokens;
 
-    // Convert to string vector
+    // Convert to string vector (skip argv[0] which is program name)
     for (int i = 1; i < argc; ++i)
     {
-        tokens.emplace_back(argv[i]);
+        tokens.push_back(argv[i]);
     }
 
     if (tokens.empty())
@@ -119,10 +74,17 @@ CommandArgs parse_arguments(int argc, char **argv)
     auto separator_it = std::find(tokens.begin(), tokens.end(), "--");
     size_t separator_pos = (separator_it != tokens.end()) ? std::distance(tokens.begin(), separator_it) : tokens.size();
 
-    // Extract program arguments
-    if (separator_it != tokens.end())
+    // Extract program and its arguments
+    if (separator_it != tokens.end() && separator_it + 1 != tokens.end())
     {
-        args.program_args.assign(separator_it + 1, tokens.end());
+        // First token after "--" is the program
+        args.program = *(separator_it + 1);
+
+        // Rest are program arguments
+        for (auto it = separator_it + 2; it != tokens.end(); ++it)
+        {
+            args.program_args.push_back(*it);
+        }
     }
 
     // Process command-specific arguments
@@ -146,20 +108,44 @@ CommandArgs parse_arguments(int argc, char **argv)
         }
         break;
 
-    case Command::BENCH:
-        // Parse benchmark type
-        if (separator_pos > 1)
-        {
-            args.bench_type = parse_bench_type(tokens[1]);
-        }
-
-        // Parse affinity strategy if present
+    case Command::STAT:
+        // Parse all options before the separator
         for (size_t i = 1; i < separator_pos; ++i)
         {
-            if (tokens[i].find("--strategy=") == 0)
+            const std::string &token = tokens[i];
+
+            if (token == "-e" || token == "--event")
             {
-                std::string strategy = tokens[i].substr(11); // Skip "--strategy="
-                args.affinity_strategy = parse_affinity_strategy(strategy);
+                // Next token should be the event name
+                if (i + 1 < separator_pos && tokens[i + 1][0] != '-')
+                {
+                    args.events.push_back(tokens[++i]);
+                }
+            }
+            else if (token == "-m" || token == "--metric")
+            {
+                // Next token should be the metric name
+                if (i + 1 < separator_pos && tokens[i + 1][0] != '-')
+                {
+                    args.metrics.push_back(tokens[++i]);
+                }
+            }
+            else if (token == "--bench")
+            {
+                // Format: --bench freq-scaling
+                if (i + 1 < separator_pos)
+                {
+                    args.bench_type = parse_bench_type(tokens[++i]);
+                }
+            }
+            else if (token == "--affinity")
+            {
+                // Format: --affinity compact
+                if (i + 1 < separator_pos)
+                {
+                    args.affinity_strategy = parse_affinity_strategy(tokens[++i]);
+                    args.bench_type = BenchType::AFFINITY;
+                }
             }
         }
         break;
@@ -217,47 +203,81 @@ void execute_list_command(const CommandArgs &args)
     }
 }
 
-void execute_bench_command(const CommandArgs &args)
+void execute_stat_command(const CommandArgs &args)
 {
     if (args.program_args.empty())
     {
-        std::cerr << "Error: No program specified for benchmark\n";
-        std::cerr << "Usage: optkit bench [TYPE] -- <program> [args...]\n";
+        std::cerr << "Error: No program specified for profiling\n";
+        std::cerr << "Usage: optkit stat [OPTIONS] -- <program> [args...]\n";
         return;
     }
 
-    std::cout << "Running benchmark: ";
-    switch (args.bench_type)
+    // Determine if this is single-shot profiling or benchmark
+    bool is_benchmark = (args.bench_type != BenchType::DEFAULT);
+
+    if (is_benchmark)
     {
-    case BenchType::FREQ_SCALING:
-        std::cout << "Frequency Scaling Analysis\n";
-        break;
-    case BenchType::CORE_SCALING:
-        std::cout << "Core Scaling Analysis\n";
-        break;
-    case BenchType::AFFINITY:
-        std::cout << "Affinity Analysis (strategy: ";
-        switch (args.affinity_strategy)
+        std::cout << "Running benchmark: ";
+        switch (args.bench_type)
         {
-        case AffinityStrategy::COMPACT:
-            std::cout << "compact";
+        case BenchType::FREQ_SCALING:
+            std::cout << "Frequency Scaling Analysis (multiple executions)\n";
             break;
-        case AffinityStrategy::SCATTER:
-            std::cout << "scatter";
+        case BenchType::CORE_SCALING:
+            std::cout << "Core Scaling Analysis (multiple executions)\n";
             break;
-        case AffinityStrategy::NUMA:
-            std::cout << "numa";
+        case BenchType::AFFINITY:
+            std::cout << "Affinity Analysis (multiple executions, strategy: ";
+            switch (args.affinity_strategy)
+            {
+            case AffinityStrategy::COMPACT:
+                std::cout << "compact";
+                break;
+            case AffinityStrategy::SCATTER:
+                std::cout << "scatter";
+                break;
+            case AffinityStrategy::NUMA:
+                std::cout << "numa";
+                break;
+            case AffinityStrategy::MANUAL:
+                std::cout << "manual";
+                break;
+            }
+            std::cout << ")\n";
             break;
-        case AffinityStrategy::MANUAL:
-            std::cout << "manual";
+        default:
             break;
         }
-        std::cout << ")\n";
-        break;
-    case BenchType::DEFAULT:
-    default:
-        std::cout << "Default Benchmark\n";
-        break;
+    }
+    else
+    {
+        std::cout << "Running single-shot profiling (like perf stat)\n";
+    }
+
+    // Display events if specified
+    if (!args.events.empty())
+    {
+        std::cout << "Events: ";
+        for (size_t i = 0; i < args.events.size(); ++i)
+        {
+            if (i > 0)
+                std::cout << ", ";
+            std::cout << args.events[i];
+        }
+        std::cout << "\n";
+    }
+
+    // Display metrics if specified
+    if (!args.metrics.empty())
+    {
+        std::cout << "Metrics: ";
+        for (size_t i = 0; i < args.metrics.size(); ++i)
+        {
+            if (i > 0)
+                std::cout << ", ";
+            std::cout << args.metrics[i];
+        }
+        std::cout << "\n";
     }
 
     std::cout << "Program: ";
@@ -267,11 +287,22 @@ void execute_bench_command(const CommandArgs &args)
     }
     std::cout << "\n";
 
-    // TODO: Execute benchmark with OPTKIT
+    if (is_benchmark)
+    {
+        std::cout << "\n[Will execute program multiple times with varying configurations]\n";
+    }
+    else
+    {
+        std::cout << "\n[Will execute program once and collect metrics]\n";
+    }
+
+    // TODO: Execute profiling/benchmark with OPTKIT
 }
 
 void execute_command(const CommandArgs &args)
 {
+    std::cout << "Parsed Arguments:\n"
+              << to_string(args) << "\n\n";
     switch (args.command)
     {
     case Command::TOPOLOGY:
@@ -288,8 +319,8 @@ void execute_command(const CommandArgs &args)
         execute_list_command(args);
         break;
 
-    case Command::BENCH:
-        execute_bench_command(args);
+    case Command::STAT:
+        execute_stat_command(args);
         break;
 
     case Command::HELP:

@@ -21,9 +21,9 @@ linkoptions { LIB_PFM_PATH .. "/lib/libpfm.a" }
 project(OPTKIT_LIB_DYNAMIC)
 kind "SharedLib"
 base_project_setup()
+removefiles { "./src/main.cc" }
 libdirs { LIB_PFM_PATH .. "/lib" } -- so that pfm.so can be found, we link this agains shared pfm
 links { "pfm" }
-removefiles { "./src/main.cc" }
 
 project(OPTKIT_LIB_STATIC)
 kind "StaticLib"
@@ -43,13 +43,6 @@ postbuildcommands {
 
     -- Optional cleanup
     "rm -rf bin/obj/pfm_extract"
-}
-
--- Add tool build step only for Release
-filter { "configurations:Release" }
-postbuildcommands {
-    "@echo [COMPILE UTILITY TOOLS]",
-    "@cd ./tools && ./compile.sh && echo [✅ COMPILE UTILITY TOOLS]"
 }
 -- Reset filter to avoid affecting other sections
 filter {}

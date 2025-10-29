@@ -36,6 +36,7 @@ namespace optkit::gpu
 #endif
     public:
         static bool init(GpuVendor vendor);
+        static bool is_init(GpuVendor vendor);
         static bool shutdown(GpuVendor vendor);
         static bool is_device_exists(GpuVendor vendor);
         static bool shutdown_amdsmi();
