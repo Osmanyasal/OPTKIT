@@ -17,6 +17,17 @@ Command parse_command(const std::string &cmd)
     return (it != command_map.end()) ? it->second : Command::UNKNOWN;
 }
 
+ListType parse_list_type(const std::string &type)
+{
+    static const std::unordered_map<std::string, ListType> list_map = {
+        {"all", ListType::ALL},
+        {"events", ListType::EVENTS},
+        {"metrics", ListType::METRICS}};
+
+    auto it = list_map.find(type);
+    return (it != list_map.end()) ? it->second : ListType::ALL;
+}
+
 Target parse_target(const std::string &target)
 {
     static const std::unordered_map<std::string, Target> target_map = {
@@ -91,20 +102,20 @@ CommandArgs parse_arguments(int argc, char **argv)
     switch (args.command)
     {
     case Command::TOPOLOGY:
-        if (separator_pos > 1)
-        {
+        if (tokens.size() > 1)
             args.target = parse_target(tokens[1]);
-        }
         break;
 
     case Command::LIST:
-        if (separator_pos > 1)
+        if (tokens.size() > 1)
         {
-            args.list_type = tokens[1];
-            if (separator_pos > 2)
-            {
-                args.target = parse_target(tokens[2]);
-            }
+            std::cout << "tokens[1]: " << tokens[1] << std::endl;
+            args.target = parse_target(tokens[1]);
+        }
+        if (tokens.size() > 2)
+        {
+            std::cout << "tokens[2]: " << tokens[2] << std::endl;
+            args.list_type = parse_list_type(tokens[2]);
         }
         break;
 
@@ -157,30 +168,9 @@ CommandArgs parse_arguments(int argc, char **argv)
     return args;
 }
 
-void execute_topology_command(const CommandArgs &args)
-{
-    std::cout << "Executing topology command for ";
-    switch (args.target)
-    {
-    case Target::CPU:
-        std::cout << "CPU\n";
-        // TODO: Call OPTKIT CPU topology function
-        break;
-    case Target::GPU:
-        std::cout << "GPU\n";
-        // TODO: Call OPTKIT GPU topology function
-        break;
-    case Target::ALL:
-    default:
-        std::cout << "ALL devices\n";
-        // TODO: Call OPTKIT complete topology function
-        break;
-    }
-}
-
 void execute_list_command(const CommandArgs &args)
 {
-    std::cout << "Listing " << args.list_type;
+    std::cout << "Listing " << to_string(args.list_type);
 
     if (args.target != Target::ALL)
     {
@@ -189,17 +179,21 @@ void execute_list_command(const CommandArgs &args)
     std::cout << "\n";
 
     // TODO: Implement list functionality
-    if (args.list_type == "pmu")
+    switch (args.list_type)
     {
-        std::cout << "  - PMU capabilities\n";
-    }
-    else if (args.list_type == "events")
-    {
+    case ListType::ALL:
         std::cout << "  - Available PMU events\n";
-    }
-    else if (args.list_type == "metrics")
-    {
         std::cout << "  - Available metrics\n";
+        break;
+    case ListType::EVENTS:
+        std::cout << "  - Available PMU events\n";
+        break;
+    case ListType::METRICS:
+        std::cout << "  - Available metrics\n";
+        break;
+    default:
+        std::cerr << "Error: Unknown list type\n";
+        break;
     }
 }
 
@@ -310,12 +304,6 @@ void execute_command(const CommandArgs &args)
         break;
 
     case Command::LIST:
-        if (args.list_type.empty())
-        {
-            std::cerr << "Error: Missing list type\n";
-            std::cerr << "Usage: optkit list <TYPE> [cpu|gpu]\n";
-            return;
-        }
         execute_list_command(args);
         break;
 

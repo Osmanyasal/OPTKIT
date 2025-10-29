@@ -28,33 +28,33 @@ namespace optkit
         {
 
 #if OPTKIT_CONF_RAPL_MACROS_ENABLED
-            OPTKIT_CORE_INFO("OPTKIT_CONF_RAPL_MACROS_ENABLED: OK");
+            OPTKIT_CORE_DEBUG("OPTKIT_CONF_RAPL_MACROS_ENABLED: OK");
 #else
-            OPTKIT_CORE_WARN("OPTKIT_CONF_RAPL_MACROS_ENABLED: NOT ENABLED");
+            OPTKIT_CORE_DEBUG("OPTKIT_CONF_RAPL_MACROS_ENABLED: NOT ENABLED");
 #endif
 
 #if OPTKIT_CONF_FREQ_MACROS_ENABLED
-            OPTKIT_CORE_INFO("OPTKIT_CONF_FREQ_MACROS_ENABLED: OK");
+            OPTKIT_CORE_DEBUG("OPTKIT_CONF_FREQ_MACROS_ENABLED: OK");
 #else
-            OPTKIT_CORE_WARN("OPTKIT_CONF_FREQ_MACROS_ENABLED: NOT ENABLED");
+            OPTKIT_CORE_DEBUG("OPTKIT_CONF_FREQ_MACROS_ENABLED: NOT ENABLED");
 #endif
 
 #if OPTKIT_CONF_PMU_MACROS_ENABLED
-            OPTKIT_CORE_INFO("OPTKIT_CONF_PMU_MACROS_ENABLED: OK");
+            OPTKIT_CORE_DEBUG("OPTKIT_CONF_PMU_MACROS_ENABLED: OK");
 #else
-            OPTKIT_CORE_WARN("OPTKIT_CONF_PMU_MACROS_ENABLED: NOT ENABLED");
+            OPTKIT_CORE_DEBUG("OPTKIT_CONF_PMU_MACROS_ENABLED: NOT ENABLED");
 #endif
 
 #if OPTKIT_CONF_PMU_USE_PERF
-            OPTKIT_CORE_INFO("OPTKIT_CONF_PMU_USE_PERF: OK");
+            OPTKIT_CORE_DEBUG("OPTKIT_CONF_PMU_USE_PERF: OK");
 #else
-            OPTKIT_CORE_WARN("OPTKIT_CONF_PMU_USE_PERF: NOT ENABLED");
+            OPTKIT_CORE_DEBUG("OPTKIT_CONF_PMU_USE_PERF: NOT ENABLED");
 #endif
 
 #if OPTKIT_CONF_PMU_USE_MSR
-            OPTKIT_CORE_INFO("OPTKIT_CONF_PMU_USE_MSR: OK");
+            OPTKIT_CORE_DEBUG("OPTKIT_CONF_PMU_USE_MSR: OK");
 #else
-            OPTKIT_CORE_WARN("OPTKIT_CONF_PMU_USE_MSR: NOT ENABLED");
+            OPTKIT_CORE_DEBUG("OPTKIT_CONF_PMU_USE_MSR: NOT ENABLED");
 #endif
 
             Query::create_folder = config.create_folder;
@@ -64,11 +64,11 @@ namespace optkit
                     optkit::utils::EXECUTION_FOLDER_NAME = this->config.execution_file;
 
                 optkit::utils::create_directory(optkit::utils::EXECUTION_FOLDER_NAME);
-                OPTKIT_CORE_INFO("Execution file created {}", optkit::utils::EXECUTION_FOLDER_NAME);
+                OPTKIT_CORE_DEBUG("Execution file created {}", optkit::utils::EXECUTION_FOLDER_NAME);
             }
             else
             {
-                OPTKIT_CORE_INFO("File creation skipped!");
+                OPTKIT_CORE_DEBUG("File creation skipped!");
             }
 
             // pmf init
@@ -80,12 +80,7 @@ namespace optkit
                 if (optkit::gpu::Query::init(vendor))
                 {
                     if (!optkit::gpu::Query::is_device_exists(vendor))
-                    {
-                        std::cout << "Device doesn't exists for vendor:" << to_string(vendor) << "\n";
                         optkit::gpu::Query::shutdown(vendor);
-                        continue;
-                    }
-                    std::cout << "Initialized vendor: " << to_string(vendor) << " successfully." << std::endl;
                 }
             }
 
@@ -107,12 +102,7 @@ namespace optkit
         for (optkit::gpu::GpuVendor vendor = optkit::gpu::GpuVendor::BEGIN; vendor < optkit::gpu::GpuVendor::END; vendor = static_cast<optkit::gpu::GpuVendor>(static_cast<int>(vendor) + 1))
         {
             if (optkit::gpu::Query::is_init(vendor))
-            {
                 optkit::gpu::Query::shutdown(vendor);
-                std::cout << "Shutdown vendor " << to_string(vendor) << " successfully." << std::endl;
-            }
-            else
-                std::cout << "Failed to shutdown vendor " << to_string(vendor) << "." << std::endl;
         }
         optkit::pmu::cpu::Query::destroy();
         optkit::utils::logger::BaseLogger::shutdown(); // logger shutdown.

@@ -13,7 +13,7 @@ namespace optkit::temperature::hwmon
         }
         else
         {
-            OPTKIT_CORE_INFO("Discovered {} temperature sensors", sensor_paths.size());
+            OPTKIT_CORE_DEBUG("Discovered {} temperature sensors", sensor_paths.size());
         }
     }
 

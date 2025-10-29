@@ -4,6 +4,7 @@
 #include <vector>
 #include <iostream>
 #include <sstream>
+#include "optkit.hh"
 
 inline void print_help()
 {
@@ -24,9 +25,9 @@ TOPOLOGY:
     optkit topology gpu             Show GPU topology only
 
 LIST:
-    optkit list all [cpu|gpu]       List all PMU capabilities
-    optkit list events [cpu|gpu]    List available PMU events
-    optkit list metrics [cpu|gpu]   List available metrics
+    optkit list [all|cpu|gpu]           List all PMU capabilities
+    optkit list [all|cpu|gpu] events    List available PMU events
+    optkit list [all|cpu|gpu] metrics   List available metrics
 
 PROFILING (stat):
     Single execution profiling - runs program once and collects metrics
@@ -54,13 +55,18 @@ AFFINITY STRATEGIES:
 
 EXAMPLES:
     # Topology queries
+    optkit topology
     optkit topology cpu
     optkit topology gpu
 
     # List capabilities
-    optkit list all cpu
-    optkit list events cpu
-    optkit list metrics gpu
+    optkit list all
+    optkit list cpu all
+    optkit list cpu events
+    optkit list cpu metrics
+    optkit list gpu all
+    optkit list gpu events
+    optkit list gpu metrics
 
     # Single-shot profiling (executes once)
     optkit stat -- ./my_program
@@ -118,13 +124,20 @@ enum class AffinityStrategy
     MANUAL
 };
 
+enum class ListType
+{
+    ALL,
+    EVENTS,
+    METRICS
+};
+
 struct CommandArgs
 {
     Command command = Command::UNKNOWN;
     Target target = Target::ALL;
     BenchType bench_type = BenchType::DEFAULT;
     AffinityStrategy affinity_strategy = AffinityStrategy::COMPACT;
-    std::string list_type;
+    ListType list_type = ListType::ALL;
     std::vector<std::string> events;       // PMU events to profile (-e)
     std::vector<std::string> metrics;      // Metrics to collect (-m)
     std::string program;                   // Program to execute
@@ -136,6 +149,9 @@ CommandArgs parse_arguments(int argc, char **argv);
 
 // Execute commands
 void execute_command(const CommandArgs &args);
+void execute_topology_command(const CommandArgs &args);
+void execute_list_command(const CommandArgs &args);
+void execute_stat_command(const CommandArgs &args);
 
 // String conversion helpers
 inline std::string to_string(Command cmd)
@@ -206,6 +222,21 @@ inline std::string to_string(AffinityStrategy affinity)
     }
 }
 
+inline std::string to_string(ListType list_type)
+{
+    switch (list_type)
+    {
+    case ListType::ALL:
+        return "ALL";
+    case ListType::EVENTS:
+        return "EVENTS";
+    case ListType::METRICS:
+        return "METRICS";
+    default:
+        return "UNKNOWN";
+    }
+}
+
 inline std::string to_string(const CommandArgs &args)
 {
     std::ostringstream oss;
@@ -214,7 +245,7 @@ inline std::string to_string(const CommandArgs &args)
     oss << "  target: " << to_string(args.target) << "\n";
     oss << "  bench_type: " << to_string(args.bench_type) << "\n";
     oss << "  affinity_strategy: " << to_string(args.affinity_strategy) << "\n";
-    oss << "  list_type: " << (args.list_type.empty() ? "<none>" : args.list_type) << "\n";
+    oss << "  list_type: " << to_string(args.list_type) << "\n";
 
     oss << "  events: [";
     for (size_t i = 0; i < args.events.size(); ++i)

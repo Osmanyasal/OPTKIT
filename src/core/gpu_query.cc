@@ -124,10 +124,9 @@ namespace optkit::gpu
             {
                 nvmlReturn_t result = nvmlInit();
                 is_ok = initialized[GpuVendor::NVIDIA] = (result == NVML_SUCCESS);
-                std::cout << "NVML init result: " << initialized[GpuVendor::NVIDIA] << "\n";
                 if (OPT_LIKELY(is_ok))
                 {
-                    OPTKIT_CORE_INFO("Initialized NVML library successfully");
+                    OPTKIT_CORE_DEBUG("Initialized NVML library successfully");
 
                     // Get device count directly from NVML to avoid circular dependency
                     uint32_t device_count = 0;
@@ -178,13 +177,12 @@ namespace optkit::gpu
                 is_ok = initialized[GpuVendor::AMD] = (result == AMDSMI_STATUS_SUCCESS);
                 if (OPT_LIKELY(is_ok))
                 {
-                    OPTKIT_CORE_INFO("Initialized AMDSMI library successfully");
+                    OPTKIT_CORE_DEBUG("Initialized AMDSMI library successfully");
                     uint32_t device_count = _amdsmi_populate_device_count_and_fill_handlers();
                     if (device_count == 0)
                     {
                         is_ok = false;
                         shutdown_amdsmi();
-                        OPTKIT_CORE_WARN("No AMD devices found or failed to populate device handles");
                     }
                 }
                 else
@@ -203,7 +201,7 @@ namespace optkit::gpu
                 is_ok = initialized[GpuVendor::AMD] = (result == RSMI_STATUS_SUCCESS);
                 if (OPT_LIKELY(is_ok))
                 {
-                    OPTKIT_CORE_INFO("Initialized ROCm SMI library successfully");
+                    OPTKIT_CORE_DEBUG("Initialized ROCm SMI library successfully");
                     uint32_t device_count = 0;
                     result = rsmi_num_monitor_devices(&device_count);
                     if (result == RSMI_STATUS_SUCCESS && device_count > 0)
@@ -213,7 +211,7 @@ namespace optkit::gpu
                         {
                             Query::gpu_handles_rocm_smi.push_back(i);
                         }
-                        OPTKIT_CORE_INFO("Found {} AMD GPU devices", device_count);
+                        OPTKIT_CORE_DEBUG("Found {} AMD GPU devices", device_count);
                     }
                     else
                     {
@@ -287,7 +285,7 @@ namespace optkit::gpu
             is_ok = (result == NVML_SUCCESS);
             if (is_ok)
             {
-                OPTKIT_CORE_INFO("Shutdown NVML library successfully");
+                OPTKIT_CORE_DEBUG("Shutdown NVML library successfully");
                 initialized[GpuVendor::NVIDIA] = false;
                 Query::gpu_handles_nvml.clear();
             }
@@ -313,7 +311,7 @@ namespace optkit::gpu
 
             if (is_ok)
             {
-                OPTKIT_CORE_INFO("Shutdown AMDSMI library successfully");
+                OPTKIT_CORE_DEBUG("Shutdown AMDSMI library successfully");
                 initialized[GpuVendor::AMD] = false;
                 Query::gpu_handles_amdsmi.clear();
                 Query::socket_handles_amdsmi.clear();
@@ -333,7 +331,7 @@ namespace optkit::gpu
 
             if (is_ok)
             {
-                OPTKIT_CORE_INFO("Shutdown ROCm SMI library successfully");
+                OPTKIT_CORE_DEBUG("Shutdown ROCm SMI library successfully");
                 initialized[GpuVendor::AMD] = false;
                 Query::gpu_handles_rocm_smi.clear();
             }
@@ -399,7 +397,7 @@ namespace optkit::gpu
             if (result == NVML_SUCCESS)
             {
                 is_ok = true;
-                OPTKIT_CORE_INFO("Resetting clocks to default for device index {} of vendor {}", device_index, to_string(vendor));
+                OPTKIT_CORE_DEBUG("Resetting clocks to default for device index {} of vendor {}", device_index, to_string(vendor));
             }
             else
             {
@@ -427,7 +425,7 @@ namespace optkit::gpu
             if (result == AMDSMI_STATUS_SUCCESS)
             {
                 is_ok = true;
-                OPTKIT_CORE_INFO("Reset AMDSMI_CLK_TYPE_SYS to default for device index {} of vendor {}", device_index, to_string(vendor));
+                OPTKIT_CORE_DEBUG("Reset AMDSMI_CLK_TYPE_SYS to default for device index {} of vendor {}", device_index, to_string(vendor));
             }
             else
             {
@@ -446,7 +444,7 @@ namespace optkit::gpu
             if (result == AMDSMI_STATUS_SUCCESS)
             {
                 is_ok = true;
-                OPTKIT_CORE_INFO("Reset AMDSMI_CLK_TYPE_MEM to default for device index {} of vendor {}", device_index, to_string(vendor));
+                OPTKIT_CORE_DEBUG("Reset AMDSMI_CLK_TYPE_MEM to default for device index {} of vendor {}", device_index, to_string(vendor));
             }
             else
             {
@@ -464,7 +462,7 @@ namespace optkit::gpu
             if (result == RSMI_STATUS_SUCCESS)
             {
                 is_ok = true;
-                OPTKIT_CORE_INFO("ROCm SMI reset performance level to AUTO for device {}", device_index);
+                OPTKIT_CORE_DEBUG("ROCm SMI reset performance level to AUTO for device {}", device_index);
             }
             else
             {
@@ -511,7 +509,7 @@ namespace optkit::gpu
                             if (result == NVML_SUCCESS)
                             {
                                 is_ok = true;
-                                OPTKIT_CORE_INFO("Setting clocks to Memory={} MHz, Graphics={} MHz for device index {} of vendor {}", mem_clk_mhz, graphics_clk_mhz, device_index, to_string(vendor));
+                                OPTKIT_CORE_DEBUG("Setting clocks to Memory={} MHz, Graphics={} MHz for device index {} of vendor {}", mem_clk_mhz, graphics_clk_mhz, device_index, to_string(vendor));
                             }
                             else
                             {
@@ -560,7 +558,7 @@ namespace optkit::gpu
                         if (result == AMDSMI_STATUS_SUCCESS)
                         {
                             is_ok = true;
-                            OPTKIT_CORE_INFO("Setting AMDSMI_CLK_TYPE_MEM to Memory={} MHz, Graphics={} MHz for device index {} of vendor {}", mem_clk_mhz, graphics_clk_mhz, device_index, to_string(vendor));
+                            OPTKIT_CORE_DEBUG("Setting AMDSMI_CLK_TYPE_MEM to Memory={} MHz, Graphics={} MHz for device index {} of vendor {}", mem_clk_mhz, graphics_clk_mhz, device_index, to_string(vendor));
                         }
                         else
                         {
@@ -576,7 +574,7 @@ namespace optkit::gpu
                         if (result == AMDSMI_STATUS_SUCCESS)
                         {
                             is_ok = true;
-                            OPTKIT_CORE_INFO("Setting AMDSMI_CLK_TYPE_SYS to Memory={} MHz, Graphics={} MHz for device index {} of vendor {}", mem_clk_mhz, graphics_clk_mhz, device_index, to_string(vendor));
+                            OPTKIT_CORE_DEBUG("Setting AMDSMI_CLK_TYPE_SYS to Memory={} MHz, Graphics={} MHz for device index {} of vendor {}", mem_clk_mhz, graphics_clk_mhz, device_index, to_string(vendor));
                         }
                         else
                         {
@@ -634,8 +632,8 @@ namespace optkit::gpu
                                       RSMI_CLK_TYPE_MEM, freq_bitmask);
                 if (result == RSMI_STATUS_SUCCESS)
                 {
-                    OPTKIT_CORE_INFO("ROCm SMI set memory clock to {} MHz for device {}",
-                                     mem_freqs.frequency[mem_freq_idx] / 1000000, device_index);
+                    OPTKIT_CORE_DEBUG("ROCm SMI set memory clock to {} MHz for device {}",
+                                      mem_freqs.frequency[mem_freq_idx] / 1000000, device_index);
                 }
                 else
                 {
@@ -670,8 +668,8 @@ namespace optkit::gpu
                 if (result == RSMI_STATUS_SUCCESS)
                 {
                     is_ok = true;
-                    OPTKIT_CORE_INFO("ROCm SMI set graphics clock to {} MHz for device {}",
-                                     gfx_freqs.frequency[gfx_freq_idx] / 1000000, device_index);
+                    OPTKIT_CORE_DEBUG("ROCm SMI set graphics clock to {} MHz for device {}",
+                                      gfx_freqs.frequency[gfx_freq_idx] / 1000000, device_index);
                 }
                 else
                 {
@@ -764,7 +762,7 @@ namespace optkit::gpu
                 {
                     warp_size = 64; // GCN/CDNA default
                 }
-                OPTKIT_CORE_INFO("ROCm SMI inferred wavefront size for device {}: {}", device_index, warp_size);
+                OPTKIT_CORE_DEBUG("ROCm SMI inferred wavefront size for device {}: {}", device_index, warp_size);
             }
             else
             {
@@ -915,7 +913,7 @@ namespace optkit::gpu
                 else
                 {
                     OPTKIT_CORE_WARN("nvmlDeviceGetMultiProcessorCount: {}", nvmlErrorString(result));
-                    OPTKIT_CORE_INFO("Fallbacking to lookup table");
+                    OPTKIT_CORE_DEBUG("Fallbacking to lookup table");
                     char name_buf[NVML_DEVICE_NAME_BUFFER_SIZE];
                     if (nvmlDeviceGetName(nvml_device, name_buf, sizeof(name_buf)) == NVML_SUCCESS)
                     {
@@ -1125,9 +1123,9 @@ namespace optkit::gpu
                     memory_info.memory_utilization_percent =
                         (memory_info.used_memory_MBytes / memory_info.total_global_memory_MBytes) * 100.0;
                 }
-                OPTKIT_CORE_INFO("ROCm SMI memory for device {}: total={} MB, used={} MB, free={} MB",
-                                 device_index, memory_info.total_global_memory_MBytes,
-                                 memory_info.used_memory_MBytes, memory_info.free_memory_MBytes);
+                OPTKIT_CORE_DEBUG("ROCm SMI memory for device {}: total={} MB, used={} MB, free={} MB",
+                                  device_index, memory_info.total_global_memory_MBytes,
+                                  memory_info.used_memory_MBytes, memory_info.free_memory_MBytes);
             }
             else
             {
@@ -1481,8 +1479,8 @@ namespace optkit::gpu
                 clock_info.max_memory_clock_MHz = max_freq / 1000000;
                 clock_info.min_memory_clock_MHz = min_freq / 1000000;
 
-                OPTKIT_CORE_INFO("ROCm SMI clock info for device {}: SM={} MHz, MEM={} MHz",
-                                 device_index, clock_info.current_sm_clock_MHz, clock_info.current_memory_clock_MHz);
+                OPTKIT_CORE_DEBUG("ROCm SMI clock info for device {}: SM={} MHz, MEM={} MHz",
+                                  device_index, clock_info.current_sm_clock_MHz, clock_info.current_memory_clock_MHz);
             }
             else
             {
@@ -1624,7 +1622,7 @@ namespace optkit::gpu
                 is_ok = true;
                 utilization_info.gpu_utilization_percent = busy_percent;
                 utilization_info.has_utilization_monitoring = true;
-                OPTKIT_CORE_INFO("ROCm SMI GPU utilization for device {}: {}%", device_index, busy_percent);
+                OPTKIT_CORE_DEBUG("ROCm SMI GPU utilization for device {}: {}%", device_index, busy_percent);
             }
             else
             {
@@ -1636,7 +1634,7 @@ namespace optkit::gpu
             if (result == RSMI_STATUS_SUCCESS)
             {
                 utilization_info.memory_utilization_percent = busy_percent;
-                OPTKIT_CORE_INFO("ROCm SMI memory utilization for device {}: {}%", device_index, busy_percent);
+                OPTKIT_CORE_DEBUG("ROCm SMI memory utilization for device {}: {}%", device_index, busy_percent);
             }
             else
             {
@@ -1812,7 +1810,7 @@ namespace optkit::gpu
                 char bdf[64];
                 snprintf(bdf, sizeof(bdf), "%04x:%02x:%02x.%x", domain, bus, device, function);
                 hardware_info.pci_bus_id = std::string(bdf);
-                OPTKIT_CORE_INFO("ROCm SMI PCI Bus ID for device {}: {}", device_index, hardware_info.pci_bus_id);
+                OPTKIT_CORE_DEBUG("ROCm SMI PCI Bus ID for device {}: {}", device_index, hardware_info.pci_bus_id);
             }
             else
             {
@@ -2004,7 +2002,7 @@ namespace optkit::gpu
             {
                 is_ok = true;
                 driver_version = version.major + version.minor / 10.0;
-                OPTKIT_CORE_INFO("ROCm SMI driver version: {}.{}", version.major, version.minor);
+                OPTKIT_CORE_DEBUG("ROCm SMI driver version: {}.{}", version.major, version.minor);
             }
             else
             {
@@ -2071,7 +2069,7 @@ namespace optkit::gpu
                 {
                     library_version += "-" + std::string(version.build);
                 }
-                OPTKIT_CORE_INFO("ROCm SMI library version: {}", library_version);
+                OPTKIT_CORE_DEBUG("ROCm SMI library version: {}", library_version);
             }
             else
             {
@@ -2182,7 +2180,7 @@ namespace optkit::gpu
             {
                 is_ok = true;
                 power_watts = static_cast<double>(power_uw) / 1000000.0; // Convert from microwatts to watts
-                OPTKIT_CORE_INFO("ROCm SMI power for device {}: {} W", device_index, power_watts);
+                OPTKIT_CORE_DEBUG("ROCm SMI power for device {}: {} W", device_index, power_watts);
             }
             else
             {
@@ -2332,8 +2330,8 @@ namespace optkit::gpu
                 min_limit_watts = static_cast<double>(min_power_uw) / 1000000.0;
                 max_limit_watts = static_cast<double>(max_power_uw) / 1000000.0;
                 is_configurable = true; // If we can get the range, it's configurable
-                OPTKIT_CORE_INFO("ROCm SMI power limits for device {}: min={} W, max={} W",
-                                 device_index, min_limit_watts, max_limit_watts);
+                OPTKIT_CORE_DEBUG("ROCm SMI power limits for device {}: min={} W, max={} W",
+                                  device_index, min_limit_watts, max_limit_watts);
             }
             else
             {
@@ -2433,7 +2431,7 @@ namespace optkit::gpu
             {
                 is_ok = true;
                 temp_device_celsius = static_cast<double>(temperature) / 1000.0; // Convert from millidegrees
-                OPTKIT_CORE_INFO("ROCm SMI device temperature for device {}: {} C", device_index, temp_device_celsius);
+                OPTKIT_CORE_DEBUG("ROCm SMI device temperature for device {}: {} C", device_index, temp_device_celsius);
             }
             else
             {
@@ -2446,7 +2444,7 @@ namespace optkit::gpu
             if (result == RSMI_STATUS_SUCCESS)
             {
                 temp_mem_celsius = static_cast<double>(temperature) / 1000.0;
-                OPTKIT_CORE_INFO("ROCm SMI memory temperature for device {}: {} C", device_index, temp_mem_celsius);
+                OPTKIT_CORE_DEBUG("ROCm SMI memory temperature for device {}: {} C", device_index, temp_mem_celsius);
             }
             else
             {
@@ -2520,7 +2518,7 @@ namespace optkit::gpu
             {
                 is_ok = true;
                 device_name = std::string(name);
-                OPTKIT_CORE_INFO("ROCm SMI retrieved device name for device {}: {}", device_index, device_name);
+                OPTKIT_CORE_DEBUG("ROCm SMI retrieved device name for device {}: {}", device_index, device_name);
             }
             else
             {
@@ -2599,7 +2597,7 @@ namespace optkit::gpu
             {
                 architecture = _map_amd_device_id_to_arch(static_cast<uint32_t>(device_id));
                 is_ok = true;
-                OPTKIT_CORE_INFO("ROCm SMI retrieved architecture for device {}: 0x{:X}", device_index, architecture);
+                OPTKIT_CORE_DEBUG("ROCm SMI retrieved architecture for device {}: 0x{:X}", device_index, architecture);
             }
             else
             {

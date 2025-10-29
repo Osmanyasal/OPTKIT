@@ -9,7 +9,7 @@ namespace optkit::pmu::cpu
         if (pfm_initialize() == PFM_SUCCESS)
         {
             memset(&Query::default_architectural_pmu, 0, sizeof(pfm_pmu_info_t));
-            OPTKIT_CORE_INFO("pfm initialized successfully!");
+            OPTKIT_CORE_DEBUG("pfm initialized successfully!");
         }
         else
         {

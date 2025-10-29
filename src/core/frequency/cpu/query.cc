@@ -114,7 +114,7 @@ namespace optkit::frequency::cpu
                 msg << "Governor '" << governor << "' is not supported on socket " << socket << ". Available governors:";
                 for (const auto &g : available_governors)
                     msg << " " << g;
-                OPTKIT_CORE_INFO("Available governors: {}", msg.str());
+                OPTKIT_CORE_DEBUG("Available governors: {}", msg.str());
                 return;
             }
 
@@ -125,7 +125,7 @@ namespace optkit::frequency::cpu
                 optkit::utils::write_file(path, governor);
             }
 
-            OPTKIT_CORE_INFO("Governor '{}' successfully set for all cores in socket {}", governor, socket);
+            OPTKIT_CORE_DEBUG("Governor '{}' successfully set for all cores in socket {}", governor, socket);
         }
         catch (const std::exception &e)
         {
@@ -163,7 +163,7 @@ namespace optkit::frequency::cpu
             std::string set_path = "/sys/devices/system/cpu/cpu" + std::to_string(core) + "/cpufreq/scaling_governor";
             optkit::utils::write_file(set_path, governor);
 
-            OPTKIT_CORE_INFO("Governor '{}' successfully set for core {}", governor, core);
+            OPTKIT_CORE_DEBUG("Governor '{}' successfully set for core {}", governor, core);
         }
         catch (const std::exception &e)
         {
