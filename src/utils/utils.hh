@@ -357,7 +357,7 @@ namespace optkit::utils
 
         if (pwrite(fd, &MSR_REGISTER_bits, sizeof MSR_REGISTER_bits, MSR_REGISTER_address) != sizeof MSR_REGISTER_bits)
         {
-            OPTKIT_CORE_WARN("read msr error -- cannot read register {}", MSR_REGISTER_address);
+            OPTKIT_CORE_WARN("write msr error -- cannot write register {}", MSR_REGISTER_address);
         }
     }
 
