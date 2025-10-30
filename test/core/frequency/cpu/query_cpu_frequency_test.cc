@@ -53,7 +53,7 @@ TEST_F(QueryCPUFrequencyTest, ScalingAvailableFrequencies_MayBeEmptyForModernDri
     if (!exists("scaling_available_frequencies"))
         GTEST_SKIP() << "File not present: scaling_available_frequencies";
 
-    auto freqs = Query::get_scaling_available_frequencies(core);
+    auto freqs = Query::get_scaling_available_core_frequencies(core);
     std::cout << "Available frequencies count: " << freqs.size() << "\n";
 
     if (is_modern_driver())

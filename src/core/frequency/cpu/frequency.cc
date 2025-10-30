@@ -193,19 +193,31 @@ namespace optkit::frequency::cpu
 
     std::pair<int64_t, int64_t> Frequency::get_uncore_min_max(int16_t socket)
     {
-        std::pair<int64_t, int64_t> result{0, 0};
+        static std::unordered_map<int16_t, std::pair<int64_t, int64_t>> cache;
 
-        uint64_t MSR_UNCORE_RATIO_LIMIT_bits = 0;
-        optkit::utils::read_msr(package_info.at(socket)[0], MSR_UNCORE_RATIO_LIMIT, &MSR_UNCORE_RATIO_LIMIT_bits);
+        // Check cache first
+        auto it = cache.find(socket);
+        if (it != cache.end())
+            return it->second;
 
-        // min uncore freq
-        result.first = ((MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_RATIO_LIMIT_min_mask) >> MSR_UNCORE_RATIO_LIMIT_min_shift) * 100000;
+        // Otherwise, read from MSR
+        uint64_t bits = 0;
+        optkit::utils::read_msr(package_info.at(socket)[0], MSR_UNCORE_RATIO_LIMIT, &bits);
 
-        // max uncore freq
-        result.second = (MSR_UNCORE_RATIO_LIMIT_bits & MSR_UNCORE_RATIO_LIMIT_max_mask) * 100000;
+        const int64_t min_ratio = (bits & MSR_UNCORE_RATIO_LIMIT_min_mask) >> MSR_UNCORE_RATIO_LIMIT_min_shift;
+        const int64_t max_ratio = (bits & MSR_UNCORE_RATIO_LIMIT_max_mask);
+
+        std::pair<int64_t, int64_t> result{
+            min_ratio * 100000, // kHz
+            max_ratio * 100000  // kHz
+        };
+
+        // Cache it
+        cache[socket] = result;
 
         return result;
     }
+
     void Frequency::reset_uncore_frequency(int16_t socket)
     {
         std::pair<int64_t, int64_t> default_uncore = get_uncore_min_max(socket);

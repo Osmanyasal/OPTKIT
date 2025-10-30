@@ -62,7 +62,7 @@ void print_cpu()
         try
         {
             const auto &core_ids = packages.at(socket);
-            const auto &avail_freqs = optkit::frequency::QueryCPUFrequency::get_scaling_available_frequencies(core_ids[0]);
+            const auto &avail_freqs = optkit::frequency::QueryCPUFrequency::get_scaling_available_core_frequencies(core_ids[0]);
 
             std::cout << "  Core[0] Available Freqs (Hz): ";
             for (auto it = avail_freqs.rbegin(); it != avail_freqs.rend(); ++it)
@@ -94,7 +94,7 @@ void print_cpu()
             std::cout << "  Scaling Max Limit (Hz): " << optkit::frequency::QueryCPUFrequency::get_scaling_max_limit(i) << "\n";
             std::cout << "  Scaling Driver: " << optkit::frequency::QueryCPUFrequency::get_scaling_driver(i) << "\n";
 
-            const auto &freq_list = optkit::frequency::QueryCPUFrequency::get_scaling_available_frequencies(i);
+            const auto &freq_list = optkit::frequency::QueryCPUFrequency::get_scaling_available_core_frequencies(i);
             std::cout << "  Available Core Freqs (Hz): ";
             for (auto it = freq_list.rbegin(); it != freq_list.rend(); ++it)
                 std::cout << *it << " ";

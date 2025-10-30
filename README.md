@@ -276,7 +276,7 @@ OPTKIT uses the `perf_event_open` system call to monitor both PMU (Performance M
 - `googletest` for comprehensive unit testing
 - `spdlog` for advanced logging capabilities
 - `bash` and `python3` for various utility tools
-- `msr-safe (optional)` library for direct CPU MSR access
+- `msr-safe (optional)` library for direct CPU MSR access -- please install manually [check how to](https://github.com/LLNL/msr-safe)
 
 ### Architecture Support
 

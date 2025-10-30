@@ -58,7 +58,6 @@ AffinityStrategy parse_affinity_strategy(const std::string &strategy)
         {"scatter", AffinityStrategy::SCATTER},
         {"numa", AffinityStrategy::NUMA},
         {"manual", AffinityStrategy::MANUAL}};
-
     auto it = strategy_map.find(strategy);
     return (it != strategy_map.end()) ? it->second : AffinityStrategy::COMPACT;
 }
@@ -120,7 +119,22 @@ CommandArgs parse_arguments(int argc, char **argv)
         for (size_t i = 1; i < separator_pos; ++i)
         {
             const std::string &token = tokens[i];
-
+            if (token == "-T")
+            {
+                // Next token should be the sampling period in milliseconds
+                if (i + 1 < separator_pos)
+                {
+                    args.sampling_period_ms = static_cast<uint32_t>(std::stoul(tokens[++i]));
+                }
+            }
+            if (token == "-S")
+            {
+                // Next token should be the socket ID
+                if (i + 1 < separator_pos)
+                {
+                    args.socket_id = static_cast<uint32_t>(std::stoul(tokens[++i]));
+                }
+            }
             if (token == "-e" || token == "--event")
             {
                 // Next token should be the event name

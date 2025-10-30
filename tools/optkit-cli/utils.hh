@@ -4,6 +4,10 @@
 #include <vector>
 #include <iostream>
 #include <sstream>
+#include <chrono>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include "optkit.hh"
 
 inline void print_help()
@@ -33,10 +37,12 @@ LIST:
 PROFILING (stat):
     Single execution profiling - runs program once and collects metrics
     
-    optkit stat -- <program>                                 Default profiling
-    optkit stat -e <event> -- <program>                      Profile specific event
-    optkit stat -m <metric> -- <program>                     Profile specific metric
-    optkit stat -e <event> -m <metric> -- <program>          Profile event + metric
+    optkit stat -- <program>                                                          Default profiling
+    optkit stat -e <event> -- <program>                                               Profile specific event
+    optkit stat -m <metric> -- <program>                                              Profile specific metric
+    optkit stat -e <event> -m <metric> -- <program>                                   Profile event + metric
+    optkit stat -e <event> -m <metric> -T <sampling_period_in_ms> -- <program>        Profile event + metric
+    optkit stat -e <event> -m <metric> -T <sampling_period_in_ms> -S 0 -- <program>   Profile event + metric + socket 0
 
 BENCHMARKING (--bench):
     Multiple execution analysis - runs program multiple times with different configurations
@@ -140,10 +146,12 @@ struct CommandArgs
     BenchType bench_type = BenchType::DEFAULT;
     AffinityStrategy affinity_strategy = AffinityStrategy::COMPACT;
     ListType list_type = ListType::ALL;
-    std::vector<std::string> events;       // PMU events to profile (-e)
-    std::vector<std::string> metrics;      // Metrics to collect (-m)
-    std::string program;                   // Program to execute
-    std::vector<std::string> program_args; // Arguments for the program
+    std::vector<std::string> events;                // PMU events to profile (-e)
+    std::vector<std::string> metrics;               // Metrics to collect (-m)
+    std::string program;                            // Program to execute
+    std::vector<std::string> program_args;          // Arguments for the program
+    uint32_t socket_id = static_cast<uint32_t>(-1); // Socket ID (-1 means all sockets, 0+ means specific socket)
+    uint32_t sampling_period_ms = 1000;             // Sampling period in milliseconds (1second) for stat command
 };
 
 // Parse command line arguments

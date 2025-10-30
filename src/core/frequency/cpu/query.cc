@@ -15,10 +15,23 @@ namespace optkit::frequency::cpu
     else                                                 \
         for (int32_t __cpu : package_info.at(socket))
 
-    std::vector<int64_t> Query::get_scaling_available_frequencies(int32_t core)
+    std::vector<int64_t> Query::get_scaling_available_core_frequencies(int32_t core)
     {
         std::vector<int64_t> frequencies;
         std::string avail_freqs = optkit::utils::read_file("/sys/devices/system/cpu/cpu" + std::to_string(core) + "/cpufreq/scaling_available_frequencies");
+        std::istringstream iss(avail_freqs);
+        int64_t freq;
+        while (iss >> freq)
+        {
+            frequencies.push_back(freq);
+        }
+        return frequencies;
+    }
+
+    std::vector<int64_t> Query::get_scaling_available_uncore_frequencies(int32_t core)
+    {
+        std::vector<int64_t> frequencies;
+        std::string avail_freqs = optkit::utils::read_file("/sys/devices/system/cpu/cpu" + std::to_string(core) + "/cpufreq/uncore/scaling_available_frequencies");
         std::istringstream iss(avail_freqs);
         int64_t freq;
         while (iss >> freq)
