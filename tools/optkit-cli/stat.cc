@@ -120,6 +120,11 @@ void execute_stat_command(const CommandArgs &args)
 
             auto avail_core_freqs = optkit::frequency::cpu::Query::get_scaling_available_core_frequencies(0);         // assuming all sockets are the same and have same available frequencies
             auto avail_uncore_freqs = optkit::frequency::cpu::Frequency::get_scaling_available_uncore_frequencies(0); // assuming all sockets are the same and have same available frequencies
+            if (avail_uncore_freqs.empty())
+            {
+                std::cerr << "Error: No available uncore frequencies found for scaling analysis\n";
+                avail_uncore_freqs.push_back(0);
+            }
             for (const auto &core_freq : avail_core_freqs)
                 for (const auto &uncore_freq : avail_uncore_freqs)
                 {
@@ -134,7 +139,8 @@ void execute_stat_command(const CommandArgs &args)
                     {
                         optkit::frequency::cpu::Query::set_scaling_governor("performance", socket);
                         optkit::frequency::cpu::Frequency::set_core_frequency(core_freq, socket);
-                        optkit::frequency::cpu::Frequency::set_uncore_frequency(uncore_freq, socket);
+                        if (uncore_freq > 0)
+                            optkit::frequency::cpu::Frequency::set_uncore_frequency(uncore_freq, socket);
                     }
                     // Create modified args with frequency settings
                     create_child_process(args);
@@ -147,7 +153,8 @@ void execute_stat_command(const CommandArgs &args)
             {
                 optkit::frequency::cpu::Query::set_scaling_governor(socket_curr_governor.at(socket), socket);
                 optkit::frequency::cpu::Frequency::reset_core_frequency(socket);
-                optkit::frequency::cpu::Frequency::reset_uncore_frequency(socket);
+                if (uncore_freq > 0)
+                    optkit::frequency::cpu::Frequency::reset_uncore_frequency(socket);
             }
             break;
         }
