@@ -153,7 +153,7 @@ void execute_stat_command(const CommandArgs &args)
             {
                 optkit::frequency::cpu::Query::set_scaling_governor(socket_curr_governor.at(socket), socket);
                 optkit::frequency::cpu::Frequency::reset_core_frequency(socket);
-                if (uncore_freq > 0)
+                if (avail_uncore_freqs.size() == 1 && avail_uncore_freqs[0] == 0)
                     optkit::frequency::cpu::Frequency::reset_uncore_frequency(socket);
             }
             break;
