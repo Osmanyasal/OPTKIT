@@ -18,27 +18,28 @@ namespace optkit::frequency::cpu
     std::vector<int64_t> Query::get_scaling_available_core_frequencies(int32_t core)
     {
         std::vector<int64_t> frequencies;
-        std::string avail_freqs = optkit::utils::read_file("/sys/devices/system/cpu/cpu" + std::to_string(core) + "/cpufreq/scaling_available_frequencies");
-        std::istringstream iss(avail_freqs);
-        int64_t freq;
-        while (iss >> freq)
+        try
         {
-            frequencies.push_back(freq);
+            std::string avail_freqs = optkit::utils::read_file("/sys/devices/system/cpu/cpu" + std::to_string(core) + "/cpufreq/scaling_available_frequencies");
+            std::istringstream iss(avail_freqs);
+            int64_t freq;
+            while (iss >> freq)
+                frequencies.push_back(freq);
+            return frequencies;
         }
-        return frequencies;
-    }
-
-    std::vector<int64_t> Query::get_scaling_available_uncore_frequencies(int32_t core)
-    {
-        std::vector<int64_t> frequencies;
-        std::string avail_freqs = optkit::utils::read_file("/sys/devices/system/cpu/cpu" + std::to_string(core) + "/cpufreq/uncore/scaling_available_frequencies");
-        std::istringstream iss(avail_freqs);
-        int64_t freq;
-        while (iss >> freq)
+        catch (const std::exception &e)
         {
-            frequencies.push_back(freq);
+            OPTKIT_CORE_WARN("Failed to read scaling available core frequencies for core {}: generating list from available max and mins", core);
+            // Generate list from available max and mins
+            int64_t max_freq = get_cpuinfo_max_freq(core);
+            int64_t min_freq = get_cpuinfo_min_freq(core);
+            if (min_freq > 0 && max_freq > 0 && max_freq >= min_freq)
+            {
+                for (int64_t freq = max_freq; freq >= min_freq; freq -= 200000) // step by 200MHz
+                    frequencies.push_back(freq);
+                return frequencies;
+            }
         }
-        return frequencies;
     }
 
     int64_t Query::get_bios_limit(int32_t core)
@@ -275,5 +276,4 @@ namespace optkit::frequency::cpu
             return -1;
         }
     }
-
 }

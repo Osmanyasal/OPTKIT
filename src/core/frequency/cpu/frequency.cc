@@ -234,6 +234,22 @@ namespace optkit::frequency::cpu
         return result;
     }
 
+    std::vector<int64_t> Frequency::get_scaling_available_uncore_frequencies(int16_t socket)
+    {
+        std::vector<int64_t> frequencies;
+        try
+        {
+            std::pair<int64_t, int64_t> avail_freqs = optkit::frequency::cpu::Frequency::get_uncore_min_max(socket);
+            for (int64_t freq = avail_freqs.second; freq >= avail_freqs.first; freq -= 200000) // step by 200MHz
+                frequencies.push_back(freq);
+        }
+        catch (const std::exception &e)
+        {
+            OPTKIT_CORE_WARN("Failed to read scaling available uncore frequencies for socket {}", socket);
+        }
+        return frequencies;
+    }
+
     void Frequency::reset_uncore_frequency(int16_t socket)
     {
         std::pair<int64_t, int64_t> default_uncore = get_uncore_min_max(socket);
@@ -251,6 +267,7 @@ namespace optkit::frequency::cpu
     std::pair<int64_t, int64_t> Frequency::get_uncore_min_max(int16_t socket) { return {}; };
     void Frequency::reset_uncore_frequency(int16_t socket) {};
     void Frequency::set_uncore_frequency(int64_t frequency, int16_t socket) {};
+    std::vector<int64_t> Frequency::get_scaling_available_uncore_frequencies(int16_t socket) { return {}; };
 #endif
     void Frequency::reset_core_frequency(int16_t socket)
     {

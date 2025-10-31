@@ -21,7 +21,6 @@ namespace optkit::frequency::cpu
     {
     public:
         static std::vector<int64_t> get_scaling_available_core_frequencies(int32_t core = 0);
-        static std::vector<int64_t> get_scaling_available_uncore_frequencies(int32_t core = 0);
         static int64_t get_bios_limit(int32_t core = 0);
         static std::string get_scaling_driver(int32_t core = 0);
         static std::string get_scaling_governor(int32_t core = 0);

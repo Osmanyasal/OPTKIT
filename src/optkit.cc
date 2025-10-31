@@ -117,5 +117,6 @@ namespace optkit
                 optkit::frequency::cpu::Frequency::reset_uncore_frequency(socket); // restore default uncore freq on exit.
         optkit::pmu::cpu::Query::destroy();
         optkit::utils::logger::BaseLogger::shutdown(); // logger shutdown.
+    }
 
-    } // namespace optkit
+} // namespace optkit

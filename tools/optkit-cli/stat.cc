@@ -118,8 +118,8 @@ void execute_stat_command(const CommandArgs &args)
             for (size_t socket = 0; socket < OPTKIT_ENV_CPU_NUM_SOCKETS; socket++)
                 socket_curr_governor[socket] = optkit::frequency::cpu::Query::get_scaling_governor(socket_cpus.at(socket)[0]);
 
-            auto avail_core_freqs = optkit::frequency::cpu::Query::get_scaling_available_core_frequencies(0);     // assuming all sockets are the same and have same available frequencies
-            auto avail_uncore_freqs = optkit::frequency::cpu::Query::get_scaling_available_uncore_frequencies(0); // assuming all sockets are the same and have same available frequencies
+            auto avail_core_freqs = optkit::frequency::cpu::Query::get_scaling_available_core_frequencies(0);         // assuming all sockets are the same and have same available frequencies
+            auto avail_uncore_freqs = optkit::frequency::cpu::Frequency::get_scaling_available_uncore_frequencies(0); // assuming all sockets are the same and have same available frequencies
             for (const auto &core_freq : avail_core_freqs)
                 for (const auto &uncore_freq : avail_uncore_freqs)
                 {
@@ -146,7 +146,7 @@ void execute_stat_command(const CommandArgs &args)
             for (size_t socket = 0; socket < OPTKIT_ENV_CPU_NUM_SOCKETS; socket++)
             {
                 optkit::frequency::cpu::Query::set_scaling_governor(socket_curr_governor.at(socket), socket);
-                optkit::frequency::cpu::Frequency::reset_core_frequency(core_freq, socket);
+                optkit::frequency::cpu::Frequency::reset_core_frequency(socket);
                 optkit::frequency::cpu::Frequency::reset_uncore_frequency(socket);
             }
             break;
@@ -162,7 +162,7 @@ void execute_stat_command(const CommandArgs &args)
                 return;
             }
 
-            std::cout << "System has " << OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS << " processors across " << socket_cpus.size() << " socket(s)\n";
+            std::cout << "System has " << OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS << " processors across " << OPTKIT_ENV_CPU_NUM_SOCKETS << " socket(s)\n";
             std::cout << std::string(60, '=') << "\n";
 
             // Determine which cores to use based on socket selection
@@ -236,7 +236,7 @@ void execute_stat_command(const CommandArgs &args)
                 // Small delay between runs
                 usleep(500000); // 0.5 second
             }
-            if (num_cores > total_cores)
+            if (num_cores > total_cores && num_cores / 2.0 != total_cores)
             {
                 std::cout << "\n"
                           << std::string(60, '-') << "\n";

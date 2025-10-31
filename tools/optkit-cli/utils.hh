@@ -125,10 +125,10 @@ enum class BenchType
 
 enum class AffinityStrategy
 {
-    COMPACT,
-    SCATTER,
-    NUMA,
-    MANUAL
+    COMPACT, // Pack threads on fewer cores (cache locality)
+    SCATTER, // Spread threads across cores (avoid contention)
+    NUMA,    // NUMA-aware placement (memory locality)
+    MANUAL   // Manual affinity control
 };
 
 enum class ListType
