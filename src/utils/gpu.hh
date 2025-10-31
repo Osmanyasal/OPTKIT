@@ -123,9 +123,6 @@ OPT_FORCE_INLINE std::string _rocm_smi_status_to_string(rsmi_status_t status)
 #define VENDOR_ID_QUALCOMM 0x5143
 namespace optkit::gpu
 {
-    /**
-     * @brief GPU vendors for power monitoring
-     */
     enum class GpuVendor : uint8_t
     {
         BEGIN = 0,
@@ -139,9 +136,6 @@ namespace optkit::gpu
         UNKNOWN,
     };
 
-    /**
-     * @brief GPU power measurement methods
-     */
     enum class GpuPowerMethod : uint8_t
     {
         NONE = 0,
@@ -153,12 +147,6 @@ namespace optkit::gpu
         ALL = NVIDIA_ML | AMD_ROCM | INTEL_I915 | SYSFS_HWMON | PERF_UNCORE
     };
 
-    /**
-     * @brief Comprehensive GPU device information using composition
-     */
-    /**
-     * @brief Basic GPU device identification information
-     */
     struct GpuBasicInfo
     {
         uint32_t id;
@@ -169,9 +157,6 @@ namespace optkit::gpu
         bool is_integrated;
     };
 
-    /**
-     * @brief GPU driver and library version information
-     */
     struct GpuVersionInfo
     {
         double driver_major_minor;
@@ -179,9 +164,6 @@ namespace optkit::gpu
         std::string library_version_string;
     };
 
-    /**
-     * @brief GPU compute capability and architecture information
-     */
     struct GpuComputeInfo
     {
         int32_t compute_capability_major;
@@ -192,9 +174,6 @@ namespace optkit::gpu
         uint32_t warp_size;
     };
 
-    /**
-     * @brief GPU memory information
-     */
     struct GpuMemoryInfo
     {
         uint64_t total_global_memory_MBytes;
@@ -204,9 +183,6 @@ namespace optkit::gpu
         double memory_utilization_percent;
     };
 
-    /**
-     * @brief GPU clock and frequency information
-     */
     struct GpuClockInfo
     {
         uint32_t current_sm_clock_MHz;
@@ -229,9 +205,6 @@ namespace optkit::gpu
         bool has_frequency_control;
     };
 
-    /**
-     * @brief GPU power monitoring information
-     */
     struct GpuPowerInfo
     {
         double current_power_watts;
@@ -243,9 +216,6 @@ namespace optkit::gpu
         bool is_configurable;
     };
 
-    /**
-     * @brief GPU temperature monitoring information
-     */
     struct GpuTemperatureInfo
     {
         double current_device_temperature_celsius;
@@ -257,9 +227,6 @@ namespace optkit::gpu
         bool has_temperature_monitoring;
     };
 
-    /**
-     * @brief GPU utilization and performance information
-     */
     struct GpuUtilizationInfo
     {
         double gpu_utilization_percent;
@@ -267,9 +234,6 @@ namespace optkit::gpu
         bool has_utilization_monitoring;
     };
 
-    /**
-     * @brief GPU PCI and hardware information
-     */
     struct GpuHardwareInfo
     {
         std::string pci_bus_id;
@@ -279,15 +243,13 @@ namespace optkit::gpu
         bool multi_gpu_board;
     };
 
-    /**
-     * @brief GPU advanced features and capabilities
-     */
     struct GpuCapabilitiesInfo
     {
         bool ecc_enabled;
         bool supports_unified_memory;
         bool persistence_mode_enabled;
     };
+
     struct GpuDeviceInfo
     {
         GpuBasicInfo basic;

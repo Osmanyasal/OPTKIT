@@ -142,7 +142,7 @@ void execute_stat_command(const CommandArgs &args)
             {
                 optkit::frequency::cpu::Frequency::reset_core_frequency(core_freq, socket);
                 optkit::frequency::cpu::Frequency::reset_uncore_frequency(socket);
-                optkit::frequency::cpu::Query::set_scaling_governor("powersave", socket);
+                // optkit::frequency::cpu::Query::set_scaling_governor("powersave", socket);
             }
             break;
         }
