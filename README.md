@@ -33,7 +33,7 @@ make -j$(nproc) config=debug optkit_test  ## no optimization in tests, raw resul
 
 ```
 
-## CLI Tools
+## CLI Tools of The OPTKIT
 
 <details>
 <summary><strong>optkit</strong> - Performance and Energy Profiling Tool</summary>
@@ -272,18 +272,20 @@ OPTKIT uses the `perf_event_open` system call to monitor both PMU (Performance M
 
 - `perf_event_open` linux kernel call for both energy and performance monitoring.
 - `libpfm4` for PMU-related queries and event code database
-- `sysfs` for modifying CPU core frequencies
+- `sysfs` for modifying CPU core frequencies it is necessary to have access to `/sys/devices/system/cpu/cpu*/cpufreq/**`
 - `googletest` for comprehensive unit testing
 - `spdlog` for advanced logging capabilities
-- `bash` and `python3` for various utility tools
+- `python3` for various utility tools
 - `msr-safe (optional)` library for direct CPU MSR access -- please install manually [check how to](https://github.com/LLNL/msr-safe)
+  
+Each utility is automatically built locally and linked during compilation except msr-safe which requires admin priviledges to load the module and mrs\_allowlist under `/dev/cpu/msr_allowlist`. 
+
+**note:** users also need to update the msr_allowlist, they can find their list under `lib/msr-safe/allowlists`, they need to remove comment. `(0x620 for uncore frequency in intel cpus)`
 
 ### Architecture Support
 
-- **CPU**: Intel (Broadwell, Skylake, Ice Lake), AMD, ARM
-- **GPU**: NVIDIA, AMD ROCm, Intel
-- **Monitoring**: CPU, GPU, Disk I/O, Temperature sensors
-- **Frequency Control**: Core and uncore frequencies for both CPU and GPU
+- **CPU**: Intel, AMD, ARM
+- **GPU**: NVIDIA, AMD
 
 ### Monitoring Capabilities
 
@@ -292,6 +294,7 @@ OPTKIT uses the `perf_event_open` system call to monitor both PMU (Performance M
 - **Disk I/O**: Comprehensive disk performance profiling
 - **Temperature**: CPU and GPU temperature monitoring
 - **Frequency**: Real-time frequency monitoring and control
+- **Memory**: Memory info
 
 The functionality of OPTKIT depends on its utility programs, as outlined above.
 
@@ -375,7 +378,9 @@ int main(){
     optkit::frequency::gpu::Query::*
 }
 ```
-## 📊 Supported Metrics in OptKit
+
+<details>
+<summary><strong>📊 Supported Metrics in OPTKIT</strong></summary>
 
 This document lists all currently supported performance and energy metrics in **OptKit**.  
 Each metric is implemented via a `MetricBuilder<T>` function and categorized by domain. Althoguh we support many important metrics, users of the library are free to implement their own metrics and pass to a Profiler.
@@ -407,7 +412,7 @@ static const MetricBuilder<uint64_t> &ipc()
 
 ---
 
-### 🧠 CPU Utilization
+### CPU Utilization
 
 | Metric | Description |
 |--------|--------------|
@@ -415,7 +420,7 @@ static const MetricBuilder<uint64_t> &ipc()
 
 ---
 
-### 🧮 Cache Metrics
+### Cache Metrics
 
 | Metric | Description |
 |--------|--------------|
@@ -428,7 +433,7 @@ static const MetricBuilder<uint64_t> &ipc()
 
 ---
 
-### 🧭 Branch Metrics
+### Branch Metrics
 
 | Metric | Description |
 |--------|--------------|
@@ -436,7 +441,7 @@ static const MetricBuilder<uint64_t> &ipc()
 
 ---
 
-### 🧩 TLB Metrics
+### TLB Metrics
 
 | Metric | Description |
 |--------|--------------|
@@ -446,7 +451,7 @@ static const MetricBuilder<uint64_t> &ipc()
 
 ---
 
-### ⚙️ Latency & Parallelism
+### Latency & Parallelism
 
 | Metric | Description |
 |--------|--------------|
@@ -456,7 +461,7 @@ static const MetricBuilder<uint64_t> &ipc()
 
 ---
 
-### 💾 DRAM Bandwidth
+### DRAM Bandwidth
 
 | Metric | Description |
 |--------|--------------|
@@ -464,7 +469,7 @@ static const MetricBuilder<uint64_t> &ipc()
 
 ---
 
-### 🧱 Instruction-per-Event Metrics
+### Instruction-per-Event Metrics
 
 | Metric | Description |
 |--------|--------------|
@@ -477,7 +482,7 @@ static const MetricBuilder<uint64_t> &ipc()
 
 ---
 
-### 🧮 Floating-Point & Vector Metrics
+### Floating-Point & Vector Metrics
 
 | Metric | Description |
 |--------|--------------|
@@ -495,7 +500,7 @@ static const MetricBuilder<uint64_t> &ipc()
 
 ---
 
-### 🧠 Software Prefetch
+### Software Prefetch
 
 | Metric | Description |
 |--------|--------------|
@@ -503,7 +508,7 @@ static const MetricBuilder<uint64_t> &ipc()
 
 ---
 
-### 🚦 Topdown (Pipeline Utilization) — Level 1
+### Topdown (Pipeline Utilization) — Level 1
 
 | Metric | Description |
 |--------|--------------|
@@ -515,7 +520,7 @@ static const MetricBuilder<uint64_t> &ipc()
 
 ---
 
-### ⚙️ Topdown — Level 2
+### Topdown — Level 2
 
 | Metric | Description |
 |--------|--------------|
@@ -530,7 +535,7 @@ static const MetricBuilder<uint64_t> &ipc()
 
 ---
 
-### 🧩 Aggregated & Composite Metrics
+### Aggregated & Composite Metrics
 
 | Metric | Description |
 |--------|--------------|
@@ -552,64 +557,4 @@ static const MetricBuilder<uint64_t> &ipc()
 | **all_metrics** | Full OptKit metric set (all categories). |
 
 ---
-
-
-## Directory Structure
-
-Project structure and explanations are given below.
-
-```text
-.
-├── docs
-├── examples
-├── lib
-│   ├── googletest  
-│   ├── libpfm4 
-│   └── spdlog 
-├── src
-│   ├── bindings
-│   │   ├── c
-│   │   └── python
-│   ├── core
-│   │   ├── disk
-│   │   ├── energy
-│   │   │   ├── cpu
-│   │   │   └── gpu
-│   │   ├── frequency
-│   │   │   ├── cpu
-│   │   │   └── gpu
-│   │   ├── metrics
-│   │   │   ├── cpu
-│   │   │   ├── disk
-│   │   │   ├── gpu
-│   │   │   └── temperature
-│   │   ├── pmu
-│   │   │   ├── cpu
-│   │   │   └── gpu
-│   │   └── temperature
-│   │       ├── gpu
-│   │       └── hwmon
-│   └── utils
-│       ├── deployment
-│       ├── logging
-│       └── optimizations
-├── test
-│   ├── common
-│   ├── core
-│   │   ├── energy
-│   │   │   ├── cpu
-│   │   │   └── gpu
-│   │   ├── frequency
-│   │   │   ├── cpu
-│   │   │   └── gpu
-│   │   ├── metrics
-│   │   │   ├── cpu
-│   │   │   ├── disk
-│   │   │   └── gpu
-│   │   └── pmu
-│   │       ├── cpu
-│   │       └── gpu
-│   └── utils
-└── tools
-    ├── optkit-cli
-    └── optkit-setenv
+</details>
