@@ -8,6 +8,22 @@ namespace optkit::frequency::cpu
     // e.g. {0: [0, 1, 2, 3], 1: [8, 9, 10, 11]} means socket 0 has cores 0-3 and socket 1 has cores 4-7
     static const std::map<int32_t, std::vector<int32_t>> &package_info = optkit::Query::detect_cpu_packages();
 
+#ifndef MSR_UNCORE_RATIO_LIMIT_max_mask
+#define MSR_UNCORE_RATIO_LIMIT_max_mask 0x7F
+#endif
+#ifndef MSR_UNCORE_RATIO_LIMIT_min_mask
+#define MSR_UNCORE_RATIO_LIMIT_min_mask 0x7F00
+#endif
+#ifndef MSR_UNCORE_RATIO_LIMIT_min_shif
+#define MSR_UNCORE_RATIO_LIMIT_min_shift 8
+#endif
+#ifndef MSR_UNCORE_CURRENT_RATIO_mask
+#define MSR_UNCORE_CURRENT_RATIO_mask 0x7F
+#endif
+#ifndef MSR_UNCORE_RATIO_LIMIT
+#define MSR_UNCORE_RATIO_LIMIT 0x620
+#endif
+
 #define TRAVERSE_CORES(socket)                           \
     if (package_info.find(socket) == package_info.end()) \
     {                                                    \
@@ -265,4 +281,9 @@ namespace optkit::frequency::cpu
     }
 
 #undef TRAVERSE_CORES
+#undef MSR_UNCORE_RATIO_LIMIT_max_mask
+#undef MSR_UNCORE_RATIO_LIMIT_min_mask
+#undef MSR_UNCORE_RATIO_LIMIT_min_shift
+#undef MSR_UNCORE_CURRENT_RATIO_mask
+#undef MSR_UNCORE_RATIO_LIMIT
 }

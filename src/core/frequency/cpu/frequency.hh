@@ -42,24 +42,6 @@ namespace optkit::frequency::cpu
      * @note Most operations require elevated privileges (e.g., root) to access sysfs or MSR interfaces.
      */
 
-#ifndef MSR_UNCORE_RATIO_LIMIT_max_mask
-#define MSR_UNCORE_RATIO_LIMIT_max_mask 0x7F
-#endif
-#ifndef MSR_UNCORE_RATIO_LIMIT_min_mask
-#define MSR_UNCORE_RATIO_LIMIT_min_mask 0x7F00
-#endif
-#ifndef MSR_UNCORE_RATIO_LIMIT_min_shif
-#define MSR_UNCORE_RATIO_LIMIT_min_shift 8
-#endif
-#ifndef MSR_UNCORE_CURRENT_RATIO_mask
-#define MSR_UNCORE_CURRENT_RATIO_mask 0x7F
-#endif
-#ifndef U_MSR_PMON_FIXED_CTL_shift
-#define U_MSR_PMON_FIXED_CTL_shift 22
-#endif
-#ifndef MSR_UNCORE_RATIO_LIMIT
-#define MSR_UNCORE_RATIO_LIMIT 0x620
-#endif
     class Frequency final
     {
     public:
