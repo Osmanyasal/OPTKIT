@@ -112,5 +112,11 @@ uninstall:
 	@echo "Removing $(TARGET) from /usr/local/bin/"
 	sudo rm -f /usr/local/bin/$(TARGET)
 
+# Do not keep intermediate object files after a successful build
+.INTERMEDIATE: $(OBJECTS)
+
+# If a command fails, delete the target to avoid leaving partial artifacts
+.DELETE_ON_ERROR:
+
 # Phony targets
 .PHONY: all run clean rebuild check-lib env-info gpu-info install uninstall

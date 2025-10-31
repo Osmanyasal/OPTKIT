@@ -75,7 +75,6 @@ void create_child_process(const CommandArgs &args)
             else
             { // child is finished!
                 IS_RUNNING = false;
-                CHILD_PID = -1;
             }
         }
         CHILD_PID = -1;
