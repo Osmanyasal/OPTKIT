@@ -105,16 +105,22 @@ void execute_stat_command(const CommandArgs &args)
     {
         std::cout << "\n[Will execute program multiple times with varying configurations]\n";
         std::cout << "Running benchmark: ";
+
+        // Get topology to determine socket configuration
+        const auto &socket_cpus = optkit::Query::detect_cpu_packages();
+
         switch (args.bench_type)
         {
         case BenchType::FREQ_SCALING:
         {
             std::cout << "Frequency Scaling Analysis (multiple executions)\n";
-            auto avail_core_freqs = optkit::frequency::cpu::Query::get_scaling_available_core_frequencies(0);
-            auto avail_uncore_freqs = optkit::frequency::cpu::Query::get_scaling_available_uncore_frequencies(0);
-            // assuming all sockets have same available frequencies
+            std::unordered_map<uint32_t, std::string> socket_curr_governor;
+            for (size_t socket = 0; socket < OPTKIT_ENV_CPU_NUM_SOCKETS; socket++)
+                socket_curr_governor[socket] = optkit::frequency::cpu::Query::get_scaling_governor(socket_cpus.at(socket)[0]);
+
+            auto avail_core_freqs = optkit::frequency::cpu::Query::get_scaling_available_core_frequencies(0);     // assuming all sockets are the same and have same available frequencies
+            auto avail_uncore_freqs = optkit::frequency::cpu::Query::get_scaling_available_uncore_frequencies(0); // assuming all sockets are the same and have same available frequencies
             for (const auto &core_freq : avail_core_freqs)
-            {
                 for (const auto &uncore_freq : avail_uncore_freqs)
                 {
                     std::cout << "\n"
@@ -136,16 +142,16 @@ void execute_stat_command(const CommandArgs &args)
                     // Small delay between runs
                     usleep(500000); // 0.5 second
                 }
-            }
 
             for (size_t socket = 0; socket < OPTKIT_ENV_CPU_NUM_SOCKETS; socket++)
             {
+                optkit::frequency::cpu::Query::set_scaling_governor(socket_curr_governor.at(socket), socket);
                 optkit::frequency::cpu::Frequency::reset_core_frequency(core_freq, socket);
                 optkit::frequency::cpu::Frequency::reset_uncore_frequency(socket);
-                // optkit::frequency::cpu::Query::set_scaling_governor("powersave", socket);
             }
             break;
         }
+
         case BenchType::CORE_SCALING:
         {
             std::cout << "Core Scaling Analysis (multiple executions)\n";
@@ -155,15 +161,12 @@ void execute_stat_command(const CommandArgs &args)
                 std::cerr << "Error: Could not determine number of processors\n";
                 return;
             }
-            // Get topology to determine socket configuration
-            const auto &socket_cpus = optkit::Query::detect_cpu_packages();
 
             std::cout << "System has " << OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS << " processors across " << socket_cpus.size() << " socket(s)\n";
             std::cout << std::string(60, '=') << "\n";
 
             // Determine which cores to use based on socket selection
             std::vector<int> cpus_to_use;
-
             if (args.socket_id == static_cast<uint32_t>(-1))
             {
                 // Use all cores from all sockets
@@ -201,7 +204,8 @@ void execute_stat_command(const CommandArgs &args)
             std::cout << std::string(60, '=') << "\n";
 
             // Execute with 1, 2, 4, 8, ... cores up to total_cores
-            for (int num_cores = 1; num_cores <= total_cores; num_cores *= 2)
+            int num_cores = 1;
+            for (; num_cores <= total_cores; num_cores *= 2)
             {
                 std::cout << "\n"
                           << std::string(60, '-') << "\n";
@@ -210,7 +214,7 @@ void execute_stat_command(const CommandArgs &args)
 
                 // Build CPU mask using selected cores
                 std::string cpu_list = std::to_string(cpus_to_use[0]);
-                for (int i = 1; i < num_cores && i < total_cores; ++i)
+                for (int i = 1; i < num_cores; ++i)
                 {
                     cpu_list += "," + std::to_string(cpus_to_use[i]);
                 }
@@ -232,6 +236,36 @@ void execute_stat_command(const CommandArgs &args)
                 // Small delay between runs
                 usleep(500000); // 0.5 second
             }
+            if (num_cores > total_cores)
+            {
+                std::cout << "\n"
+                          << std::string(60, '-') << "\n";
+                std::cout << "Running with " << total_cores << " core(s)\n";
+                std::cout << std::string(60, '-') << "\n";
+
+                // Build CPU mask using all selected CPUs
+                std::string cpu_list;
+                for (int i = 0; i < total_cores; ++i)
+                {
+                    if (!cpu_list.empty())
+                        cpu_list += ",";
+                    cpu_list += std::to_string(cpus_to_use[i]);
+                }
+
+                // Create modified args with taskset prepended
+                CommandArgs taskset_args = args;
+                taskset_args.program = "taskset";
+                taskset_args.program_args.clear();
+                taskset_args.program_args.push_back("-c");
+                taskset_args.program_args.push_back(cpu_list);
+                taskset_args.program_args.push_back(args.program);
+                taskset_args.program_args.insert(
+                    taskset_args.program_args.end(),
+                    args.program_args.begin(),
+                    args.program_args.end());
+
+                create_child_process(taskset_args);
+            }
             std::cout << "\n"
                       << std::string(60, '=') << "\n";
             std::cout << "Core scaling analysis complete\n";
@@ -239,6 +273,7 @@ void execute_stat_command(const CommandArgs &args)
         }
 
         case BenchType::AFFINITY:
+        {
             std::cout << "Affinity Analysis (multiple executions, strategy: ";
             switch (args.affinity_strategy)
             {
@@ -257,6 +292,7 @@ void execute_stat_command(const CommandArgs &args)
             }
             std::cout << ")\n";
             break;
+        }
         default:
             break;
         }
