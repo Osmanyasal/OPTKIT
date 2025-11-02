@@ -34,6 +34,8 @@ void create_child_process(const CommandArgs &args)
 {
     const std::string &program = args.program;
     const std::vector<std::string> &program_args = args.program_args;
+    auto events = args.events;
+    auto metrics = args.metrics;
 
     CHILD_PID = fork();
     if (CHILD_PID == 0)
@@ -55,6 +57,17 @@ void create_child_process(const CommandArgs &args)
         IS_RUNNING = true;
         int status;
         auto begin_time = std::chrono::high_resolution_clock::now();
+
+        optkit::metrics::MetricBuilder<uint64_t> _metric;
+        for (auto &&i : args.metrics)
+            _metric.add(optkit::metrics::performance::cpu_metrics::get_metric(i));
+
+        // _metric.add("unhalted_core_cycles", {0x0076});
+
+        optkit::pmu::cpu::perf::PerfProfilerConfig perf_config{"stat_metric_profiler"};
+        perf_config.pid = CHILD_PID;
+        optkit::pmu::cpu::perf::BlockProfiler stat_metric_profiler(perf_config, _metric);
+
         while (IS_RUNNING)
         {
             pid_t result = waitpid(CHILD_PID, &status, WNOHANG);
@@ -64,7 +77,7 @@ void create_child_process(const CommandArgs &args)
                 auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end_time - begin_time).count() / 1000.0f;
                 if (elapsed >= args.sampling_period_ms) // Sample here.
                 {
-                    std::cout << "sampling...\n";
+                    stat_metric_profiler.read_and_store();
                     begin_time = end_time;
                 }
                 // sleep 100ms to avoid busy waiting

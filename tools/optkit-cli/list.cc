@@ -10,7 +10,7 @@ void execute_list_command(const CommandArgs &args)
     }
     std::cout << "\n";
 
-    auto all_metrics = optkit::metrics::performance::cpu_metrics::all_metrics();
+    auto all_metrics = optkit::metrics::performance::cpu_metrics::get_all_metrics();
     auto pmu_ids = optkit::pmu::cpu::Query::avail_pmu_ids();
 
     switch (args.list_type)
@@ -28,7 +28,7 @@ void execute_list_command(const CommandArgs &args)
                 std::cout << "\t\t" << event << "\n";
         }
         std::cout << "\tAvailable metrics\n";
-        for (const auto &metric : all_metrics.metric_names())
+        for (const auto &metric : all_metrics)
             std::cout << "\t\t" << metric << "\n";
         break;
     case ListType::EVENTS:
@@ -43,7 +43,7 @@ void execute_list_command(const CommandArgs &args)
 
     case ListType::METRICS:
         std::cout << "\tAvailable metrics\n";
-        for (const auto &metric : all_metrics.metric_names())
+        for (const auto &metric : all_metrics)
             std::cout << "\t\t" << metric << "\n";
         break;
 

@@ -6,7 +6,7 @@
 #include "core/metrics/performance/cpu/core_metrics.hh"
 #include "core/metrics/performance/cpu/intel/event_mapper.hh"
 #include "core/metrics/performance/cpu/intel/native_events.hh"
-
+#include <vector>
 // Intel (decode width)
 #if OPTKIT_ENV_CPU_MICROARCH_P6 || OPTKIT_ENV_CPU_MICROARCH_WSM ||  \
     OPTKIT_ENV_CPU_MICROARCH_NHM || OPTKIT_ENV_CPU_MICROARCH_SNB || \
@@ -53,8 +53,224 @@ namespace optkit::metrics::performance
     class CoreMetrics<IntelMetricsImpl>
     {
     public:
+        // Return all supported metric names that can be passed to get_metric().
+        static const std::vector<std::string> &get_all_metrics()
+        {
+            static const std::vector<std::string> names = {
+                // Common metrics
+                "cpu_max_capacity_based_utilization",
+                "l1_mpki",
+                "l2_mpki",
+                "l3_mpki",
+                "l2_hit_ratio",
+                "l3_hit_ratio",
+                "branch_mispr_ratio",
+                "itlb_mpki",
+                "dtlb_mpki",
+                "tlb_mpki",
+                "ipc",
+                "ilp",
+                // removed: mlp (not implemented)
+                // removed: load_miss_latency (not implemented)
+                // removed: dram_bandwidth_gbs (not implemented)
+                "ip_call",
+                "ip_branch",
+                "ip_mem_load",
+                "ip_mem_store",
+                "ip_mispredict",
+                "ip_flop",
+                "ip_avx_any_flop",
+                "ip_arith",
+                "ip_arith_scalar_sp",
+                "ip_arith_scalar_dp",
+                "ip_arith_avx128",
+                "ip_arith_avx256",
+                "ip_arith_avx512",
+                "ip_arith_vector_any",
+                // removed: scalarp_arith_vector (not implemented)
+                "ip_swpf",
+
+                // Topdown
+                "frontend_bound",
+                "bad_speculation",
+                "retiring",
+                "backend_bound",
+                // removed: smt_contention (not implemented)
+                "frontend_bound_latency",
+                "frontend_bound_bw",
+                "bad_speculation_mispredicts",
+                "bad_speculation_pipeline_restarts",
+                "backend_bound_memory",
+                "backend_bound_cpu",
+                "retiring_fastpath",
+                "retiring_microcode",
+
+                // Aggregates
+                "topdown_l1",
+                "topdown_l2",
+                "topdown_l2_fe",
+                "topdown_l2_be",
+                "topdown_l2_retiring",
+                "topdown_l2_bad_spec",
+                //"all_topdown",
+                //"all_mpki",
+                //"all_cache_hit_ratio",
+                //"all_stlb_mpki",
+                //"all_latency_and_parallelism",
+                //"all_dram_bandwidth",
+                //"all_ip_metrics",
+                //"all_branch_metrics",
+                //"all_metrics"
+            };
+            return names;
+        }
+
+        // Fetch a metric by its method name (e.g., "l2_mpki").
+        // Returns a const reference to a static MetricBuilder.
+        static const MetricBuilder<uint64_t> &get_metric(const std::string &metric_name)
+        {
+
+            if (metric_name == "cpu_max_capacity_based_utilization")
+                return cpu_max_capacity_based_utilization();
+            if (metric_name == "l1_hit_ratio")
+                return l1_hit_ratio();
+            if (metric_name == "l2_hit_ratio")
+                return l2_hit_ratio();
+            if (metric_name == "l3_hit_ratio")
+                return l3_hit_ratio();
+            if (metric_name == "l1_mpki")
+                return l1_mpki();
+            if (metric_name == "l2_mpki")
+                return l2_mpki();
+            if (metric_name == "l3_mpki")
+                return l3_mpki();
+            if (metric_name == "branch_mispr_ratio")
+                return branch_mispr_ratio();
+            if (metric_name == "itlb_mpki")
+                return itlb_mpki();
+            if (metric_name == "dtlb_mpki")
+                return dtlb_mpki();
+            if (metric_name == "tlb_mpki")
+                return tlb_mpki();
+            if (metric_name == "ipc")
+                return ipc();
+            if (metric_name == "ilp")
+                return ilp();
+            if (metric_name == "mlp")
+                return mlp();
+            if (metric_name == "load_miss_latency")
+                return load_miss_latency();
+            if (metric_name == "dram_bandwidth_gbs")
+                return dram_bandwidth_gbs();
+            if (metric_name == "ip_call")
+                return ip_call();
+            if (metric_name == "ip_branch")
+                return ip_branch();
+            if (metric_name == "ip_mem_load")
+                return ip_mem_load();
+            if (metric_name == "ip_mem_store")
+                return ip_mem_store();
+            if (metric_name == "ip_mispredict")
+                return ip_mispredict();
+            if (metric_name == "ip_flop")
+                return ip_flop();
+            if (metric_name == "gflops")
+                return gflops();
+            if (metric_name == "ai")
+                return ai();
+            if (metric_name == "ip_avx_any_flop")
+                return ip_avx_any_flop();
+            if (metric_name == "ip_arith")
+                return ip_arith();
+            if (metric_name == "ip_arith_scalar_sp")
+                return ip_arith_scalar_sp();
+            if (metric_name == "ip_arith_scalar_dp")
+                return ip_arith_scalar_dp();
+            if (metric_name == "ip_arith_avx128")
+                return ip_arith_avx128();
+            if (metric_name == "ip_arith_avx256")
+                return ip_arith_avx256();
+            if (metric_name == "ip_arith_avx512")
+                return ip_arith_avx512();
+            if (metric_name == "scalar_arithp_vector")
+                return scalar_arithp_vector();
+            if (metric_name == "ip_arith_vector_any")
+                return ip_arith_vector_any();
+            if (metric_name == "scalarp_arith_vector")
+                return scalarp_arith_vector();
+            if (metric_name == "ip_swpf")
+                return ip_swpf();
+
+            // Topdown
+            if (metric_name == "frontend_bound")
+                return frontend_bound();
+            if (metric_name == "bad_speculation")
+                return bad_speculation();
+            if (metric_name == "retiring")
+                return retiring();
+            if (metric_name == "backend_bound")
+                return backend_bound();
+            if (metric_name == "smt_contention")
+                return smt_contention();
+
+            if (metric_name == "frontend_bound_latency")
+                return frontend_bound_latency();
+            if (metric_name == "frontend_bound_bw")
+                return frontend_bound_bw();
+            if (metric_name == "bad_speculation_mispredicts")
+                return bad_speculation_mispredicts();
+            if (metric_name == "bad_speculation_pipeline_restarts")
+                return bad_speculation_pipeline_restarts();
+            if (metric_name == "backend_bound_memory")
+                return backend_bound_memory();
+            if (metric_name == "backend_bound_cpu")
+                return backend_bound_cpu();
+            if (metric_name == "retiring_fastpath")
+                return retiring_fastpath();
+            if (metric_name == "retiring_microcode")
+                return retiring_microcode();
+
+            // Aggregates / Roofline
+            if (metric_name == "carm")
+                return carm();
+            if (metric_name == "topdown_l1")
+                return topdown_l1();
+            if (metric_name == "topdown_l2")
+                return topdown_l2();
+            if (metric_name == "topdown_l2_fe")
+                return topdown_l2_fe();
+            if (metric_name == "topdown_l2_be")
+                return topdown_l2_be();
+            if (metric_name == "topdown_l2_retiring")
+                return topdown_l2_retiring();
+            if (metric_name == "topdown_l2_bad_spec")
+                return topdown_l2_bad_spec();
+            if (metric_name == "all_topdown")
+                return all_topdown();
+            if (metric_name == "all_mpki")
+                return all_mpki();
+            if (metric_name == "all_cache_hit_ratio")
+                return all_cache_hit_ratio();
+            if (metric_name == "all_stlb_mpki")
+                return all_stlb_mpki();
+            if (metric_name == "all_latency_and_parallelism")
+                return all_latency_and_parallelism();
+            if (metric_name == "all_dram_bandwidth")
+                return all_dram_bandwidth();
+            if (metric_name == "all_ip_metrics")
+                return all_ip_metrics();
+            if (metric_name == "all_branch_metrics")
+                return all_branch_metrics();
+            if (metric_name == "all_metrics")
+                return all_metrics();
+
+            OPTKIT_CORE_WARN("Requested unknown AMD metric: {}", metric_name);
+            static const MetricBuilder<uint64_t> empty{};
+            return empty;
+        }
+
         // CPU Utilization
-        static const MetricBuilder<uint64_t> cpu_max_capacity_based_utilization()
+        static const MetricBuilder<uint64_t> &cpu_max_capacity_based_utilization()
         {
             static const MetricBuilder<uint64_t> metric = []
             {
