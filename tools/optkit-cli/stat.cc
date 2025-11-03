@@ -146,6 +146,9 @@ void execute_stat_command(const CommandArgs &args)
                         optkit::frequency::cpu::Frequency::set_uncore_frequency(uncore_freq, socket);
                 }
                 // Create modified args with frequency settings
+
+                optkit::utils::EXECUTION_FOLDER_NAME = {optkit::utils::get_date() + "__" + optkit::utils::get_time() + "__" + optkit::utils::generateGUID().substr(0, CONF_LOG_PRINT_GUID_LENGTH)};
+                optkit::utils::create_directory(optkit::utils::EXECUTION_FOLDER_NAME);
                 create_child_process(args);
 
                 // Small delay between runs
@@ -242,6 +245,8 @@ void execute_stat_command(const CommandArgs &args)
                 args.program_args.begin(),
                 args.program_args.end());
 
+            optkit::utils::EXECUTION_FOLDER_NAME = {optkit::utils::get_date() + "__" + optkit::utils::get_time() + "__" + optkit::utils::generateGUID().substr(0, CONF_LOG_PRINT_GUID_LENGTH)};
+            optkit::utils::create_directory(optkit::utils::EXECUTION_FOLDER_NAME);
             create_child_process(taskset_args);
 
             // Small delay between runs
@@ -275,6 +280,7 @@ void execute_stat_command(const CommandArgs &args)
                 args.program_args.begin(),
                 args.program_args.end());
 
+            optkit::utils::EXECUTION_FOLDER_NAME = {optkit::utils::get_date() + "__" + optkit::utils::get_time() + "__" + optkit::utils::generateGUID().substr(0, CONF_LOG_PRINT_GUID_LENGTH)};
             create_child_process(taskset_args);
         }
         std::cout << "\n"

@@ -185,22 +185,29 @@ void execute_command(const CommandArgs &args)
     switch (args.command)
     {
     case Command::TOPOLOGY:
+    {
+        OPTKIT_INIT({false});
         execute_topology_command(args);
         break;
-
+    }
     case Command::LIST:
+    {
+        OPTKIT_INIT({false});
         execute_list_command(args);
         break;
-
+    }
     case Command::STAT:
+    {
+        OPTKIT_INIT({true});
+        optkit::utils::remove_directory(optkit::utils::EXECUTION_FOLDER_NAME);
         execute_stat_command(args);
         break;
+    }
 
     case Command::HELP:
+    case Command::UNKNOWN:
         print_help();
         break;
-
-    case Command::UNKNOWN:
     default:
         std::cerr << "Error: Unknown command\n";
         print_help();
