@@ -298,6 +298,19 @@ namespace optkit::utils
         }
     }
 
+    OPT_FORCE_INLINE void remove_directory(const std::string &folderName)
+    {
+        // For Linux/Unix
+        if (rmdir(folderName.c_str()) != 0)
+        {
+            OPTKIT_CORE_ERROR("Failed to remove directory {}", folderName);
+        }
+        else
+        {
+            OPTKIT_CORE_INFO("Directory removed: {}", folderName);
+        }
+    }
+
     OPT_FORCE_INLINE std::string read_file(const std::string &location)
     {
         std::stringstream buffer;
