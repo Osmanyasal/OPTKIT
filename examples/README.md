@@ -8,9 +8,11 @@
 
 ### Compile and Execute🚀
 
-First compile OPTKIT to its static version
+First compile OPTKIT to its static version then build optkit-cli
 ```bash
-make -j$(nproc) config=release optkit_static 
+$ premake5 gmake
+$ make -j$(nproc) config=release optkit_static 
+$ cd tools/optkit-cli && make -j$(nproc) && alias optkit-cli=$(pwd)/optkit
 ```
 Then enter a problem set and execute the following
 ```bash
@@ -18,9 +20,11 @@ $ make
 $ ./<program>
 ```
 
-Each problem set includes an introduction to the problem and a baseline solution that contains a performance bottleneck. The `solution_patch` file provides an optimized version that resolves this issue. In the `main` program, both the original and patched solutions are executed, their correctness is verified, and performance metrics, execution time and speedup are measured and reported. Thus user expected to see how OPTKIT can be useful step by step.
+Each problem set begins with an introduction and a baseline implementation that intentionally includes a performance bottleneck. The accompanying `solution_patch` file offers an optimized version that eliminates this limitation. In the `main` program, both the baseline and optimized versions are executed, their correctness is validated, and performance metrics—such as execution time and speedup—are measured and reported. This allows users to observe how OPTKIT provides practical, step-by-step performance improvements.
 
-Current system where all these examples tested has the following features
+`NAS_BENCH` and `STREAM` are two standard benchmarks integrated for execution via `optkit-cli`. Other benchmarks are already instrumented and can be run directly. Each benchmark includes a **Performance Analysis Results** section in its `README.md`, where performance outcomes and evaluations are presented.
+
+The system used to test all these examples is configured with the following specifications:
 ```bash
             .-/+oossssoo+/-.               XXXXXXXXXXXXXXXX 
         `:+ssssssssssssssssss+:`           ---------------- 
