@@ -2,6 +2,56 @@
 #include <csignal>
 #include <cstdint>
 #include "utils.hh"
+// For rewriting JSON files in-place
+#include <fstream>
+
+// Injects a top-level "cores_used": <n> key into all JSON files inside `dir`.
+// Assumes files have the shape: [ { "readings": [ ... ] } ] (measurements may vary).
+// If the key already exists, it is left unchanged.
+static void inject_cores_used_into_jsons(const std::string &dir, int cores_used)
+{
+    if (cores_used <= 0)
+        return;
+
+    // Collect files in the directory
+    std::vector<std::string> files = optkit::utils::get_all_files(dir);
+    for (size_t i = 0; i < files.size(); ++i)
+    {
+        const std::string &path = files[i];
+        // Only touch .json files
+        if (path.size() < 5 || path.substr(path.size() - 5) != ".json")
+            continue;
+
+        std::string file = dir + "/" + path;
+        std::string content;
+        try
+        {
+            content = optkit::utils::read_file(file);
+        }
+        catch (...)
+        {
+            continue; // skip unreadable files
+        }
+
+        // Skip if already annotated
+        if (content.find("\"cores_used\"") != std::string::npos)
+            continue;
+
+        // Prefer inserting right before the first "duration" key inside the reading object
+        size_t durPos = content.find("\"duration\"");
+        if (durPos != std::string::npos)
+        {
+            std::string insertion = std::string("\"cores_used\": ") + std::to_string(cores_used) + ", ";
+            content.insert(durPos, insertion);
+        }
+        // Write back with truncation (overwrite)
+        std::ofstream out(file.c_str(), std::ios::out | std::ios::trunc);
+        if (!out.is_open())
+            continue;
+        out << content;
+        out.close();
+    }
+}
 
 bool IS_RUNNING = false;
 int32_t CHILD_PID = -1;
@@ -62,7 +112,7 @@ void create_child_process(const CommandArgs &args)
         for (auto &&i : args.metrics)
             _metric.add(optkit::metrics::performance::cpu_metrics::get_metric(i));
 
-        optkit::pmu::cpu::perf::PerfProfilerConfig perf_config{"stat_metric_profiler"};
+        optkit::pmu::cpu::perf::PerfProfilerConfig perf_config{"stat"};
         perf_config.pid = CHILD_PID;
         optkit::pmu::cpu::perf::BlockProfiler stat_metric_profiler(perf_config, _metric);
 
@@ -115,6 +165,7 @@ void execute_stat_command(const CommandArgs &args)
     {
     case BenchType::FREQ_SCALING:
     {
+        OPTKIT_INIT({true});
         std::cout << "\n[Will execute program multiple times with varying configurations]\n";
         std::cout << "Frequency Scaling Analysis (multiple executions)\n";
         std::unordered_map<uint32_t, std::string> socket_curr_governor;
@@ -147,13 +198,14 @@ void execute_stat_command(const CommandArgs &args)
                 }
                 // Create modified args with frequency settings
 
+                create_child_process(args);
                 optkit::utils::EXECUTION_FOLDER_NAME = {optkit::utils::get_date() + "__" + optkit::utils::get_time() + "__" + optkit::utils::generateGUID().substr(0, CONF_LOG_PRINT_GUID_LENGTH)};
                 optkit::utils::create_directory(optkit::utils::EXECUTION_FOLDER_NAME);
-                create_child_process(args);
 
                 // Small delay between runs
                 usleep(500000); // 0.5 second
             }
+        optkit::utils::remove_directory(optkit::utils::EXECUTION_FOLDER_NAME);
 
         for (size_t socket = 0; socket < OPTKIT_ENV_CPU_NUM_SOCKETS; socket++)
         {
@@ -167,6 +219,7 @@ void execute_stat_command(const CommandArgs &args)
 
     case BenchType::CORE_SCALING:
     {
+        OPTKIT_INIT({true});
         std::cout << "\n[Will execute program multiple times with varying configurations]\n";
         std::cout << "Core Scaling Analysis (multiple executions)\n";
         // Get number of processors
@@ -245,9 +298,12 @@ void execute_stat_command(const CommandArgs &args)
                 args.program_args.begin(),
                 args.program_args.end());
 
+            create_child_process(taskset_args);
+            // Annotate generated JSON files with the number of logical CPUs used
+            inject_cores_used_into_jsons(optkit::utils::EXECUTION_FOLDER_NAME, num_cores);
+
             optkit::utils::EXECUTION_FOLDER_NAME = {optkit::utils::get_date() + "__" + optkit::utils::get_time() + "__" + optkit::utils::generateGUID().substr(0, CONF_LOG_PRINT_GUID_LENGTH)};
             optkit::utils::create_directory(optkit::utils::EXECUTION_FOLDER_NAME);
-            create_child_process(taskset_args);
 
             // Small delay between runs
             usleep(500000); // 0.5 second
@@ -280,8 +336,16 @@ void execute_stat_command(const CommandArgs &args)
                 args.program_args.begin(),
                 args.program_args.end());
 
-            optkit::utils::EXECUTION_FOLDER_NAME = {optkit::utils::get_date() + "__" + optkit::utils::get_time() + "__" + optkit::utils::generateGUID().substr(0, CONF_LOG_PRINT_GUID_LENGTH)};
             create_child_process(taskset_args);
+            // Give a brief moment for files to be materialized before annotation
+            usleep(100000); // 0.1 second
+
+            // Annotate JSONs for the final run using all selected cores
+            inject_cores_used_into_jsons(optkit::utils::EXECUTION_FOLDER_NAME, total_cores);
+        }
+        else
+        {
+            optkit::utils::remove_directory(optkit::utils::EXECUTION_FOLDER_NAME);
         }
         std::cout << "\n"
                   << std::string(60, '=') << "\n";
@@ -291,6 +355,7 @@ void execute_stat_command(const CommandArgs &args)
 
     case BenchType::AFFINITY:
     {
+        OPTKIT_INIT({true});
         std::cout << "Affinity Analysis (multiple executions, strategy: ";
         switch (args.affinity_strategy)
         {
@@ -312,9 +377,12 @@ void execute_stat_command(const CommandArgs &args)
     }
 
     case BenchType::DEFAULT:
+    {
+        OPTKIT_INIT({false});
         std::cout << "\n[Will execute program once and collect metrics]\n";
         create_child_process(args);
         break;
+    }
     default:
         std::cerr << "Error: Unknown benchmark type\n";
         break;

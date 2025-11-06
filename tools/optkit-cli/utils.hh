@@ -29,10 +29,10 @@ TOPOLOGY:
     optkit topology gpu             Show GPU topology only
 
 LIST:
-    optkit list [all|cpu|gpu]           List all PMU capabilities
-    optkit list [all|cpu|gpu] pmu       List available PMU info
-    optkit list [all|cpu|gpu] events    List available PMU events
-    optkit list [all|cpu|gpu] metrics   List available metrics
+    optkit list [cpu|gpu] pmu                   List available PMU info
+    optkit list [cpu|gpu|disk|memory]           List available events + metrics
+    optkit list [cpu|gpu|disk|memory] events    List available events
+    optkit list [cpu|gpu|disk|memory] metrics   List available metrics
 
 PROFILING (stat):
     Single execution profiling - runs program once and collects metrics
@@ -53,6 +53,11 @@ BENCHMARKING (--bench):
 
     Options can be interleaved:
     optkit stat --bench freq-scaling -e cycles -m ipc -- <program>
+
+VISUALISING REPORT (--report):
+    Generate visual report from collected profiling data
+
+    optkit report -- <report_data_folder(s)>
 
 AFFINITY STRATEGIES:
     --affinity compact              Pack threads on fewer cores (cache locality)
@@ -105,6 +110,7 @@ enum class Command
     LIST,
     STAT,
     HELP,
+    REPORT,
     UNKNOWN
 };
 
@@ -112,6 +118,8 @@ enum class Target
 {
     CPU,
     GPU,
+    DISK,
+    MEMORY,
     ALL
 };
 
@@ -162,6 +170,7 @@ void execute_command(const CommandArgs &args);
 void execute_topology_command(const CommandArgs &args);
 void execute_list_command(const CommandArgs &args);
 void execute_stat_command(const CommandArgs &args);
+void execute_report_command(const CommandArgs &args);
 
 // String conversion helpers
 inline std::string to_string(Command cmd)
@@ -176,10 +185,12 @@ inline std::string to_string(Command cmd)
         return "STAT";
     case Command::HELP:
         return "HELP";
+    case Command::REPORT:
+        return "REPORT";
     case Command::UNKNOWN:
         return "UNKNOWN";
     default:
-        return "INVALID";
+        return "UNKNOWN";
     }
 }
 
@@ -191,6 +202,10 @@ inline std::string to_string(Target target)
         return "CPU";
     case Target::GPU:
         return "GPU";
+    case Target::DISK:
+        return "DISK";
+    case Target::MEMORY:
+        return "MEMORY";
     case Target::ALL:
         return "ALL";
     default:

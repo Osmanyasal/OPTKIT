@@ -9,6 +9,7 @@ Command parse_command(const std::string &cmd)
         {"topology", Command::TOPOLOGY},
         {"list", Command::LIST},
         {"stat", Command::STAT},
+        {"report", Command::REPORT},
         {"help", Command::HELP},
         {"--help", Command::HELP},
         {"-h", Command::HELP}};
@@ -34,7 +35,10 @@ Target parse_target(const std::string &target)
 {
     static const std::unordered_map<std::string, Target> target_map = {
         {"cpu", Target::CPU},
-        {"gpu", Target::GPU}};
+        {"gpu", Target::GPU},
+        {"disk", Target::DISK},
+        {"memory", Target::MEMORY},
+        {"all", Target::ALL}};
 
     auto it = target_map.find(target);
     return (it != target_map.end()) ? it->second : Target::ALL;
@@ -84,7 +88,7 @@ CommandArgs parse_arguments(int argc, char **argv)
 
     // Find program separator "--"
     auto separator_it = std::find(tokens.begin(), tokens.end(), "--");
-    size_t separator_pos = (separator_it != tokens.end()) ? std::distance(tokens.begin(), separator_it) : tokens.size();
+    size_t separator_pos = (separator_it != tokens.end()) ? std::distance(tokens.begin(), separator_it) : 0;
 
     // Extract program and its arguments
     if (separator_it != tokens.end() && separator_it + 1 != tokens.end())
@@ -98,6 +102,11 @@ CommandArgs parse_arguments(int argc, char **argv)
             args.program_args.push_back(*it);
         }
     }
+    else if (separator_it == tokens.end())
+    {
+        for (size_t i = 1; i < tokens.size(); i++)
+            args.program_args.push_back(tokens[i]);
+    }
 
     // Process command-specific arguments
     switch (args.command)
@@ -108,12 +117,17 @@ CommandArgs parse_arguments(int argc, char **argv)
         break;
 
     case Command::LIST:
-        if (tokens.size() > 1)
+        if (tokens.size() == 2)
+        {
             args.target = parse_target(tokens[1]);
-        if (tokens.size() > 2)
+            args.list_type = ListType::ALL;
+        }
+        if (tokens.size() == 3)
+        {
+            args.target = parse_target(tokens[1]);
             args.list_type = parse_list_type(tokens[2]);
+        }
         break;
-
     case Command::STAT:
         // Parse all options before the separator
         for (size_t i = 1; i < separator_pos; ++i)
@@ -198,9 +212,12 @@ void execute_command(const CommandArgs &args)
     }
     case Command::STAT:
     {
-        OPTKIT_INIT({true});
-        optkit::utils::remove_directory(optkit::utils::EXECUTION_FOLDER_NAME);
         execute_stat_command(args);
+        break;
+    }
+    case Command::REPORT:
+    {
+        execute_report_command(args);
         break;
     }
 

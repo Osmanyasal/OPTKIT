@@ -27,6 +27,57 @@ namespace optkit::metrics::disk
     class CoreMetrics
     {
     public:
+        static const std::vector<std::string> &get_all_metrics()
+        {
+            static const std::vector<std::string> names = {
+                "logical_read_per_syscall",
+                "logical_write_per_syscall",
+                "physical_read_cache_hit_rate",
+                "physical_write_cache_hit_rate",
+                "io_amplification_factor",
+                "read_amplification_factor",
+                "write_amplification_factor",
+                "logical_read_per_write",
+                "logical_io_per_syscall",
+                "disk_utilization_rate",
+                "syscall_iops",
+                "logical_iops",
+                "physical_iops"};
+            return names;
+        }
+        // Fetch a metric by its method name (e.g., "l2_mpki").
+        // Returns a const reference to a static MetricBuilder.
+        static const MetricBuilder<uint64_t> &get_metric(const std::string &metric_name)
+        {
+            if (metric_name == "logical_read_per_syscall")
+                return logical_read_per_syscall();
+            if (metric_name == "logical_write_per_syscall")
+                return logical_write_per_syscall();
+            if (metric_name == "physical_read_cache_hit_rate")
+                return physical_read_cache_hit_rate();
+            if (metric_name == "physical_write_cache_hit_rate")
+                return physical_write_cache_hit_rate();
+            if (metric_name == "io_amplification_factor")
+                return io_amplification_factor();
+            if (metric_name == "read_amplification_factor")
+                return read_amplification_factor();
+            if (metric_name == "write_amplification_factor")
+                return write_amplification_factor();
+            if (metric_name == "logical_read_per_write")
+                return logical_read_per_write();
+            if (metric_name == "logical_io_per_syscall")
+                return logical_io_per_syscall();
+            if (metric_name == "disk_utilization_rate")
+                return disk_utilization_rate();
+            if (metric_name == "syscall_iops")
+                return syscall_iops();
+            if (metric_name == "logical_iops")
+                return logical_iops();
+            if (metric_name == "physical_iops")
+                return physical_iops();
+            return {};
+        }
+
         /**
          * @brief Average bytes per read syscall.
          *
@@ -37,22 +88,26 @@ namespace optkit::metrics::disk
          */
         static optkit::metrics::MetricBuilder<uint64_t> logical_read_per_syscall()
         {
-            std::string rchar = to_string(CoreEvents::RCHAR);
-            std::string syscr = to_string(CoreEvents::SYSCR);
+            static const MetricBuilder<uint64_t> metric = []
+            {
+                std::string rchar = to_string(CoreEvents::RCHAR);
+                std::string syscr = to_string(CoreEvents::SYSCR);
 
-            return optkit::metrics::MetricBuilder<uint64_t>{}
-                .add(rchar, {0x0})
-                .add(syscr, {0x0})
-                .build("logical_read_per_syscall",
-                       [rchar, syscr](const std::unordered_map<std::string, uint64_t> &m)
-                       {
-                           uint64_t val_rchar = m.at(rchar);
-                           uint64_t val_syscr = m.at(syscr);
+                return optkit::metrics::MetricBuilder<uint64_t>{}
+                    .add(rchar, {0x0})
+                    .add(syscr, {0x0})
+                    .build("logical_read_per_syscall",
+                           [rchar, syscr](const std::unordered_map<std::string, uint64_t> &m)
+                           {
+                               uint64_t val_rchar = m.at(rchar);
+                               uint64_t val_syscr = m.at(syscr);
 
-                           if (val_syscr == 0)
-                               return std::numeric_limits<double>::quiet_NaN();
-                           return static_cast<double>(val_rchar) / val_syscr;
-                       });
+                               if (val_syscr == 0)
+                                   return std::numeric_limits<double>::quiet_NaN();
+                               return static_cast<double>(val_rchar) / val_syscr;
+                           });
+            }();
+            return metric;
         }
 
         /**
@@ -65,22 +120,26 @@ namespace optkit::metrics::disk
          */
         static optkit::metrics::MetricBuilder<uint64_t> logical_write_per_syscall()
         {
-            std::string wchar = to_string(CoreEvents::WCHAR);
-            std::string syscw = to_string(CoreEvents::SYSCW);
+            static const MetricBuilder<uint64_t> metric = []
+            {
+                std::string wchar = to_string(CoreEvents::WCHAR);
+                std::string syscw = to_string(CoreEvents::SYSCW);
 
-            return optkit::metrics::MetricBuilder<uint64_t>{}
-                .add(wchar, {0x0})
-                .add(syscw, {0x0})
-                .build("logical_write_per_syscall",
-                       [wchar, syscw](const std::unordered_map<std::string, uint64_t> &m)
-                       {
-                           uint64_t val_wchar = m.at(wchar);
-                           uint64_t val_syscw = m.at(syscw);
+                return optkit::metrics::MetricBuilder<uint64_t>{}
+                    .add(wchar, {0x0})
+                    .add(syscw, {0x0})
+                    .build("logical_write_per_syscall",
+                           [wchar, syscw](const std::unordered_map<std::string, uint64_t> &m)
+                           {
+                               uint64_t val_wchar = m.at(wchar);
+                               uint64_t val_syscw = m.at(syscw);
 
-                           if (val_syscw == 0)
-                               return std::numeric_limits<double>::quiet_NaN();
-                           return static_cast<double>(val_wchar) / val_syscw;
-                       });
+                               if (val_syscw == 0)
+                                   return std::numeric_limits<double>::quiet_NaN();
+                               return static_cast<double>(val_wchar) / val_syscw;
+                           });
+            }();
+            return metric;
         }
 
         /**
@@ -93,22 +152,26 @@ namespace optkit::metrics::disk
          */
         static optkit::metrics::MetricBuilder<uint64_t> physical_read_cache_hit_rate()
         {
-            std::string rchar = to_string(CoreEvents::RCHAR);
-            std::string read_bytes = to_string(CoreEvents::READ_BYTES);
+            static const MetricBuilder<uint64_t> metric = []
+            {
+                std::string rchar = to_string(CoreEvents::RCHAR);
+                std::string read_bytes = to_string(CoreEvents::READ_BYTES);
 
-            return optkit::metrics::MetricBuilder<uint64_t>{}
-                .add(rchar, {0x0})
-                .add(read_bytes, {0x0})
-                .build("physical_read_cache_hit_rate__%",
-                       [rchar, read_bytes](const std::unordered_map<std::string, uint64_t> &m)
-                       {
-                           uint64_t val_rchar = m.at(rchar);
-                           uint64_t val_read_bytes = m.at(read_bytes);
+                return optkit::metrics::MetricBuilder<uint64_t>{}
+                    .add(rchar, {0x0})
+                    .add(read_bytes, {0x0})
+                    .build("physical_read_cache_hit_rate__%",
+                           [rchar, read_bytes](const std::unordered_map<std::string, uint64_t> &m)
+                           {
+                               uint64_t val_rchar = m.at(rchar);
+                               uint64_t val_read_bytes = m.at(read_bytes);
 
-                           if (val_rchar == 0)
-                               return std::numeric_limits<double>::quiet_NaN();
-                           return 100 * (1.0 - static_cast<double>(val_read_bytes) / val_rchar);
-                       });
+                               if (val_rchar == 0)
+                                   return std::numeric_limits<double>::quiet_NaN();
+                               return 100 * (1.0 - static_cast<double>(val_read_bytes) / val_rchar);
+                           });
+            }();
+            return metric;
         }
 
         /**
@@ -121,20 +184,24 @@ namespace optkit::metrics::disk
          */
         static optkit::metrics::MetricBuilder<uint64_t> physical_write_cache_hit_rate()
         {
-            std::string wchar = to_string(CoreEvents::WCHAR);
-            std::string write_bytes = to_string(CoreEvents::WRITE_BYTES);
-            return optkit::metrics::MetricBuilder<uint64_t>{}
-                .add(wchar, {0x0})
-                .add(write_bytes, {0x0})
-                .build("physical_write_cache_hit_rate__%",
-                       [wchar, write_bytes](const std::unordered_map<std::string, uint64_t> &m)
-                       {
-                           uint64_t val_wchar = m.at(wchar);
-                           uint64_t val_write_bytes = m.at(write_bytes);
-                           if (val_wchar == 0)
-                               return std::numeric_limits<double>::quiet_NaN();
-                           return 100.0 * (1.0 - static_cast<double>(val_write_bytes) / val_wchar);
-                       });
+            static const MetricBuilder<uint64_t> metric = []
+            {
+                std::string wchar = to_string(CoreEvents::WCHAR);
+                std::string write_bytes = to_string(CoreEvents::WRITE_BYTES);
+                return optkit::metrics::MetricBuilder<uint64_t>{}
+                    .add(wchar, {0x0})
+                    .add(write_bytes, {0x0})
+                    .build("physical_write_cache_hit_rate__%",
+                           [wchar, write_bytes](const std::unordered_map<std::string, uint64_t> &m)
+                           {
+                               uint64_t val_wchar = m.at(wchar);
+                               uint64_t val_write_bytes = m.at(write_bytes);
+                               if (val_wchar == 0)
+                                   return std::numeric_limits<double>::quiet_NaN();
+                               return 100.0 * (1.0 - static_cast<double>(val_write_bytes) / val_wchar);
+                           });
+            }();
+            return metric;
         }
 
         /**
@@ -148,31 +215,35 @@ namespace optkit::metrics::disk
          */
         static optkit::metrics::MetricBuilder<uint64_t> io_amplification_factor()
         {
-            std::string rchar = to_string(CoreEvents::RCHAR);
-            std::string wchar = to_string(CoreEvents::WCHAR);
-            std::string read_bytes = to_string(CoreEvents::READ_BYTES);
-            std::string write_bytes = to_string(CoreEvents::WRITE_BYTES);
+            static const MetricBuilder<uint64_t> metric = []
+            {
+                std::string rchar = to_string(CoreEvents::RCHAR);
+                std::string wchar = to_string(CoreEvents::WCHAR);
+                std::string read_bytes = to_string(CoreEvents::READ_BYTES);
+                std::string write_bytes = to_string(CoreEvents::WRITE_BYTES);
 
-            return optkit::metrics::MetricBuilder<uint64_t>{}
-                .add(rchar, {0x0})
-                .add(wchar, {0x0})
-                .add(read_bytes, {0x0})
-                .add(write_bytes, {0x0})
-                .build("io_amplification_factor",
-                       [rchar, wchar, read_bytes, write_bytes](const std::unordered_map<std::string, uint64_t> &m)
-                       {
-                           uint64_t val_rchar = m.at(rchar);
-                           uint64_t val_wchar = m.at(wchar);
-                           uint64_t val_read_bytes = m.at(read_bytes);
-                           uint64_t val_write_bytes = m.at(write_bytes);
+                return optkit::metrics::MetricBuilder<uint64_t>{}
+                    .add(rchar, {0x0})
+                    .add(wchar, {0x0})
+                    .add(read_bytes, {0x0})
+                    .add(write_bytes, {0x0})
+                    .build("io_amplification_factor",
+                           [rchar, wchar, read_bytes, write_bytes](const std::unordered_map<std::string, uint64_t> &m)
+                           {
+                               uint64_t val_rchar = m.at(rchar);
+                               uint64_t val_wchar = m.at(wchar);
+                               uint64_t val_read_bytes = m.at(read_bytes);
+                               uint64_t val_write_bytes = m.at(write_bytes);
 
-                           uint64_t total_logical = val_rchar + val_wchar;
-                           uint64_t total_physical = val_read_bytes + val_write_bytes;
+                               uint64_t total_logical = val_rchar + val_wchar;
+                               uint64_t total_physical = val_read_bytes + val_write_bytes;
 
-                           if (total_logical == 0)
-                               return std::numeric_limits<double>::quiet_NaN();
-                           return static_cast<double>(total_physical) / total_logical;
-                       });
+                               if (total_logical == 0)
+                                   return std::numeric_limits<double>::quiet_NaN();
+                               return static_cast<double>(total_physical) / total_logical;
+                           });
+            }();
+            return metric;
         }
 
         /**
@@ -184,24 +255,29 @@ namespace optkit::metrics::disk
          * Values < 1.0 indicate caching effectiveness (most reads served from cache).
          * Values near 0 mean almost all reads are cached.
          */
-        static optkit::metrics::MetricBuilder<uint64_t> read_amplification_factor()
+        static optkit::metrics::MetricBuilder<uint64_t>
+        read_amplification_factor()
         {
-            std::string rchar = to_string(CoreEvents::RCHAR);
-            std::string read_bytes = to_string(CoreEvents::READ_BYTES);
+            static const MetricBuilder<uint64_t> metric = []
+            {
+                std::string rchar = to_string(CoreEvents::RCHAR);
+                std::string read_bytes = to_string(CoreEvents::READ_BYTES);
 
-            return optkit::metrics::MetricBuilder<uint64_t>{}
-                .add(rchar, {0x0})
-                .add(read_bytes, {0x0})
-                .build("read_amplification_factor",
-                       [rchar, read_bytes](const std::unordered_map<std::string, uint64_t> &m)
-                       {
-                           uint64_t val_rchar = m.at(rchar);
-                           uint64_t val_read_bytes = m.at(read_bytes);
+                return optkit::metrics::MetricBuilder<uint64_t>{}
+                    .add(rchar, {0x0})
+                    .add(read_bytes, {0x0})
+                    .build("read_amplification_factor",
+                           [rchar, read_bytes](const std::unordered_map<std::string, uint64_t> &m)
+                           {
+                               uint64_t val_rchar = m.at(rchar);
+                               uint64_t val_read_bytes = m.at(read_bytes);
 
-                           if (val_rchar == 0)
-                               return std::numeric_limits<double>::quiet_NaN();
-                           return static_cast<double>(val_read_bytes) / val_rchar;
-                       });
+                               if (val_rchar == 0)
+                                   return std::numeric_limits<double>::quiet_NaN();
+                               return static_cast<double>(val_read_bytes) / val_rchar;
+                           });
+            }();
+            return metric;
         }
 
         /**
@@ -213,24 +289,29 @@ namespace optkit::metrics::disk
          * Values close to 1.0 indicate little amplification.
          * Values < 1.0 suggest write buffering or caching.
          */
-        static optkit::metrics::MetricBuilder<uint64_t> write_amplification_factor()
+        static optkit::metrics::MetricBuilder<uint64_t>
+        write_amplification_factor()
         {
-            std::string wchar = to_string(CoreEvents::WCHAR);
-            std::string write_bytes = to_string(CoreEvents::WRITE_BYTES);
+            static const MetricBuilder<uint64_t> metric = []
+            {
+                std::string wchar = to_string(CoreEvents::WCHAR);
+                std::string write_bytes = to_string(CoreEvents::WRITE_BYTES);
 
-            return optkit::metrics::MetricBuilder<uint64_t>{}
-                .add(wchar, {0x0})
-                .add(write_bytes, {0x0})
-                .build("write_amplification_factor",
-                       [wchar, write_bytes](const std::unordered_map<std::string, uint64_t> &m)
-                       {
-                           uint64_t val_wchar = m.at(wchar);
-                           uint64_t val_write_bytes = m.at(write_bytes);
+                return optkit::metrics::MetricBuilder<uint64_t>{}
+                    .add(wchar, {0x0})
+                    .add(write_bytes, {0x0})
+                    .build("write_amplification_factor",
+                           [wchar, write_bytes](const std::unordered_map<std::string, uint64_t> &m)
+                           {
+                               uint64_t val_wchar = m.at(wchar);
+                               uint64_t val_write_bytes = m.at(write_bytes);
 
-                           if (val_wchar == 0)
-                               return std::numeric_limits<double>::quiet_NaN();
-                           return static_cast<double>(val_write_bytes) / val_wchar;
-                       });
+                               if (val_wchar == 0)
+                                   return std::numeric_limits<double>::quiet_NaN();
+                               return static_cast<double>(val_write_bytes) / val_wchar;
+                           });
+            }();
+            return metric;
         }
 
         /**
@@ -242,27 +323,32 @@ namespace optkit::metrics::disk
          * < 1.0 = Write-heavy workload
          * Helps characterize workload patterns
          */
-        static optkit::metrics::MetricBuilder<uint64_t> logical_read_per_write()
+        static optkit::metrics::MetricBuilder<uint64_t>
+        logical_read_per_write()
         {
-            std::string rchar = to_string(CoreEvents::RCHAR);
-            std::string wchar = to_string(CoreEvents::WCHAR);
+            static const MetricBuilder<uint64_t> metric = []
+            {
+                std::string rchar = to_string(CoreEvents::RCHAR);
+                std::string wchar = to_string(CoreEvents::WCHAR);
 
-            return optkit::metrics::MetricBuilder<uint64_t>{}
-                .add(rchar, {0x0})
-                .add(wchar, {0x0})
-                .build("logical_read_per_write",
-                       [rchar, wchar](const std::unordered_map<std::string, uint64_t> &m)
-                       {
-                           uint64_t val_rchar = m.at(rchar);
-                           uint64_t val_wchar = m.at(wchar);
-
-                           if (val_wchar == 0)
+                return optkit::metrics::MetricBuilder<uint64_t>{}
+                    .add(rchar, {0x0})
+                    .add(wchar, {0x0})
+                    .build("logical_read_per_write",
+                           [rchar, wchar](const std::unordered_map<std::string, uint64_t> &m)
                            {
-                               return val_rchar > 0 ? std::numeric_limits<double>::infinity()
-                                                    : std::numeric_limits<double>::quiet_NaN();
-                           }
-                           return static_cast<double>(val_rchar) / val_wchar;
-                       });
+                               uint64_t val_rchar = m.at(rchar);
+                               uint64_t val_wchar = m.at(wchar);
+
+                               if (val_wchar == 0)
+                               {
+                                   return val_rchar > 0 ? std::numeric_limits<double>::infinity()
+                                                        : std::numeric_limits<double>::quiet_NaN();
+                               }
+                               return static_cast<double>(val_rchar) / val_wchar;
+                           });
+            }();
+            return metric;
         }
 
         /**
@@ -274,33 +360,38 @@ namespace optkit::metrics::disk
          * Values < 1KB suggest very inefficient syscall patterns.
          * Values > 64KB suggest good I/O batching.
          */
-        static optkit::metrics::MetricBuilder<uint64_t> logical_io_per_syscall()
+        static optkit::metrics::MetricBuilder<uint64_t>
+        logical_io_per_syscall()
         {
-            std::string rchar = to_string(CoreEvents::RCHAR);
-            std::string wchar = to_string(CoreEvents::WCHAR);
-            std::string syscr = to_string(CoreEvents::SYSCR);
-            std::string syscw = to_string(CoreEvents::SYSCW);
+            static const MetricBuilder<uint64_t> metric = []
+            {
+                std::string rchar = to_string(CoreEvents::RCHAR);
+                std::string wchar = to_string(CoreEvents::WCHAR);
+                std::string syscr = to_string(CoreEvents::SYSCR);
+                std::string syscw = to_string(CoreEvents::SYSCW);
 
-            return optkit::metrics::MetricBuilder<uint64_t>{}
-                .add(rchar, {0x0})
-                .add(wchar, {0x0})
-                .add(syscr, {0x0})
-                .add(syscw, {0x0})
-                .build("logical_io_per_syscall",
-                       [rchar, wchar, syscr, syscw](const std::unordered_map<std::string, uint64_t> &m)
-                       {
-                           uint64_t val_rchar = m.at(rchar);
-                           uint64_t val_wchar = m.at(wchar);
-                           uint64_t val_syscr = m.at(syscr);
-                           uint64_t val_syscw = m.at(syscw);
+                return optkit::metrics::MetricBuilder<uint64_t>{}
+                    .add(rchar, {0x0})
+                    .add(wchar, {0x0})
+                    .add(syscr, {0x0})
+                    .add(syscw, {0x0})
+                    .build("logical_io_per_syscall",
+                           [rchar, wchar, syscr, syscw](const std::unordered_map<std::string, uint64_t> &m)
+                           {
+                               uint64_t val_rchar = m.at(rchar);
+                               uint64_t val_wchar = m.at(wchar);
+                               uint64_t val_syscr = m.at(syscr);
+                               uint64_t val_syscw = m.at(syscw);
 
-                           uint64_t total_bytes = val_rchar + val_wchar;
-                           uint64_t total_syscalls = val_syscr + val_syscw;
+                               uint64_t total_bytes = val_rchar + val_wchar;
+                               uint64_t total_syscalls = val_syscr + val_syscw;
 
-                           if (total_syscalls == 0)
-                               return std::numeric_limits<double>::quiet_NaN();
-                           return static_cast<double>(total_bytes) / total_syscalls;
-                       });
+                               if (total_syscalls == 0)
+                                   return std::numeric_limits<double>::quiet_NaN();
+                               return static_cast<double>(total_bytes) / total_syscalls;
+                           });
+            }();
+            return metric;
         }
 
         /**
@@ -312,33 +403,38 @@ namespace optkit::metrics::disk
          * Lower values indicate better caching.
          * Values near 100% suggest poor cache utilization or sync I/O.
          */
-        static optkit::metrics::MetricBuilder<uint64_t> disk_utilization_rate()
+        static optkit::metrics::MetricBuilder<uint64_t>
+        disk_utilization_rate()
         {
-            std::string rchar = to_string(CoreEvents::RCHAR);
-            std::string wchar = to_string(CoreEvents::WCHAR);
-            std::string read_bytes = to_string(CoreEvents::READ_BYTES);
-            std::string write_bytes = to_string(CoreEvents::WRITE_BYTES);
+            static const MetricBuilder<uint64_t> metric = []
+            {
+                std::string rchar = to_string(CoreEvents::RCHAR);
+                std::string wchar = to_string(CoreEvents::WCHAR);
+                std::string read_bytes = to_string(CoreEvents::READ_BYTES);
+                std::string write_bytes = to_string(CoreEvents::WRITE_BYTES);
 
-            return optkit::metrics::MetricBuilder<uint64_t>{}
-                .add(rchar, {0x0})
-                .add(wchar, {0x0})
-                .add(read_bytes, {0x0})
-                .add(write_bytes, {0x0})
-                .build("disk_utilization_rate__%",
-                       [rchar, wchar, read_bytes, write_bytes](const std::unordered_map<std::string, uint64_t> &m)
-                       {
-                           uint64_t val_rchar = m.at(rchar);
-                           uint64_t val_wchar = m.at(wchar);
-                           uint64_t val_read_bytes = m.at(read_bytes);
-                           uint64_t val_write_bytes = m.at(write_bytes);
+                return optkit::metrics::MetricBuilder<uint64_t>{}
+                    .add(rchar, {0x0})
+                    .add(wchar, {0x0})
+                    .add(read_bytes, {0x0})
+                    .add(write_bytes, {0x0})
+                    .build("disk_utilization_rate__%",
+                           [rchar, wchar, read_bytes, write_bytes](const std::unordered_map<std::string, uint64_t> &m)
+                           {
+                               uint64_t val_rchar = m.at(rchar);
+                               uint64_t val_wchar = m.at(wchar);
+                               uint64_t val_read_bytes = m.at(read_bytes);
+                               uint64_t val_write_bytes = m.at(write_bytes);
 
-                           uint64_t total_logical = val_rchar + val_wchar;
-                           uint64_t total_physical = val_read_bytes + val_write_bytes;
+                               uint64_t total_logical = val_rchar + val_wchar;
+                               uint64_t total_physical = val_read_bytes + val_write_bytes;
 
-                           if (total_logical == 0)
-                               return std::numeric_limits<double>::quiet_NaN();
-                           return 100.0 * (static_cast<double>(total_physical) / total_logical);
-                       });
+                               if (total_logical == 0)
+                                   return std::numeric_limits<double>::quiet_NaN();
+                               return 100.0 * (static_cast<double>(total_physical) / total_logical);
+                           });
+            }();
+            return metric;
         }
 
         /**
@@ -346,26 +442,31 @@ namespace optkit::metrics::disk
          *
          * @return optkit::metrics::MetricBuilder<uint64_t>
          */
-        static optkit::metrics::MetricBuilder<uint64_t> syscall_iops()
+        static optkit::metrics::MetricBuilder<uint64_t>
+        syscall_iops()
         {
-            std::string syscr = to_string(CoreEvents::SYSCR);
-            std::string syscw = to_string(CoreEvents::SYSCW);
-            return optkit::metrics::MetricBuilder<uint64_t>{}
-                .add(syscr, {0x0})
-                .add(syscw, {0x0})
-                .build("syscall_iops",
-                       [syscr, syscw](const std::unordered_map<std::string, uint64_t> &m)
-                       {
-                           uint64_t val_syscr = m.at(syscr);
-                           uint64_t val_syscw = m.at(syscw);
+            static const MetricBuilder<uint64_t> metric = []
+            {
+                std::string syscr = to_string(CoreEvents::SYSCR);
+                std::string syscw = to_string(CoreEvents::SYSCW);
+                return optkit::metrics::MetricBuilder<uint64_t>{}
+                    .add(syscr, {0x0})
+                    .add(syscw, {0x0})
+                    .build("syscall_iops",
+                           [syscr, syscw](const std::unordered_map<std::string, uint64_t> &m)
+                           {
+                               uint64_t val_syscr = m.at(syscr);
+                               uint64_t val_syscw = m.at(syscw);
 
-                           uint64_t total_logical = val_syscr + val_syscw;
-                           double duration_sec = get_event_count(m, "duration_microsec") / 1.0e6;
+                               uint64_t total_logical = val_syscr + val_syscw;
+                               double duration_sec = get_event_count(m, "duration_microsec") / 1.0e6;
 
-                           if (duration_sec == 0)
-                               return std::numeric_limits<double>::quiet_NaN();
-                           return static_cast<double>(total_logical) / duration_sec;
-                       });
+                               if (duration_sec == 0)
+                                   return std::numeric_limits<double>::quiet_NaN();
+                               return static_cast<double>(total_logical) / duration_sec;
+                           });
+            }();
+            return metric;
         }
         /**
          * @brief Logical IOPS (application-visible I/O requests per second)
@@ -373,26 +474,31 @@ namespace optkit::metrics::disk
          * Computed from logical bytes transferred (RCHAR + WCHAR) divided
          * by a default block size (4KB) per duration.
          */
-        static optkit::metrics::MetricBuilder<uint64_t> logical_iops(uint64_t block_size = 4096)
+        static optkit::metrics::MetricBuilder<uint64_t>
+        logical_iops(uint64_t block_size = 4096)
         {
-            std::string rchar = to_string(CoreEvents::RCHAR);
-            std::string wchar = to_string(CoreEvents::WCHAR);
-            return optkit::metrics::MetricBuilder<uint64_t>{}
-                .add(rchar, {0x0})
-                .add(wchar, {0x0})
-                .build("logical_iops",
-                       [rchar, wchar, block_size](const std::unordered_map<std::string, uint64_t> &m)
-                       {
-                           uint64_t val_rchar = m.at(rchar);
-                           uint64_t val_wchar = m.at(wchar);
+            static const MetricBuilder<uint64_t> metric = [block_size]
+            {
+                std::string rchar = to_string(CoreEvents::RCHAR);
+                std::string wchar = to_string(CoreEvents::WCHAR);
+                return optkit::metrics::MetricBuilder<uint64_t>{}
+                    .add(rchar, {0x0})
+                    .add(wchar, {0x0})
+                    .build("logical_iops",
+                           [rchar, wchar, block_size](const std::unordered_map<std::string, uint64_t> &m)
+                           {
+                               uint64_t val_rchar = m.at(rchar);
+                               uint64_t val_wchar = m.at(wchar);
 
-                           uint64_t logical_ops = (val_rchar + val_wchar) / block_size;
-                           double duration_sec = get_event_count(m, "duration_microsec") / 1.0e6;
+                               uint64_t logical_ops = (val_rchar + val_wchar) / block_size;
+                               double duration_sec = get_event_count(m, "duration_microsec") / 1.0e6;
 
-                           if (duration_sec == 0)
-                               return std::numeric_limits<double>::quiet_NaN();
-                           return static_cast<double>(logical_ops) / duration_sec;
-                       });
+                               if (duration_sec == 0)
+                                   return std::numeric_limits<double>::quiet_NaN();
+                               return static_cast<double>(logical_ops) / duration_sec;
+                           });
+            }();
+            return metric;
         }
 
         /**
@@ -401,26 +507,31 @@ namespace optkit::metrics::disk
          * Computed from physical bytes transferred (READ_BYTES + WRITE_BYTES)
          * divided by a default block size (4KB) per duration.
          */
-        static optkit::metrics::MetricBuilder<uint64_t> physical_iops(uint64_t block_size = 4096)
+        static optkit::metrics::MetricBuilder<uint64_t>
+        physical_iops(uint64_t block_size = 4096)
         {
-            std::string read_bytes = to_string(CoreEvents::READ_BYTES);
-            std::string write_bytes = to_string(CoreEvents::WRITE_BYTES);
-            return optkit::metrics::MetricBuilder<uint64_t>{}
-                .add(read_bytes, {0x0})
-                .add(write_bytes, {0x0})
-                .build("physical_iops",
-                       [read_bytes, write_bytes, block_size](const std::unordered_map<std::string, uint64_t> &m)
-                       {
-                           uint64_t val_read = m.at(read_bytes);
-                           uint64_t val_write = m.at(write_bytes);
+            static const MetricBuilder<uint64_t> metric = [block_size]
+            {
+                std::string read_bytes = to_string(CoreEvents::READ_BYTES);
+                std::string write_bytes = to_string(CoreEvents::WRITE_BYTES);
+                return optkit::metrics::MetricBuilder<uint64_t>{}
+                    .add(read_bytes, {0x0})
+                    .add(write_bytes, {0x0})
+                    .build("physical_iops",
+                           [read_bytes, write_bytes, block_size](const std::unordered_map<std::string, uint64_t> &m)
+                           {
+                               uint64_t val_read = m.at(read_bytes);
+                               uint64_t val_write = m.at(write_bytes);
 
-                           uint64_t physical_ops = (val_read + val_write) / block_size;
-                           double duration_sec = get_event_count(m, "duration_microsec") / 1.0e6;
+                               uint64_t physical_ops = (val_read + val_write) / block_size;
+                               double duration_sec = get_event_count(m, "duration_microsec") / 1.0e6;
 
-                           if (duration_sec == 0)
-                               return std::numeric_limits<double>::quiet_NaN();
-                           return static_cast<double>(physical_ops) / duration_sec;
-                       });
+                               if (duration_sec == 0)
+                                   return std::numeric_limits<double>::quiet_NaN();
+                               return static_cast<double>(physical_ops) / duration_sec;
+                           });
+            }();
+            return metric;
         }
 
         static optkit::metrics::MetricBuilder<uint64_t> all_metrics()

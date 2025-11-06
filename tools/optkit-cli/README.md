@@ -22,10 +22,10 @@ TOPOLOGY:
     optkit topology gpu             Show GPU topology only
 
 LIST:
-    optkit list [all|cpu|gpu]           List all PMU capabilities
-    optkit list [all|cpu|gpu] pmu       List available PMU info
-    optkit list [all|cpu|gpu] events    List available PMU events
-    optkit list [all|cpu|gpu] metrics   List available metrics
+    optkit list [cpu|gpu] pmu                   List available PMU info
+    optkit list [cpu|gpu|disk|memory]           List available events + metrics
+    optkit list [cpu|gpu|disk|memory] events    List available events
+    optkit list [cpu|gpu|disk|memory] metrics   List available metrics
 
 PROFILING (stat):
     Single execution profiling - runs program once and collects metrics

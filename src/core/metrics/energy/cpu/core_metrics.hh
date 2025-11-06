@@ -34,6 +34,25 @@ namespace optkit::metrics::energy
     class CoreMetrics<CPUImpl>
     {
     public:
+        static const std::vector<std::string> &get_all_metrics()
+        {
+            static const std::vector<std::string> names = {
+                "k_edp",
+                "watt_hour",
+            };
+            return names;
+        }
+        // Fetch a metric by its method name (e.g., "l2_mpki").
+        // Returns a const reference to a static MetricBuilder.
+        static const MetricBuilder<double> &get_metric(const std::string &metric_name)
+        {
+            if (metric_name == "k_edp")
+                return k_edp();
+            if (metric_name == "watt_hour")
+                return watt_hour();
+            static const MetricBuilder<double> empty{};
+            return empty;
+        }
         static optkit::metrics::MetricBuilder<double> all_domains()
         {
             static const optkit::metrics::MetricBuilder<double> mb = []

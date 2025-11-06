@@ -1,4 +1,7 @@
 #include "utils.hh"
+#include <unordered_map>
+#include <vector>
+#include <string>
 
 void execute_list_command(const CommandArgs &args)
 {
@@ -10,8 +13,28 @@ void execute_list_command(const CommandArgs &args)
     }
     std::cout << "\n";
 
-    auto all_metrics = optkit::metrics::performance::cpu_metrics::get_all_metrics();
-    auto pmu_ids = optkit::pmu::cpu::Query::avail_pmu_ids();
+    // Collect metrics by category
+    std::unordered_map<std::string, std::vector<std::string>> metrics_by_category;
+    if (args.target == Target::ALL)
+    {
+        metrics_by_category["cpu_performance"] = optkit::metrics::performance::cpu_metrics::get_all_metrics();
+        metrics_by_category["cpu_energy"] = optkit::metrics::energy::cpu_metrics::get_all_metrics();
+        metrics_by_category["gpu_energy"] = optkit::metrics::energy::gpu_metrics::get_all_metrics();
+        metrics_by_category["disk"] = optkit::metrics::disk::core_metrics::get_all_metrics();
+    }
+    else if (args.target == Target::CPU)
+    {
+        metrics_by_category["cpu_performance"] = optkit::metrics::performance::cpu_metrics::get_all_metrics();
+        metrics_by_category["cpu_energy"] = optkit::metrics::energy::cpu_metrics::get_all_metrics();
+    }
+    else if (args.target == Target::GPU)
+    {
+        metrics_by_category["gpu_energy"] = optkit::metrics::energy::gpu_metrics::get_all_metrics();
+    }
+
+    std::vector<int32_t> pmu_ids;
+    if (args.target == Target::CPU)
+        pmu_ids = optkit::pmu::cpu::Query::avail_pmu_ids();
 
     switch (args.list_type)
     {
@@ -28,8 +51,12 @@ void execute_list_command(const CommandArgs &args)
                 std::cout << "\t\t" << event << "\n";
         }
         std::cout << "\tAvailable metrics\n";
-        for (const auto &metric : all_metrics)
-            std::cout << "\t\t" << metric << "\n";
+        for (const auto &metric : metrics_by_category)
+        {
+            std::cout << "\t" << metric.first << "\n";
+            for (auto &&i : metric.second)
+                std::cout << "\t\t" << i << "\n";
+        }
         break;
     case ListType::EVENTS:
         std::cout << "\tAvailable PMU events\n";
@@ -43,8 +70,12 @@ void execute_list_command(const CommandArgs &args)
 
     case ListType::METRICS:
         std::cout << "\tAvailable metrics\n";
-        for (const auto &metric : all_metrics)
-            std::cout << "\t\t" << metric << "\n";
+        for (const auto &metric : metrics_by_category)
+        {
+            std::cout << "\t" << metric.first << "\n";
+            for (auto &&i : metric.second)
+                std::cout << "\t\t" << i << "\n";
+        }
         break;
 
     case ListType::PMU:
