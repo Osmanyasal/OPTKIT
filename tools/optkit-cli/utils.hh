@@ -48,8 +48,7 @@ BENCHMARKING (--bench):
     Multiple execution analysis - runs program multiple times with different configurations
     
     optkit stat --bench freq-scaling -- <program>            Frequency scaling analysis
-    optkit stat --bench core-scaling -- <program>            Core scaling analysis
-    optkit stat --affinity <STRATEGY> -- <program>           Affinity analysis
+    optkit stat --bench core-scaling -- <program>            Core scaling analysis 
 
     Options can be interleaved:
     optkit stat --bench freq-scaling -e cycles -m ipc -- <program>
@@ -58,12 +57,6 @@ VISUALISING REPORT (--report):
     Generate visual report from collected profiling data
 
     optkit report -- <report_data_folder(s)>
-
-AFFINITY STRATEGIES:
-    --affinity compact              Pack threads on fewer cores (cache locality)
-    --affinity scatter              Spread threads across cores (avoid contention)
-    --affinity numa                 NUMA-aware placement (memory locality)
-    --affinity manual               Manual affinity control
 
 EXAMPLES:
     # Topology queries
@@ -87,19 +80,16 @@ EXAMPLES:
 
     # Benchmark analysis (executes multiple times)
     optkit stat --bench freq-scaling -- ./compute_heavy
-    optkit stat --bench core-scaling -- ./parallel_app
-    optkit stat --affinity scatter -- ./threaded_app
-    optkit stat --affinity numa -- ./parallel_workload
+    optkit stat --bench core-scaling -- ./parallel_app 
 
     # Interleaved options (benchmark + specific profiling)
     optkit stat --bench freq-scaling -e cycles -m ipc -- ./program --input data.txt
-    optkit stat -e cache-misses -m energy --bench core-scaling -- ./app
-    optkit stat --affinity compact -e instructions -m ipc -- ./multithreaded
+    optkit stat -e cache-misses -m energy --bench core-scaling -- ./app 
 
 NOTE:
-    - 'stat' without --bench or --affinity: Single execution, collects specified events/metrics
-    - 'stat' with --bench or --affinity: Multiple executions with varying configurations
-      (e.g., different frequencies, core counts, affinity patterns)
+    - 'stat' without --bench <...>: Single execution, collects specified events/metrics
+    - 'stat' with --bench <...>: Multiple executions with varying configurations
+      (e.g., different frequencies or core counts)
 
 )";
 }
@@ -127,16 +117,7 @@ enum class BenchType
 {
     DEFAULT,
     FREQ_SCALING,
-    CORE_SCALING,
-    AFFINITY
-};
-
-enum class AffinityStrategy
-{
-    COMPACT, // Pack threads on fewer cores (cache locality)
-    SCATTER, // Spread threads across cores (avoid contention)
-    NUMA,    // NUMA-aware placement (memory locality)
-    MANUAL   // Manual affinity control
+    CORE_SCALING
 };
 
 enum class ListType
@@ -152,7 +133,6 @@ struct CommandArgs
     Command command = Command::UNKNOWN;
     Target target = Target::ALL;
     BenchType bench_type = BenchType::DEFAULT;
-    AffinityStrategy affinity_strategy = AffinityStrategy::COMPACT;
     ListType list_type = ListType::ALL;
     std::vector<std::string> events;                // PMU events to profile (-e)
     std::vector<std::string> metrics;               // Metrics to collect (-m)
@@ -223,25 +203,6 @@ inline std::string to_string(BenchType bench)
         return "FREQ_SCALING";
     case BenchType::CORE_SCALING:
         return "CORE_SCALING";
-    case BenchType::AFFINITY:
-        return "AFFINITY";
-    default:
-        return "INVALID";
-    }
-}
-
-inline std::string to_string(AffinityStrategy affinity)
-{
-    switch (affinity)
-    {
-    case AffinityStrategy::COMPACT:
-        return "COMPACT";
-    case AffinityStrategy::SCATTER:
-        return "SCATTER";
-    case AffinityStrategy::NUMA:
-        return "NUMA";
-    case AffinityStrategy::MANUAL:
-        return "MANUAL";
     default:
         return "INVALID";
     }
@@ -271,7 +232,6 @@ inline std::string to_string(const CommandArgs &args)
     oss << "  command: " << to_string(args.command) << "\n";
     oss << "  target: " << to_string(args.target) << "\n";
     oss << "  bench_type: " << to_string(args.bench_type) << "\n";
-    oss << "  affinity_strategy: " << to_string(args.affinity_strategy) << "\n";
     oss << "  list_type: " << to_string(args.list_type) << "\n";
 
     oss << "  events: [";

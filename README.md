@@ -74,18 +74,11 @@ BENCHMARKING (--bench):
     Multiple execution analysis - runs program multiple times with different configurations
     
     optkit stat --bench freq-scaling -- <program>            Frequency scaling analysis
-    optkit stat --bench core-scaling -- <program>            Core scaling analysis
-    optkit stat --affinity <STRATEGY> -- <program>           Affinity analysis
+    optkit stat --bench core-scaling -- <program>            Core scaling analysis 
 
     Options can be interleaved:
     optkit stat --bench freq-scaling -e cycles -m ipc -- <program>
-
-AFFINITY STRATEGIES:
-    --affinity compact              Pack threads on fewer cores (cache locality)
-    --affinity scatter              Spread threads across cores (avoid contention)
-    --affinity numa                 NUMA-aware placement (memory locality)
-    --affinity manual               Manual affinity control
-
+ 
 EXAMPLES:
     # Topology queries
     optkit topology
@@ -108,19 +101,16 @@ EXAMPLES:
 
     # Benchmark analysis (executes multiple times)
     optkit stat --bench freq-scaling -- ./compute_heavy
-    optkit stat --bench core-scaling -- ./parallel_app
-    optkit stat --affinity scatter -- ./threaded_app
-    optkit stat --affinity numa -- ./parallel_workload
+    optkit stat --bench core-scaling -- ./parallel_app 
 
     # Interleaved options (benchmark + specific profiling)
     optkit stat --bench freq-scaling -e cycles -m ipc -- ./program --input data.txt
-    optkit stat -e cache-misses -m energy --bench core-scaling -- ./app
-    optkit stat --affinity compact -e instructions -m ipc -- ./multithreaded
+    optkit stat -e cache-misses -m energy --bench core-scaling -- ./app 
 
 NOTE:
-    - 'stat' without --bench or --affinity: Single execution, collects specified events/metrics
-    - 'stat' with --bench or --affinity: Multiple executions with varying configurations
-      (e.g., different frequencies, core counts, affinity patterns)
+    - 'stat' without --bench <...>: Single execution, collects specified events/metrics
+    - 'stat' with --bench <...>: Multiple executions with varying configurations
+      (e.g., different frequencies or core counts)
 
 ```
 
