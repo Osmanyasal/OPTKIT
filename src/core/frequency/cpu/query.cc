@@ -1,4 +1,5 @@
 #include "core/frequency/cpu/query.hh"
+#include <algorithm> // std::count
 
 namespace optkit::frequency::cpu
 {
@@ -35,8 +36,40 @@ namespace optkit::frequency::cpu
             int64_t min_freq = get_cpuinfo_min_freq(core);
             if (min_freq > 0 && max_freq > 0 && max_freq >= min_freq)
             {
-                for (int64_t freq = max_freq; freq >= min_freq; freq -= 200000) // step by 200MHz
+                // Fallback synthesis of available frequencies when sysfs list is missing.
+                // Units: all kernel cpufreq interfaces expose kHz.
+                constexpr int64_t STEP_KHZ = 100000;       // 100 MHz step in kHz
+                constexpr int64_t TURBO_OFFSET_KHZ = 1000; // 1 MHz tail sometimes present on turbo advertised max
+
+                std::string max_freq_str = std::to_string(max_freq);
+
+                if (std::count(max_freq_str.begin(), max_freq_str.end(), '1') > 1 &&
+                    max_freq - TURBO_OFFSET_KHZ >= min_freq)
+                    max_freq -= TURBO_OFFSET_KHZ;
+
+                // Reserve approximate number of steps to avoid reallocations.
+                if (max_freq > min_freq)
+                {
+                    auto approx_steps = (max_freq - min_freq) / STEP_KHZ + 2; // +2 for inclusive end & possible tail adjust
+                    frequencies.reserve(static_cast<size_t>(approx_steps));
+                }
+
+                for (int64_t freq = max_freq; freq >= min_freq && freq > 0; freq -= STEP_KHZ)
                     frequencies.push_back(freq);
+
+                // Ensure min frequency present (avoid duplicate if exact on last step).
+                if (!frequencies.empty() && frequencies.back() != min_freq && min_freq > 0)
+                    frequencies.push_back(min_freq);
+
+                // Defensive: if somehow empty (e.g. max == min but loop skipped), push min.
+                if (frequencies.empty())
+                {
+                    if (min_freq > 0)
+                        frequencies.push_back(min_freq);
+                    if (max_freq > 0)
+                        frequencies.push_back(max_freq);
+                }
+
                 return frequencies;
             }
         }
