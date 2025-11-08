@@ -54,7 +54,7 @@ namespace optkit::frequency::cpu
 
         // #if OPTKIT_ENV_CPU_INTEL
         static std::pair<int64_t, int64_t> get_uncore_min_max(int16_t socket);
-        static std::vector<int64_t> get_scaling_available_uncore_frequencies(int16_t socket);
+        static std::vector<int64_t> get_scaling_available_uncore_frequencies(int16_t socket, int64_t step_khz = 200000);
         static int64_t get_uncore_frequency(int16_t socket);
         static void set_uncore_frequency(int64_t frequency, int16_t socket);
         static void reset_uncore_frequency(int16_t socket);

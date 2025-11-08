@@ -234,7 +234,7 @@ namespace optkit::frequency::cpu
         return result;
     }
 
-    std::vector<int64_t> Frequency::get_scaling_available_uncore_frequencies(int16_t socket)
+    std::vector<int64_t> Frequency::get_scaling_available_uncore_frequencies(int16_t socket, int64_t step_khz)
     {
         std::vector<int64_t> frequencies;
         try
@@ -245,8 +245,7 @@ namespace optkit::frequency::cpu
             if (min_freq > 0 && max_freq > 0 && max_freq >= min_freq)
             {
                 // Units: all kernel cpufreq interfaces expose kHz.
-                constexpr int64_t STEP_KHZ = 100000;       // 100 MHz step in kHz
-                constexpr int64_t TURBO_OFFSET_KHZ = 1000; // 1 MHz tail sometimes present on turbo advertised max
+                int64_t TURBO_OFFSET_KHZ = 1000; // 1 MHz tail sometimes present on turbo advertised max
 
                 std::string max_freq_str = std::to_string(max_freq);
 
@@ -257,11 +256,11 @@ namespace optkit::frequency::cpu
                 // Reserve approximate number of steps to avoid reallocations.
                 if (max_freq > min_freq)
                 {
-                    auto approx_steps = (max_freq - min_freq) / STEP_KHZ + 2; // +2 for inclusive end & possible tail adjust
+                    auto approx_steps = (max_freq - min_freq) / step_khz + 2; // +2 for inclusive end & possible tail adjust
                     frequencies.reserve(static_cast<size_t>(approx_steps));
                 }
 
-                for (int64_t freq = max_freq; freq >= min_freq && freq > 0; freq -= STEP_KHZ)
+                for (int64_t freq = max_freq; freq >= min_freq && freq > 0; freq -= step_khz)
                     frequencies.push_back(freq);
 
                 // Ensure min frequency present (avoid duplicate if exact on last step).
@@ -302,7 +301,7 @@ namespace optkit::frequency::cpu
     std::pair<int64_t, int64_t> Frequency::get_uncore_min_max(int16_t socket) { return {}; };
     void Frequency::reset_uncore_frequency(int16_t socket) {};
     void Frequency::set_uncore_frequency(int64_t frequency, int16_t socket) {};
-    std::vector<int64_t> Frequency::get_scaling_available_uncore_frequencies(int16_t socket) { return {}; };
+    std::vector<int64_t> Frequency::get_scaling_available_uncore_frequencies(int16_t socket, int64_t step_khz) { return {}; };
 #endif
     void Frequency::reset_core_frequency(int16_t socket)
     {

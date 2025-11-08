@@ -5,24 +5,27 @@
 // For rewriting JSON files in-place
 #include <fstream>
 
-// Injects a top-level "cores_used": <n> key into all JSON files inside `dir`.
-// Assumes files have the shape: [ { "readings": [ ... ] } ] (measurements may vary).
-// If the key already exists, it is left unchanged.
-static void inject_cores_used_into_jsons(const std::string &dir, int cores_used)
+// Generic JSON key/value injector.
+// Adds a top-level key:value (string inserted verbatim) to every JSON file in `dir` unless the key already exists.
+// Anchor-based insertion (by default before first "duration") keeps ordering consistent; falls back near the start.
+static void inject_json_kv(const std::string &dir,
+                           const std::string &key,
+                           const std::string &value_literal, // Must be a JSON literal (e.g. 123, "str", true)
+                           const std::string &anchor = "\"duration\"")
 {
-    if (cores_used <= 0)
+    if (key.empty())
         return;
 
-    // Collect files in the directory
-    std::vector<std::string> files = optkit::utils::get_all_files(dir);
-    for (size_t i = 0; i < files.size(); ++i)
-    {
-        const std::string &path = files[i];
-        // Only touch .json files
-        if (path.size() < 5 || path.substr(path.size() - 5) != ".json")
-            continue;
+    const std::string key_pattern = std::string("\"") + key + "\""; // "key"
+    const std::string insertion_prefix = key_pattern + ": " + value_literal + ", ";
 
-        std::string file = dir + "/" + path;
+    std::vector<std::string> files = optkit::utils::get_all_files(dir);
+    for (const auto &path : files)
+    {
+        if (path.size() < 5 || path.substr(path.size() - 5) != ".json")
+            continue; // only JSON files
+
+        const std::string file = dir + "/" + path;
         std::string content;
         try
         {
@@ -30,26 +33,42 @@ static void inject_cores_used_into_jsons(const std::string &dir, int cores_used)
         }
         catch (...)
         {
-            continue; // skip unreadable files
+            continue; // unreadable
         }
 
-        // Skip if already annotated
-        if (content.find("\"cores_used\"") != std::string::npos)
+        if (content.find(key_pattern) != std::string::npos)
+            continue; // already annotated
+
+        bool inserted = false;
+        size_t anchor_pos = content.find(anchor);
+        if (anchor_pos != std::string::npos)
+        {
+            content.insert(anchor_pos, insertion_prefix);
+            inserted = true;
+        }
+        else
+        {
+            // Fallback: after first '[' or '{'
+            size_t pos = content.find('[');
+            if (pos == std::string::npos)
+                pos = content.find('{');
+            if (pos != std::string::npos)
+            {
+                ++pos; // after bracket/brace
+                while (pos < content.size() && std::isspace(static_cast<unsigned char>(content[pos])))
+                    ++pos;
+                content.insert(pos, insertion_prefix);
+                inserted = true;
+            }
+        }
+
+        if (!inserted)
             continue;
 
-        // Prefer inserting right before the first "duration" key inside the reading object
-        size_t durPos = content.find("\"duration\"");
-        if (durPos != std::string::npos)
-        {
-            std::string insertion = std::string("\"cores_used\": ") + std::to_string(cores_used) + ", ";
-            content.insert(durPos, insertion);
-        }
-        // Write back with truncation (overwrite)
         std::ofstream out(file.c_str(), std::ios::out | std::ios::trunc);
         if (!out.is_open())
             continue;
         out << content;
-        out.close();
     }
 }
 
@@ -108,6 +127,7 @@ void create_child_process(const CommandArgs &args)
         int status;
         auto begin_time = std::chrono::high_resolution_clock::now();
 
+        // Initialize metrics
         optkit::metrics::MetricBuilder<uint64_t> _metric;
         for (auto &&i : args.metrics)
             _metric.add(optkit::metrics::performance::cpu_metrics::get_metric(i));
@@ -116,6 +136,7 @@ void create_child_process(const CommandArgs &args)
         perf_config.pid = CHILD_PID;
         optkit::pmu::cpu::perf::BlockProfiler stat_metric_profiler(perf_config, _metric);
 
+        OPTKIT_CPU_ENERGY("stat");
         while (IS_RUNNING)
         {
             pid_t result = waitpid(CHILD_PID, &status, WNOHANG);
@@ -199,6 +220,8 @@ void execute_stat_command(const CommandArgs &args)
                 // Create modified args with frequency settings
 
                 create_child_process(args);
+                inject_json_kv(optkit::utils::EXECUTION_FOLDER_NAME, "core_frequency_khz", std::to_string(core_freq));
+                inject_json_kv(optkit::utils::EXECUTION_FOLDER_NAME, "uncore_frequency_khz", std::to_string(uncore_freq));
                 optkit::utils::EXECUTION_FOLDER_NAME = {optkit::utils::get_date() + "__" + optkit::utils::get_time() + "__" + optkit::utils::generateGUID().substr(0, CONF_LOG_PRINT_GUID_LENGTH)};
                 optkit::utils::create_directory(optkit::utils::EXECUTION_FOLDER_NAME);
 
@@ -300,7 +323,7 @@ void execute_stat_command(const CommandArgs &args)
 
             create_child_process(taskset_args);
             // Annotate generated JSON files with the number of logical CPUs used
-            inject_cores_used_into_jsons(optkit::utils::EXECUTION_FOLDER_NAME, num_cores);
+            inject_json_kv(optkit::utils::EXECUTION_FOLDER_NAME, "cores_used", std::to_string(num_cores));
 
             optkit::utils::EXECUTION_FOLDER_NAME = {optkit::utils::get_date() + "__" + optkit::utils::get_time() + "__" + optkit::utils::generateGUID().substr(0, CONF_LOG_PRINT_GUID_LENGTH)};
             optkit::utils::create_directory(optkit::utils::EXECUTION_FOLDER_NAME);
@@ -341,7 +364,7 @@ void execute_stat_command(const CommandArgs &args)
             usleep(100000); // 0.1 second
 
             // Annotate JSONs for the final run using all selected cores
-            inject_cores_used_into_jsons(optkit::utils::EXECUTION_FOLDER_NAME, total_cores);
+            inject_json_kv(optkit::utils::EXECUTION_FOLDER_NAME, "cores_used", std::to_string(num_cores));
         }
         else
         {
