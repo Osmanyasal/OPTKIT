@@ -323,10 +323,11 @@ static void generate_heatmap(const std::vector<RunData> &runs, const std::string
     gp << ytics.str();
 
     // Compute box half-dimensions (for low/high coordinates)
-    double box_half_width = (core_step_ghz > 0 ? (core_step_ghz * 0.95) / 2.0 : 0.025);
+    // Use 95% of step or minimum visible size
+    double box_half_width = (core_step_ghz > 0 ? std::max((core_step_ghz * 0.95) / 2.0, 0.045) : 0.045);
     double box_half_height = (uncores_khz.size() > 1
-                                  ? (uncore_step_ghz > 0 ? (uncore_step_ghz * 0.95) / 2.0 : 0.03)
-                                  : 0.03);
+                                  ? std::max((uncore_step_ghz > 0 ? (uncore_step_ghz * 0.95) / 2.0 : 0.09), 0.09)
+                                  : 0.09);
 
     // Set ranges
     double y_center = 0.0;
