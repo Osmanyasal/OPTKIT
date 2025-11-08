@@ -329,12 +329,19 @@ static void generate_heatmap(const std::vector<RunData> &runs, const std::string
                                   ? std::max((uncore_step_ghz > 0 ? (uncore_step_ghz * 0.95) / 2.0 : 0.09), 0.09)
                                   : 0.09);
 
-    // Set ranges
-    double y_center = 0.0;
-    if (uncores_khz.size() == 1)
-        y_center = (*uncores_khz.begin()) / 1e6;
-
-    gp << "set yrange [" << (y_center - box_half_height * 1.2) << ":" << (y_center + box_half_height * 1.2) << "]\n";
+    // Set ranges to show all data
+    if (uncores_khz.size() > 1)
+    {
+        double y_min = (*uncores_khz.begin()) / 1e6;
+        double y_max = (*uncores_khz.rbegin()) / 1e6;
+        gp << "set yrange [" << (y_min - box_half_height * 1.2) << ":" << (y_max + box_half_height * 1.2) << "]\n";
+    }
+    else
+    {
+        // Single uncore value - create narrow band
+        double y_center = (*uncores_khz.begin()) / 1e6;
+        gp << "set yrange [" << (y_center - box_half_height * 1.2) << ":" << (y_center + box_half_height * 1.2) << "]\n";
+    }
 
     // Let gnuplot autoscale color range (robust across versions)
     gp << "unset cbrange\n";
