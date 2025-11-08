@@ -352,9 +352,9 @@ static void generate_heatmap(const std::vector<RunData> &runs, const std::string
 
     // Draw colored rectangles using low/high coordinates, then overlay minimum marker
     gp << "plot '" << dat_name << "' using 1:2:($1-w):($1+w):($2-h):($2+h):3 with boxxyerrorbars palette fs solid 1.0 border lc rgb 'black' notitle, \\\n";
-    gp << "     '" << min_name << "' using 1:2 with points pt 7 ps 2.5 lc rgb 'yellow' lw 3 notitle, \\\n";
+    gp << "     '" << min_name << "' using 1:2 with points pt 7 ps 2.5 lc rgb 'white' lw 3 notitle, \\\n";
     gp << "     '" << min_name << "' using 1:2 with points pt 6 ps 2.0 lc rgb 'black' lw 2 notitle, \\\n";
-    gp << "     '" << min_name << "' using 1:2:(sprintf('MIN=%.3f', $3)) with labels offset 0,1.5 tc rgb 'yellow' font ',12' notitle\n";
+    gp << "     '" << min_name << "' using 1:2:(sprintf('MIN=%.3f', $3)) with labels offset 0,1.5 tc rgb 'white' font ',12' notitle\n";
     gp.close();
     // Execute the generated gnuplot script to produce the PNG
     std::string cmd = std::string("gnuplot ") + gp_name;
