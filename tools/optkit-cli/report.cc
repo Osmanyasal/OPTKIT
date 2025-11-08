@@ -308,6 +308,20 @@ static void generate_heatmap(const std::vector<RunData> &runs, const std::string
     xtics << ") rotate by -45\n";
     gp << xtics.str();
 
+    // Generate explicit ytics with exact frequency values
+    std::ostringstream ytics;
+    ytics << "set ytics (";
+    bool first_y = true;
+    for (auto u : uncores_khz)
+    {
+        if (!first_y)
+            ytics << ", ";
+        ytics << "'" << std::fixed << std::setprecision(3) << (u / 1e6) << "' " << (u / 1e6);
+        first_y = false;
+    }
+    ytics << ")\n";
+    gp << ytics.str();
+
     // Compute box half-dimensions (for low/high coordinates)
     double box_half_width = (core_step_ghz > 0 ? (core_step_ghz * 0.95) / 2.0 : 0.025);
     double box_half_height = (uncores_khz.size() > 1
@@ -320,7 +334,6 @@ static void generate_heatmap(const std::vector<RunData> &runs, const std::string
         y_center = (*uncores_khz.begin()) / 1e6;
 
     gp << "set yrange [" << (y_center - box_half_height * 1.2) << ":" << (y_center + box_half_height * 1.2) << "]\n";
-    gp << "set ytics (\"" << std::fixed << std::setprecision(3) << y_center << "\" " << y_center << ")\n";
 
     // Let gnuplot autoscale color range (robust across versions)
     gp << "unset cbrange\n";
