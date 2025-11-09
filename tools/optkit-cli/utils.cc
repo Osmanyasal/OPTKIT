@@ -48,22 +48,10 @@ BenchType parse_bench_type(const std::string &type)
 {
     static const std::unordered_map<std::string, BenchType> bench_map = {
         {"freq-scaling", BenchType::FREQ_SCALING},
-        {"core-scaling", BenchType::CORE_SCALING},
-        {"affinity", BenchType::AFFINITY}};
+        {"core-scaling", BenchType::CORE_SCALING}};
 
     auto it = bench_map.find(type);
     return (it != bench_map.end()) ? it->second : BenchType::DEFAULT;
-}
-
-AffinityStrategy parse_affinity_strategy(const std::string &strategy)
-{
-    static const std::unordered_map<std::string, AffinityStrategy> strategy_map = {
-        {"compact", AffinityStrategy::COMPACT},
-        {"scatter", AffinityStrategy::SCATTER},
-        {"numa", AffinityStrategy::NUMA},
-        {"manual", AffinityStrategy::MANUAL}};
-    auto it = strategy_map.find(strategy);
-    return (it != strategy_map.end()) ? it->second : AffinityStrategy::COMPACT;
 }
 
 CommandArgs parse_arguments(int argc, char **argv)
@@ -171,15 +159,6 @@ CommandArgs parse_arguments(int argc, char **argv)
                 if (i + 1 < separator_pos)
                 {
                     args.bench_type = parse_bench_type(tokens[++i]);
-                }
-            }
-            else if (token == "--affinity")
-            {
-                // Format: --affinity compact
-                if (i + 1 < separator_pos)
-                {
-                    args.affinity_strategy = parse_affinity_strategy(tokens[++i]);
-                    args.bench_type = BenchType::AFFINITY;
                 }
             }
         }

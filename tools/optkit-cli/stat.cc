@@ -376,29 +376,6 @@ void execute_stat_command(const CommandArgs &args)
         break;
     }
 
-    case BenchType::AFFINITY:
-    {
-        OPTKIT_INIT({true});
-        std::cout << "Affinity Analysis (multiple executions, strategy: ";
-        switch (args.affinity_strategy)
-        {
-        case AffinityStrategy::COMPACT:
-            std::cout << "compact";
-            break;
-        case AffinityStrategy::SCATTER:
-            std::cout << "scatter";
-            break;
-        case AffinityStrategy::NUMA:
-            std::cout << "numa";
-            break;
-        case AffinityStrategy::MANUAL:
-            std::cout << "manual";
-            break;
-        }
-        std::cout << ")\n";
-        break;
-    }
-
     case BenchType::DEFAULT:
     {
         OPTKIT_INIT({false});

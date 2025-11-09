@@ -6,8 +6,10 @@ namespace optkit::temperature::gpu
     {
         // Define array of vendors to support
         std::vector<optkit::gpu::GpuVendor> vendors;
-        vendors.push_back(optkit::gpu::GpuVendor::NVIDIA);
-        vendors.push_back(optkit::gpu::GpuVendor::AMD);
+        for (optkit::gpu::GpuVendor vendor = optkit::gpu::GpuVendor::BEGIN; vendor < optkit::gpu::GpuVendor::END; vendor = static_cast<optkit::gpu::GpuVendor>(static_cast<int>(vendor) + 1))
+        {
+            vendors.push_back(vendor);
+        }
 
         uint32_t device_index = 0;
         // Initialize temperature snapshots for all vendors and their devices

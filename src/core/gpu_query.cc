@@ -256,23 +256,9 @@ namespace optkit::gpu
 
     bool Query::is_device_exists(GpuVendor vendor)
     {
-        if (vendor == GpuVendor::NVIDIA)
-        {
-#if OPTKIT_ENV_LIB_NVML
-            uint32_t count = 0;
-            return Query::get_device_count(vendor, count) > 0;
-#endif
-            return false;
-        }
-        else if (vendor == GpuVendor::AMD)
-        {
-#if OPTKIT_ENV_LIB_AMDSMI || OPTKIT_ENV_LIB_ROCM_SMI
-            uint32_t count = 0;
-            return Query::get_device_count(vendor, count) > 0;
-#endif
-            return false;
-        }
-        return false;
+        uint32_t device_count = 0;
+        Query::get_device_count(vendor, device_count);
+        return device_count > 0;
     }
 
     bool Query::shutdown_nvml()
@@ -2092,21 +2078,14 @@ namespace optkit::gpu
         if (vendor == GpuVendor::NVIDIA && initialized[GpuVendor::NVIDIA])
         {
 #if OPTKIT_ENV_LIB_NVML
-            uint32_t count;
-            nvmlReturn_t result = nvmlDeviceGetCount(&count);
-            device_count = count;
-            if (result == NVML_SUCCESS)
-                is_ok = true;
-            else
-            {
-                OPTKIT_CORE_WARN("nvmlDeviceGetCount: {}", nvmlErrorString(result));
-            }
+            device_count = Query::gpu_handles_nvml.size();
+            is_ok = true;
 #endif
         }
         else if (vendor == GpuVendor::AMD && initialized[GpuVendor::AMD])
         {
 #if OPTKIT_ENV_LIB_AMDSMI
-            device_count = _amdsmi_populate_device_count_and_fill_handlers();
+            device_count = gpu_handles_amdsmi.size();
             is_ok = true; // AMD device enumeration succeeded
 #elif OPTKIT_ENV_LIB_ROCM_SMI
             device_count = Query::gpu_handles_rocm_smi.size();
