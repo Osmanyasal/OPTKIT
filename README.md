@@ -12,6 +12,7 @@ The library provides comprehensive monitoring capabilities for CPUs, GPUs, and I
 git clone https://github.com/Osmanyasal/OPTKIT.git
 cd ./OPTKIT
 git submodule update --force --recursive --init --remote
+cd lib/carm-roofline; python3 run.py; cd .. #(optional to build carm roofline)
 premake5 gmake
 
 ## To create libraries:

@@ -1,5 +1,6 @@
 ﻿#include "utils.hh"
-#include "utils/utils.hh" // use project utils for file IO (C++11-friendly)
+#include "utils/utils.hh"              // use project utils for file IO (C++11-friendly)
+#include "utils/environment_config.hh" // for CARM bandwidth macros
 #include <fstream>
 #include <sstream>
 #include <algorithm>
@@ -18,6 +19,8 @@ struct RunData
     long long uncore_freq_khz;             // uncore frequency in kHz (from JSON)
     double energy_pkg;                     // Joules, from measurements name: "energy_pkg"
     double kilo_edp_pkg;                   // unitless (kilo edp pkg), from measurements name: "kilo_edp_pkg"
+    double ai;                             // arithmetic intensity
+    double gflops;                         // gigaflops
     std::map<std::string, double> topdown; // metric -> %
 
     RunData() : duration_ms(0.0), cores_used(0), core_freq_khz(0), uncore_freq_khz(0), energy_pkg(0.0), kilo_edp_pkg(0.0) {}
@@ -75,6 +78,7 @@ static bool find_first_number_after(const std::string &s, size_t pos, double &ou
 
 static bool extract_scalar_by_key(const std::string &json, const std::string &key, double &out)
 {
+    out = 0.0;
     // looks for "key": <number> or "key": "number"
     std::string pat = "\"" + key + "\"";
     size_t k = json.find(pat);
@@ -137,6 +141,11 @@ static RunData parse_run(const std::string &json_path)
         rd.energy_pkg = d;
     if (extract_metric_value(content, "kilo_edp_pkg", d))
         rd.kilo_edp_pkg = d;
+
+    if (extract_scalar_by_key(content, "ai", d))
+        rd.ai = d;
+    if (extract_scalar_by_key(content, "gflops", d))
+        rd.gflops = d;
 
     rd.label = filename_stem(basename_no_dir(json_path));
 
@@ -561,6 +570,160 @@ static void generate_topdownl2_chart(const std::vector<RunData> &runs)
     system("gnuplot topdownl2_blocks.gp");
 }
 
+static void generate_carm_roofline_for_isa(const std::vector<RunData> &runs,
+                                           const std::string &isa_name,
+                                           double l1_bw, double l2_bw, double l3_bw,
+                                           double mem_bw, double compute_peak)
+{
+    std::string output_name = "carm_roofline_" + isa_name + ".png";
+    std::string gp_name = "carm_roofline_" + isa_name + ".gp";
+
+    // Calculate AI knees
+    double ai_knee_l1 = compute_peak / l1_bw;
+    double ai_knee_l2 = compute_peak / l2_bw;
+    double ai_knee_l3 = compute_peak / l3_bw;
+    double ai_knee_mem = compute_peak / mem_bw;
+
+    // Write gnuplot script
+    std::ofstream gp(gp_name.c_str());
+    if (!gp)
+    {
+        std::cerr << "Error: Cannot write " << gp_name << "\n";
+        return;
+    }
+
+    gp << "# Cache-Aware Roofline Model (CARM) - " << isa_name << "\n";
+    gp << "set terminal pngcairo size 1000,640 enhanced font 'Arial,12'\n";
+    gp << "set output '" << output_name << "'\n\n";
+
+    gp << "set title \"CARM - " << isa_name << " ISA\"\n";
+    gp << "set xlabel \"Arithmetic Intensity [FLOPs/Byte]\"\n";
+    gp << "set ylabel \"Performance [GFLOPs/s]\"\n";
+    gp << "set logscale xy\n";
+    gp << "set grid\n\n";
+
+    gp << "# Margins and layout\n";
+    gp << "set tmargin 3\n";
+    gp << "set bmargin 3\n";
+    gp << "set lmargin 8\n";
+    gp << "set rmargin 4\n";
+    gp << "set key left top spacing 1.2 box samplen 3 width 0\n";
+    gp << "set samples 400\n\n";
+
+    gp << "# Hardware parameters from CARM measurements\n";
+    gp << "compute_peak = " << compute_peak << "  # GFLOPs/s\n";
+    gp << "l1_bw = " << l1_bw << "         # GB/s\n";
+    gp << "l2_bw = " << l2_bw << "         # GB/s\n";
+    gp << "l3_bw = " << l3_bw << "         # GB/s\n";
+    gp << "mem_bw = " << mem_bw << "       # GB/s\n\n";
+
+    gp << "# Roofline functions\n";
+    gp << "roof_bw(bw, x) = (bw * x <= compute_peak) ? (bw * x) : compute_peak\n";
+    gp << "compute_line(x) = compute_peak\n\n";
+
+    gp << "# AI knees (where bandwidth roof meets compute roof)\n";
+    gp << "ai_knee_l1  = " << std::fixed << std::setprecision(6) << ai_knee_l1 << "\n";
+    gp << "ai_knee_l2  = " << ai_knee_l2 << "\n";
+    gp << "ai_knee_l3  = " << ai_knee_l3 << "\n";
+    gp << "ai_knee_mem = " << ai_knee_mem << "\n\n";
+
+    gp << "format_knee(x) = sprintf(\"AI=%.3g\", x)\n\n";
+
+    gp << "set xrange [1e-3:5e1]\n";
+    gp << "set yrange [0.1:compute_peak*6]\n\n";
+
+    gp << "# Plot rooflines and measured data\n";
+    gp << "plot \\\n";
+    gp << "    roof_bw(l1_bw, x)  w l lw 2 lc rgb \"#00BB00\" title sprintf(\"L1 (%.0f GB/s)\", l1_bw), \\\n";
+    gp << "    roof_bw(l2_bw, x)  w l lw 2 lc rgb \"#0000FF\" title sprintf(\"L2 (%.0f GB/s)\", l2_bw), \\\n";
+    gp << "    roof_bw(l3_bw, x)  w l lw 2 lc rgb \"#9900CC\" title sprintf(\"L3 (%.0f GB/s)\", l3_bw), \\\n";
+    gp << "    roof_bw(mem_bw, x) w l lw 2 lc rgb \"#FF9900\" title sprintf(\"DRAM (%.0f GB/s)\", mem_bw), \\\n";
+    gp << "    'roofline.dat' using 1:2 w p pt 7 ps 2 lw 2 lc rgb \"#FF0000\" title \"Measured\"\n\n";
+
+    gp << "# Knee markers and labels\n";
+    gp << "set arrow from ai_knee_l1, graph 0 to ai_knee_l1, compute_peak nohead dt 3 lc rgb \"#00BB00\"\n";
+    gp << "set label 1 format_knee(ai_knee_l1) at ai_knee_l1, compute_peak*0.45 center tc rgb \"#00BB00\"\n\n";
+
+    gp << "set arrow from ai_knee_l2, graph 0 to ai_knee_l2, compute_peak nohead dt 3 lc rgb \"#0000FF\"\n";
+    gp << "set label 2 format_knee(ai_knee_l2) at ai_knee_l2, compute_peak*0.6 center tc rgb \"#0000FF\"\n\n";
+
+    gp << "set arrow from ai_knee_l3, graph 0 to ai_knee_l3, compute_peak nohead dt 3 lc rgb \"#9900CC\"\n";
+    gp << "set label 3 format_knee(ai_knee_l3) at ai_knee_l3, compute_peak*0.75 center tc rgb \"#9900CC\"\n\n";
+
+    gp << "set arrow from ai_knee_mem, graph 0 to ai_knee_mem, compute_peak nohead dt 3 lc rgb \"#FF9900\"\n";
+    gp << "set label 4 format_knee(ai_knee_mem) at ai_knee_mem, compute_peak*0.25 center tc rgb \"#FF9900\"\n\n";
+
+    gp << "# Replot to apply labels\n";
+    gp << "replot\n";
+    gp.close();
+
+    std::string cmd = "gnuplot " + gp_name;
+    system(cmd.c_str());
+
+    std::cout << "  " << isa_name << ": " << output_name << " (Peak: " << compute_peak
+              << " GFlops/s, DRAM: " << mem_bw << " GB/s)\n";
+}
+
+static void generate_carm_roofline_chart(const std::vector<RunData> &runs)
+{
+    // Check if we have any AI/GFlops data
+    bool has_data = false;
+    for (size_t i = 0; i < runs.size(); ++i)
+    {
+        if (runs[i].ai > 0.0 && runs[i].gflops > 0.0)
+        {
+            has_data = true;
+            break;
+        }
+    }
+
+    if (!has_data)
+    {
+        std::cerr << "Info: No AI/GFlops data found in runs. Skipping CARM roofline chart.\n";
+        return;
+    }
+
+    // Write shared data file with measured kernels (AI vs GFlops)
+    std::ofstream dat("roofline.dat");
+    if (!dat)
+    {
+        std::cerr << "Error: Cannot write roofline.dat\n";
+        return;
+    }
+    dat << "# AI(FLOPs/Byte)\tGFlops/s\tLabel\n";
+    for (size_t i = 0; i < runs.size(); ++i)
+    {
+        if (runs[i].ai > 0.0 && runs[i].gflops > 0.0)
+        {
+            dat << runs[i].ai << "\t" << runs[i].gflops << "\t# " << runs[i].label << "\n";
+        }
+    }
+    dat.close();
+
+    std::cout << "CARM Roofline charts generated:\n";
+
+    // Generate roofline for each ISA
+    generate_carm_roofline_for_isa(runs, "AVX512",
+                                   OPTKIT_ENV_CARM_AVX512_L1_BW, OPTKIT_ENV_CARM_AVX512_L2_BW,
+                                   OPTKIT_ENV_CARM_AVX512_L3_BW, OPTKIT_ENV_CARM_AVX512_DRAM_BW,
+                                   OPTKIT_ENV_CARM_AVX512_FP_FMA_GFLOPS);
+
+    generate_carm_roofline_for_isa(runs, "AVX2",
+                                   OPTKIT_ENV_CARM_AVX2_L1_BW, OPTKIT_ENV_CARM_AVX2_L2_BW,
+                                   OPTKIT_ENV_CARM_AVX2_L3_BW, OPTKIT_ENV_CARM_AVX2_DRAM_BW,
+                                   OPTKIT_ENV_CARM_AVX2_FP_FMA_GFLOPS);
+
+    generate_carm_roofline_for_isa(runs, "SSE",
+                                   OPTKIT_ENV_CARM_SSE_L1_BW, OPTKIT_ENV_CARM_SSE_L2_BW,
+                                   OPTKIT_ENV_CARM_SSE_L3_BW, OPTKIT_ENV_CARM_SSE_DRAM_BW,
+                                   OPTKIT_ENV_CARM_SSE_FP_FMA_GFLOPS);
+
+    generate_carm_roofline_for_isa(runs, "SCALAR",
+                                   OPTKIT_ENV_CARM_SCALAR_L1_BW, OPTKIT_ENV_CARM_SCALAR_L2_BW,
+                                   OPTKIT_ENV_CARM_SCALAR_L3_BW, OPTKIT_ENV_CARM_SCALAR_DRAM_BW,
+                                   OPTKIT_ENV_CARM_SCALAR_FP_FMA_GFLOPS);
+}
+
 void execute_report_command(const CommandArgs &args)
 {
     // Collect input paths (assume args.program is the first path, followed by program_args)
@@ -594,6 +757,7 @@ void execute_report_command(const CommandArgs &args)
     generate_exec_time_chart(runs);
     generate_topdownl1_chart(runs);
     generate_topdownl2_chart(runs);
+    generate_carm_roofline_chart(runs);
 
     // Generate heatmaps for requested metrics
     generate_heatmap(runs, "duration_ms");

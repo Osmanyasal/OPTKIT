@@ -598,6 +598,78 @@ write_cpu_cache_info() {
     fi
 }
 
+write_carm_info()
+{
+    echo -e "\n// CARM Roofline Bandwidth Information" >> "$SRC_CONFIG_FILE"
+    
+    local carm_csv="./lib/carm-roofline/carm_results/roofline/unnamed_roofline.csv"
+    
+    if [ ! -f "$carm_csv" ]; then
+        echo "// CARM roofline data not available" >> "$SRC_CONFIG_FILE"
+        return
+    fi
+    
+    # Parse CSV and extract bandwidth information
+    # Skip header lines (first 2 lines) and process data lines
+    tail -n +3 "$carm_csv" | while IFS=',' read -r date isa precision threads loads stores interleaved dram_bytes fp_inst \
+        l1_gbps l1_icycle l2_gbps l2_icycle l3_gbps l3_icycle dram_gbps dram_icycle \
+        fp_gflops fp_icycle fp_fma_gflops fp_fma_icycle; do
+        
+        # Sanitize ISA name for macro (e.g., avx512 -> AVX512, avx2 -> AVX2)
+        isa_upper=$(echo "$isa" | tr '[:lower:]' '[:upper:]')
+        
+        # Create macros for each bandwidth measurement
+        # L1 bandwidth
+        if [ -n "$l1_gbps" ]; then
+            macro="OPTKIT_ENV_CARM_${isa_upper}_L1_BW"
+            # Round to integer for cleaner macros
+            l1_gbps_int=$(printf "%.0f" "$l1_gbps")
+            echo "#define $macro $l1_gbps_int // GB/s" >> "$SRC_CONFIG_FILE"
+            printf "\t%-$(($ALIGN_WIDTH - 8))s %s GB/s\n" "$macro" "$l1_gbps_int"
+        fi
+        
+        # L2 bandwidth
+        if [ -n "$l2_gbps" ]; then
+            macro="OPTKIT_ENV_CARM_${isa_upper}_L2_BW"
+            l2_gbps_int=$(printf "%.0f" "$l2_gbps")
+            echo "#define $macro $l2_gbps_int // GB/s" >> "$SRC_CONFIG_FILE"
+            printf "\t%-$(($ALIGN_WIDTH - 8))s %s GB/s\n" "$macro" "$l2_gbps_int"
+        fi
+        
+        # L3 bandwidth
+        if [ -n "$l3_gbps" ]; then
+            macro="OPTKIT_ENV_CARM_${isa_upper}_L3_BW"
+            l3_gbps_int=$(printf "%.0f" "$l3_gbps")
+            echo "#define $macro $l3_gbps_int // GB/s" >> "$SRC_CONFIG_FILE"
+            printf "\t%-$(($ALIGN_WIDTH - 8))s %s GB/s\n" "$macro" "$l3_gbps_int"
+        fi
+        
+        # DRAM bandwidth
+        if [ -n "$dram_gbps" ]; then
+            macro="OPTKIT_ENV_CARM_${isa_upper}_DRAM_BW"
+            dram_gbps_int=$(printf "%.0f" "$dram_gbps")
+            echo "#define $macro $dram_gbps_int // GB/s" >> "$SRC_CONFIG_FILE"
+            printf "\t%-$(($ALIGN_WIDTH - 8))s %s GB/s\n" "$macro" "$dram_gbps_int"
+        fi
+        
+        # FP performance (as bonus)
+        if [ -n "$fp_gflops" ]; then
+            macro="OPTKIT_ENV_CARM_${isa_upper}_FP_GFLOPS"
+            fp_gflops_int=$(printf "%.0f" "$fp_gflops")
+            echo "#define $macro $fp_gflops_int // GFlop/s" >> "$SRC_CONFIG_FILE"
+            printf "\t%-$(($ALIGN_WIDTH - 8))s %s GFlop/s\n" "$macro" "$fp_gflops_int"
+        fi
+        
+        # FP FMA performance (as bonus)
+        if [ -n "$fp_fma_gflops" ]; then
+            macro="OPTKIT_ENV_CARM_${isa_upper}_FP_FMA_GFLOPS"
+            fp_fma_gflops_int=$(printf "%.0f" "$fp_fma_gflops")
+            echo "#define $macro $fp_fma_gflops_int // GFlop/s" >> "$SRC_CONFIG_FILE"
+            printf "\t%-$(($ALIGN_WIDTH - 8))s %s GFlop/s\n" "$macro" "$fp_fma_gflops_int"
+        fi
+    done
+}
+
 main() {
     write_headers
     write_compiler_macro
@@ -606,7 +678,7 @@ main() {
     write_cpu_topology
     write_cpu_microarch
     write_cpu_cache_info
-
+    write_carm_info
     echo "[✅ generate_environment_config.sh executed]"
     # cp $SRC_CONFIG_FILE ./test/utils/    ## copy this to test directory.
 }
