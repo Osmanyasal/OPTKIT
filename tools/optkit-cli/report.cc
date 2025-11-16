@@ -16,17 +16,17 @@ struct RunData
     int cores_used;                        // parsed cores_used if present
     long long core_freq_khz;               // core frequency in kHz (from JSON)
     long long uncore_freq_khz;             // uncore frequency in kHz (from JSON)
-    double energy_pkg;                     // Joules, from measurements name: "energy-pkg"
+    double energy_pkg;                     // Joules, from measurements name: "energy_pkg"
     double kilo_edp_pkg;                   // unitless (kilo edp pkg), from measurements name: "kilo_edp_pkg"
     std::map<std::string, double> topdown; // metric -> %
 
     RunData() : duration_ms(0.0), cores_used(0), core_freq_khz(0), uncore_freq_khz(0), energy_pkg(0.0), kilo_edp_pkg(0.0) {}
 };
 
-static const char *topdownl1_keys[] = {
+static const std::vector<std::string> topdownl1_keys = {
     "frontend_bound", "bad_speculation", "Retiring", "backend_bound", "smt_contention"};
 
-static const char *topdownl2_keys[] = {
+static const std::vector<std::string> topdownl2_keys = {
     "frontend_bound_bw",
     "frontend_bound_latency",
     "backend_bound_cpu",
@@ -133,18 +133,23 @@ static RunData parse_run(const std::string &json_path)
         rd.uncore_freq_khz = static_cast<long long>(d);
 
     // parse energy and EDP metrics if present
-    if (extract_metric_value(content, "energy-pkg", d))
+    if (extract_metric_value(content, "energy_pkg", d))
         rd.energy_pkg = d;
     if (extract_metric_value(content, "kilo_edp_pkg", d))
         rd.kilo_edp_pkg = d;
 
     rd.label = filename_stem(basename_no_dir(json_path));
 
-    for (size_t i = 0; i < sizeof(topdownl1_keys) / sizeof(topdownl1_keys[0]); ++i)
+    for (size_t i = 0; i < topdownl1_keys.size(); ++i)
     {
         double v = 0.0;
         if (extract_metric_value(content, topdownl1_keys[i], v))
             rd.topdown[topdownl1_keys[i]] = v;
+    }
+
+    for (size_t i = 0; i < topdownl2_keys.size(); ++i)
+    {
+        double v = 0.0;
         if (extract_metric_value(content, topdownl2_keys[i], v))
             rd.topdown[topdownl2_keys[i]] = v;
     }
@@ -181,10 +186,12 @@ static void generate_heatmap(const std::vector<RunData> &runs, const std::string
 
     auto get_metric_value = [&](const RunData &rd) -> double
     {
-        if (metric_key == "energy-pkg")
+        if (metric_key == "energy_pkg")
             return rd.energy_pkg;
         if (metric_key == "kilo_edp_pkg")
             return rd.kilo_edp_pkg;
+        if (metric_key == "duration_ms")
+            return rd.duration_ms;
         return 0.0;
     };
 
@@ -431,7 +438,7 @@ static void generate_topdownl1_chart(const std::vector<RunData> &runs)
     bool any_topdown_present = false;
     for (size_t i = 0; i < runs.size() && !any_topdown_present; ++i)
     {
-        for (size_t k = 0; k < sizeof(topdownl1_keys) / sizeof(topdownl1_keys[0]); ++k)
+        for (size_t k = 0; k < topdownl1_keys.size(); ++k)
         {
             if (runs[i].topdown.find(topdownl1_keys[k]) != runs[i].topdown.end())
             {
@@ -456,7 +463,7 @@ static void generate_topdownl1_chart(const std::vector<RunData> &runs)
     for (size_t i = 0; i < runs.size(); ++i)
     {
         dat << runs[i].label;
-        for (size_t k = 0; k < sizeof(topdownl1_keys) / sizeof(topdownl1_keys[0]); ++k)
+        for (size_t k = 0; k < topdownl1_keys.size(); ++k)
         {
             std::map<std::string, double>::const_iterator it = runs[i].topdown.find(topdownl1_keys[k]);
             double v = (it == runs[i].topdown.end() ? 0.0 : it->second);
@@ -494,7 +501,7 @@ static void generate_topdownl2_chart(const std::vector<RunData> &runs)
     bool any_topdown_present = false;
     for (size_t i = 0; i < runs.size() && !any_topdown_present; ++i)
     {
-        for (size_t k = 0; k < sizeof(topdownl2_keys) / sizeof(topdownl2_keys[0]); ++k)
+        for (size_t k = 0; k < topdownl2_keys.size(); ++k)
         {
             if (runs[i].topdown.find(topdownl2_keys[k]) != runs[i].topdown.end())
             {
@@ -519,7 +526,7 @@ static void generate_topdownl2_chart(const std::vector<RunData> &runs)
     for (size_t i = 0; i < runs.size(); ++i)
     {
         dat << runs[i].label;
-        for (size_t k = 0; k < sizeof(topdownl2_keys) / sizeof(topdownl2_keys[0]); ++k)
+        for (size_t k = 0; k < topdownl2_keys.size(); ++k)
         {
             std::map<std::string, double>::const_iterator it = runs[i].topdown.find(topdownl2_keys[k]);
             double v = (it == runs[i].topdown.end() ? 0.0 : it->second);
@@ -589,6 +596,7 @@ void execute_report_command(const CommandArgs &args)
     generate_topdownl2_chart(runs);
 
     // Generate heatmaps for requested metrics
-    generate_heatmap(runs, "energy-pkg");
+    generate_heatmap(runs, "duration_ms");
+    generate_heatmap(runs, "energy_pkg");
     generate_heatmap(runs, "kilo_edp_pkg");
 }

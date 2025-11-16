@@ -7,7 +7,7 @@
 // Select which way (perf or msr) to macro
 #if OPTKIT_CONF_TEMPERATURE_MACROS_ENABLED
 
-#define OPTKIT_HWMON_TEMPERATURE_EVENTS(block_name)                                                            \
+#define OPTKIT_HWMON_TEMPERATURE(block_name)                                                                   \
     optkit::temperature::hwmon::Profiler EXPAND_AND_CONCAT(var, __LINE__)                                      \
     {                                                                                                          \
         {                                                                                                      \
@@ -15,7 +15,7 @@
         }                                                                                                      \
     }
 
-#define OPTKIT_GPU_TEMPERATURE_EVENTS(block_name)                                                            \
+#define OPTKIT_GPU_TEMPERATURE(block_name)                                                                   \
     optkit::temperature::gpu::Profiler EXPAND_AND_CONCAT(var, __LINE__)                                      \
     {                                                                                                        \
         {                                                                                                    \
@@ -23,6 +23,6 @@
         }                                                                                                    \
     }
 #else
-#define OPTKIT_HWMON_TEMPERATURE_EVENTS(block_name)
-#define OPTKIT_GPU_TEMPERATURE_EVENTS(block_name)
+#define OPTKIT_HWMON_TEMPERATURE(block_name)
+#define OPTKIT_GPU_TEMPERATURE(block_name)
 #endif

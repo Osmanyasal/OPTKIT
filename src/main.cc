@@ -17,13 +17,15 @@ inline std::vector<T> generate_vector(size_t n = VECTOR_SIZE)
 
 int32_t main(int32_t argc, char **argv)
 {
-    OPTKIT_INIT(false);
+    OPTKIT_INIT(true);
     std::cout << "GPU Device Query Example" << std::endl;
     std::cout << "========================" << std::endl;
 
     optkit::gpu::GpuDeviceInfo device_info;
     optkit::gpu::Query::device_query(optkit::gpu::GpuVendor::AMD, 0, device_info);
     std::cout << device_info << "\n";
+
+    OPTKIT_GPU_ENERGY("main gpu energy");
 
     // optkit::gpu::GpuClockInfo clock_info;
     // optkit::gpu::Query::get_clock_info(optkit::gpu::GpuVendor::NVIDIA, 0, clock_info);

@@ -137,6 +137,7 @@ void create_child_process(const CommandArgs &args)
         optkit::pmu::cpu::perf::BlockProfiler stat_metric_profiler(perf_config, _metric);
 
         OPTKIT_CPU_ENERGY("stat");
+        OPTKIT_GPU_ENERGY("stat");
         while (IS_RUNNING)
         {
             pid_t result = waitpid(CHILD_PID, &status, WNOHANG);
