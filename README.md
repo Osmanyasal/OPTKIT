@@ -34,4 +34,4 @@ make -j$(nproc) config=debug optkit_test  ## no optimization in tests, raw resul
 
 ```
 
-For more details and tutorials, check out the [wiki page]([https://github.com/Osmanyasal/OPTKIT/wiki/OPTKIT%E2%80%90API-(Start-Here)](https://github.com/Osmanyasal/OPTKIT/wiki/OPTKIT))
+For more details and tutorials, check out the [OPTKIT Wiki](https://github.com/Osmanyasal/OPTKIT/wiki/OPTKIT)
