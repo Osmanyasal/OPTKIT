@@ -4,11 +4,11 @@ namespace optkit::energy::rapl
 {
     const std::unordered_map<int32_t, std::string> rapl_domain_name_mapping = {
         {static_cast<int32_t>(RaplDomain::BEGIN), "begin"},
-        {static_cast<int32_t>(RaplDomain::PP0), "energy_cores"},
-        {static_cast<int32_t>(RaplDomain::PP1), "energy_gpu"},
-        {static_cast<int32_t>(RaplDomain::PACKAGE), "energy_pkg"},
-        {static_cast<int32_t>(RaplDomain::PSYS), "energy_psys"},
-        {static_cast<int32_t>(RaplDomain::DRAM), "energy_dram"},
+        {static_cast<int32_t>(RaplDomain::PP0), "energy-cores"},
+        {static_cast<int32_t>(RaplDomain::PP1), "energy-gpu"},
+        {static_cast<int32_t>(RaplDomain::PACKAGE), "energy-pkg"},
+        {static_cast<int32_t>(RaplDomain::PSYS), "energy-psys"},
+        {static_cast<int32_t>(RaplDomain::DRAM), "energy-dram"},
         {static_cast<int32_t>(RaplDomain::END), "end"},
         {static_cast<int32_t>(RaplDomain::ALL), "All domains"}};
 
@@ -60,19 +60,19 @@ namespace optkit::energy::rapl
         switch (domain)
         {
         case optkit::energy::rapl::RaplDomain::PP0:
-            os << "energy_cores";
+            os << "energy-cores";
             break;
         case optkit::energy::rapl::RaplDomain::PP1:
-            os << "energy_gpu";
+            os << "energy-gpu";
             break;
         case optkit::energy::rapl::RaplDomain::PACKAGE:
-            os << "energy_pkg";
+            os << "energy-pkg";
             break;
         case optkit::energy::rapl::RaplDomain::PSYS:
-            os << "energy_psys";
+            os << "energy-psys";
             break;
         case optkit::energy::rapl::RaplDomain::DRAM:
-            os << "energy_dram";
+            os << "energy-dram";
             break;
         default:
             break;

@@ -623,9 +623,9 @@ static void generate_carm_roofline_for_isa(const std::vector<RunData> &runs,
 
     gp << "# AI knees (where bandwidth roof meets compute roof)\n";
     gp << "ai_knee_l1  = " << std::fixed << std::setprecision(6) << ai_knee_l1 << "\n";
-    gp << "ai_knee_l2  = " << ai_knee_l2 << "\n";
-    gp << "ai_knee_l3  = " << ai_knee_l3 << "\n";
-    gp << "ai_knee_mem = " << ai_knee_mem << "\n\n";
+    gp << "ai_knee_l2  = " << std::fixed << std::setprecision(6) << ai_knee_l2 << "\n";
+    gp << "ai_knee_l3  = " << std::fixed << std::setprecision(6) << ai_knee_l3 << "\n";
+    gp << "ai_knee_mem = " << std::fixed << std::setprecision(6) << ai_knee_mem << "\n\n";
 
     gp << "format_knee(x) = sprintf(\"AI=%.3g\", x)\n\n";
 
@@ -638,7 +638,8 @@ static void generate_carm_roofline_for_isa(const std::vector<RunData> &runs,
     gp << "    roof_bw(l2_bw, x)  w l lw 2 lc rgb \"#0000FF\" title sprintf(\"L2 (%.0f GB/s)\", l2_bw), \\\n";
     gp << "    roof_bw(l3_bw, x)  w l lw 2 lc rgb \"#9900CC\" title sprintf(\"L3 (%.0f GB/s)\", l3_bw), \\\n";
     gp << "    roof_bw(mem_bw, x) w l lw 2 lc rgb \"#FF9900\" title sprintf(\"DRAM (%.0f GB/s)\", mem_bw), \\\n";
-    gp << "    'roofline.dat' using 1:2 w p pt 7 ps 2 lw 2 lc rgb \"#FF0000\" title \"Measured\"\n\n";
+    gp << "    'roofline.dat' using 1:2 w p pt 7 ps 2 lw 2 lc rgb \"#FF0000\" title \"Measured\", \\\n";
+    gp << "    'roofline.dat' using 1:2:(sprintf('Cores=%d\\nAI=%.3f\\nGFlops=%.2f', column(3), column(4), column(5))) with labels offset 1.5,1.5 tc rgb \"#000000\" font ',9' notitle\n\n";
 
     gp << "# Knee markers and labels\n";
     gp << "set arrow from ai_knee_l1, graph 0 to ai_knee_l1, compute_peak nohead dt 3 lc rgb \"#00BB00\"\n";
@@ -683,19 +684,20 @@ static void generate_carm_roofline_chart(const std::vector<RunData> &runs)
         return;
     }
 
-    // Write shared data file with measured kernels (AI vs GFlops)
+    // Write shared data file with measured kernels (AI vs GFlops with metadata)
     std::ofstream dat("roofline.dat");
     if (!dat)
     {
         std::cerr << "Error: Cannot write roofline.dat\n";
         return;
     }
-    dat << "# AI(FLOPs/Byte)\tGFlops/s\tLabel\n";
+    dat << "# AI(FLOPs/Byte)\tGFlops/s\tCores\tAI\tGFlops\n";
     for (size_t i = 0; i < runs.size(); ++i)
     {
         if (runs[i].ai > 0.0 && runs[i].gflops > 0.0)
         {
-            dat << runs[i].ai << "\t" << runs[i].gflops << "\t# " << runs[i].label << "\n";
+            dat << std::fixed << std::setprecision(6) << runs[i].ai << "\t" << runs[i].gflops << "\t"
+                << runs[i].cores_used << "\t" << runs[i].ai << "\t" << runs[i].gflops << "\n";
         }
     }
     dat.close();
