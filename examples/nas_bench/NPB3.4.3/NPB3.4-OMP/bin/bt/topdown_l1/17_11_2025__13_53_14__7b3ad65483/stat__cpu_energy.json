@@ -1,0 +1,49 @@
+[
+{
+  "readings": [
+    {
+      "cores_used": 4, "duration": 106502.25,
+      "duration_unit": "ms",
+      "measurement_type": "cpu_energy",
+      "measurements": [
+        {
+          "dtype": "double",
+          "name": "energy-pkg",
+          "type": "event",
+          "value": "8336.664719",
+          "value_unit": "Joules"
+        },
+        {
+          "dtype": "double",
+          "name": "watt_hour",
+          "type": "metric",
+          "value": "2.315740",
+          "value_unit": "None"
+        },
+        {
+          "dtype": "double",
+          "name": "kilo_edp_edp",
+          "type": "metric",
+          "value": "887.873550",
+          "value_unit": "None"
+        },
+        {
+          "dtype": "double",
+          "name": "kilo_edp_pkg",
+          "type": "metric",
+          "value": "887.873550",
+          "value_unit": "None"
+        },
+        {
+          "dtype": "double",
+          "name": "kilo_edp_dram",
+          "type": "metric",
+          "value": "0.000000",
+          "value_unit": "None"
+        }
+      ],
+      "socket_number": 0
+    }
+  ]
+}
+]
