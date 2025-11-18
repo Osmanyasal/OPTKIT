@@ -23,7 +23,7 @@ struct RunData
     double gflops;                         // gigaflops
     std::map<std::string, double> topdown; // metric -> %
 
-    RunData() : duration_ms(0.0), cores_used(0), core_freq_khz(0), uncore_freq_khz(0), energy_pkg(0.0), kilo_edp_pkg(0.0) {}
+    RunData() : duration_ms(0.0), cores_used(0), core_freq_khz(0), uncore_freq_khz(0), energy_pkg(0.0), kilo_edp_pkg(0.0), ai(0.0), gflops(0.0) {}
 };
 
 static const std::vector<std::string> topdownl1_keys = {
@@ -112,6 +112,7 @@ static bool extract_metric_value(const std::string &json, const std::string &met
 static RunData parse_run(const std::string &json_path)
 {
     RunData rd;
+
     std::string content;
     try
     {
@@ -402,6 +403,18 @@ static std::vector<RunData> parse_runs_from_paths(const std::vector<std::string>
 
 static void generate_exec_time_chart(const std::vector<RunData> &runs)
 {
+    std::vector<RunData> valid_runs;
+    for (size_t i = 0; i < runs.size(); ++i)
+    {
+        if (runs[i].duration_ms > 0)
+            valid_runs.push_back(runs[i]);
+    }
+    if (valid_runs.empty())
+    {
+        std::cerr << "Info: No valid runs with execution time found. Skipping exec_time_per_core chart.\n";
+        return;
+    }
+
     std::ofstream dat("exec_time_per_core.dat");
     if (!dat)
     {
@@ -409,20 +422,20 @@ static void generate_exec_time_chart(const std::vector<RunData> &runs)
         return;
     }
     dat << "# cores_used duration_ms label\n";
-    for (size_t i = 0; i < runs.size(); ++i)
-        dat << runs[i].cores_used << "\t" << runs[i].duration_ms << "\t# " << runs[i].label << "\n";
+    for (size_t i = 0; i < valid_runs.size(); ++i)
+        dat << valid_runs[i].cores_used << "\t" << valid_runs[i].duration_ms << "\t# " << valid_runs[i].label << "\n";
     dat.close();
 
     int max_cores = 0;
     std::ostringstream xtics;
     xtics << "set xtics (";
-    for (size_t i = 0; i < runs.size(); ++i)
+    for (size_t i = 0; i < valid_runs.size(); ++i)
     {
         if (i > 0)
             xtics << ", ";
-        xtics << "'" << runs[i].cores_used << "' " << runs[i].cores_used;
-        if (runs[i].cores_used > max_cores)
-            max_cores = runs[i].cores_used;
+        xtics << "'" << valid_runs[i].cores_used << "' " << valid_runs[i].cores_used;
+        if (valid_runs[i].cores_used > max_cores)
+            max_cores = valid_runs[i].cores_used;
     }
     xtics << ")\n";
 
@@ -444,19 +457,16 @@ static void generate_exec_time_chart(const std::vector<RunData> &runs)
 static void generate_topdownl1_chart(const std::vector<RunData> &runs)
 {
     // Verify at least one run has any topdown metric
-    bool any_topdown_present = false;
-    for (size_t i = 0; i < runs.size() && !any_topdown_present; ++i)
-    {
+    std::vector<RunData> valid_runs;
+    for (size_t i = 0; i < runs.size(); ++i)
         for (size_t k = 0; k < topdownl1_keys.size(); ++k)
-        {
             if (runs[i].topdown.find(topdownl1_keys[k]) != runs[i].topdown.end())
             {
-                any_topdown_present = true;
+                valid_runs.push_back(runs[i]);
                 break;
             }
-        }
-    }
-    if (!any_topdown_present)
+
+    if (valid_runs.empty())
     {
         std::cerr << "Info: No Topdown metrics found in any run. Skipping 'topdown_blocksl1' chart.\n";
         return;
@@ -468,14 +478,14 @@ static void generate_topdownl1_chart(const std::vector<RunData> &runs)
         std::cerr << "Error: Cannot write topdown_blocksl1.dat\n";
         return;
     }
-    dat << "# label\tfrontend_bound\tbad_speculation\tRetiring\tbackend_bound\tsmt_contention\n";
-    for (size_t i = 0; i < runs.size(); ++i)
+    dat << "# cores_used\tfrontend_bound\tbad_speculation\tRetiring\tbackend_bound\tsmt_contention\n";
+    for (size_t i = 0; i < valid_runs.size(); ++i)
     {
-        dat << runs[i].label;
+        dat << valid_runs[i].cores_used;
         for (size_t k = 0; k < topdownl1_keys.size(); ++k)
         {
-            std::map<std::string, double>::const_iterator it = runs[i].topdown.find(topdownl1_keys[k]);
-            double v = (it == runs[i].topdown.end() ? 0.0 : it->second);
+            std::map<std::string, double>::const_iterator it = valid_runs[i].topdown.find(topdownl1_keys[k]);
+            double v = (it == valid_runs[i].topdown.end() ? 0.0 : it->second);
             dat << "\t" << v;
         }
         dat << "\n";
@@ -491,6 +501,7 @@ static void generate_topdownl1_chart(const std::vector<RunData> &runs)
     gp << "set style fill solid border -1\n";
     gp << "set boxwidth 0.8\n";
     gp << "set key outside right\n";
+    gp << "set xlabel 'Core Count'\n";
     gp << "set ylabel '%'\n";
     gp << "set yrange [0:100]\n";
     gp << "set xtics rotate by -30\n";
@@ -498,7 +509,12 @@ static void generate_topdownl1_chart(const std::vector<RunData> &runs)
           "'' using 3 title 'bad_speculation', "
           "'' using 4 title 'Retiring', "
           "'' using 5 title 'backend_bound', "
-          "'' using 6 title 'smt_contention'\n";
+          "'' using 6 title 'smt_contention', "
+          "'' using 0:($2/2):($2 > 3 ? sprintf('%.1f%%',$2) : '') with labels tc rgb 'black' font ',9' notitle, "
+          "'' using 0:($2+$3/2):($3 > 3 ? sprintf('%.1f%%',$3) : '') with labels tc rgb 'black' font ',9' notitle, "
+          "'' using 0:($2+$3+$4/2):($4 > 3 ? sprintf('%.1f%%',$4) : '') with labels tc rgb 'black' font ',9' notitle, "
+          "'' using 0:($2+$3+$4+$5/2):($5 > 3 ? sprintf('%.1f%%',$5) : '') with labels tc rgb 'black' font ',9' notitle, "
+          "'' using 0:($2+$3+$4+$5+$6/2):($6 > 3 ? sprintf('%.1f%%',$6) : '') with labels tc rgb 'black' font ',9' notitle\n";
     gp.close();
 
     system("gnuplot topdown_blocksl1.gp");
@@ -507,19 +523,16 @@ static void generate_topdownl1_chart(const std::vector<RunData> &runs)
 static void generate_topdownl2_chart(const std::vector<RunData> &runs)
 {
     // Verify at least one run has any topdown metric
-    bool any_topdown_present = false;
-    for (size_t i = 0; i < runs.size() && !any_topdown_present; ++i)
-    {
+    std::vector<RunData> valid_runs;
+    for (size_t i = 0; i < runs.size(); ++i)
         for (size_t k = 0; k < topdownl2_keys.size(); ++k)
-        {
             if (runs[i].topdown.find(topdownl2_keys[k]) != runs[i].topdown.end())
             {
-                any_topdown_present = true;
+                valid_runs.push_back(runs[i]);
                 break;
             }
-        }
-    }
-    if (!any_topdown_present)
+
+    if (valid_runs.empty())
     {
         std::cerr << "Info: No Topdown metrics found in any run. Skipping 'topdown_blocksl2' chart.\n";
         return;
@@ -531,14 +544,14 @@ static void generate_topdownl2_chart(const std::vector<RunData> &runs)
         std::cerr << "Error: Cannot write topdown_blocksl2.dat\n";
         return;
     }
-    dat << "# label\tfrontend_bound_bw\tfrontend_bound_latency\tbackend_bound_cpu\tbackend_bound_memory\tretiring_microcode\tretiring_fastpath\tbad_speculation_pipeline_restarts\tbad_speculation_mispredicts\n";
-    for (size_t i = 0; i < runs.size(); ++i)
+    dat << "# cores_used\tfrontend_bound_bw\tfrontend_bound_latency\tbackend_bound_cpu\tbackend_bound_memory\tretiring_microcode\tretiring_fastpath\tbad_speculation_pipeline_restarts\tbad_speculation_mispredicts\n";
+    for (size_t i = 0; i < valid_runs.size(); ++i)
     {
-        dat << runs[i].label;
+        dat << valid_runs[i].cores_used;
         for (size_t k = 0; k < topdownl2_keys.size(); ++k)
         {
-            std::map<std::string, double>::const_iterator it = runs[i].topdown.find(topdownl2_keys[k]);
-            double v = (it == runs[i].topdown.end() ? 0.0 : it->second);
+            std::map<std::string, double>::const_iterator it = valid_runs[i].topdown.find(topdownl2_keys[k]);
+            double v = (it == valid_runs[i].topdown.end() ? 0.0 : it->second);
             dat << "\t" << v;
         }
         dat << "\n";
@@ -554,6 +567,7 @@ static void generate_topdownl2_chart(const std::vector<RunData> &runs)
     gp << "set style fill solid border -1\n";
     gp << "set boxwidth 0.8\n";
     gp << "set key outside right\n";
+    gp << "set xlabel 'Core Count'\n";
     gp << "set ylabel '%'\n";
     gp << "set yrange [0:100]\n";
     gp << "set xtics rotate by -30\n";
@@ -564,7 +578,15 @@ static void generate_topdownl2_chart(const std::vector<RunData> &runs)
           "'' using 6 title 'retiring_microcode', "
           "'' using 7 title 'retiring_fastpath', "
           "'' using 8 title 'bad_speculation_pipeline_restarts', "
-          "'' using 9 title 'bad_speculation_mispredicts'\n";
+          "'' using 9 title 'bad_speculation_mispredicts', "
+          "'' using 0:($2/2):($2 > 3 ? sprintf('%.1f%%',$2) : '') with labels tc rgb 'black' font ',9' notitle, "
+          "'' using 0:($2+$3/2):($3 > 3 ? sprintf('%.1f%%',$3) : '') with labels tc rgb 'black' font ',9' notitle, "
+          "'' using 0:($2+$3+$4/2):($4 > 3 ? sprintf('%.1f%%',$4) : '') with labels tc rgb 'black' font ',9' notitle, "
+          "'' using 0:($2+$3+$4+$5/2):($5 > 3 ? sprintf('%.1f%%',$5) : '') with labels tc rgb 'black' font ',9' notitle, "
+          "'' using 0:($2+$3+$4+$5+$6/2):($6 > 3 ? sprintf('%.1f%%',$6) : '') with labels tc rgb 'black' font ',9' notitle, "
+          "'' using 0:($2+$3+$4+$5+$6+$7/2):($7 > 3 ? sprintf('%.1f%%',$7) : '') with labels tc rgb 'black' font ',9' notitle, "
+          "'' using 0:($2+$3+$4+$5+$6+$7+$8/2):($8 > 3 ? sprintf('%.1f%%',$8) : '') with labels tc rgb 'black' font ',9' notitle, "
+          "'' using 0:($2+$3+$4+$5+$6+$7+$8+$9/2):($9 > 3 ? sprintf('%.1f%%',$9) : '') with labels tc rgb 'black' font ',9' notitle\n";
     gp.close();
 
     system("gnuplot topdownl2_blocks.gp");
@@ -639,7 +661,7 @@ static void generate_carm_roofline_for_isa(const std::vector<RunData> &runs,
     gp << "    roof_bw(l3_bw, x)  w l lw 2 lc rgb \"#9900CC\" title sprintf(\"L3 (%.0f GB/s)\", l3_bw), \\\n";
     gp << "    roof_bw(mem_bw, x) w l lw 2 lc rgb \"#FF9900\" title sprintf(\"DRAM (%.0f GB/s)\", mem_bw), \\\n";
     gp << "    'roofline.dat' using 1:2 w p pt 7 ps 2 lw 2 lc rgb \"#FF0000\" title \"Measured\", \\\n";
-    gp << "    'roofline.dat' using 1:2:(sprintf('Cores=%d\\nAI=%.3f\\nGFlops=%.2f', column(3), column(4), column(5))) with labels offset 1.5,1.5 tc rgb \"#000000\" font ',9' notitle\n\n";
+    gp << "    'roofline.dat' using 1:2:(sprintf('Cores=%d, AI=%.3f, GFlops=%.2f', column(3), column(4), column(5))) with labels offset 0,-1.0 tc rgb \"#000000\" font ',9' notitle\n\n";
 
     gp << "# Knee markers and labels\n";
     gp << "set arrow from ai_knee_l1, graph 0 to ai_knee_l1, compute_peak nohead dt 3 lc rgb \"#00BB00\"\n";
@@ -668,17 +690,12 @@ static void generate_carm_roofline_for_isa(const std::vector<RunData> &runs,
 static void generate_carm_roofline_chart(const std::vector<RunData> &runs)
 {
     // Check if we have any AI/GFlops data
-    bool has_data = false;
+    std::vector<RunData> valid_runs;
     for (size_t i = 0; i < runs.size(); ++i)
-    {
         if (runs[i].ai > 0.0 && runs[i].gflops > 0.0)
-        {
-            has_data = true;
-            break;
-        }
-    }
+            valid_runs.push_back(runs[i]);
 
-    if (!has_data)
+    if (valid_runs.empty())
     {
         std::cerr << "Info: No AI/GFlops data found in runs. Skipping CARM roofline chart.\n";
         return;
@@ -692,12 +709,12 @@ static void generate_carm_roofline_chart(const std::vector<RunData> &runs)
         return;
     }
     dat << "# AI(FLOPs/Byte)\tGFlops/s\tCores\tAI\tGFlops\n";
-    for (size_t i = 0; i < runs.size(); ++i)
+    for (size_t i = 0; i < valid_runs.size(); ++i)
     {
-        if (runs[i].ai > 0.0 && runs[i].gflops > 0.0)
+        if (valid_runs[i].ai > 0.0 && valid_runs[i].gflops > 0.0)
         {
-            dat << std::fixed << std::setprecision(6) << runs[i].ai << "\t" << runs[i].gflops << "\t"
-                << runs[i].cores_used << "\t" << runs[i].ai << "\t" << runs[i].gflops << "\n";
+            dat << std::fixed << std::setprecision(6) << valid_runs[i].ai << "\t" << valid_runs[i].gflops << "\t"
+                << valid_runs[i].cores_used << "\t" << valid_runs[i].ai << "\t" << valid_runs[i].gflops << "\n";
         }
     }
     dat.close();
@@ -705,22 +722,22 @@ static void generate_carm_roofline_chart(const std::vector<RunData> &runs)
     std::cout << "CARM Roofline charts generated:\n";
 
     // Generate roofline for each ISA
-    generate_carm_roofline_for_isa(runs, "AVX512",
+    generate_carm_roofline_for_isa(valid_runs, "AVX512",
                                    OPTKIT_ENV_CARM_AVX512_L1_BW, OPTKIT_ENV_CARM_AVX512_L2_BW,
                                    OPTKIT_ENV_CARM_AVX512_L3_BW, OPTKIT_ENV_CARM_AVX512_DRAM_BW,
                                    OPTKIT_ENV_CARM_AVX512_FP_FMA_GFLOPS);
 
-    generate_carm_roofline_for_isa(runs, "AVX2",
+    generate_carm_roofline_for_isa(valid_runs, "AVX2",
                                    OPTKIT_ENV_CARM_AVX2_L1_BW, OPTKIT_ENV_CARM_AVX2_L2_BW,
                                    OPTKIT_ENV_CARM_AVX2_L3_BW, OPTKIT_ENV_CARM_AVX2_DRAM_BW,
                                    OPTKIT_ENV_CARM_AVX2_FP_FMA_GFLOPS);
 
-    generate_carm_roofline_for_isa(runs, "SSE",
+    generate_carm_roofline_for_isa(valid_runs, "SSE",
                                    OPTKIT_ENV_CARM_SSE_L1_BW, OPTKIT_ENV_CARM_SSE_L2_BW,
                                    OPTKIT_ENV_CARM_SSE_L3_BW, OPTKIT_ENV_CARM_SSE_DRAM_BW,
                                    OPTKIT_ENV_CARM_SSE_FP_FMA_GFLOPS);
 
-    generate_carm_roofline_for_isa(runs, "SCALAR",
+    generate_carm_roofline_for_isa(valid_runs, "SCALAR",
                                    OPTKIT_ENV_CARM_SCALAR_L1_BW, OPTKIT_ENV_CARM_SCALAR_L2_BW,
                                    OPTKIT_ENV_CARM_SCALAR_L3_BW, OPTKIT_ENV_CARM_SCALAR_DRAM_BW,
                                    OPTKIT_ENV_CARM_SCALAR_FP_FMA_GFLOPS);
