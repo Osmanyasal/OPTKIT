@@ -138,7 +138,7 @@ static RunData parse_run(const std::string &json_path)
         rd.uncore_freq_khz = static_cast<long long>(d);
 
     // parse energy and EDP metrics if present
-    if (extract_metric_value(content, "energy_pkg", d))
+    if (extract_metric_value(content, "energy-pkg", d))
         rd.energy_pkg = d;
     if (extract_metric_value(content, "kilo_edp_pkg", d))
         rd.kilo_edp_pkg = d;
@@ -196,7 +196,7 @@ static void generate_heatmap(const std::vector<RunData> &runs, const std::string
 
     auto get_metric_value = [&](const RunData &rd) -> double
     {
-        if (metric_key == "energy_pkg")
+        if (metric_key == "energy-pkg")
             return rd.energy_pkg;
         if (metric_key == "kilo_edp_pkg")
             return rd.kilo_edp_pkg;
@@ -780,6 +780,6 @@ void execute_report_command(const CommandArgs &args)
 
     // Generate heatmaps for requested metrics
     generate_heatmap(runs, "duration_ms");
-    generate_heatmap(runs, "energy_pkg");
+    generate_heatmap(runs, "energy-pkg");
     generate_heatmap(runs, "kilo_edp_pkg");
 }
