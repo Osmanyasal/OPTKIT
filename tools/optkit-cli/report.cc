@@ -666,6 +666,8 @@ static void generate_carm_roofline_for_isa(const std::vector<RunData> &runs,
 
 static void generate_carm_roofline_chart(const std::vector<RunData> &runs)
 {
+#ifdef OPTKIT_ENV_CARM_AVX512_L1_BW &&OPTKIT_ENV_CARM_SCALAR_L2_BW &&OPTKIT_ENV_CARM_AVX2_L3_BW &&OPTKIT_ENV_CARM_SSE_DRAM_BW &&OPTKIT_ENV_CARM_AVX512_FP_FMA_GFLOPS
+
     // Check if we have any AI/GFlops data
     bool has_data = false;
     for (size_t i = 0; i < runs.size(); ++i)
@@ -722,6 +724,7 @@ static void generate_carm_roofline_chart(const std::vector<RunData> &runs)
                                    OPTKIT_ENV_CARM_SCALAR_L1_BW, OPTKIT_ENV_CARM_SCALAR_L2_BW,
                                    OPTKIT_ENV_CARM_SCALAR_L3_BW, OPTKIT_ENV_CARM_SCALAR_DRAM_BW,
                                    OPTKIT_ENV_CARM_SCALAR_FP_FMA_GFLOPS);
+#endif
 }
 
 void execute_report_command(const CommandArgs &args)
