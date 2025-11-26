@@ -339,6 +339,18 @@ namespace optkit::utils
         }
     }
 
+    OPT_FORCE_INLINE void remove_file(const std::string &location)
+    {
+        if (std::remove(location.c_str()) != 0)
+        {
+            OPTKIT_CORE_ERROR("Error deleting file: {}", location);
+        }
+        else
+        {
+            OPTKIT_CORE_INFO("File deleted successfully: {}", location);
+        }
+    }
+
     OPT_FORCE_INLINE void read_msr(int32_t cpuid, off_t MSR_REGISTER_address, uint64_t *MSR_REGISTER_bits)
     {
         char msr_file_name[64];

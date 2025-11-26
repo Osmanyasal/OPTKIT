@@ -1,10 +1,30 @@
-## OPTKIT-SETENV
+## Overview
 
-`optkit-setenv` is a comprehensive system environment configuration tool designed to set, tune, and isolate system parameters for reproducible, low-noise, and energy-aware benchmarking and profiling. It integrates closely with OPTKIT's profiling ecosystem but can be used standalone to control CPU, memory, disk, OS, GPU, and cgroup resources.
+`optkit-setenv` is a comprehensive system environment configuration tool designed to set, tune, and isolate system parameters for reproducible, low-noise, and energy-aware benchmarking and profiling. It integrates closely with OptKit's profiling ecosystem but can be used standalone to control CPU, memory, disk, OS, GPU, and cgroup resources.
+
+Users can either set values directly through CLI parameters or run `optkit-setenv init` to generate an empty configuration file with all adjustable fields. After modifying that file, they simply load it. Examples are shown below.
+
+
+### Example Commands
+
+```bash
+# create an empty env.json file
+optkit-setenv --init
+
+# Load configuration from file (after changes)
+optkit-setenv ./env.json
+
+# Restore system to defaults
+optkit-setenv --restore
+```
+
+### Requirements
 
 - Root privileges (or `CAP_SYS_ADMIN`) are required for many operations.
 - Supported on Linux systems with appropriate kernel interfaces.
 - GPU controls require NVIDIA or ROCm drivers and libraries.
+
+ 
 
 ### CPU Controls
 
@@ -94,22 +114,4 @@
 | Verbose logging      | `--verbose`                    | (flag)                      | Print detailed logs of actions.                |
 | Log output to file    | `--logfile=<path>`             | File path                   | Write logs to a file.                           |
 
-### Example Commands
-
-```bash
-# Disable SMT, fix CPU freq to 2800 MHz, set performance governor, drop caches, and disable THP
-optkit-setenv --smt=off --cpu-freq=2800 --governor=performance --drop-caches --thp=never
-
-# Limit CPU quota to 50ms per 100ms period, pin to CPUs 0-3, limit memory to 4GB
-optkit-setenv --cgroup-cpu-quota=50000 --cgroup-cpu-period=100000 --cgroup-cpuset=0-3 --cgroup-mem-limit=4G
-
-# Lock GPU freq and set power cap
-optkit-setenv --gpu-freq=lock:1200 --gpu-power-limit=150 --gpu-persistence=on
-
-# Load configuration from file
-optkit-setenv --config ./benchmark-env.json
-
-# Restore system to defaults
-optkit-setenv --restore
-
-``` 
+</details>

@@ -1,0 +1,58 @@
+{
+    "cgroup": {
+        "cpu_period_us": 0,
+        "cpu_quota_us": 0,
+        "cpuset": "",
+        "freeze_state": "",
+        "io_limit_read": "",
+        "io_limit_write": "",
+        "mem_limit": "",
+        "mem_swappiness": 0
+    },
+    "cpu": {
+        "affinity_cores": [],
+        "core_freq": 0,
+        "governor": "",
+        "offline_cores": [],
+        "smt_enabled": false,
+        "turbo": false,
+        "uncore_freq": 0
+    },
+    "disk_io": {
+        "aio_max_nr": 0,
+        "io_scheduler": "",
+        "mount_options": "",
+        "mount_path": "",
+        "sync_disk": false,
+        "use_direct_io": false
+    },
+    "gpu": {
+        "core_freq_mhz": 0,
+        "fan_speed": "",
+        "mem_freq_mhz": 0,
+        "persistence_mode": "",
+        "power_limit_watts": 0,
+        "reset_stats": false
+    },
+    "kernel": {
+        "clocksource": "",
+        "disable_watchdogs": false,
+        "irqbalance": "",
+        "isolate_cpus": "",
+        "isolate_irqs": "",
+        "mitigations": "",
+        "sched_min_granularity_ms": 0,
+        "ulimit_n": 0
+    },
+    "memory": {
+        "arena_max": 0,
+        "drop_caches": false,
+        "hugepages_count": 0,
+        "malloc_backend": "",
+        "mlock_all": false,
+        "numa_policy": "",
+        "oom_kill_task": 0,
+        "swappiness": 0,
+        "thp_mode": ""
+    }
+}
