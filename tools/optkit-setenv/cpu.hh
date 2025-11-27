@@ -17,13 +17,15 @@ struct CPU
     bool turbo;                      // true or false
 
     bool set_governor(const std::string &gov);
-    bool set_affinity_cores(const std::vector<int> &cores);
+    bool set_affinity_cores(pid_t pid, const std::vector<int> &cores);
     bool set_offline_cores(const std::vector<int> &cores);
     bool set_online_cores(const std::vector<int> &cores);
     bool set_all_cores_offline();
     bool set_all_cores_online();
     bool set_core_freq(int64_t freq_khz);
     bool set_uncore_freq(int64_t freq_khz);
+    bool reset_core_freq(int64_t socket);
+    bool reset_uncore_freq(int64_t socket);
     bool set_smt_enabled(Switch state);
     bool set_turbo(Switch state);
     std::string to_string() const;
