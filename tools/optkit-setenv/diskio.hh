@@ -1,7 +1,9 @@
 #pragma once
 
+#include "module.hh"
 #include "helper.hh"
-struct DiskIO
+
+struct DiskIO : public Module
 {
     std::string io_scheduler;  // none, mq-deadline, cfq, bfq
     std::string mount_path;    // mount point path
@@ -10,19 +12,9 @@ struct DiskIO
     bool sync_disk;            // true or false
     bool use_direct_io;        // true or false
 
-    std::string to_string() const
-    {
-        std::ostringstream oss;
-        oss << "DiskIO{scheduler=" << io_scheduler
-            << ", mount=" << mount_path
-            << ", options=" << mount_options
-            << ", aio_max=" << aio_max_nr
-            << ", sync=" << (sync_disk ? "yes" : "no")
-            << ", direct_io=" << (use_direct_io ? "yes" : "no")
-            << "}";
-        return oss.str();
-    }
-    bool is_valid();
+    std::string to_string() const override;
+    bool is_valid() const override;
+    bool apply() override;
 };
 
 inline std::ostream &operator<<(std::ostream &os, const DiskIO &disk)

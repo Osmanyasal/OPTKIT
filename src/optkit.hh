@@ -32,6 +32,7 @@ namespace optkit
         const OPTKIT_CONFIG config;
     };
 }
-
+#ifndef OPTKIT_INIT
 #define OPTKIT_INIT(...) \
     optkit::OPTKIT optkit { __VA_ARGS__ }
+#endif

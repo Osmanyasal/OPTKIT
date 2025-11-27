@@ -947,8 +947,8 @@ namespace optkit::gpu
             // The current code incorrectly uses device_index for socket access
             // For now, use a safer approach and skip the complex socket enumeration
 
-            amdsmi_status_t result;
-            uint32_t processor_count = 0;
+            // amdsmi_status_t result;
+            // uint32_t processor_count = 0;
 
             // Skip the problematic socket access for now
             // ROCM_EXEC_IF_SUPPORTS("amdsmi_get_processor_handles",
@@ -1918,10 +1918,10 @@ namespace optkit::gpu
                                   &vram_info);
             if (result == AMDSMI_STATUS_SUCCESS)
             { // Check for HBM memory (indicates high-end GPU with advanced memory features)
-                bool has_hbm = (vram_info.vram_type == AMDSMI_VRAM_TYPE_HBM ||
-                                vram_info.vram_type == AMDSMI_VRAM_TYPE_HBM2 ||
-                                vram_info.vram_type == AMDSMI_VRAM_TYPE_HBM2E ||
-                                vram_info.vram_type == AMDSMI_VRAM_TYPE_HBM3);
+                // bool has_hbm = (vram_info.vram_type == AMDSMI_VRAM_TYPE_HBM ||
+                //                 vram_info.vram_type == AMDSMI_VRAM_TYPE_HBM2 ||
+                //                 vram_info.vram_type == AMDSMI_VRAM_TYPE_HBM2E ||
+                //                 vram_info.vram_type == AMDSMI_VRAM_TYPE_HBM3);
 
                 // Check VRAM size - larger VRAM typically indicates support for advanced features
                 capabilities_info.supports_unified_memory = (vram_info.vram_size > 8000); // > 8GB suggests modern GPU

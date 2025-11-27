@@ -1,9 +1,11 @@
 #pragma once
+#include "module.hh"
 #include "cpu.hh"
 #include "diskio.hh"
 #include "kernel.hh"
 #include "gpu.hh"
 #include "cgroup.hh"
+#include "memory.hh"
 
 struct SystemConfig
 {
@@ -14,24 +16,11 @@ struct SystemConfig
     GPU gpu;
     CGroup cgroup;
 
-    std::string to_string() const
-    {
-        std::ostringstream oss;
-        oss << "SystemConfig{\n"
-            << "  " << cpu.to_string() << "\n"
-            << "  " << memory.to_string() << "\n"
-            << "  " << disk_io.to_string() << "\n"
-            << "  " << kernel.to_string() << "\n"
-            << "  " << gpu.to_string() << "\n"
-            << "  " << cgroup.to_string() << "\n"
-            << "}";
-        return oss.str();
-    }
+    std::string to_string() const;
+    bool is_valid() const;
+    void apply();
 };
 inline std::ostream &operator<<(std::ostream &os, const SystemConfig &config)
 {
     return os << config.to_string();
 }
-
-bool is_requested_config_valid(const SystemConfig &config);
-void apply_requested_config(const SystemConfig &config);

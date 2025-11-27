@@ -1,5 +1,70 @@
 #include "memory.hh"
 
+std::string Memory::to_string() const
+{
+    std::ostringstream oss;
+    oss << "Memory{thp=" << to_string_thp_mode(thp_mode)
+        << ", malloc=" << to_string_malloc_backend(malloc_backend)
+        << ", hugepages=" << hugepages_count
+        << ", arena_max=" << arena_max
+        << ", swappiness=" << swappiness
+        << ", oom_kill=" << oom_kill_task
+        << ", drop_caches=" << (drop_caches ? "yes" : "no")
+        << ", mlock_all=" << (mlock_all ? "yes" : "no")
+        << "}";
+    return oss.str();
+}
+std::string Memory::to_string_thp_mode(THPMode mode) const
+{
+    switch (mode)
+    {
+    case THPMode::NEVER:
+        return "never";
+    case THPMode::ALWAYS:
+        return "always";
+    case THPMode::MADVISE:
+        return "madvise";
+    default:
+        return "unknown";
+    }
+}
+Memory::THPMode Memory::from_string_thp_mode(const std::string &mode_str) const
+{
+    if (mode_str == "never")
+        return THPMode::NEVER;
+    else if (mode_str == "always")
+        return THPMode::ALWAYS;
+    else if (mode_str == "madvise")
+        return THPMode::MADVISE;
+    else
+        throw std::invalid_argument("Invalid THP mode string: " + mode_str);
+}
+std::string Memory::to_string_malloc_backend(Backend backend) const
+{
+    switch (backend)
+    {
+    case Backend::GLIBC:
+        return "glibc";
+    case Backend::JEMALLOC:
+        return "jemalloc";
+    case Backend::TCMALLOC:
+        return "tcmalloc";
+    default:
+        return "unknown";
+    }
+}
+Memory::Backend Memory::from_string_malloc_backend(const std::string &backend_str) const
+{
+    if (backend_str == "glibc")
+        return Backend::GLIBC;
+    else if (backend_str == "jemalloc")
+        return Backend::JEMALLOC;
+    else if (backend_str == "tcmalloc")
+        return Backend::TCMALLOC;
+    else
+        throw std::invalid_argument("Invalid malloc backend string: " + backend_str);
+}
+
 bool Memory::set_thp_mode(THPMode mode)
 {
     std::string mode_str = to_string_thp_mode(mode);
@@ -86,5 +151,60 @@ bool Memory::set_mlock_all(bool enable)
     }
 
     this->mlock_all = enable;
+    return true;
+}
+
+bool Memory::is_valid() const
+{
+    bool result = true;
+
+    if (hugepages_count < 0)
+    {
+        OPTKIT_WARN("hugepages_count cannot be negative: {}", hugepages_count);
+        result = false;
+    }
+
+    if (arena_max < 0)
+    {
+        OPTKIT_WARN("arena_max cannot be negative: {}", arena_max);
+        result = false;
+    }
+
+    if (swappiness < 0 || swappiness > 100)
+    {
+        OPTKIT_WARN("swappiness must be between 0 and 100: {}", swappiness);
+        result = false;
+    }
+
+    if (oom_kill_task < -1000 || oom_kill_task > 1000)
+    {
+        OPTKIT_WARN("oom_kill_task must be between -1000 and 1000: {}", oom_kill_task);
+        result = false;
+    }
+
+    return result;
+}
+
+bool Memory::apply()
+{
+    // Apply THP mode
+    set_thp_mode(thp_mode);
+
+    // Apply hugepages count
+    set_hugepages_count(hugepages_count);
+
+    // Apply arena max
+    set_arena_max(arena_max);
+
+    // Apply swappiness
+    set_swappiness(swappiness);
+
+    // Apply drop caches if requested
+    if (drop_caches)
+        drop_caches_now();
+
+    // Apply mlock_all
+    set_mlock_all(mlock_all);
+
     return true;
 }

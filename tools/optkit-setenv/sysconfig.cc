@@ -1,12 +1,33 @@
-#include "config.hh"
+#include "sysconfig.hh"
 
-bool is_requested_config_valid(const SystemConfig &config)
+std::string SystemConfig::to_string() const
 {
-    return config.memory.is_valid() &&
-           config.cpu.is_valid() &&
-           config.disk_io.is_valid() &&
-           config.kernel.is_valid() &&
-           config.gpu.is_valid() &&
-           config.cgroup.is_valid();
+    std::ostringstream oss;
+    oss << "SystemConfig{\n"
+        << "  " << cpu.to_string() << "\n"
+        << "  " << memory.to_string() << "\n"
+        << "  " << disk_io.to_string() << "\n"
+        << "  " << kernel.to_string() << "\n"
+        << "  " << gpu.to_string() << "\n"
+        << "  " << cgroup.to_string() << "\n"
+        << "}";
+    return oss.str();
 }
-void apply_requested_config(const SystemConfig &config) {}
+void SystemConfig::apply()
+{
+    cpu.apply();
+    memory.apply();
+    disk_io.apply();
+    kernel.apply();
+    gpu.apply();
+    cgroup.apply();
+}
+bool SystemConfig::is_valid() const
+{
+    return memory.is_valid() &&
+           cpu.is_valid() &&
+           disk_io.is_valid() &&
+           kernel.is_valid() &&
+           gpu.is_valid() &&
+           cgroup.is_valid();
+}

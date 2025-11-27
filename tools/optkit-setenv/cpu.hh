@@ -1,12 +1,14 @@
 #pragma once
+#include "module.hh"
 #include "helper.hh"
+
 enum class Switch
 {
     ON = true,
     OFF = false
 };
 
-struct CPU
+struct CPU : public Module
 {
     std::string governor;            // performance, powersave, ondemand, userspace, schedutil
     std::vector<int> affinity_cores; // list of core IDs to set affinity
@@ -28,9 +30,10 @@ struct CPU
     bool reset_uncore_freq(int64_t socket);
     bool set_smt_enabled(Switch state);
     bool set_turbo(Switch state);
-    std::string to_string() const;
+    std::string to_string() const override;
 
-    bool is_valid();
+    bool is_valid() const override;
+    bool apply() override;
 };
 
 inline std::ostream &operator<<(std::ostream &os, const CPU &cpu)

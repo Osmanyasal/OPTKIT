@@ -1,7 +1,8 @@
 #pragma once
+#include "module.hh"
 #include "helper.hh"
 
-struct GPU
+struct GPU : public Module
 {
     std::string persistence_mode; // on, off
     std::string fan_speed;        // percentage (e.g., "50%")
@@ -10,19 +11,9 @@ struct GPU
     int64_t power_limit_watts;    // power limit in watts
     bool reset_stats;             // true or false
 
-    std::string to_string() const
-    {
-        std::ostringstream oss;
-        oss << "GPU{persistence=" << persistence_mode
-            << ", fan=" << fan_speed
-            << ", core_freq=" << core_freq_mhz << "MHz"
-            << ", mem_freq=" << mem_freq_mhz << "MHz"
-            << ", power_limit=" << power_limit_watts << "W"
-            << ", reset_stats=" << (reset_stats ? "yes" : "no")
-            << "}";
-        return oss.str();
-    }
-    bool is_valid();
+    std::string to_string() const override;
+    bool is_valid() const override;
+    bool apply() override;
 };
 
 inline std::ostream &operator<<(std::ostream &os, const GPU &gpu)

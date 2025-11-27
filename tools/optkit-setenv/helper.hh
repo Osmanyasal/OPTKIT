@@ -8,4 +8,5 @@
 #include <sys/mman.h>
 #include <cstring>
 #include <cerrno>
+#include <sched.h>
 #include "optkit.hh"

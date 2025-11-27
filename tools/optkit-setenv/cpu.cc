@@ -1,5 +1,4 @@
 #include "cpu.hh"
-#include <sched.h>
 
 bool CPU::set_turbo(Switch state)
 {
@@ -19,7 +18,7 @@ bool CPU::set_turbo(Switch state)
 
 bool CPU::set_governor(const std::string &gov)
 {
-    if (optkit::frequency::cpu::set_scaling_governor(gov))
+    if (optkit::frequency::cpu::Query::set_scaling_governor(gov))
     {
         this->governor = gov;
         return true;
@@ -228,7 +227,7 @@ std::string CPU::to_string() const
     return oss.str();
 }
 
-bool CPU::is_valid()
+bool CPU::is_valid() const
 {
     bool result = true;
     // Check governor is valid
@@ -236,30 +235,32 @@ bool CPU::is_valid()
     if (!governor.empty() && std::find(valid_governors.begin(), valid_governors.end(), governor) == valid_governors.end())
     {
         OPTKIT_WARN("Invalid governor: {}, it should be either performance, powersave, ondemand, conservative, schedutil, or userspace", governor);
-        result && = false;
+        result = false;
     }
 
     // Check frequency ranges
     if (core_freq < 0 || uncore_freq < 0)
     {
         OPTKIT_WARN("Frequencies must be non-negative: core_freq={}, uncore_freq={}", core_freq, uncore_freq);
-        result && = false;
+        result = false;
     }
-    if (core_freq > optkit::frequency::cpu::Query::get_cpuinfo_max_freq() || core_freq < optkit::frequency::cpu::Query::get_cpuinfo_min_freq())
+    const int64_t min_core_freq = optkit::frequency::cpu::Query::get_cpuinfo_min_freq();
+    const int64_t max_core_freq = optkit::frequency::cpu::Query::get_cpuinfo_max_freq();
+    if (core_freq > 0 && (core_freq < min_core_freq || core_freq > max_core_freq))
     {
         OPTKIT_WARN("Core frequency {}kHz is out of bounds (min: {}kHz, max: {}kHz)", core_freq,
-                    optkit::frequency::cpu::Query::get_cpuinfo_min_freq(),
-                    optkit::frequency::cpu::Query::get_cpuinfo_max_freq());
-        result && = false;
+                    min_core_freq,
+                    max_core_freq);
+        result = false;
     }
 
     auto uncore_min_max = optkit::frequency::cpu::Frequency::get_uncore_min_max(0); // Just to check uncore support
-    if (uncore_freq < uncore_min_max.first || uncore_freq > uncore_min_max.second)
+    if (uncore_freq > 0 && (uncore_freq < uncore_min_max.first || uncore_freq > uncore_min_max.second))
     {
         OPTKIT_WARN("Uncore frequency {}kHz is out of bounds (min: {}kHz, max: {}kHz)", uncore_freq,
                     uncore_min_max.first,
                     uncore_min_max.second);
-        result && = false;
+        result = false;
     }
 
     // Check core indices are valid
@@ -267,7 +268,7 @@ bool CPU::is_valid()
     {
         if (core < 0 || core >= OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS)
         {
-            result && = false;
+            result = false;
             OPTKIT_WARN("Invalid core index in affinity_cores: {}", core);
             break;
         }
@@ -277,7 +278,7 @@ bool CPU::is_valid()
     {
         if (core < 0 || core >= OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS)
         {
-            result && = false;
+            result = false;
             OPTKIT_WARN("Invalid core index in offline_cores: {}", core);
             break;
         }
@@ -287,8 +288,32 @@ bool CPU::is_valid()
     if (std::find(offline_cores.begin(), offline_cores.end(), 0) != offline_cores.end())
     {
         OPTKIT_WARN("Cannot offline CPU0");
-        result && = false;
+        result = false;
     }
 
     return result;
+}
+
+bool CPU::apply()
+{
+    // Apply governor
+    set_governor(governor);
+
+    // Apply core frequency
+    set_core_freq(core_freq);
+
+    // Apply uncore frequency
+    set_uncore_freq(uncore_freq);
+
+    // Apply SMT state
+    set_smt_enabled(smt_enabled ? Switch::ON : Switch::OFF);
+
+    // Apply offline cores
+    set_all_cores_online(); // First online all cores
+    set_offline_cores(offline_cores);
+
+    // Apply turbo
+    set_turbo(turbo ? Switch::ON : Switch::OFF);
+
+    return true;
 }

@@ -1,6 +1,8 @@
 #pragma once
+#include "module.hh"
 #include "helper.hh"
-struct CGroup
+
+struct CGroup : public Module
 {
     std::string cpuset;         // CPU list or range
     std::string mem_limit;      // bytes or human readable (e.g., "4G")
@@ -11,21 +13,9 @@ struct CGroup
     int64_t cpu_period_us;      // microseconds
     int64_t mem_swappiness;     // 0-100
 
-    bool is_valid();
-    std::string to_string() const
-    {
-        std::ostringstream oss;
-        oss << "CGroup{cpuset=" << cpuset
-            << ", mem_limit=" << mem_limit
-            << ", io_read=" << io_limit_read
-            << ", io_write=" << io_limit_write
-            << ", freeze=" << freeze_state
-            << ", cpu_quota=" << cpu_quota_us << "us"
-            << ", cpu_period=" << cpu_period_us << "us"
-            << ", mem_swappiness=" << mem_swappiness
-            << "}";
-        return oss.str();
-    }
+    bool is_valid() const override;
+    bool apply() override;
+    std::string to_string() const override;
 };
 
 inline std::ostream &operator<<(std::ostream &os, const CGroup &cg)

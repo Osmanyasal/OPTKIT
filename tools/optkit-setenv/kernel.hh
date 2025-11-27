@@ -1,7 +1,8 @@
 #pragma once
+#include "module.hh"
 #include "helper.hh"
 
-struct Kernel
+struct Kernel : public Module
 {
     std::string irqbalance;           // on, off
     std::string isolate_irqs;         // CPU list or range
@@ -12,21 +13,9 @@ struct Kernel
     int64_t ulimit_n;                 // max number of open files
     bool disable_watchdogs;           // true or false
 
-    std::string to_string() const
-    {
-        std::ostringstream oss;
-        oss << "Kernel{irqbalance=" << irqbalance
-            << ", isolate_irqs=" << isolate_irqs
-            << ", isolate_cpus=" << isolate_cpus
-            << ", mitigations=" << mitigations
-            << ", clocksource=" << clocksource
-            << ", sched_granularity=" << sched_min_granularity_ms << "ms"
-            << ", ulimit_n=" << ulimit_n
-            << ", watchdogs=" << (disable_watchdogs ? "disabled" : "enabled")
-            << "}";
-        return oss.str();
-    }
-    bool is_valid();
+    std::string to_string() const override;
+    bool is_valid() const override;
+    bool apply() override;
 };
 
 inline std::ostream &operator<<(std::ostream &os, const Kernel &kern)

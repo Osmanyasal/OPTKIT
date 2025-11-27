@@ -1,8 +1,6 @@
 #pragma once
 
-#include <fstream>
-#include <stdexcept>
-#include "config.hh"
+#include "sysconfig.hh"
 
 // Helper to safely extract int64_t with default value
 inline int64_t get_int64_or(const nlohmann::json &j, const std::string &key, int64_t default_val)
@@ -66,9 +64,8 @@ inline Memory load_memory_config(const nlohmann::json &j)
     if (j.contains("memory") && j["memory"].is_object())
     {
         const auto &mem_json = j["memory"];
-        mem.thp_mode = get_string_or(mem_json, "thp_mode", "");
-        mem.numa_policy = get_string_or(mem_json, "numa_policy", "");
-        mem.malloc_backend = get_string_or(mem_json, "malloc_backend", "");
+        mem.thp_mode = mem.from_string_thp_mode(get_string_or(mem_json, "thp_mode", ""));
+        mem.malloc_backend = mem.from_string_malloc_backend(get_string_or(mem_json, "malloc_backend", ""));
         mem.hugepages_count = get_int64_or(mem_json, "hugepages_count", 0);
         mem.arena_max = get_int64_or(mem_json, "arena_max", 0);
         mem.swappiness = get_int64_or(mem_json, "swappiness", 60);

@@ -1,9 +1,6 @@
 #pragma once
 
-#include "config.hh"
-#include "utils/json.hh"
-#include <fstream>
-#include <stdexcept>
+#include "sysconfig.hh"
 
 // Convert CPU to JSON
 inline nlohmann::json cpu_to_json(const CPU &cpu)
@@ -24,7 +21,6 @@ inline nlohmann::json memory_to_json(const Memory &mem)
 {
     nlohmann::json j;
     j["thp_mode"] = mem.thp_mode;
-    j["numa_policy"] = mem.numa_policy;
     j["malloc_backend"] = mem.malloc_backend;
     j["hugepages_count"] = mem.hugepages_count;
     j["arena_max"] = mem.arena_max;
@@ -146,9 +142,8 @@ inline SystemConfig create_empty_config()
     config.cpu.turbo = false;
 
     // Memory defaults
-    config.memory.thp_mode = "";
-    config.memory.numa_policy = "";
-    config.memory.malloc_backend = "";
+    config.memory.thp_mode = Memory::THPMode::MADVISE;
+    config.memory.malloc_backend = Memory::Backend::GLIBC;
     config.memory.hugepages_count = 0;
     config.memory.arena_max = 0;
     config.memory.swappiness = 0;

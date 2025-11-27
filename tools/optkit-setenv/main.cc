@@ -1,4 +1,5 @@
 #include <iostream>
+#include "sysconfig.hh"
 #include "config_loader.hh"
 #include "config_writer.hh"
 #include "config_defaults.hh"
@@ -46,8 +47,8 @@ int main(int argc, char **argv)
         EXEC_IF_ROOT_RETURN(false);
         SystemConfig config = load_system_config(argv[1]);
         std::cout << config << "\n";
-        if (is_requested_config_valid(config))
-            apply_requested_config(config);
+        if (config.is_valid())
+            config.apply();
     }
     else
         return help(argc, argv);

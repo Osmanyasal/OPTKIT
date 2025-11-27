@@ -68,9 +68,8 @@ namespace optkit::frequency::cpu
                     if (max_freq > 0)
                         frequencies.push_back(max_freq);
                 }
-
-                return frequencies;
             }
+            return frequencies;
         }
     }
 
@@ -140,7 +139,7 @@ namespace optkit::frequency::cpu
             if (it == package_info.end() || it->second.empty())
             {
                 OPTKIT_CORE_ERROR("No cores found for socket {}", socket);
-                return;
+                return false;
             }
 
             int32_t sample_core = it->second.front(); // First core in this socket
@@ -161,7 +160,7 @@ namespace optkit::frequency::cpu
                 for (const auto &g : available_governors)
                     msg << " " << g;
                 OPTKIT_CORE_DEBUG("Available governors: {}", msg.str());
-                return;
+                return false;
             }
 
             // Apply governor to all cores in socket
@@ -204,7 +203,7 @@ namespace optkit::frequency::cpu
                     msg << " " << g;
 
                 OPTKIT_CORE_WARN("{}", msg.str());
-                return;
+                return false;
             }
 
             // Apply governor
