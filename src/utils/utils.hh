@@ -339,51 +339,74 @@ namespace optkit::utils
         }
     }
 
-    OPT_FORCE_INLINE void remove_file(const std::string &location)
+    OPT_FORCE_INLINE bool remove_file(const std::string &location, bool is_verbose = false)
     {
         if (std::remove(location.c_str()) != 0)
         {
-            OPTKIT_CORE_ERROR("Error deleting file: {}", location);
+            if (is_verbose)
+            {
+                OPTKIT_CORE_ERROR("Error deleting file: {}", location);
+            }
+            return false;
         }
         else
         {
-            OPTKIT_CORE_INFO("File deleted successfully: {}", location);
+            if (is_verbose)
+            {
+                OPTKIT_CORE_INFO("File deleted successfully: {}", location);
+            }
         }
+        return true;
     }
 
-    OPT_FORCE_INLINE void read_msr(int32_t cpuid, off_t MSR_REGISTER_address, uint64_t *MSR_REGISTER_bits)
+    OPT_FORCE_INLINE bool read_msr(int32_t cpuid, off_t MSR_REGISTER_address, uint64_t *MSR_REGISTER_bits, bool is_verbose = false)
     {
         char msr_file_name[64];
         sprintf(msr_file_name, "/dev/cpu/%d/msr_safe", cpuid);
         int32_t fd = open(msr_file_name, O_RDONLY);
         if (fd < 0)
         {
-            OPTKIT_CORE_WARN("read msr error [{}]", cpuid);
-            return;
+            if (is_verbose)
+            {
+                OPTKIT_CORE_WARN("read msr error [{}]", cpuid);
+            }
+            return false;
         }
 
         if (pread(fd, MSR_REGISTER_bits, sizeof MSR_REGISTER_bits, MSR_REGISTER_address) != sizeof MSR_REGISTER_bits)
         {
-            OPTKIT_CORE_WARN("read msr error -- cannot read register {}", MSR_REGISTER_address);
+            if (is_verbose)
+            {
+                OPTKIT_CORE_WARN("read msr error -- cannot read register {}", MSR_REGISTER_address);
+            }
+            return false;
         }
         close(fd);
+        return true;
     }
 
-    OPT_FORCE_INLINE void write_msr(int32_t cpuid, off_t MSR_REGISTER_address, uint64_t MSR_REGISTER_bits)
+    OPT_FORCE_INLINE bool write_msr(int32_t cpuid, off_t MSR_REGISTER_address, uint64_t MSR_REGISTER_bits, bool is_verbose = false)
     {
         char msr_file_name[64];
         sprintf(msr_file_name, "/dev/cpu/%d/msr_safe", cpuid);
         int32_t fd = open(msr_file_name, O_WRONLY);
         if (fd < 0)
         {
-            OPTKIT_CORE_WARN("write msr error [{}]", cpuid);
-            return;
+            if (is_verbose)
+            {
+                OPTKIT_CORE_WARN("write msr error [{}]", cpuid);
+            }
+            return false;
         }
 
         if (pwrite(fd, &MSR_REGISTER_bits, sizeof MSR_REGISTER_bits, MSR_REGISTER_address) != sizeof MSR_REGISTER_bits)
         {
-            OPTKIT_CORE_WARN("write msr error -- cannot write register {}", MSR_REGISTER_address);
+            if (is_verbose)
+            {
+                OPTKIT_CORE_WARN("write msr error -- cannot write register {}", MSR_REGISTER_address);
+            }
+            return false;
         }
+        return true;
     }
-
 }

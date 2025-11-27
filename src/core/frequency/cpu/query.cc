@@ -132,7 +132,7 @@ namespace optkit::frequency::cpu
             return "";
         }
     }
-    void Query::set_scaling_governor(const std::string &governor, int32_t socket)
+    bool Query::set_scaling_governor(const std::string &governor, int32_t socket)
     {
         try
         {
@@ -176,10 +176,12 @@ namespace optkit::frequency::cpu
         catch (const std::exception &e)
         {
             OPTKIT_CORE_ERROR("Failed to set scaling governor for socket {}: {}", socket, e.what());
+            return false;
         }
+        return true;
     }
 
-    void Query::set_scaling_governor_percore(const std::string &governor, int32_t core)
+    bool Query::set_scaling_governor_percore(const std::string &governor, int32_t core)
     {
         try
         {
@@ -214,7 +216,9 @@ namespace optkit::frequency::cpu
         catch (const std::exception &e)
         {
             OPTKIT_CORE_ERROR("Failed to set scaling governor for core {}: {}", core, e.what());
+            return false;
         }
+        return true;
     }
 
     std::vector<std::string> Query::get_available_governors(int32_t core)
