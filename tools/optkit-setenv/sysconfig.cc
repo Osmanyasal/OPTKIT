@@ -31,12 +31,12 @@ void SystemConfig::apply()
     gpu.apply();
     cgroup.apply();
 }
-void SystemConfig::load_current_settings()
+void SystemConfig::load_current_settings(pid_t pid)
 {
-    cpu.load_current_settings();
-    memory.load_current_settings();
-    disk_io.load_current_settings();
-    kernel.load_current_settings();
-    gpu.load_current_settings();
-    cgroup.load_current_settings();
+    cpu.load_current_settings(pid);
+    memory.load_current_settings(pid);
+    disk_io.load_current_settings(pid);
+    kernel.load_current_settings(pid);
+    gpu.load_current_settings(pid);
+    cgroup.load_current_settings(pid);
 }

@@ -24,7 +24,7 @@ bool Kernel::apply()
 {
     return true;
 }
-void Kernel::load_current_settings()
+void Kernel::load_current_settings(pid_t pid)
 {
     // Implementation to load current kernel settings would go here
 }

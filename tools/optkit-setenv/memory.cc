@@ -14,7 +14,7 @@ std::string Memory::to_string() const
         << "}";
     return oss.str();
 }
-std::string Memory::to_string_thp_mode(THPMode mode) const
+std::string Memory::to_string_thp_mode(THPMode mode)
 {
     switch (mode)
     {
@@ -28,7 +28,7 @@ std::string Memory::to_string_thp_mode(THPMode mode) const
         return "unknown";
     }
 }
-Memory::THPMode Memory::from_string_thp_mode(const std::string &mode_str) const
+Memory::THPMode Memory::from_string_thp_mode(const std::string &mode_str)
 {
     if (mode_str == "never")
         return THPMode::NEVER;
@@ -39,7 +39,7 @@ Memory::THPMode Memory::from_string_thp_mode(const std::string &mode_str) const
     else
         throw std::invalid_argument("Invalid THP mode string: " + mode_str);
 }
-std::string Memory::to_string_malloc_backend(Backend backend) const
+std::string Memory::to_string_malloc_backend(Backend backend)
 {
     switch (backend)
     {
@@ -53,7 +53,7 @@ std::string Memory::to_string_malloc_backend(Backend backend) const
         return "unknown";
     }
 }
-Memory::Backend Memory::from_string_malloc_backend(const std::string &backend_str) const
+Memory::Backend Memory::from_string_malloc_backend(const std::string &backend_str)
 {
     if (backend_str == "glibc")
         return Backend::GLIBC;
@@ -72,27 +72,107 @@ bool Memory::set_thp_mode(THPMode mode)
     this->thp_mode = mode;
     return true;
 }
-
 bool Memory::set_malloc_backend(Backend backend)
 {
-    // Set LD_PRELOAD environment variable before launching app
+    const char *current_preload = getenv("LD_PRELOAD");
+    std::string new_preload;
 
+    // Parse existing LD_PRELOAD and remove any malloc libraries
+    if (current_preload != nullptr)
+    {
+        std::string preload_str(current_preload);
+        std::vector<std::string> libs;
+
+        // Split by ':' delimiter
+        size_t pos = 0;
+        while ((pos = preload_str.find(':')) != std::string::npos)
+        {
+            std::string lib = preload_str.substr(0, pos);
+            // Keep libraries that aren't malloc backends
+            if (lib.find("jemalloc") == std::string::npos &&
+                lib.find("tcmalloc") == std::string::npos)
+            {
+                libs.push_back(lib);
+            }
+            preload_str.erase(0, pos + 1);
+        }
+        // Handle last library (or only library if no ':')
+        if (!preload_str.empty() &&
+            preload_str.find("jemalloc") == std::string::npos &&
+            preload_str.find("tcmalloc") == std::string::npos)
+        {
+            libs.push_back(preload_str);
+        }
+
+        // Reconstruct LD_PRELOAD without malloc libraries
+        for (size_t i = 0; i < libs.size(); ++i)
+        {
+            new_preload += libs[i];
+            if (i < libs.size() - 1)
+            {
+                new_preload += ":";
+            }
+        }
+    }
+
+    // Add the requested malloc backend
     switch (backend)
     {
     case Backend::GLIBC:
-        unsetenv("LD_PRELOAD");
+        // Just use the cleaned preload (no malloc library added)
         break;
     case Backend::JEMALLOC:
-        setenv("LD_PRELOAD", "/usr/lib/x86_64-linux-gnu/libjemalloc.so.2", 1);
+        if (!new_preload.empty())
+            new_preload += ":";
+        new_preload += "/usr/lib/x86_64-linux-gnu/libjemalloc.so.2";
         break;
     case Backend::TCMALLOC:
-        setenv("LD_PRELOAD", "/usr/lib/x86_64-linux-gnu/libtcmalloc.so.4", 1);
+        if (!new_preload.empty())
+            new_preload += ":";
+        new_preload += "/usr/lib/x86_64-linux-gnu/libtcmalloc.so.4";
         break;
     }
+
+    // Set or unset LD_PRELOAD
+    if (new_preload.empty())
+    {
+        unsetenv("LD_PRELOAD");
+    }
+    else
+    {
+        setenv("LD_PRELOAD", new_preload.c_str(), 1);
+    }
+
     this->malloc_backend = backend;
     return true;
 }
 
+Memory::Backend Memory::get_malloc_backend() const
+{
+    const char *preload = getenv("LD_PRELOAD");
+
+    if (preload == nullptr || strlen(preload) == 0)
+    {
+        return Backend::GLIBC; // No LD_PRELOAD means default glibc
+    }
+
+    std::string preload_str(preload);
+
+    // Check for jemalloc
+    if (preload_str.find("jemalloc") != std::string::npos)
+    {
+        return Backend::JEMALLOC;
+    }
+
+    // Check for tcmalloc
+    if (preload_str.find("tcmalloc") != std::string::npos)
+    {
+        return Backend::TCMALLOC;
+    }
+
+    // Default to glibc if no recognized malloc library found
+    return Backend::GLIBC;
+}
 bool Memory::set_hugepages_count(int64_t count)
 {
     optkit::utils::write_file(
@@ -208,7 +288,39 @@ bool Memory::apply()
 
     return true;
 }
-void Memory::load_current_settings()
+void Memory::load_current_settings(pid_t pid)
 {
-    // Implementation to load current memory settings would go here
+    std::string huge_pages = optkit::utils::read_file("/sys/kernel/mm/transparent_hugepage/enabled");
+    auto tokens = optkit::utils::str_split(huge_pages, " ");
+    for (const auto &token : tokens)
+    {
+        if (token.front() == '[' && token.back() == ']')
+        {
+            std::string mode_str = token.substr(1, token.size() - 2);
+            this->thp_mode = from_string_thp_mode(mode_str);
+            break;
+        }
+    }
+
+    this->malloc_backend = get_malloc_backend();
+
+    // Load hugepages count
+    std::string hugepages_str = optkit::utils::read_file("/sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages");
+    this->hugepages_count = std::stoll(hugepages_str);
+
+    // Load arena_max from environment
+    const char *arena_env = getenv("MALLOC_ARENA_MAX");
+    this->arena_max = arena_env ? std::stoll(arena_env) : 0;
+
+    // Load swappiness
+    std::string swappiness_str = optkit::utils::read_file("/proc/sys/vm/swappiness");
+    this->swappiness = std::stoll(swappiness_str);
+
+    // Load OOM score for current process
+    std::string oom_str = optkit::utils::read_file("/proc/" + std::to_string(pid) + "/oom_score_adj");
+    this->oom_kill_task = std::stoll(oom_str);
+
+    // drop_caches and mlock_all are write-only, can't read current state
+    this->drop_caches = false;
+    this->mlock_all = false;
 }

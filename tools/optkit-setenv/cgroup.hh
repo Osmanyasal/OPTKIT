@@ -1,6 +1,5 @@
 #pragma once
 #include "module.hh"
-#include "helper.hh"
 
 struct CGroup : public Module
 {
@@ -16,7 +15,7 @@ struct CGroup : public Module
     bool is_valid() const override;
     bool apply() override;
     std::string to_string() const override;
-    void load_current_settings() override;
+    void load_current_settings(pid_t pid) override;
 };
 
 inline std::ostream &operator<<(std::ostream &os, const CGroup &cg)

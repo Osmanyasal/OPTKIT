@@ -23,7 +23,7 @@ bool CGroup::apply()
     // Implementation to apply cgroup settings would go here
     return true;
 }
-void CGroup::load_current_settings()
+void CGroup::load_current_settings(pid_t pid)
 {
     // Implementation to load current cgroup settings would go here
 }

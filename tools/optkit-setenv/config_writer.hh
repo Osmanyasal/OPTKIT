@@ -20,8 +20,8 @@ inline nlohmann::json cpu_to_json(const CPU &cpu)
 inline nlohmann::json memory_to_json(const Memory &mem)
 {
     nlohmann::json j;
-    j["thp_mode"] = mem.thp_mode;
-    j["malloc_backend"] = mem.malloc_backend;
+    j["thp_mode"] = mem.to_string_thp_mode(mem.thp_mode);
+    j["malloc_backend"] = mem.to_string_malloc_backend(mem.malloc_backend);
     j["hugepages_count"] = mem.hugepages_count;
     j["arena_max"] = mem.arena_max;
     j["swappiness"] = mem.swappiness;

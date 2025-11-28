@@ -23,7 +23,7 @@ bool DiskIO::apply()
     return true;
 }
 
-void DiskIO::load_current_settings()
+void DiskIO::load_current_settings(pid_t pid)
 {
     // Implementation to load current diskio settings would go here
 }

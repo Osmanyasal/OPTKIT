@@ -19,7 +19,7 @@ struct SystemConfig
     std::string to_string() const;
     bool is_valid() const;
     void apply();
-    void load_current_settings();
+    void load_current_settings(pid_t pid);
 };
 inline std::ostream &operator<<(std::ostream &os, const SystemConfig &config)
 {

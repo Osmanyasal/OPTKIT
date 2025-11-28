@@ -22,7 +22,7 @@ bool GPU::apply()
     return true;
 }
 
-void GPU::load_current_settings()
+void GPU::load_current_settings(pid_t pid)
 {
     // Implementation to load current GPU settings would go here
 }

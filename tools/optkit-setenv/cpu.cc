@@ -130,7 +130,7 @@ bool CPU::set_all_cores_offline()
         }
     }
 
-    return !this->offline_cores.empty();
+    return (this->offline_cores.size() == OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS - 1);
 }
 bool CPU::set_core_freq(int64_t freq_khz)
 {
@@ -284,7 +284,7 @@ bool CPU::is_valid() const
 
     for (auto core : offline_cores)
     {
-        if (core < 0 || core >= OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS)
+        if (core <= 0 || core >= OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS)
         {
             result = false;
             OPTKIT_WARN("Invalid core index in offline_cores: {}", core);
@@ -326,7 +326,7 @@ bool CPU::apply()
     return true;
 }
 
-void CPU::load_current_settings()
+void CPU::load_current_settings(pid_t pid)
 {
     this->governor = optkit::frequency::cpu::Query::get_scaling_governor(0);
     this->affinity_cores = {};
