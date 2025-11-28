@@ -13,6 +13,15 @@ std::string SystemConfig::to_string() const
         << "}";
     return oss.str();
 }
+bool SystemConfig::is_valid() const
+{
+    return memory.is_valid() &&
+           cpu.is_valid() &&
+           disk_io.is_valid() &&
+           kernel.is_valid() &&
+           gpu.is_valid() &&
+           cgroup.is_valid();
+}
 void SystemConfig::apply()
 {
     cpu.apply();
@@ -22,12 +31,12 @@ void SystemConfig::apply()
     gpu.apply();
     cgroup.apply();
 }
-bool SystemConfig::is_valid() const
+void SystemConfig::load_current_settings()
 {
-    return memory.is_valid() &&
-           cpu.is_valid() &&
-           disk_io.is_valid() &&
-           kernel.is_valid() &&
-           gpu.is_valid() &&
-           cgroup.is_valid();
+    cpu.load_current_settings();
+    memory.load_current_settings();
+    disk_io.load_current_settings();
+    kernel.load_current_settings();
+    gpu.load_current_settings();
+    cgroup.load_current_settings();
 }

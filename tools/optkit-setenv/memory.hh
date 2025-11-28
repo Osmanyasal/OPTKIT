@@ -42,6 +42,7 @@ struct Memory : public Module
     Backend from_string_malloc_backend(const std::string &backend_str) const;
     bool is_valid() const override;
     bool apply() override;
+    void load_current_settings() override;
 };
 
 inline std::ostream &operator<<(std::ostream &os, const Memory &mem)

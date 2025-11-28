@@ -22,3 +22,8 @@ bool DiskIO::apply()
     // Currently no-op
     return true;
 }
+
+void DiskIO::load_current_settings()
+{
+    // Implementation to load current diskio settings would go here
+}

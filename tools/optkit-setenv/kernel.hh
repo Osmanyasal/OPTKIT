@@ -16,6 +16,7 @@ struct Kernel : public Module
     std::string to_string() const override;
     bool is_valid() const override;
     bool apply() override;
+    void load_current_settings() override;
 };
 
 inline std::ostream &operator<<(std::ostream &os, const Kernel &kern)

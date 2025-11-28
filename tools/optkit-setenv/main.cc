@@ -2,7 +2,6 @@
 #include "sysconfig.hh"
 #include "config_loader.hh"
 #include "config_writer.hh"
-#include "config_defaults.hh"
 
 int help(int argc, char **argv)
 {
@@ -27,7 +26,7 @@ int main(int argc, char **argv)
     if (argc == 2 && std::string(argv[1]) == "--backup")
     {
         SystemConfig config = create_empty_config();
-        fill_defaults(config);
+        config.load_current_settings();
         save_system_config(config, "/tmp/optkit_env_backup.json");
         std::cout << "Created backup of current environment at /tmp/optkit_env_backup.json\n";
     }

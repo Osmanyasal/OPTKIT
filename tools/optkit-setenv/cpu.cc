@@ -2,11 +2,11 @@
 
 bool CPU::set_turbo(Switch state)
 {
-    std::string turbo_path = "/sys/devices/system/cpu/intel_pstate/no_turbo";
+    std::string turbo_path = "cat /sys/devices/system/cpu/cpufreq/boost";
     try
     {
         // no_turbo file is inverted: 0 = turbo enabled, 1 = turbo disabled
-        optkit::utils::write_file(turbo_path, (state == Switch::ON) ? "0" : "1");
+        optkit::utils::write_file(turbo_path, (state == Switch::ON) ? "1" : "0");
         this->turbo = (bool)state;
     }
     catch (const std::exception &e)
@@ -126,6 +126,7 @@ bool CPU::set_all_cores_offline()
         catch (const std::exception &e)
         {
             // Continue trying other cores
+            OPTKIT_WARN("Failed to offline core {}: {}", core, e.what());
         }
     }
 
@@ -144,6 +145,8 @@ bool CPU::set_core_freq(int64_t freq_khz)
         else
         {
             // Rollback on failure
+            OPTKIT_WARN("Failed to set core frequency for socket {}", socket);
+            OPTKIT_WARN("Rolling back core frequency changes on previously changed sockets");
             for (auto s : changed_sockets)
             {
                 reset_core_freq(s);
@@ -151,10 +154,10 @@ bool CPU::set_core_freq(int64_t freq_khz)
             return false;
         }
     }
-
     this->core_freq = freq_khz;
     return true;
 }
+
 bool CPU::set_uncore_freq(int64_t freq_khz)
 {
     std::vector<int> changed_sockets;
@@ -168,6 +171,8 @@ bool CPU::set_uncore_freq(int64_t freq_khz)
         else
         {
             // Rollback on failure
+            OPTKIT_WARN("Failed to set uncore frequency for socket {}", socket);
+            OPTKIT_WARN("Rolling back uncore frequency changes on previously changed sockets");
             for (auto s : changed_sockets)
             {
                 reset_uncore_freq(s);
@@ -184,10 +189,12 @@ bool CPU::reset_core_freq(int64_t socket)
 {
     return optkit::frequency::cpu::Frequency::reset_core_frequency(socket);
 }
+
 bool CPU::reset_uncore_freq(int64_t socket)
 {
     return optkit::frequency::cpu::Frequency::reset_uncore_frequency(socket);
 }
+
 bool CPU::set_smt_enabled(Switch state)
 {
     try
@@ -201,6 +208,7 @@ bool CPU::set_smt_enabled(Switch state)
     }
     return true;
 }
+
 std::string CPU::to_string() const
 {
     std::ostringstream oss;
@@ -316,4 +324,22 @@ bool CPU::apply()
     set_turbo(turbo ? Switch::ON : Switch::OFF);
 
     return true;
+}
+
+void CPU::load_current_settings()
+{
+    this->governor = optkit::frequency::cpu::Query::get_scaling_governor(0);
+    this->affinity_cores = {};
+    this->offline_cores = {};
+    this->core_freq = optkit::frequency::cpu::Frequency::get_core_frequency(0);
+    this->uncore_freq = optkit::frequency::cpu::Frequency::get_uncore_frequency(0);
+    this->smt_enabled = optkit::Query::is_smt_enabled();
+    this->turbo = optkit::Query::is_turbo_enabled();
+    // get offline cores
+    for (int core = 1; core < OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS; core++)
+    {
+        std::string res = optkit::utils::read_file("/sys/devices/system/cpu/cpu" + std::to_string(core) + "/online");
+        if (res.find('0') != std::string::npos)
+            this->offline_cores.push_back(core);
+    }
 }

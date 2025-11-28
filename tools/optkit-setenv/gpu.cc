@@ -21,3 +21,8 @@ bool GPU::apply()
 {
     return true;
 }
+
+void GPU::load_current_settings()
+{
+    // Implementation to load current GPU settings would go here
+}
