@@ -24,5 +24,5 @@ bool GPU::apply()
 
 void GPU::load_current_settings(pid_t pid)
 {
-    // Implementation to load current GPU settings would go here
+    this->mem_freq_mhz = optkit::gpu::Query::device_query();
 }

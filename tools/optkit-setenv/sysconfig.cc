@@ -1,42 +1,33 @@
 #include "sysconfig.hh"
 
-std::string SystemConfig::to_string() const
+SysConfig &SysConfig::add_module(std::unique_ptr<Module> mod)
+{
+    modules.push_back(std::move(mod));
+    return *this;
+}
+std::string SysConfig::to_string() const
 {
     std::ostringstream oss;
-    oss << "SystemConfig{\n"
+    oss << "SysConfig{\n"
         << "  " << cpu.to_string() << "\n"
         << "  " << memory.to_string() << "\n"
-        << "  " << disk_io.to_string() << "\n"
-        << "  " << kernel.to_string() << "\n"
         << "  " << gpu.to_string() << "\n"
         << "  " << cgroup.to_string() << "\n"
         << "}";
     return oss.str();
 }
-bool SystemConfig::is_valid() const
+bool SysConfig::is_valid() const
 {
-    return memory.is_valid() &&
-           cpu.is_valid() &&
-           disk_io.is_valid() &&
-           kernel.is_valid() &&
-           gpu.is_valid() &&
-           cgroup.is_valid();
+    for (auto &&module : this->modules)
+        module->is_valid();
 }
-void SystemConfig::apply()
+void SysConfig::apply()
 {
-    cpu.apply();
-    memory.apply();
-    disk_io.apply();
-    kernel.apply();
-    gpu.apply();
-    cgroup.apply();
+    for (auto &&module : this->modules)
+        module->apply();
 }
-void SystemConfig::load_current_settings(pid_t pid)
+void SysConfig::load_current_settings(pid_t pid)
 {
-    cpu.load_current_settings(pid);
-    memory.load_current_settings(pid);
-    disk_io.load_current_settings(pid);
-    kernel.load_current_settings(pid);
-    gpu.load_current_settings(pid);
-    cgroup.load_current_settings(pid);
+    for (auto &&module : this->modules)
+        module->load_current_settings(pid);
 }

@@ -34,7 +34,7 @@ endif
 
 # Targets
 TARGET = optkit-setenv
-SOURCES = main.cc sysconfig.cc cpu.cc memory.cc diskio.cc kernel.cc gpu.cc cgroup.cc
+SOURCES = main.cc sysconfig.cc cpu.cc memory.cc gpu.cc cgroup.cc
 OBJECTS = $(SOURCES:.cc=.o)
 
 # Default target

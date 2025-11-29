@@ -1,70 +1,5 @@
 #include "memory.hh"
 
-std::string Memory::to_string() const
-{
-    std::ostringstream oss;
-    oss << "Memory{thp=" << to_string_thp_mode(thp_mode)
-        << ", malloc=" << to_string_malloc_backend(malloc_backend)
-        << ", hugepages=" << hugepages_count
-        << ", arena_max=" << arena_max
-        << ", swappiness=" << swappiness
-        << ", oom_kill=" << oom_kill_task
-        << ", drop_caches=" << (drop_caches ? "yes" : "no")
-        << ", mlock_all=" << (mlock_all ? "yes" : "no")
-        << "}";
-    return oss.str();
-}
-std::string Memory::to_string_thp_mode(THPMode mode)
-{
-    switch (mode)
-    {
-    case THPMode::NEVER:
-        return "never";
-    case THPMode::ALWAYS:
-        return "always";
-    case THPMode::MADVISE:
-        return "madvise";
-    default:
-        return "unknown";
-    }
-}
-Memory::THPMode Memory::from_string_thp_mode(const std::string &mode_str)
-{
-    if (mode_str == "never")
-        return THPMode::NEVER;
-    else if (mode_str == "always")
-        return THPMode::ALWAYS;
-    else if (mode_str == "madvise")
-        return THPMode::MADVISE;
-    else
-        throw std::invalid_argument("Invalid THP mode string: " + mode_str);
-}
-std::string Memory::to_string_malloc_backend(Backend backend)
-{
-    switch (backend)
-    {
-    case Backend::GLIBC:
-        return "glibc";
-    case Backend::JEMALLOC:
-        return "jemalloc";
-    case Backend::TCMALLOC:
-        return "tcmalloc";
-    default:
-        return "unknown";
-    }
-}
-Memory::Backend Memory::from_string_malloc_backend(const std::string &backend_str)
-{
-    if (backend_str == "glibc")
-        return Backend::GLIBC;
-    else if (backend_str == "jemalloc")
-        return Backend::JEMALLOC;
-    else if (backend_str == "tcmalloc")
-        return Backend::TCMALLOC;
-    else
-        throw std::invalid_argument("Invalid malloc backend string: " + backend_str);
-}
-
 bool Memory::set_thp_mode(THPMode mode)
 {
     std::string mode_str = to_string_thp_mode(mode);
@@ -323,4 +258,68 @@ void Memory::load_current_settings(pid_t pid)
     // drop_caches and mlock_all are write-only, can't read current state
     this->drop_caches = false;
     this->mlock_all = false;
+}
+std::string Memory::to_string() const
+{
+    std::ostringstream oss;
+    oss << "Memory{thp=" << to_string_thp_mode(thp_mode)
+        << ", malloc=" << to_string_malloc_backend(malloc_backend)
+        << ", hugepages=" << hugepages_count
+        << ", arena_max=" << arena_max
+        << ", swappiness=" << swappiness
+        << ", oom_kill=" << oom_kill_task
+        << ", drop_caches=" << (drop_caches ? "yes" : "no")
+        << ", mlock_all=" << (mlock_all ? "yes" : "no")
+        << "}";
+    return oss.str();
+}
+std::string Memory::to_string_thp_mode(THPMode mode)
+{
+    switch (mode)
+    {
+    case THPMode::NEVER:
+        return "never";
+    case THPMode::ALWAYS:
+        return "always";
+    case THPMode::MADVISE:
+        return "madvise";
+    default:
+        return "unknown";
+    }
+}
+Memory::THPMode Memory::from_string_thp_mode(const std::string &mode_str)
+{
+    if (mode_str == "never")
+        return THPMode::NEVER;
+    else if (mode_str == "always")
+        return THPMode::ALWAYS;
+    else if (mode_str == "madvise")
+        return THPMode::MADVISE;
+    else
+        throw std::invalid_argument("Invalid THP mode string: " + mode_str);
+}
+std::string Memory::to_string_malloc_backend(Backend backend)
+{
+    switch (backend)
+    {
+    case Backend::GLIBC:
+        return "glibc";
+    case Backend::JEMALLOC:
+        return "jemalloc";
+    case Backend::TCMALLOC:
+        return "tcmalloc";
+    default:
+        return "unknown";
+    }
+}
+Memory::Backend Memory::from_string_malloc_backend(const std::string &backend_str)
+{
+    if (backend_str == "glibc")
+        return Backend::GLIBC;
+    else if (backend_str == "jemalloc")
+        return Backend::JEMALLOC;
+    else if (backend_str == "tcmalloc")
+        return Backend::TCMALLOC;
+    else
+        throw std::invalid_argument("Invalid malloc backend string: " + backend_str);
 }
