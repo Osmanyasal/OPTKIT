@@ -41,17 +41,10 @@ BENCHMARKING (--bench):
     Multiple execution analysis - runs program multiple times with different configurations
     
     optkit stat --bench freq-scaling -- <program>            Frequency scaling analysis
-    optkit stat --bench core-scaling -- <program>            Core scaling analysis
-    optkit stat --affinity <STRATEGY> -- <program>           Affinity analysis
+    optkit stat --bench core-scaling -- <program>            Core scaling analysis 
 
     Options can be interleaved:
-    optkit stat --bench freq-scaling -e cycles -m ipc -- <program>
-
-AFFINITY STRATEGIES:
-    --affinity compact              Pack threads on fewer cores (cache locality)
-    --affinity scatter              Spread threads across cores (avoid contention)
-    --affinity numa                 NUMA-aware placement (memory locality)
-    --affinity manual               Manual affinity control
+    optkit stat --bench freq-scaling -e cycles -m ipc -- <program> 
 
 EXAMPLES:
     # Topology queries
