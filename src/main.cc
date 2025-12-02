@@ -28,6 +28,8 @@ int32_t main(int32_t argc, char **argv)
     // OPTKIT_GPU_ENERGY("main gpu energy");
     OPTKIT_CPU_ENERGY("main cpu energy");
 
+    OPTKIT_DISK_EVENTS("main disk");
+
     // optkit::gpu::GpuClockInfo clock_info;
     // optkit::gpu::Query::get_clock_info(optkit::gpu::GpuVendor::NVIDIA, 0, clock_info);
     // std::cout << "Clock Version:" << clock_info << "\n";
@@ -79,7 +81,7 @@ int32_t main(int32_t argc, char **argv)
     }
 #endif
 
-    sleep(5);
+    sleep(15);
     // var24.read_and_store();
     sleep(5);
 

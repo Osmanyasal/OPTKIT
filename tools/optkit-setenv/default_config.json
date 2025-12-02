@@ -1,18 +1,46 @@
 {
     "cgroup": {
-        "cpu_period_us": 0,
-        "cpu_quota_us": 0,
-        "cpuset": "",
-        "freeze_state": "",
-        "io_limit_read": "",
-        "io_limit_write": "",
-        "mem_limit": "",
-        "mem_swappiness": 0
+        "core": {
+            "freeze": false,
+            "max_depth": -1,
+            "max_descendants": -1,
+            "pressure": true
+        },
+        "cpu": {
+            "idle": false,
+            "max_burst_us": 0,
+            "period_us": 100000,
+            "quota_us": -1,
+            "uclamp_max": 100,
+            "uclamp_min": 0,
+            "weight": 100,
+            "weight_nice": 0
+        },
+        "io": {
+            "max": "",
+            "weight": "100"
+        },
+        "memory": {
+            "high": "max",
+            "low": "0",
+            "max": "max",
+            "min": "0",
+            "oom_group": false,
+            "swap_high": "max",
+            "swap_max": "max",
+            "zswap_max": "max",
+            "zswap_writeback": true
+        },
+        "name": "",
+        "path": "",
+        "pids": {
+            "max": -1
+        }
     },
     "cpu": {
         "affinity_cores": [],
         "core_freq": 0,
-        "governor": "",
+        "governor": "performance",
         "offline_cores": [],
         "smt_enabled": false,
         "turbo": false,
@@ -20,9 +48,9 @@
     },
     "gpu": {
         "core_freq_mhz": 0,
-        "fan_speed": "",
+        "fan_speed": "auto",
         "mem_freq_mhz": 0,
-        "persistence_mode": "",
+        "persistence_mode": "off",
         "power_limit_watts": 0,
         "reset_stats": false
     },
@@ -30,11 +58,10 @@
         "arena_max": 0,
         "drop_caches": false,
         "hugepages_count": 0,
-        "malloc_backend": "",
+        "malloc_backend": "glibc",
         "mlock_all": false,
-        "numa_policy": "",
         "oom_kill_task": 0,
-        "swappiness": 0,
-        "thp_mode": ""
+        "swappiness": 60,
+        "thp_mode": "madvise"
     }
 }

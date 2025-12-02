@@ -4,6 +4,9 @@
 class GPU : public Module
 {
 public:
+    static const std::string name;
+
+public:
     GPU()
         : persistence_mode("off"),
           fan_speed("auto"),
@@ -14,10 +17,12 @@ public:
     {
     }
     virtual ~GPU() = default;
+
     std::string to_string() const override;
     bool is_valid() const override;
     bool apply() override;
     void load_current_settings(pid_t pid) override;
+    nlohmann::json to_json() const override;
 
 public:
     std::string persistence_mode; // on, off

@@ -124,6 +124,7 @@ namespace optkit::utils
     std::string get_time(const std::string &format = "%H_%M_%S");
     std::vector<std::string> get_all_files(const std::string &directory_name);
     std::vector<std::string> str_split(const std::string &s, const std::string &delimiter);
+    std::string str_trim(const std::string &s);
 
     // Helper functions for C++11 compatible type handling
     template <typename T>

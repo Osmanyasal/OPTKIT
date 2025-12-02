@@ -1,5 +1,7 @@
 #include "memory.hh"
 
+const std::string Memory::name = "memory";
+
 bool Memory::set_thp_mode(THPMode mode)
 {
     std::string mode_str = to_string_thp_mode(mode);
@@ -258,6 +260,20 @@ void Memory::load_current_settings(pid_t pid)
     // drop_caches and mlock_all are write-only, can't read current state
     this->drop_caches = false;
     this->mlock_all = false;
+}
+
+nlohmann::json Memory::to_json() const
+{
+    nlohmann::json j;
+    j["thp_mode"] = to_string_thp_mode(thp_mode);
+    j["malloc_backend"] = to_string_malloc_backend(malloc_backend);
+    j["hugepages_count"] = hugepages_count;
+    j["arena_max"] = arena_max;
+    j["swappiness"] = swappiness;
+    j["oom_kill_task"] = oom_kill_task;
+    j["drop_caches"] = drop_caches;
+    j["mlock_all"] = mlock_all;
+    return j;
 }
 std::string Memory::to_string() const
 {

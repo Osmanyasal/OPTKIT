@@ -32,4 +32,5 @@ public:
     virtual bool is_valid() const = 0;
     virtual bool apply() = 0;
     virtual void load_current_settings(pid_t pid) = 0;
+    virtual nlohmann::json to_json() const = 0;
 };

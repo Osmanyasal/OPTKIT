@@ -32,10 +32,10 @@ inline bool get_bool_or(const nlohmann::json &j, const std::string &key, bool de
 }
 
 // Helper to safely extract vector<int> with default value
-inline std::vector<int> get_int_vec_or(const nlohmann::json &j, const std::string &key, const std::vector<int> &default_val)
+inline std::vector<int16_t> get_int16_vec_or(const nlohmann::json &j, const std::string &key, const std::vector<int16_t> &default_val)
 {
     if (j.contains(key) && !j[key].is_null() && j[key].is_array())
-        return j[key].get<std::vector<int>>();
+        return j[key].get<std::vector<int16_t>>();
     return default_val;
 }
 
@@ -47,8 +47,8 @@ inline CPU load_cpu_config(const nlohmann::json &j)
     {
         const auto &cpu_json = j["cpu"];
         cpu.governor = get_string_or(cpu_json, "governor", "");
-        cpu.affinity_cores = get_int_vec_or(cpu_json, "affinity_cores", {});
-        cpu.offline_cores = get_int_vec_or(cpu_json, "offline_cores", {});
+        cpu.affinity_cores = get_int16_vec_or(cpu_json, "affinity_cores", {});
+        cpu.offline_cores = get_int16_vec_or(cpu_json, "offline_cores", {});
         cpu.core_freq = get_int64_or(cpu_json, "core_freq", 0);
         cpu.uncore_freq = get_int64_or(cpu_json, "uncore_freq", 0);
         cpu.smt_enabled = get_bool_or(cpu_json, "smt_enabled", true);
@@ -100,14 +100,64 @@ inline CGroup load_cgroup_config(const nlohmann::json &j)
     if (j.contains("cgroup") && j["cgroup"].is_object())
     {
         const auto &cg_json = j["cgroup"];
-        cg.cpuset = get_string_or(cg_json, "cpuset", "");
-        cg.mem_limit = get_string_or(cg_json, "mem_limit", "");
-        cg.io_limit_read = get_string_or(cg_json, "io_limit_read", "");
-        cg.io_limit_write = get_string_or(cg_json, "io_limit_write", "");
-        cg.freeze_state = get_string_or(cg_json, "freeze_state", "");
-        cg.cpu_quota_us = get_int64_or(cg_json, "cpu_quota_us", 0);
-        cg.cpu_period_us = get_int64_or(cg_json, "cpu_period_us", 0);
-        cg.mem_swappiness = get_int64_or(cg_json, "mem_swappiness", 0);
+
+        // Load cgroup path and name
+        cg.cgroup_path = get_string_or(cg_json, "cgroup_path", "/sys/fs/cgroup/optkit");
+        cg.cgroup_name = get_string_or(cg_json, "cgroup_name", "optkit");
+
+        // Load CPU controller settings
+        if (cg_json.contains("cpu") && cg_json["cpu"].is_object())
+        {
+            const auto &cpu_json = cg_json["cpu"];
+            cg.cpu.quota_us = get_int64_or(cpu_json, "quota_us", -1);
+            cg.cpu.period_us = get_int64_or(cpu_json, "period_us", 100000);
+            cg.cpu.max_burst_us = get_int64_or(cpu_json, "max_burst_us", 0);
+            cg.cpu.weight = get_int64_or(cpu_json, "weight", 100);
+            cg.cpu.weight_nice = get_int64_or(cpu_json, "weight_nice", 0);
+            cg.cpu.uclamp_min = get_int64_or(cpu_json, "uclamp_min", 0);
+            cg.cpu.uclamp_max = get_int64_or(cpu_json, "uclamp_max", 100);
+            cg.cpu.idle = get_bool_or(cpu_json, "idle", false);
+        }
+
+        // Load Memory controller settings
+        if (cg_json.contains("memory") && cg_json["memory"].is_object())
+        {
+            const auto &mem_json = cg_json["memory"];
+            cg.memory.max = get_string_or(mem_json, "max", "max");
+            cg.memory.high = get_string_or(mem_json, "high", "max");
+            cg.memory.low = get_string_or(mem_json, "low", "0");
+            cg.memory.min = get_string_or(mem_json, "min", "0");
+            cg.memory.swap_max = get_string_or(mem_json, "swap_max", "max");
+            cg.memory.swap_high = get_string_or(mem_json, "swap_high", "max");
+            cg.memory.zswap_max = get_string_or(mem_json, "zswap_max", "max");
+            cg.memory.oom_group = get_bool_or(mem_json, "oom_group", false);
+            cg.memory.zswap_writeback = get_bool_or(mem_json, "zswap_writeback", true);
+        }
+
+        // Load IO controller settings
+        if (cg_json.contains("io") && cg_json["io"].is_object())
+        {
+            const auto &io_json = cg_json["io"];
+            cg.io.max = get_string_or(io_json, "max", "");
+            cg.io.weight = get_string_or(io_json, "weight", "100");
+        }
+
+        // Load PID controller settings
+        if (cg_json.contains("pid") && cg_json["pid"].is_object())
+        {
+            const auto &pid_json = cg_json["pid"];
+            cg.pid.max = get_int64_or(pid_json, "max", -1);
+        }
+
+        // Load Core cgroup settings
+        if (cg_json.contains("core") && cg_json["core"].is_object())
+        {
+            const auto &core_json = cg_json["core"];
+            cg.core.freeze = get_bool_or(core_json, "freeze", false);
+            cg.core.max_depth = get_int64_or(core_json, "max_depth", -1);
+            cg.core.max_descendants = get_int64_or(core_json, "max_descendants", -1);
+            cg.core.pressure = get_bool_or(core_json, "pressure", true);
+        }
     }
     return cg;
 }
@@ -132,10 +182,10 @@ inline SysConfig load_system_config(const std::string &json_path)
         nlohmann::json j = nlohmann::json::parse(content);
 
         // Load each component
-        config.cpu = load_cpu_config(j);
-        config.memory = load_memory_config(j);
-        config.gpu = load_gpu_config(j);
-        config.cgroup = load_cgroup_config(j);
+        config.add_module(CPU::name, std::make_unique<CPU>(load_cpu_config(j)));
+        config.add_module(Memory::name, std::make_unique<Memory>(load_memory_config(j)));
+        config.add_module(GPU::name, std::make_unique<GPU>(load_gpu_config(j)));
+        config.add_module(CGroup::name, std::make_unique<CGroup>(load_cgroup_config(j)));
     }
     catch (const nlohmann::json::parse_error &e)
     {

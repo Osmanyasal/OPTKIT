@@ -4,6 +4,9 @@
 class Memory : public Module
 {
 public:
+    static const std::string name;
+
+public:
     enum class THPMode
     {
         NEVER,
@@ -39,6 +42,7 @@ public:
     bool is_valid() const override;
     bool apply() override;
     void load_current_settings(pid_t pid) override;
+    nlohmann::json to_json() const override;
 
     // Setter methods
     bool set_thp_mode(THPMode mode);
