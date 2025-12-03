@@ -46,7 +46,7 @@ inline CPU load_cpu_config(const nlohmann::json &j)
     if (j.contains("cpu") && j["cpu"].is_object())
     {
         const auto &cpu_json = j["cpu"];
-        cpu.governor = get_string_or(cpu_json, "governor", "");
+        cpu.governor = get_string_or(cpu_json, "governor", "performance");
         cpu.affinity_cores = get_int16_vec_or(cpu_json, "affinity_cores", {});
         cpu.offline_cores = get_int16_vec_or(cpu_json, "offline_cores", {});
         cpu.core_freq = get_int64_or(cpu_json, "core_freq", 0);
@@ -64,8 +64,8 @@ inline Memory load_memory_config(const nlohmann::json &j)
     if (j.contains("memory") && j["memory"].is_object())
     {
         const auto &mem_json = j["memory"];
-        mem.thp_mode = mem.from_string_thp_mode(get_string_or(mem_json, "thp_mode", ""));
-        mem.malloc_backend = mem.from_string_malloc_backend(get_string_or(mem_json, "malloc_backend", ""));
+        mem.thp_mode = mem.from_string_thp_mode(get_string_or(mem_json, "thp_mode", to_string_thp_mode(THPMode::MADVISE)));
+        mem.malloc_backend = mem.from_string_malloc_backend(get_string_or(mem_json, "malloc_backend", to_string_malloc_backend(Backend::GLIBC)));
         mem.hugepages_count = get_int64_or(mem_json, "hugepages_count", 0);
         mem.arena_max = get_int64_or(mem_json, "arena_max", 0);
         mem.swappiness = get_int64_or(mem_json, "swappiness", 60);
@@ -83,8 +83,8 @@ inline GPU load_gpu_config(const nlohmann::json &j)
     if (j.contains("gpu") && j["gpu"].is_object())
     {
         const auto &gpu_json = j["gpu"];
-        gpu.persistence_mode = get_string_or(gpu_json, "persistence_mode", "");
-        gpu.fan_speed = get_string_or(gpu_json, "fan_speed", "");
+        gpu.persistence_mode = get_string_or(gpu_json, "persistence_mode", "off");
+        gpu.fan_speed = get_string_or(gpu_json, "fan_speed", "auto");
         gpu.core_freq_mhz = get_int64_or(gpu_json, "core_freq_mhz", 0);
         gpu.mem_freq_mhz = get_int64_or(gpu_json, "mem_freq_mhz", 0);
         gpu.power_limit_watts = get_int64_or(gpu_json, "power_limit_watts", 0);

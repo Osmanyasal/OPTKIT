@@ -1907,6 +1907,38 @@ namespace optkit::gpu
         }
         return is_ok;
     }
+    bool Query::set_persistence_mode(GpuVendor vendor, uint32_t device_index, bool enable)
+    {
+        if (!IS_DEVICE_INDEX_VALID(vendor, device_index))
+        {
+            OPTKIT_CORE_ERROR("Invalid device index {} for vendor {}", device_index, to_string(vendor));
+            return false;
+        }
+        bool is_ok = true;
+
+        if (vendor == GpuVendor::NVIDIA && initialized[GpuVendor::NVIDIA])
+        {
+#if OPTKIT_ENV_LIB_NVML
+            nvmlReturn_t result;
+            auto device = Query::gpu_handles_nvml.at(device_index);
+            NVML_EXEC_IF_SUPPORTS("nvmlDeviceSetPersistenceMode", device, result, enable ? NVML_FEATURE_ENABLED : NVML_FEATURE_DISABLED);
+            if (OPT_LIKELY(result == NVML_SUCCESS))
+            {
+                is_ok = true;
+            }
+            else
+            {
+                is_ok = false;
+                OPTKIT_CORE_WARN("nvmlDeviceSetPersistenceMode: {}", nvmlErrorString(result));
+            }
+#endif
+        }
+        else if (vendor == GpuVendor::AMD && initialized[GpuVendor::AMD])
+        {
+            OPTKIT_CORE_WARN("Setting persistence mode is not supported for AMD GPUs");
+            is_ok = false;
+        }
+    }
 
     bool Query::get_capabilities_info(GpuVendor vendor, uint32_t device_index, GpuCapabilitiesInfo &capabilities_info)
     {

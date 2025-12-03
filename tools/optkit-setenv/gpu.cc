@@ -57,6 +57,8 @@ std::string GPU::possible_values() const
         {
             optkit::gpu::GpuDeviceInfo device_info{};
             optkit::gpu::Query::device_query(vendor, 0, device_info);
+            oss << "persistence_mode: on, off\n";
+            oss << "fan_speed: auto, 0-100%\n";
             oss << "\tmem_freq_mhz: ";
             for (auto &&i : device_info.clocks.memory_supported_clock_rates_MHz)
                 oss << i << ",";
