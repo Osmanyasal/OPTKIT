@@ -89,6 +89,7 @@ public:
     bool apply() override;
     std::string to_string() const override;
     void load_current_settings(pid_t pid) override;
+    std::string possible_values() const override;
     nlohmann::json to_json() const override;
 
     // Resource controller configurations

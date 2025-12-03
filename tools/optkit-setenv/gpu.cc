@@ -10,7 +10,7 @@ std::string GPU::to_string() const
         << ", core_freq=" << core_freq_mhz << "MHz"
         << ", mem_freq=" << mem_freq_mhz << "MHz"
         << ", power_limit=" << power_limit_watts << "W"
-        << ", reset_stats=" << (reset_stats ? "yes" : "no")
+        << ", reset_device=" << (reset_device ? "yes" : "no")
         << "}";
     return oss.str();
 }
@@ -34,7 +34,7 @@ void GPU::load_current_settings(pid_t pid)
     this->core_freq_mhz = 0;
     this->mem_freq_mhz = 0;
     this->power_limit_watts = 0;
-    this->reset_stats = false;
+    this->reset_device = false;
 }
 
 nlohmann::json GPU::to_json() const
@@ -45,6 +45,41 @@ nlohmann::json GPU::to_json() const
     j["core_freq_mhz"] = core_freq_mhz;
     j["mem_freq_mhz"] = mem_freq_mhz;
     j["power_limit_watts"] = power_limit_watts;
-    j["reset_stats"] = reset_stats;
+    j["reset_device"] = reset_device;
     return j;
+}
+std::string GPU::possible_values() const
+{
+    std::ostringstream oss;
+    OPTKIT_GPU_VENDOR_TRAVERSE(vendor)
+    {
+        if (optkit::gpu::Query::is_device_exists(vendor))
+        {
+            optkit::gpu::GpuDeviceInfo device_info{};
+            optkit::gpu::Query::device_query(vendor, 0, device_info);
+            oss << "\tmem_freq_mhz: ";
+            for (auto &&i : device_info.clocks.memory_supported_clock_rates_MHz)
+                oss << i << ",";
+
+            if (!device_info.clocks.memory_supported_clock_rates_MHz.empty())
+                oss.seekp(-1, oss.cur);
+            oss << "\n";
+
+            oss << "\tcore_freq_mhz: ";
+            for (auto &&i : device_info.clocks.graphics_supported_clock_rates_MHz)
+            {
+                oss << "[" << i.first << "]:";
+                for (auto &&j : i.second)
+                    oss << j << ",";
+                oss << "\n";
+            }
+
+            if (!device_info.clocks.graphics_supported_clock_rates_MHz.empty())
+                oss.seekp(-1, oss.cur);
+            oss << "\n";
+            oss << "\tpower_limit_watts: " << device_info.power.min_power_watts << "-" << device_info.power.max_power_watts << " limit:" << device_info.power.power_limit_watts << "\n";
+            oss << "\treset_device: true, false\n";
+        }
+    }
+    return oss.str();
 }

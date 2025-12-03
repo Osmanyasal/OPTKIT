@@ -34,6 +34,7 @@ public:
     bool set_turbo(Switch state);
     std::vector<int16_t> get_offline_cores() const;
     std::string to_string() const override;
+    std::string possible_values() const override;
 
     bool is_valid() const override;
     bool apply() override;

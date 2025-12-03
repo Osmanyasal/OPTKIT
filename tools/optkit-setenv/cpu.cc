@@ -100,38 +100,39 @@ bool CPU::set_online_cores(const std::vector<int16_t> &cores)
 }
 bool CPU::set_all_cores_online()
 {
+    int16_t core = 1;
     try
     {
-        for (int16_t core = 1; core < OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS; core++)
+        while (true)
+        {
             optkit::utils::write_file("/sys/devices/system/cpu/cpu" + std::to_string(core) + "/online", "1");
-
-        this->offline_cores.clear();
+            this->offline_cores.erase(std::remove(this->offline_cores.begin(), this->offline_cores.end(), core), this->offline_cores.end());
+            ++core;
+        }
     }
     catch (const std::exception &e)
     {
-        return false;
     }
-    return true;
+    return this->offline_cores.size() == 0;
 }
 bool CPU::set_all_cores_offline()
 {
     this->offline_cores.clear();
 
     // Cannot offline CPU0
-    for (int16_t core = 1; core < OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS; core++)
+    int16_t core = 1;
+    try
     {
-        try
+        while (true)
         {
             optkit::utils::write_file("/sys/devices/system/cpu/cpu" + std::to_string(core) + "/online", "0");
             this->offline_cores.push_back(core);
-        }
-        catch (const std::exception &e)
-        {
-            // Continue trying other cores
-            OPTKIT_WARN("Failed to offline core {}: {}", core, e.what());
+            ++core;
         }
     }
-
+    catch (const std::exception &e)
+    {
+    }
     return (this->offline_cores.size() == OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS - 1);
 }
 bool CPU::set_core_freq(int64_t freq_khz)
@@ -213,11 +214,20 @@ bool CPU::set_smt_enabled(Switch state)
 std::vector<int16_t> CPU::get_offline_cores() const
 {
     std::vector<int16_t> offline_cores;
-    for (int16_t core = 1; core < OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS; core++)
+    int16_t core = 1;
+    try
     {
-        std::string res = optkit::utils::read_file("/sys/devices/system/cpu/cpu" + std::to_string(core) + "/online");
-        if (res.find('0') != std::string::npos)
-            offline_cores.push_back(core);
+        while (true)
+        {
+            std::string res = optkit::utils::read_file("/sys/devices/system/cpu/cpu" + std::to_string(core) + "/online");
+            if (res.find('0') != std::string::npos)
+                offline_cores.push_back(core);
+
+            core++;
+        }
+    }
+    catch (const std::exception &e)
+    {
     }
     return offline_cores;
 }
@@ -341,7 +351,6 @@ bool CPU::apply()
 
 void CPU::load_current_settings(pid_t pid)
 {
-    this->pid = pid;
     this->governor = optkit::frequency::cpu::Query::get_scaling_governor(0);
     this->affinity_cores = {};
     this->offline_cores = this->get_offline_cores();
@@ -362,4 +371,33 @@ nlohmann::json CPU::to_json() const
     j["smt_enabled"] = smt_enabled;
     j["turbo"] = turbo;
     return j;
+}
+std::string CPU::possible_values() const
+{
+    std::stringstream oss;
+    oss << "\tgovernor: performance, powersave, ondemand, conservative, schedutil, userspace\n";
+    oss << "\taffinity_cores:";
+    for (int16_t core = 0; core < OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS; core++)
+    {
+        oss << core;
+        if (core < OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS - 1)
+            oss << ",";
+    }
+    oss << "\n";
+
+    oss << "\toffline_cores:";
+    for (int16_t core = 1; core < OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS; core++)
+    {
+        oss << core;
+        if (core < OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS - 1)
+            oss << ",";
+    }
+    oss << "\n";
+
+    oss << "\tcore_freq: " << optkit::frequency::cpu::Query::get_cpuinfo_min_freq() << "kHz - " << optkit::frequency::cpu::Query::get_cpuinfo_max_freq() << "kHz\n";
+    auto uncore_min_max = optkit::frequency::cpu::Frequency::get_uncore_min_max(0);
+    oss << "\tuncore_freq: " << uncore_min_max.first << "kHz - " << uncore_min_max.second << "kHz\n";
+    oss << "\tsmt_enabled: true, false\n";
+    oss << "\tturbo: true, false\n";
+    return oss.str();
 }

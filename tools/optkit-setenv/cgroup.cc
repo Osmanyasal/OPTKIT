@@ -498,3 +498,7 @@ nlohmann::json CGroup::to_json() const
 
     return j;
 }
+std::string CGroup::possible_values() const
+{
+    return "";
+}

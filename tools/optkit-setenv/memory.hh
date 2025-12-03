@@ -42,6 +42,7 @@ public:
     bool is_valid() const override;
     bool apply() override;
     void load_current_settings(pid_t pid) override;
+    std::string possible_values() const override;
     nlohmann::json to_json() const override;
 
     // Setter methods

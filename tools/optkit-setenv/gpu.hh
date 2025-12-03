@@ -13,7 +13,7 @@ public:
           core_freq_mhz(0),
           mem_freq_mhz(0),
           power_limit_watts(0),
-          reset_stats(false)
+          reset_device(true)
     {
     }
     virtual ~GPU() = default;
@@ -23,6 +23,7 @@ public:
     bool apply() override;
     void load_current_settings(pid_t pid) override;
     nlohmann::json to_json() const override;
+    std::string possible_values() const override;
 
 public:
     std::string persistence_mode; // on, off
@@ -30,7 +31,7 @@ public:
     int64_t core_freq_mhz;        // lock frequency
     int64_t mem_freq_mhz;         // lock memory frequency
     int64_t power_limit_watts;    // power limit in watts
-    bool reset_stats;             // true or false
+    bool reset_device;            // true or false
 };
 
 inline std::ostream &operator<<(std::ostream &os, const GPU &gpu)

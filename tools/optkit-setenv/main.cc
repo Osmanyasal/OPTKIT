@@ -32,8 +32,13 @@ int main(int argc, char **argv)
     else if (argc == 2 && std::string(argv[1]) == "--init")
     {
         SysConfig config = create_empty_config();
-        save_system_config(config, "default_config.json");
-        std::cout << "Created default_config.json template" << std::endl;
+        config.load_current_settings(getpid());
+        save_system_config(config, "current_config.json");
+
+        SysConfig defaults = create_empty_config();
+        save_system_config(defaults.possible_values(), "possible_config.txt");
+        std::cout << "Created current_config.json template" << std::endl;
+        std::cout << "Created possible_config.txt template" << std::endl;
     }
     else if (argc == 2 && std::string(argv[1]) == "--restore")
     {

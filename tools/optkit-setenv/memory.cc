@@ -112,11 +112,15 @@ Memory::Backend Memory::get_malloc_backend() const
 }
 bool Memory::set_hugepages_count(int64_t count)
 {
-    optkit::utils::write_file(
-        "/sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages",
-        std::to_string(count));
+    const std::string path = "/sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages";
+    optkit::utils::write_file(path, std::to_string(count));
+    auto read = std::stoll(optkit::utils::str_trim(optkit::utils::read_file(path)));
+    if (read == 0)
+    {
+        return false;
+    }
 
-    this->hugepages_count = count;
+    this->hugepages_count = read;
     return true;
 }
 
@@ -338,4 +342,17 @@ Memory::Backend Memory::from_string_malloc_backend(const std::string &backend_st
         return Backend::TCMALLOC;
     else
         throw std::invalid_argument("Invalid malloc backend string: " + backend_str);
+}
+std::string Memory::possible_values() const
+{
+    std::ostringstream oss;
+    oss << "\tTHP Modes: never, always, madvise\n"
+        << "\tMalloc Backends: glibc, jemalloc, tcmalloc\n"
+        << "\tHugepages Count: non-negative integer\n"
+        << "\tArena Max: non-negative integer\n"
+        << "\tSwappiness: 0-100\n"
+        << "\tOOM Kill Task Score: -1000 to 1000\n"
+        << "\tDrop Caches: true, false\n"
+        << "\tMlock All: true, false";
+    return oss.str();
 }

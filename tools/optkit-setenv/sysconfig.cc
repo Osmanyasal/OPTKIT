@@ -42,3 +42,13 @@ nlohmann::json SysConfig::to_json() const
         j[pair.first] = pair.second->to_json();
     return j;
 }
+std::string SysConfig::possible_values() const
+{
+    std::ostringstream oss;
+    for (const auto &pair : this->modules)
+    {
+        oss << pair.first << "\n"
+            << pair.second->possible_values() << "\n";
+    }
+    return oss.str();
+}

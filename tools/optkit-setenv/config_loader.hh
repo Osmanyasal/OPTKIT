@@ -88,7 +88,7 @@ inline GPU load_gpu_config(const nlohmann::json &j)
         gpu.core_freq_mhz = get_int64_or(gpu_json, "core_freq_mhz", 0);
         gpu.mem_freq_mhz = get_int64_or(gpu_json, "mem_freq_mhz", 0);
         gpu.power_limit_watts = get_int64_or(gpu_json, "power_limit_watts", 0);
-        gpu.reset_stats = get_bool_or(gpu_json, "reset_stats", false);
+        gpu.reset_device = get_bool_or(gpu_json, "reset_device", true);
     }
     return gpu;
 }

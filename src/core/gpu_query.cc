@@ -460,6 +460,70 @@ namespace optkit::gpu
         return is_ok;
     }
 
+    bool Query::reset_device(GpuVendor vendor, uint32_t device_index)
+    {
+        bool is_ok = false;
+        if (!IS_DEVICE_INDEX_VALID(vendor, device_index))
+        {
+            OPTKIT_CORE_ERROR("Invalid device index {} for vendor {}", device_index, to_string(vendor));
+            return false;
+        }
+#if OPTKIT_ENV_LIB_NVML
+        if (vendor == GpuVendor::NVIDIA && initialized[GpuVendor::NVIDIA])
+        {
+            auto nvml_device = Query::gpu_handles_nvml.at(device_index);
+            nvmlReturn_t result;
+            result = nvmlDeviceResetApplicationsClocks(nvml_device);
+            if (result == NVML_SUCCESS)
+            {
+                is_ok = true;
+                OPTKIT_CORE_DEBUG("Resetting device index {} of vendor {}", device_index, to_string(vendor));
+            }
+            else
+            {
+                OPTKIT_CORE_ERROR("Failed to reset device: {}", nvmlErrorString(result));
+            }
+        }
+#endif
+#if OPTKIT_ENV_LIB_AMDSMI
+        if (vendor == GpuVendor::AMD && initialized[GpuVendor::AMD])
+        {
+            amdsmi_status_t result;
+            auto rocm_device = Query::gpu_handles_amdsmi.at(device_index);
+            result = amdsmi_reset_gpu(rocm_device);
+            if (result == AMDSMI_STATUS_SUCCESS)
+            {
+                is_ok = true;
+                OPTKIT_CORE_DEBUG("Resetting AMD device index {} of vendor {}", device_index, to_string(vendor));
+            }
+            else
+            {
+                OPTKIT_CORE_ERROR("Failed to reset AMD device: {}", _amdsmi_status_to_string(result));
+            }
+        }
+#elif OPTKIT_ENV_LIB_ROCM_SMI
+        if (vendor == GpuVendor::AMD && initialized[GpuVendor::AMD])
+        {
+            rsmi_status_t result;
+            uint32_t dv_ind = Query::gpu_handles_rocm_smi.at(device_index);
+            ROCM_EXEC_IF_SUPPORTS(
+                "rsmi_dev_gpu_reset",
+                dv_ind,
+                result);
+            if (result == RSMI_STATUS_SUCCESS)
+            {
+                is_ok = true;
+                OPTKIT_CORE_DEBUG("Resetting ROCm SMI device index {} of vendor {}", device_index, to_string(vendor));
+            }
+            else
+            {
+                OPTKIT_CORE_ERROR("Failed to reset ROCm SMI device: {}", _rocm_smi_status_to_string(result));
+            }
+        }
+#endif
+        return is_ok;
+    }
+
     bool Query::set_clock(GpuVendor vendor, uint32_t device_index, uint32_t mem_clk_mhz, uint32_t graphics_clk_mhz)
     {
         bool is_ok = false;

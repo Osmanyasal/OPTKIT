@@ -56,6 +56,7 @@ namespace optkit::gpu
         //****** these may not be supported on consumer grade GPUs ****** //
         static bool set_clock(GpuVendor vendor, uint32_t device_index, uint32_t mem_clk_mhz, uint32_t graphics_clk_mhz);
         static bool reset_clock(GpuVendor vendor, uint32_t device_index);
+        static bool reset_device(GpuVendor vendor, uint32_t device_index);
         //****** these may not be supported on consumer grade GPUs ****** //
 
         // utilities to be called by above methods.
