@@ -269,12 +269,6 @@ bool CPU::is_valid() const
         result = false;
     }
 
-    // Check frequency ranges
-    if (core_freq <= 0 || uncore_freq <= 0)
-    {
-        OPTKIT_WARN("Frequencies must be greater than 0: core_freq={}, uncore_freq={}", core_freq, uncore_freq);
-        result = false;
-    }
     const int64_t min_core_freq = optkit::frequency::cpu::Query::get_cpuinfo_min_freq();
     const int64_t max_core_freq = optkit::frequency::cpu::Query::get_cpuinfo_max_freq();
     if (core_freq > 0 && (core_freq < min_core_freq || core_freq > max_core_freq))
@@ -325,16 +319,18 @@ bool CPU::is_valid() const
     return result;
 }
 
-bool CPU::apply()
+bool CPU::apply(pid_t pid)
 {
     // Apply governor
     set_governor(governor);
 
     // Apply core frequency
-    set_core_freq(core_freq);
+    if (core_freq > 0)
+        set_core_freq(core_freq);
 
     // Apply uncore frequency
-    set_uncore_freq(uncore_freq);
+    if (uncore_freq > 0)
+        set_uncore_freq(uncore_freq);
 
     // Apply SMT state
     set_smt_enabled(smt_enabled ? Switch::ON : Switch::OFF);

@@ -1,10 +1,5 @@
 #include "sysconfig.hh"
 
-SysConfig &SysConfig::add_module(const std::string &name, std::unique_ptr<Module> mod)
-{
-    modules[name] = std::move(mod);
-    return *this;
-}
 std::string SysConfig::to_string() const
 {
     std::ostringstream oss;
@@ -23,11 +18,11 @@ bool SysConfig::is_valid() const
         valid = valid && pair.second->is_valid();
     return valid;
 }
-bool SysConfig::apply()
+bool SysConfig::apply(pid_t pid)
 {
     bool res = true;
     for (auto &pair : this->modules)
-        res = res && pair.second->apply();
+        res = res && pair.second->apply(pid);
     return res;
 }
 void SysConfig::load_current_settings(pid_t pid)

@@ -8,6 +8,19 @@ class CGroup : public Module
 public:
     static const std::string name;
 
+    // Singleton access
+    static CGroup &instance()
+    {
+        static CGroup instance;
+        return instance;
+    }
+
+    // Delete copy and move
+    CGroup(const CGroup &) = delete;
+    CGroup &operator=(const CGroup &) = delete;
+    CGroup(CGroup &&) = delete;
+    CGroup &operator=(CGroup &&) = delete;
+
     // CPU controller settings
     struct CPU
     {
@@ -81,12 +94,13 @@ public:
         std::string to_string() const;
     };
 
-public:
+private:
     CGroup() = default;
     virtual ~CGroup() = default;
 
+public:
     bool is_valid() const override;
-    bool apply() override;
+    bool apply(pid_t pid) override;
     std::string to_string() const override;
     void load_current_settings(pid_t pid) override;
     std::string possible_values() const override;

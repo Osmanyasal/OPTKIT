@@ -16,10 +16,24 @@ class CPU : public Module
 public:
     static const std::string name;
 
-public:
+    // Singleton access
+    static CPU &instance()
+    {
+        static CPU instance;
+        return instance;
+    }
+
+    // Delete copy and move
+    CPU(const CPU &) = delete;
+    CPU &operator=(const CPU &) = delete;
+    CPU(CPU &&) = delete;
+    CPU &operator=(CPU &&) = delete;
+
+private:
     CPU() : governor{"performance"}, affinity_cores{}, offline_cores{}, core_freq{0}, uncore_freq{0}, smt_enabled{false}, turbo{false} {}
     virtual ~CPU() = default;
 
+public:
     bool set_governor(const std::string &gov);
     bool set_affinity_cores(pid_t pid, const std::vector<int16_t> &cores);
     bool set_offline_cores(const std::vector<int16_t> &cores);
@@ -37,7 +51,7 @@ public:
     std::string possible_values() const override;
 
     bool is_valid() const override;
-    bool apply() override;
+    bool apply(pid_t pid) override;
     void load_current_settings(pid_t pid) override;
     nlohmann::json to_json() const override;
 

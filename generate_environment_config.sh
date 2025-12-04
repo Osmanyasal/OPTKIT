@@ -282,11 +282,13 @@ write_cpu_topology() {
     echo "#define OPTKIT_ENV_CPU_NUM_SOCKETS $sockets" >> "$SRC_CONFIG_FILE"
     printf "\t%-$(($ALIGN_WIDTH - 8))s %s\n" "OPTKIT_ENV_CPU_NUM_SOCKETS" "$sockets"
 
-    # Unique physical cores (package_id + core_id)
+    # Unique physical cores (package_id + core_id) - only online cores
     cores=$(for cpu in /sys/devices/system/cpu/cpu[0-9]*; do
-        pkg=$(<"$cpu/topology/physical_package_id")
-        core=$(<"$cpu/topology/core_id")
-        echo "$pkg-$core"
+        if [ ! -f "$cpu/online" ] || [ "$(<"$cpu/online")" = "1" ]; then
+            pkg=$(<"$cpu/topology/physical_package_id")
+            core=$(<"$cpu/topology/core_id")
+            echo "$pkg-$core"
+        fi
     done | sort -u | wc -l)
 
     # Cores per socket
@@ -294,8 +296,12 @@ write_cpu_topology() {
     echo "#define OPTKIT_ENV_CPU_PHYSICAL_CORES_PER_SOCKET $cores_per_socket" >> "$SRC_CONFIG_FILE"
     printf "\t%-$(($ALIGN_WIDTH - 8))s %s\n" "OPTKIT_ENV_CPU_PHYSICAL_CORES_PER_SOCKET" "$cores_per_socket"
 
-    # Logical CPUs (e.g. hyperthreads)
-    logical=$(ls -d /sys/devices/system/cpu/cpu[0-9]* | wc -l)
+    # Logical CPUs (e.g. hyperthreads) - only online CPUs
+    logical=$(for cpu in /sys/devices/system/cpu/cpu[0-9]*; do
+        if [ ! -f "$cpu/online" ] || [ "$(<"$cpu/online")" = "1" ]; then
+            echo "1"
+        fi
+    done | wc -l)
 
     # Threads per core
     threads_per_core=$((logical / cores))

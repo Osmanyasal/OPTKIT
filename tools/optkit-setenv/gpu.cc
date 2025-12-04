@@ -16,10 +16,12 @@ std::string GPU::to_string() const
 }
 bool GPU::is_valid() const
 {
-    return true;
+    bool result = true;
+
+    return result;
 }
 
-bool GPU::apply()
+bool GPU::apply(pid_t pid)
 {
     return true;
 }

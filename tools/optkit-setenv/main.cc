@@ -22,41 +22,74 @@ int help(int argc, char **argv)
 int main(int argc, char **argv)
 {
     OPTKIT_INIT(false);
+
     if (argc == 2 && std::string(argv[1]) == "--backup")
     {
-        SysConfig config = create_empty_config();
+        SysConfig &config = SysConfig::instance();
         config.load_current_settings(getpid());
         save_system_config(config, "/tmp/optkit_env_backup.json");
-        std::cout << "Created backup of current environment at /tmp/optkit_env_backup.json\n";
+        std::cout << "✓ Created backup of current environment at /tmp/optkit_env_backup.json\n";
     }
     else if (argc == 2 && std::string(argv[1]) == "--init")
     {
-        SysConfig config = create_empty_config();
+        SysConfig &config = SysConfig::instance();
         config.load_current_settings(getpid());
         save_system_config(config, "current_config.json");
-
-        SysConfig defaults = create_empty_config();
-        save_system_config(defaults.possible_values(), "possible_config.txt");
-        std::cout << "Created current_config.json template" << std::endl;
-        std::cout << "Created possible_config.txt template" << std::endl;
+        save_system_config(config.possible_values(), "possible_config.txt", true);
+        std::cout << "✓ Created current_config.json (current system state)\n";
+        std::cout << "✓ Created possible_config.txt (possible values reference)\n";
     }
     else if (argc == 2 && std::string(argv[1]) == "--restore")
     {
-        SysConfig backup_config = load_system_config("/tmp/optkit_env_backup.json");
-        std::cout << "Restored environment from /tmp/optkit_env_backup.json\n";
+        EXEC_IF_ROOT_RETURN(1);
+        SysConfig &config = load_system_config("/tmp/optkit_env_backup.json");
+        if (config.is_valid())
+        {
+            if (config.apply(getpid()))
+            {
+                std::cout << "✓ Restored environment from /tmp/optkit_env_backup.json\n";
+            }
+            else
+            {
+                std::cerr << "✗ Failed to apply some settings during restore\n";
+                return 1;
+            }
+        }
+        else
+        {
+            std::cerr << "✗ Backup configuration is invalid\n";
+            return 1;
+        }
     }
     else if (argc == 2 && std::string(argv[1]).find(".json") != std::string::npos)
     {
-        EXEC_IF_ROOT_RETURN(false);
-        SysConfig config = load_system_config(argv[1]);
-        std::cout << config << "\n";
+        EXEC_IF_ROOT_RETURN(1);
+        SysConfig &config = load_system_config(argv[1]);
+        std::cout << "Configuration to apply:\n"
+                  << config << "\n";
+
         if (config.is_valid())
         {
-            // config.apply();
-            std::cout << "Configuration is valid and has been applied successfully.\n";
+            // if (config.apply(getpid()))
+            // {
+            //     std::cout << "\n✓ Configuration applied successfully\n";
+            // }
+            // else
+            // {
+            //     std::cerr << "\n✗ Failed to apply some settings\n";
+            //     return 1;
+            // }
+        }
+        else
+        {
+            std::cerr << "\n✗ Configuration is invalid\n";
+            return 1;
         }
     }
     else
+    {
         return help(argc, argv);
+    }
+
     return 0;
 }

@@ -6,6 +6,19 @@ class Memory : public Module
 public:
     static const std::string name;
 
+    // Singleton access
+    static Memory &instance()
+    {
+        static Memory instance;
+        return instance;
+    }
+
+    // Delete copy and move
+    Memory(const Memory &) = delete;
+    Memory &operator=(const Memory &) = delete;
+    Memory(Memory &&) = delete;
+    Memory &operator=(Memory &&) = delete;
+
 public:
     enum class THPMode
     {
@@ -25,6 +38,7 @@ public:
     static std::string to_string_malloc_backend(Backend backend);
     static Backend from_string_malloc_backend(const std::string &backend_str);
 
+private:
     Memory()
         : thp_mode(THPMode::MADVISE),
           malloc_backend(Backend::GLIBC),
@@ -38,9 +52,10 @@ public:
     }
     virtual ~Memory() = default;
 
+public:
     std::string to_string() const override;
     bool is_valid() const override;
-    bool apply() override;
+    bool apply(pid_t pid) override;
     void load_current_settings(pid_t pid) override;
     std::string possible_values() const override;
     nlohmann::json to_json() const override;

@@ -206,29 +206,6 @@ bool Memory::is_valid() const
     return result;
 }
 
-bool Memory::apply()
-{
-    // Apply THP mode
-    set_thp_mode(thp_mode);
-
-    // Apply hugepages count
-    set_hugepages_count(hugepages_count);
-
-    // Apply arena max
-    set_arena_max(arena_max);
-
-    // Apply swappiness
-    set_swappiness(swappiness);
-
-    // Apply drop caches if requested
-    if (drop_caches)
-        drop_caches_now();
-
-    // Apply mlock_all
-    set_mlock_all(mlock_all);
-
-    return true;
-}
 void Memory::load_current_settings(pid_t pid)
 {
     std::string huge_pages = optkit::utils::read_file("/sys/kernel/mm/transparent_hugepage/enabled");
@@ -355,4 +332,34 @@ std::string Memory::possible_values() const
         << "\tDrop Caches: true, false\n"
         << "\tMlock All: true, false";
     return oss.str();
+}
+
+bool Memory::apply(pid_t pid)
+{
+    // Apply THP mode
+    set_thp_mode(thp_mode);
+
+    // Apply malloc backend
+    set_malloc_backend(malloc_backend);
+
+    // Apply hugepages count
+    set_hugepages_count(hugepages_count);
+
+    // Apply arena max
+    set_arena_max(arena_max);
+
+    // Apply swappiness
+    set_swappiness(swappiness);
+
+    // Apply OOM kill task score
+    set_oom_kill_task(oom_kill_task, pid);
+
+    // Apply drop caches if requested
+    if (drop_caches)
+        drop_caches_now();
+
+    // Apply mlock_all
+    set_mlock_all(mlock_all);
+
+    return true;
 }

@@ -31,28 +31,28 @@
             "zswap_max": "max",
             "zswap_writeback": true
         },
-        "name": "",
-        "path": "",
+        "name": "snap.code.code-1265ba7c-c654-4bb0-983c-d217d5d2b4b4.scope",
+        "path": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/snap.code.code-1265ba7c-c654-4bb0-983c-d217d5d2b4b4.scope",
         "pids": {
             "max": -1
         }
     },
     "cpu": {
         "affinity_cores": [],
-        "core_freq": 0,
+        "core_freq": -1,
         "governor": "performance",
         "offline_cores": [],
-        "smt_enabled": false,
-        "turbo": false,
-        "uncore_freq": 0
+        "smt_enabled": true,
+        "turbo": true,
+        "uncore_freq": -1
     },
     "gpu": {
         "core_freq_mhz": 0,
-        "fan_speed": "auto",
+        "fan_speed": "",
         "mem_freq_mhz": 0,
-        "persistence_mode": "off",
+        "persistence_mode": "",
         "power_limit_watts": 0,
-        "reset_stats": false
+        "reset_device": false
     },
     "memory": {
         "arena_max": 0,
@@ -60,7 +60,7 @@
         "hugepages_count": 0,
         "malloc_backend": "glibc",
         "mlock_all": false,
-        "oom_kill_task": 0,
+        "oom_kill_task": 100,
         "swappiness": 60,
         "thp_mode": "madvise"
     }

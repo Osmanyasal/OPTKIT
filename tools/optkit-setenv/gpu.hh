@@ -6,7 +6,20 @@ class GPU : public Module
 public:
     static const std::string name;
 
-public:
+    // Singleton access
+    static GPU &instance()
+    {
+        static GPU instance;
+        return instance;
+    }
+
+    // Delete copy and move
+    GPU(const GPU &) = delete;
+    GPU &operator=(const GPU &) = delete;
+    GPU(GPU &&) = delete;
+    GPU &operator=(GPU &&) = delete;
+
+private:
     GPU()
         : persistence_mode("off"),
           fan_speed("auto"),
@@ -18,9 +31,10 @@ public:
     }
     virtual ~GPU() = default;
 
+public:
     std::string to_string() const override;
     bool is_valid() const override;
-    bool apply() override;
+    bool apply(pid_t pid) override;
     void load_current_settings(pid_t pid) override;
     nlohmann::json to_json() const override;
     std::string possible_values() const override;

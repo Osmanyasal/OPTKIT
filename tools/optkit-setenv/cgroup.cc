@@ -199,7 +199,7 @@ bool CGroup::add_process(pid_t process_pid)
     }
 }
 
-bool CGroup::apply()
+bool CGroup::apply(pid_t pid)
 {
     if (!is_cgroup_v2())
     {
@@ -312,9 +312,9 @@ bool CGroup::apply()
         }
 
         // Apply PID settings
-        if (pid.max != -1)
+        if (this->pid.max != -1)
         {
-            optkit::utils::write_file(cgroup_path + "/pids.max", std::to_string(pid.max), true);
+            optkit::utils::write_file(cgroup_path + "/pids.max", std::to_string(this->pid.max), true);
         }
 
         // Apply Core settings

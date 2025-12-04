@@ -75,7 +75,7 @@ namespace optkit
             optkit::pmu::cpu::Query::init();
 
             // try to init all gpu vendors
-            for (optkit::gpu::GpuVendor vendor = optkit::gpu::GpuVendor::BEGIN; vendor < optkit::gpu::GpuVendor::END; vendor = static_cast<optkit::gpu::GpuVendor>(static_cast<int>(vendor) + 1))
+            OPTKIT_GPU_VENDOR_TRAVERSE(vendor)
             {
                 if (optkit::gpu::Query::init(vendor))
                 {
@@ -106,7 +106,7 @@ namespace optkit
     OPTKIT::~OPTKIT()
     {
         // try to shutdown all gpu vendors
-        for (optkit::gpu::GpuVendor vendor = optkit::gpu::GpuVendor::BEGIN; vendor < optkit::gpu::GpuVendor::END; vendor = static_cast<optkit::gpu::GpuVendor>(static_cast<int>(vendor) + 1))
+        OPTKIT_GPU_VENDOR_TRAVERSE(vendor)
         {
             if (optkit::gpu::Query::is_init(vendor))
                 optkit::gpu::Query::shutdown(vendor);
