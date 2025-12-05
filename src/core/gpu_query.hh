@@ -58,6 +58,8 @@ namespace optkit::gpu
         static bool reset_clock(GpuVendor vendor, uint32_t device_index);
         static bool reset_device(GpuVendor vendor, uint32_t device_index);
         static bool set_persistence_mode(GpuVendor vendor, uint32_t device_index, bool enable);
+        static bool set_fan_speed(GpuVendor vendor, uint32_t device_index, const std::string &fan_speed_percent);
+        static bool reset_fan_speed(GpuVendor vendor, uint32_t device_index);
         //****** these may not be supported on consumer grade GPUs ****** //
 
         // utilities to be called by above methods.

@@ -1940,7 +1940,7 @@ namespace optkit::gpu
         }
     }
 
-    bool Query::get_capabilities_info(GpuVendor vendor, uint32_t device_index, GpuCapabilitiesInfo &capabilities_info)
+    bool Query::get_fan_count(GpuVendor vendor, uint32_t device_index, uint32_t &fan_count)
     {
         if (!IS_DEVICE_INDEX_VALID(vendor, device_index))
         {
@@ -1948,329 +1948,61 @@ namespace optkit::gpu
             return false;
         }
         bool is_ok = true;
+        fan_count = 0;
+        uint32_t speed;
 
-        capabilities_info = {};
         if (vendor == GpuVendor::NVIDIA && initialized[GpuVendor::NVIDIA])
         {
 #if OPTKIT_ENV_LIB_NVML
-            nvmlEnableState_t current, pending;
             nvmlReturn_t result;
             auto device = Query::gpu_handles_nvml.at(device_index);
-            NVML_EXEC_IF_SUPPORTS("nvmlDeviceGetEccMode", device, result, &current, &pending);
-            if (OPT_LIKELY(result == NVML_SUCCESS))
+            int i = 0;
+            while (true)
             {
-                capabilities_info.ecc_enabled = (current == NVML_FEATURE_ENABLED);
+                NVML_EXEC_IF_SUPPORTS("nvmlDeviceGetFanSpeed", device, result, &speed);
+                if (OPT_LIKELY(result == NVML_SUCCESS))
+                    ++fan_count;
+                else
+                    break;
+                ++i;
             }
-            else
-            {
-                is_ok = false;
-                OPTKIT_CORE_WARN("nvmlDeviceGetEccMode: {}", nvmlErrorString(result));
-            }
-            // Get persistence mode
-            nvmlEnableState_t mode;
-            NVML_EXEC_IF_SUPPORTS("nvmlDeviceGetPersistenceMode", device, result, &mode);
-            if (OPT_LIKELY(result == NVML_SUCCESS))
-            {
-                capabilities_info.persistence_mode_enabled = (mode == NVML_FEATURE_ENABLED);
-            }
-            else
-            {
-                is_ok = false;
-                OPTKIT_CORE_WARN("nvmlDeviceGetPersistenceMode: {}", nvmlErrorString(result));
-            }
-
-            uint32_t arch;
-            is_ok = is_ok && get_architecture(vendor, device_index, arch);
-
-            // Unified Memory supported on Kepler (3) and later architectures
-            capabilities_info.supports_unified_memory = (arch >= NVML_DEVICE_ARCH_KEPLER && arch != NVML_DEVICE_ARCH_UNKNOWN);
 #endif
         }
         else if (vendor == GpuVendor::AMD && initialized[GpuVendor::AMD])
         {
+
 #if OPTKIT_ENV_LIB_AMDSMI
-            uint64_t enabled_blocks;
             amdsmi_status_t result;
-            ROCM_EXEC_IF_SUPPORTS("amdsmi_get_gpu_ecc_enabled",
-                                  Query::gpu_handles_amdsmi.at(device_index),
-                                  result,
-                                  &enabled_blocks);
-            if (result == AMDSMI_STATUS_SUCCESS)
+            auto device = Query::gpu_handles_amdsmi.at(device_index);
+            int i = 0;
+            while (true)
             {
-                capabilities_info.ecc_enabled = (enabled_blocks != 0);
-            }
-            else
-            {
-                is_ok = false;
-                OPTKIT_CORE_WARN("Failed to get AMD GPU ECC status: {}", _amdsmi_status_to_string(result));
-            }
-
-            capabilities_info.persistence_mode_enabled = false; // AMD GPUs do not have persistence mode
-
-            amdsmi_vram_info_t vram_info;
-            ROCM_EXEC_IF_SUPPORTS("amdsmi_get_gpu_vram_info",
-                                  Query::gpu_handles_amdsmi.at(device_index),
-                                  result,
-                                  &vram_info);
-            if (result == AMDSMI_STATUS_SUCCESS)
-            { // Check for HBM memory (indicates high-end GPU with advanced memory features)
-                // bool has_hbm = (vram_info.vram_type == AMDSMI_VRAM_TYPE_HBM ||
-                //                 vram_info.vram_type == AMDSMI_VRAM_TYPE_HBM2 ||
-                //                 vram_info.vram_type == AMDSMI_VRAM_TYPE_HBM2E ||
-                //                 vram_info.vram_type == AMDSMI_VRAM_TYPE_HBM3);
-
-                // Check VRAM size - larger VRAM typically indicates support for advanced features
-                capabilities_info.supports_unified_memory = (vram_info.vram_size > 8000); // > 8GB suggests modern GPU
-            }
-            else
-            {
-                is_ok = false;
-                OPTKIT_CORE_WARN("Failed to get AMD GPU unified memory capability: {}", _amdsmi_status_to_string(result));
-            }
-#endif
-        }
-        else if (vendor == GpuVendor::UNKNOWN || (vendor != GpuVendor::NVIDIA && vendor != GpuVendor::AMD))
-        {
-            OPTKIT_CORE_WARN("Capabilities info query not supported without NVML or ROCm SMI");
-        }
-
-        return is_ok;
-    }
-
-    bool Query::get_driver_version(GpuVendor vendor, double &driver_version)
-    {
-        bool is_ok = false;
-
-        driver_version = 0.0;
-        if (vendor == GpuVendor::NVIDIA && initialized[GpuVendor::NVIDIA])
-        {
-#if OPTKIT_ENV_LIB_NVML
-            int32_t version;
-            nvmlReturn_t result = nvmlSystemGetCudaDriverVersion(&version);
-            if (OPT_LIKELY(result == NVML_SUCCESS))
-            {
-                is_ok = true;
-                int32_t major = NVML_CUDA_DRIVER_VERSION_MAJOR(version);
-                int32_t minor = NVML_CUDA_DRIVER_VERSION_MINOR(version);
-                driver_version = major + minor / 10.0; // major.minor as double
-            }
-            else
-            {
-                OPTKIT_CORE_ERROR("NVML error in nvmlSystemGetCudaDriverVersion: {}", std::string(nvmlErrorString(result)));
-            }
-#endif
-        }
-        else if (vendor == GpuVendor::AMD && initialized[GpuVendor::AMD])
-        {
-#if OPTKIT_ENV_LIB_AMDSMI
-            amdsmi_version_t amdsmi_version{};
-
-            amdsmi_status_t status = amdsmi_get_lib_version(&amdsmi_version);
-            if (status == AMDSMI_STATUS_SUCCESS)
-            {
-                is_ok = true;
-                int32_t major = amdsmi_version.major, minor = amdsmi_version.minor;
-                driver_version = major + minor / 10.0; // major.minor as double
-            }
-            else
-            {
-                OPTKIT_CORE_ERROR("ROCm SMI failed to get version: {}", _amdsmi_status_to_string(status));
-            }
-
-#elif OPTKIT_ENV_LIB_ROCM_SMI
-            rsmi_version_t version;
-            rsmi_status_t result = rsmi_version_get(&version);
-            if (result == RSMI_STATUS_SUCCESS)
-            {
-                is_ok = true;
-                driver_version = version.major + version.minor / 10.0;
-                OPTKIT_CORE_DEBUG("ROCm SMI driver version: {}.{}", version.major, version.minor);
-            }
-            else
-            {
-                OPTKIT_CORE_ERROR("ROCm SMI failed to get version: {}", _rocm_smi_status_to_string(result));
-            }
-#endif
-        }
-        else if (vendor == GpuVendor::UNKNOWN || (vendor != GpuVendor::NVIDIA && vendor != GpuVendor::AMD))
-        {
-            OPTKIT_CORE_WARN("Driver version query not supported without NVML or ROCm SMI");
-        }
-        return is_ok;
-    }
-
-    bool Query::get_library_version(GpuVendor vendor, std::string &library_version)
-    {
-        bool is_ok = false;
-
-        library_version = "";
-        if (vendor == GpuVendor::NVIDIA && initialized[GpuVendor::NVIDIA])
-        {
-#if OPTKIT_ENV_LIB_NVML
-            char version[NVML_SYSTEM_NVML_VERSION_BUFFER_SIZE] = {0};
-            nvmlReturn_t result_nvidia = nvmlSystemGetNVMLVersion(version, NVML_SYSTEM_NVML_VERSION_BUFFER_SIZE);
-            if (result_nvidia == NVML_SUCCESS)
-            {
-                is_ok = true;
-                library_version = std::string(version);
-            }
-            else
-            {
-                library_version = "0.0";
-                OPTKIT_CORE_ERROR("NVML error in nvmlSystemGetNVMLVersion: {}", std::string(nvmlErrorString(result_nvidia)));
-            }
-#endif
-        }
-        else if (vendor == GpuVendor::AMD && initialized[GpuVendor::AMD])
-        {
-#if OPTKIT_ENV_LIB_AMDSMI
-            amdsmi_version_t amdsmi_version{};
-            amdsmi_status_t result_amd = amdsmi_get_lib_version(&amdsmi_version);
-            if (result_amd == AMDSMI_STATUS_SUCCESS)
-            {
-                is_ok = true;
-                int32_t major = amdsmi_version.major;
-                int32_t minor = amdsmi_version.minor;
-                library_version = std::to_string(major) + "." + std::to_string(minor); // major.minor as string
-            }
-            else
-            {
-                library_version = "0.0";
-                OPTKIT_CORE_ERROR("ROCm SMI failed to get version: {}", _amdsmi_status_to_string(result_amd));
+                ROCM_EXEC_IF_SUPPORTS("amdsmi_get_gpu_fan_speed", device, result, i, &speed);
+                if (result == RSMI_STATUS_SUCCESS)
+                    ++fan_count;
+                else
+                    break; // No more fans
+                ++i;
             }
 #elif OPTKIT_ENV_LIB_ROCM_SMI
-            rsmi_version_t version;
-            rsmi_status_t result = rsmi_version_get(&version);
-            if (result == RSMI_STATUS_SUCCESS)
-            {
-                is_ok = true;
-                library_version = std::to_string(version.major) + "." +
-                                  std::to_string(version.minor) + "." +
-                                  std::to_string(version.patch);
-                if (version.build != nullptr && strlen(version.build) > 0)
-                {
-                    library_version += "-" + std::string(version.build);
-                }
-                OPTKIT_CORE_DEBUG("ROCm SMI library version: {}", library_version);
-            }
-            else
-            {
-                library_version = "0.0";
-                OPTKIT_CORE_ERROR("ROCm SMI failed to get library version: {}", _rocm_smi_status_to_string(result));
-            }
-#endif
-        }
-        else if (vendor == GpuVendor::UNKNOWN || (vendor != GpuVendor::NVIDIA && vendor != GpuVendor::AMD))
-        {
-            OPTKIT_CORE_WARN("Library version query not supported without NVML or ROCm SMI");
-        }
-        return is_ok;
-    }
-
-    bool Query::get_device_count(GpuVendor vendor, uint32_t &device_count)
-    {
-        bool is_ok = false;
-        device_count = 0;
-        if (vendor == GpuVendor::NVIDIA && initialized[GpuVendor::NVIDIA])
-        {
-#if OPTKIT_ENV_LIB_NVML
-            device_count = Query::gpu_handles_nvml.size();
-            is_ok = true;
-#endif
-        }
-        else if (vendor == GpuVendor::AMD && initialized[GpuVendor::AMD])
-        {
-#if OPTKIT_ENV_LIB_AMDSMI
-            device_count = gpu_handles_amdsmi.size();
-            is_ok = true; // AMD device enumeration succeeded
-#elif OPTKIT_ENV_LIB_ROCM_SMI
-            device_count = Query::gpu_handles_rocm_smi.size();
-            is_ok = true; // ROCm SMI device enumeration succeeded
-#endif
-        }
-        else if (vendor == GpuVendor::UNKNOWN || (vendor != GpuVendor::NVIDIA && vendor != GpuVendor::AMD))
-        {
-            OPTKIT_CORE_WARN("Device count query not supported without NVML or ROCm AMDSMI");
-        }
-        return is_ok;
-    }
-
-    bool Query::get_device_power(GpuVendor vendor, uint32_t device_index, double &power_watts)
-    {
-        if (!IS_DEVICE_INDEX_VALID(vendor, device_index))
-        {
-            OPTKIT_CORE_ERROR("Invalid device index {} for vendor {}", device_index, to_string(vendor));
-            return false;
-        }
-        bool is_ok = false;
-
-        power_watts = 0.0;
-
-        if (vendor == GpuVendor::NVIDIA && initialized[GpuVendor::NVIDIA])
-        {
-#if OPTKIT_ENV_LIB_NVML
-            nvmlDevice_t device = Query::gpu_handles_nvml.at(device_index);
-            nvmlReturn_t result_nvidia;
-            uint32_t power_mw;
-            NVML_EXEC_IF_SUPPORTS("nvmlDeviceGetPowerUsage", device, result_nvidia, &power_mw);
-            if (result_nvidia == NVML_SUCCESS)
-            {
-                // note that this is 1 seconds average power usage
-                is_ok = true;
-                power_watts = power_mw / 1000.0; // Convert from milliwatts to watts
-            }
-            else
-            {
-                OPTKIT_CORE_WARN("nvmlDeviceGetPowerUsage: {}", nvmlErrorString(result_nvidia));
-            }
-#endif
-        }
-
-        else if (vendor == GpuVendor::AMD && initialized[GpuVendor::AMD])
-        {
-#if OPTKIT_ENV_LIB_AMDSMI
-            amdsmi_power_info_t power_info;
-            amdsmi_status_t result_amd;
-            // Returns the current power and voltage of the GPU.
-            ROCM_EXEC_IF_SUPPORTS("amdsmi_get_power_info",
-                                  Query::gpu_handles_amdsmi.at(device_index),
-                                  result_amd,
-                                  &power_info);
-            if (result_amd == AMDSMI_STATUS_SUCCESS)
-            {
-                is_ok = true;
-                power_watts = power_info.average_socket_power;
-            }
-            else
-            {
-                OPTKIT_CORE_WARN("amdsmi_get_power_info: {}", _amdsmi_status_to_string(result_amd));
-            }
-#elif OPTKIT_ENV_LIB_ROCM_SMI
-            uint64_t power_uw; // Microwatts
             rsmi_status_t result;
-            uint32_t dv_ind = Query::gpu_handles_rocm_smi.at(device_index);
-
-            ROCM_EXEC_IF_SUPPORTS("rsmi_dev_power_ave_get", dv_ind, result, 0, &power_uw);
-            if (result == RSMI_STATUS_SUCCESS)
+            uint32_t device = Query::gpu_handles_rocm_smi.at(device_index);
+            int i = 0;
+            while (true)
             {
-                is_ok = true;
-                power_watts = static_cast<double>(power_uw) / 1000000.0; // Convert from microwatts to watts
-                OPTKIT_CORE_DEBUG("ROCm SMI power for device {}: {} W", device_index, power_watts);
-            }
-            else
-            {
-                OPTKIT_CORE_WARN("rsmi_dev_power_ave_get: {}", _rocm_smi_status_to_string(result));
+                ROCM_EXEC_IF_SUPPORTS("rsmi_dev_fan_speed_get", device, result, i, &speed);
+                if (result == RSMI_STATUS_SUCCESS)
+                    ++fan_count;
+                else
+                    break; // No more fans
+                ++i;
             }
 #endif
-        }
-        else if (vendor == GpuVendor::UNKNOWN || (vendor != GpuVendor::NVIDIA && vendor != GpuVendor::AMD))
-        {
-            OPTKIT_CORE_WARN("Device power query not supported without NVML or ROCm SMI");
         }
         return is_ok;
     }
 
-    bool Query::get_device_power_limits(GpuVendor vendor, uint32_t device_index, double &limit_watts, double &default_power, double &min_limit_watts, double &max_limit_watts, bool &is_configurable)
+    bool Query::set_fan_speed(GpuVendor vendor, uint32_t device_index, const std::string &fan_speed_percent)
     {
         if (!IS_DEVICE_INDEX_VALID(vendor, device_index))
         {
@@ -2279,594 +2011,1113 @@ namespace optkit::gpu
         }
         bool is_ok = true;
 
-        limit_watts = 0.0;
-        min_limit_watts = 0.0;
-        max_limit_watts = 0.0;
-        default_power = 0.0;
-        is_configurable = false;
-
         if (vendor == GpuVendor::NVIDIA && initialized[GpuVendor::NVIDIA])
         {
 #if OPTKIT_ENV_LIB_NVML
-            nvmlDevice_t device = Query::gpu_handles_nvml.at(device_index);
-            nvmlReturn_t result_nvidia;
-            uint32_t limit_mw;
-            nvmlEnableState_t power_management_state;
-
-            NVML_EXEC_IF_SUPPORTS(
-                "nvmlDeviceGetPowerManagementMode",
-                device,
-                result_nvidia,
-                &power_management_state);
-            if (result_nvidia == NVML_SUCCESS)
+            nvmlReturn_t result;
+            auto device = Query::gpu_handles_nvml.at(device_index);
+            uint32_t speed_percent = 0;
+            try
             {
-                is_configurable = (power_management_state == NVML_FEATURE_ENABLED);
+                speed_percent = std::stoul(fan_speed);
             }
-            else
+            catch (const std::exception &e)
             {
-                is_ok = false;
-                OPTKIT_CORE_WARN("nvmlDeviceGetPowerManagementMode: {}", nvmlErrorString(result_nvidia));
+                OPTKIT_CORE_ERROR("Invalid fan speed value '{}': {}", fan_speed, e.what());
+                return false;
             }
 
-            NVML_EXEC_IF_SUPPORTS(
-                "nvmlDeviceGetPowerManagementLimit",
-                device,
-                result_nvidia,
-                &limit_mw);
-            if (result_nvidia == NVML_SUCCESS)
+            uint32_t fan_id = 0;
+            while (fan_id < get_fan_count(vendor, device_index))
             {
-                limit_watts = limit_mw / 1000.0; // Convert from milliwatts to watts
-            }
-            else
-            {
-                is_ok = false;
-                OPTKIT_CORE_WARN("nvmlDeviceGetPowerManagementLimit: {}", nvmlErrorString(result_nvidia));
-                limit_watts = 0.0; // Not supported
-            }
-
-            uint32_t min_power_mw, max_power_mw;
-            NVML_EXEC_IF_SUPPORTS(
-                "nvmlDeviceGetPowerManagementLimitConstraints",
-                device,
-                result_nvidia,
-                &min_power_mw,
-                &max_power_mw);
-            if (result_nvidia == NVML_SUCCESS)
-            {
-                min_limit_watts = min_power_mw / 1000.0;
-                max_limit_watts = max_power_mw / 1000.0;
-            }
-            else
-            {
-                is_ok = false;
-                OPTKIT_CORE_WARN("nvmlDeviceGetPowerManagementLimitConstraints: {}", nvmlErrorString(result_nvidia));
-            }
-
-            uint32_t default_power_mw;
-            NVML_EXEC_IF_SUPPORTS(
-                "nvmlDeviceGetPowerManagementDefaultLimit",
-                device,
-                result_nvidia,
-                &default_power_mw);
-            if (result_nvidia == NVML_SUCCESS)
-            {
-                default_power = default_power_mw / 1000.0;
-            }
-            else
-            {
-                is_ok = false;
-                OPTKIT_CORE_WARN("nvmlDeviceGetPowerManagementDefaultLimit: {}", nvmlErrorString(result_nvidia));
+                NVML_EXEC_IF_SUPPORTS("nvmlDeviceSetFanSpeed", device, result, fan_id, speed_percent);
+                if (OPT_LIKELY(result == NVML_SUCCESS))
+                {
+                    is_ok = true;
+                }
+                else if (result == NVML_ERROR_INVALID_ARGUMENT)
+                {
+                    is_ok = false;
+                    OPTKIT_CORE_WARN("nvmlDeviceSetFanSpeed: Invalid fan speed value '{}', upto this point all fans are set.", fan_speed_percent);
+                    break;
+                }
+                else
+                {
+                    is_ok = false;
+                    OPTKIT_CORE_WARN("nvmlDeviceSetFanSpeed: {}", nvmlErrorString(result));
+                    break;
+                }
+                ++fan_id;
             }
 #endif
         }
-
         else if (vendor == GpuVendor::AMD && initialized[GpuVendor::AMD])
         {
 #if OPTKIT_ENV_LIB_AMDSMI
-
-            amdsmi_power_info_t power_info;
-            amdsmi_status_t result_amd;
-            // Returns the current power and voltage of the GPU.
-            ROCM_EXEC_IF_SUPPORTS("amdsmi_get_power_info",
-                                  Query::gpu_handles_amdsmi.at(device_index),
-                                  result_amd,
-                                  &power_info);
-            if (result_amd == AMDSMI_STATUS_SUCCESS)
+            amdsmi_status_t result;
+            auto device = Query::gpu_handles_amdsmi.at(device_index);
+            uint64_t speed_percent = 0;
+            try
             {
-                limit_watts = power_info.power_limit;
+                speed_percent = AMDSMI_MAX_FAN_SPEED * std::stoul(fan_speed_percent) / 100;
+            }
+            catch (const std::exception &e)
+            {
+                OPTKIT_CORE_ERROR("Invalid fan speed value '{}': {}", fan_speed_percent, e.what());
+                return false;
+            }
+            ROCM_EXEC_IF_SUPPORTS("amdsmi_set_gpu_fan_speed", device, result, speed_percent);
+            if (OPT_LIKELY(result == AMDSMI_STATUS_SUCCESS))
+            {
+                is_ok = true;
             }
             else
             {
                 is_ok = false;
-                OPTKIT_CORE_WARN("amdsmi_get_power_info: {}", _amdsmi_status_to_string(result_amd));
+                OPTKIT_CORE_WARN("amdsmi_set_gpu_fan_speed: {}", _amdsmi_status_to_string(result));
             }
 #elif OPTKIT_ENV_LIB_ROCM_SMI
-            uint64_t power_cap_uw; // Power cap in microwatts
             rsmi_status_t result;
             uint32_t dv_ind = Query::gpu_handles_rocm_smi.at(device_index);
-
-            // Get current power cap
-            ROCM_EXEC_IF_SUPPORTS("rsmi_dev_power_cap_get", dv_ind, result, 0, &power_cap_uw);
-            if (result == RSMI_STATUS_SUCCESS)
+            uint64_t speed_percent = 0;
+            try
             {
-                limit_watts = static_cast<double>(power_cap_uw) / 1000000.0; // Convert from microwatts
+                speed_percent = RSMI_MAX_FAN_SPEED * std::stoul(fan_speed_percent) / 100;
+            }
+            catch (const std::exception &e)
+            {
+                OPTKIT_CORE_ERROR("Invalid fan speed value '{}': {}", fan_speed_percent, e.what());
+                return false;
+            }
+            ROCM_EXEC_IF_SUPPORTS("rsmi_dev_fan_speed_set", dv_ind, result, 0, speed_percent);
+            if (OPT_LIKELY(result == RSMI_STATUS_SUCCESS))
+            {
+                is_ok = true;
             }
             else
             {
                 is_ok = false;
-                OPTKIT_CORE_WARN("rsmi_dev_power_cap_get: {}", _rocm_smi_status_to_string(result));
+                OPTKIT_CORE_WARN("rsmi_dev_fan_speed_set: {}", _rocm_smi_status_to_string(result));
             }
-
-            // Get power cap range (min and max)
-            uint64_t min_power_uw, max_power_uw;
-            ROCM_EXEC_IF_SUPPORTS("rsmi_dev_power_cap_range_get", dv_ind, result, 0, &max_power_uw, &min_power_uw);
-            if (result == RSMI_STATUS_SUCCESS)
-            {
-                min_limit_watts = static_cast<double>(min_power_uw) / 1000000.0;
-                max_limit_watts = static_cast<double>(max_power_uw) / 1000000.0;
-                is_configurable = true; // If we can get the range, it's configurable
-                OPTKIT_CORE_DEBUG("ROCm SMI power limits for device {}: min={} W, max={} W",
-                                  device_index, min_limit_watts, max_limit_watts);
-            }
-            else
-            {
-                is_ok = false;
-                OPTKIT_CORE_WARN("rsmi_dev_power_cap_range_get: {}", _rocm_smi_status_to_string(result));
-            }
-
-            // ROCm SMI doesn't have a direct "default" power, use current cap as default
-            default_power = limit_watts;
 #endif
         }
-        else if (vendor == GpuVendor::UNKNOWN || (vendor != GpuVendor::NVIDIA && vendor != GpuVendor::AMD))
+        is_ok = false;
+    }
+    return is_ok;
+}
+
+bool Query::reset_fan_speed(GpuVendor vendor, uint32_t device_index)
+{
+    if (!IS_DEVICE_INDEX_VALID(vendor, device_index))
+    {
+        OPTKIT_CORE_ERROR("Invalid device index {} for vendor {}", device_index, to_string(vendor));
+        return false;
+    }
+    bool is_ok = true;
+
+    if (vendor == GpuVendor::NVIDIA && initialized[GpuVendor::NVIDIA])
+    {
+#if OPTKIT_ENV_LIB_NVML
+        nvmlReturn_t result;
+        auto device = Query::gpu_handles_nvml.at(device_index);
+        uint32_t fan_id = 0;
+        while (true)
+        {
+            NVML_EXEC_IF_SUPPORTS("nvmlDeviceSetDefaultFanSpeed", device, result, fan_id, speed_percent);
+            if (OPT_LIKELY(result == NVML_SUCCESS))
+            {
+                is_ok = true;
+            }
+            else if (result == NVML_ERROR_INVALID_ARGUMENT)
+            {
+                is_ok = false;
+                OPTKIT_CORE_WARN("nvmlDeviceSetDefaultFanSpeed: Invalid fan speed value '{}', upto this point all fans are set.", fan_speed_percent);
+                break;
+            }
+            else
+            {
+                is_ok = false;
+                OPTKIT_CORE_WARN("nvmlDeviceSetDefaultFanSpeed: {}", nvmlErrorString(result));
+                break;
+            }
+            ++fan_id;
+        }
+#endif
+    }
+    else if (vendor == GpuVendor::AMD && initialized[GpuVendor::AMD])
+    {
+#if OPTKIT_ENV_LIB_AMDSMI
+        amdsmi_status_t result;
+        auto device = Query::gpu_handles_amdsmi.at(device_index);
+
+        uint32_t fan_id = 0;
+        while (true)
+        {
+            ROCM_EXEC_IF_SUPPORTS("amdsmi_reset_gpu_fan", device, result, fan_id);
+            if (OPT_LIKELY(result == AMDSMI_STATUS_SUCCESS))
+            {
+                is_ok = true;
+                ++fan_id;
+            }
+            else
+            {
+                is_ok = false;
+                OPTKIT_CORE_WARN("amdsmi_reset_gpu_fan: {}", _amdsmi_status_to_string(result));
+                break;
+            }
+        }
+
+#elif OPTKIT_ENV_LIB_ROCM_SMI
+        rsmi_status_t result;
+        uint32_t dv_ind = Query::gpu_handles_rocm_smi.at(device_index);
+        uint32_t fan_id = 0;
+        while (true)
+        {
+            ROCM_EXEC_IF_SUPPORTS("rsmi_dev_fan_reset", device, result, fan_id);
+            if (OPT_LIKELY(result == AMDSMI_STATUS_SUCCESS))
+            {
+                is_ok = true;
+                ++fan_id;
+            }
+            else
+            {
+                is_ok = false;
+                OPTKIT_CORE_WARN("rsmi_dev_fan_reset: {}", _amdsmi_status_to_string(result));
+                break;
+            }
+        }
+#endif
+    }
+    return is_ok;
+}
+
+bool Query::get_capabilities_info(GpuVendor vendor, uint32_t device_index, GpuCapabilitiesInfo &capabilities_info)
+{
+    if (!IS_DEVICE_INDEX_VALID(vendor, device_index))
+    {
+        OPTKIT_CORE_ERROR("Invalid device index {} for vendor {}", device_index, to_string(vendor));
+        return false;
+    }
+    bool is_ok = true;
+
+    capabilities_info = {};
+    if (vendor == GpuVendor::NVIDIA && initialized[GpuVendor::NVIDIA])
+    {
+#if OPTKIT_ENV_LIB_NVML
+        nvmlEnableState_t current, pending;
+        nvmlReturn_t result;
+        auto device = Query::gpu_handles_nvml.at(device_index);
+        NVML_EXEC_IF_SUPPORTS("nvmlDeviceGetEccMode", device, result, &current, &pending);
+        if (OPT_LIKELY(result == NVML_SUCCESS))
+        {
+            capabilities_info.ecc_enabled = (current == NVML_FEATURE_ENABLED);
+        }
+        else
         {
             is_ok = false;
-            OPTKIT_CORE_WARN("Device power limit query not supported without NVML or ROCm SMI");
+            OPTKIT_CORE_WARN("nvmlDeviceGetEccMode: {}", nvmlErrorString(result));
+        }
+        // Get persistence mode
+        nvmlEnableState_t mode;
+        NVML_EXEC_IF_SUPPORTS("nvmlDeviceGetPersistenceMode", device, result, &mode);
+        if (OPT_LIKELY(result == NVML_SUCCESS))
+        {
+            capabilities_info.persistence_mode_enabled = (mode == NVML_FEATURE_ENABLED);
+        }
+        else
+        {
+            is_ok = false;
+            OPTKIT_CORE_WARN("nvmlDeviceGetPersistenceMode: {}", nvmlErrorString(result));
         }
 
-        return is_ok;
+        uint32_t arch;
+        is_ok = is_ok && get_architecture(vendor, device_index, arch);
+
+        // Unified Memory supported on Kepler (3) and later architectures
+        capabilities_info.supports_unified_memory = (arch >= NVML_DEVICE_ARCH_KEPLER && arch != NVML_DEVICE_ARCH_UNKNOWN);
+#endif
+    }
+    else if (vendor == GpuVendor::AMD && initialized[GpuVendor::AMD])
+    {
+#if OPTKIT_ENV_LIB_AMDSMI
+        uint64_t enabled_blocks;
+        amdsmi_status_t result;
+        ROCM_EXEC_IF_SUPPORTS("amdsmi_get_gpu_ecc_enabled",
+                              Query::gpu_handles_amdsmi.at(device_index),
+                              result,
+                              &enabled_blocks);
+        if (result == AMDSMI_STATUS_SUCCESS)
+        {
+            capabilities_info.ecc_enabled = (enabled_blocks != 0);
+        }
+        else
+        {
+            is_ok = false;
+            OPTKIT_CORE_WARN("Failed to get AMD GPU ECC status: {}", _amdsmi_status_to_string(result));
+        }
+
+        capabilities_info.persistence_mode_enabled = false; // AMD GPUs do not have persistence mode
+
+        amdsmi_vram_info_t vram_info;
+        ROCM_EXEC_IF_SUPPORTS("amdsmi_get_gpu_vram_info",
+                              Query::gpu_handles_amdsmi.at(device_index),
+                              result,
+                              &vram_info);
+        if (result == AMDSMI_STATUS_SUCCESS)
+        { // Check for HBM memory (indicates high-end GPU with advanced memory features)
+            // bool has_hbm = (vram_info.vram_type == AMDSMI_VRAM_TYPE_HBM ||
+            //                 vram_info.vram_type == AMDSMI_VRAM_TYPE_HBM2 ||
+            //                 vram_info.vram_type == AMDSMI_VRAM_TYPE_HBM2E ||
+            //                 vram_info.vram_type == AMDSMI_VRAM_TYPE_HBM3);
+
+            // Check VRAM size - larger VRAM typically indicates support for advanced features
+            capabilities_info.supports_unified_memory = (vram_info.vram_size > 8000); // > 8GB suggests modern GPU
+        }
+        else
+        {
+            is_ok = false;
+            OPTKIT_CORE_WARN("Failed to get AMD GPU unified memory capability: {}", _amdsmi_status_to_string(result));
+        }
+#endif
+    }
+    else if (vendor == GpuVendor::UNKNOWN || (vendor != GpuVendor::NVIDIA && vendor != GpuVendor::AMD))
+    {
+        OPTKIT_CORE_WARN("Capabilities info query not supported without NVML or ROCm SMI");
     }
 
-    bool Query::get_device_temperature(GpuVendor vendor, uint32_t device_index, double &temp_device_celsius, double &temp_mem_celsius)
+    return is_ok;
+}
+
+bool Query::get_driver_version(GpuVendor vendor, double &driver_version)
+{
+    bool is_ok = false;
+
+    driver_version = 0.0;
+    if (vendor == GpuVendor::NVIDIA && initialized[GpuVendor::NVIDIA])
     {
-        if (!IS_DEVICE_INDEX_VALID(vendor, device_index))
-        {
-            OPTKIT_CORE_ERROR("Invalid device index {} for vendor {}", device_index, to_string(vendor));
-            return false;
-        }
-        bool is_ok = false;
-        temp_device_celsius = 0.0;
-        temp_mem_celsius = 0.0; // rand() % 10 + 30.0; // Dummy memory temp between 30 and 40 C
-
-        if (vendor == GpuVendor::NVIDIA && initialized[GpuVendor::NVIDIA])
-        {
 #if OPTKIT_ENV_LIB_NVML
-            nvmlDevice_t device = Query::gpu_handles_nvml.at(device_index);
-            nvmlReturn_t result;
-            uint32_t temp;
-
-            NVML_EXEC_IF_SUPPORTS("nvmlDeviceGetTemperature", device, result, NVML_TEMPERATURE_GPU, &temp);
-            if (OPT_LIKELY(result == NVML_SUCCESS))
-            {
-                is_ok = true;
-                temp_device_celsius = static_cast<double>(temp);
-            }
-            else
-            {
-                OPTKIT_CORE_WARN("nvmlDeviceGetTemperature: {}", nvmlErrorString(result));
-            }
-#endif
-        }
-
-        else if (vendor == GpuVendor::AMD && initialized[GpuVendor::AMD])
+        int32_t version;
+        nvmlReturn_t result = nvmlSystemGetCudaDriverVersion(&version);
+        if (OPT_LIKELY(result == NVML_SUCCESS))
         {
-#if OPTKIT_ENV_LIB_AMDSMI
-            uint32_t temperature;
-            amdsmi_status_t result;
-            ROCM_EXEC_IF_SUPPORTS("amdsmi_get_temp_metric",
-                                  Query::gpu_handles_amdsmi.at(device_index),
-                                  result,
-                                  AMDSMI_TEMPERATURE_TYPE_EDGE,
-                                  AMDSMI_TEMP_CURRENT,
-                                  &temperature);
-            if (result == AMDSMI_STATUS_SUCCESS)
-            {
-                is_ok = true;
-                temp_device_celsius = static_cast<double>(temperature) / 1000.0; // Convert from millidegrees to degrees
-            }
-            else
-            {
-                OPTKIT_CORE_WARN("amdsmi_get_cpu_socket_temperature: {}", _amdsmi_status_to_string(result));
-            }
-
-            ROCM_EXEC_IF_SUPPORTS("amdsmi_get_temp_metric",
-                                  Query::gpu_handles_amdsmi.at(device_index),
-                                  result,
-                                  AMDSMI_TEMPERATURE_TYPE_VRAM,
-                                  AMDSMI_TEMP_CURRENT,
-                                  &temperature);
-            if (result == AMDSMI_STATUS_SUCCESS)
-            {
-                is_ok = true;
-                temp_mem_celsius = static_cast<double>(temperature) / 1000.0; // Convert from millidegrees to degrees
-            }
-            else
-            {
-                OPTKIT_CORE_WARN("amdsmi_get_cpu_socket_temperature: {}", _amdsmi_status_to_string(result));
-            }
-#elif OPTKIT_ENV_LIB_ROCM_SMI
-            int64_t temperature;
-            rsmi_status_t result;
-            uint32_t dv_ind = Query::gpu_handles_rocm_smi.at(device_index);
-
-            // Get current edge (GPU die) temperature
-            ROCM_EXEC_IF_SUPPORTS("rsmi_dev_temp_metric_get", dv_ind, result,
-                                  RSMI_TEMP_TYPE_EDGE, RSMI_TEMP_CURRENT, &temperature);
-            if (result == RSMI_STATUS_SUCCESS)
-            {
-                is_ok = true;
-                temp_device_celsius = static_cast<double>(temperature) / 1000.0; // Convert from millidegrees
-                OPTKIT_CORE_DEBUG("ROCm SMI device temperature for device {}: {} C", device_index, temp_device_celsius);
-            }
-            else
-            {
-                OPTKIT_CORE_WARN("rsmi_dev_temp_metric_get (edge): {}", _rocm_smi_status_to_string(result));
-            }
-
-            // Get current memory temperature
-            ROCM_EXEC_IF_SUPPORTS("rsmi_dev_temp_metric_get", dv_ind, result,
-                                  RSMI_TEMP_TYPE_MEMORY, RSMI_TEMP_CURRENT, &temperature);
-            if (result == RSMI_STATUS_SUCCESS)
-            {
-                temp_mem_celsius = static_cast<double>(temperature) / 1000.0;
-                OPTKIT_CORE_DEBUG("ROCm SMI memory temperature for device {}: {} C", device_index, temp_mem_celsius);
-            }
-            else
-            {
-                // Memory temperature might not be available on all devices
-                OPTKIT_CORE_WARN("rsmi_dev_temp_metric_get (memory): {}", _rocm_smi_status_to_string(result));
-            }
-#endif
+            is_ok = true;
+            int32_t major = NVML_CUDA_DRIVER_VERSION_MAJOR(version);
+            int32_t minor = NVML_CUDA_DRIVER_VERSION_MINOR(version);
+            driver_version = major + minor / 10.0; // major.minor as double
         }
-
-        else if (vendor == GpuVendor::UNKNOWN || (vendor != GpuVendor::NVIDIA && vendor != GpuVendor::AMD))
+        else
         {
-            OPTKIT_CORE_WARN("Device temperature query not supported without NVML or ROCm SMI");
+            OPTKIT_CORE_ERROR("NVML error in nvmlSystemGetCudaDriverVersion: {}", std::string(nvmlErrorString(result)));
         }
-        return is_ok;
+#endif
     }
-
-    bool Query::get_device_name(GpuVendor vendor, uint32_t device_index, std::string &device_name)
+    else if (vendor == GpuVendor::AMD && initialized[GpuVendor::AMD])
     {
-        if (!IS_DEVICE_INDEX_VALID(vendor, device_index))
-        {
-            OPTKIT_CORE_ERROR("Invalid device index {} for vendor {}", device_index, to_string(vendor));
-            return false;
-        }
-        bool is_ok = false;
-
-        device_name = "Unknown";
-
-        if (vendor == GpuVendor::NVIDIA && initialized[GpuVendor::NVIDIA])
-        {
-#if OPTKIT_ENV_LIB_NVML
-            nvmlDevice_t device = Query::gpu_handles_nvml.at(device_index);
-            nvmlReturn_t result;
-            // Get device name
-            char name[NVML_DEVICE_NAME_BUFFER_SIZE];
-            NVML_EXEC_IF_SUPPORTS("nvmlDeviceGetName", device, result, &name[0], NVML_DEVICE_NAME_BUFFER_SIZE);
-            if (OPT_LIKELY(result == NVML_SUCCESS))
-            {
-                is_ok = true;
-                device_name = std::string(name);
-            }
-            else
-            {
-                OPTKIT_CORE_WARN("nvmlDeviceGetName: {}", nvmlErrorString(result));
-            }
-#endif
-        }
-        else if (vendor == GpuVendor::AMD && initialized[GpuVendor::AMD])
-        {
 #if OPTKIT_ENV_LIB_AMDSMI
-            amdsmi_board_info_t info;
-            amdsmi_status_t result;
-            ROCM_EXEC_IF_SUPPORTS("amdsmi_get_gpu_board_info",
-                                  Query::gpu_handles_amdsmi.at(device_index),
-                                  result,
-                                  &info);
-            if (result == AMDSMI_STATUS_SUCCESS)
-            {
-                is_ok = true;
-                device_name = std::string(info.product_name);
-            }
-            else
-            {
-                OPTKIT_CORE_WARN("amdsmi_get_gpu_board_info: {}", _amdsmi_status_to_string(result));
-            }
-#elif OPTKIT_ENV_LIB_ROCM_SMI
-            char name[256];
-            rsmi_status_t result;
-            uint32_t dv_ind = Query::gpu_handles_rocm_smi.at(device_index);
-            ROCM_EXEC_IF_SUPPORTS("rsmi_dev_name_get", dv_ind, result, name, sizeof(name));
-            if (OPT_LIKELY(result == RSMI_STATUS_SUCCESS))
-            {
-                is_ok = true;
-                device_name = std::string(name);
-                OPTKIT_CORE_DEBUG("ROCm SMI retrieved device name for device {}: {}", device_index, device_name);
-            }
-            else
-            {
-                OPTKIT_CORE_WARN("rsmi_dev_name_get: {}", _rocm_smi_status_to_string(result));
-            }
-#endif
-        }
-        else if (vendor == GpuVendor::UNKNOWN || (vendor != GpuVendor::NVIDIA && vendor != GpuVendor::AMD))
-        {
-            OPTKIT_CORE_WARN("Device name query not supported without NVML or ROCm SMI");
-        }
-        return is_ok;
-    }
+        amdsmi_version_t amdsmi_version{};
 
-    bool Query::get_architecture(GpuVendor vendor, uint32_t device_index, uint32_t &architecture)
-    {
-        if (!IS_DEVICE_INDEX_VALID(vendor, device_index))
+        amdsmi_status_t status = amdsmi_get_lib_version(&amdsmi_version);
+        if (status == AMDSMI_STATUS_SUCCESS)
         {
-            OPTKIT_CORE_ERROR("Invalid device index {} for vendor {}", device_index, to_string(vendor));
-            return false;
+            is_ok = true;
+            int32_t major = amdsmi_version.major, minor = amdsmi_version.minor;
+            driver_version = major + minor / 10.0; // major.minor as double
         }
-        bool is_ok = false;
-
-        if (vendor == GpuVendor::NVIDIA && initialized[GpuVendor::NVIDIA])
+        else
         {
-#if OPTKIT_ENV_LIB_NVML
-            uint32_t arch;
-            nvmlDevice_t device = Query::gpu_handles_nvml.at(device_index);
-            nvmlReturn_t result_nvidia;
-            NVML_EXEC_IF_SUPPORTS("nvmlDeviceGetArchitecture", device, result_nvidia, &arch);
-            if (result_nvidia == NVML_SUCCESS)
-            {
-                architecture = static_cast<uint32_t>(arch);
-                is_ok = true;
-            }
-            else
-            {
-                OPTKIT_CORE_WARN("nvmlDeviceGetArchitecture: {}", nvmlErrorString(result_nvidia));
-                architecture = NVML_DEVICE_ARCH_UNKNOWN; // Unknown architecture
-            }
-
-#endif
+            OPTKIT_CORE_ERROR("ROCm SMI failed to get version: {}", _amdsmi_status_to_string(status));
         }
-        else if (vendor == GpuVendor::AMD && initialized[GpuVendor::AMD])
-        {
-#if OPTKIT_ENV_LIB_AMDSMI
-            // Try to get device ID from ASIC info
-            amdsmi_asic_info_t asic_info{};
-            amdsmi_status_t result_amdsmi;
-            ROCM_EXEC_IF_SUPPORTS("amdsmi_get_gpu_asic_info",
-                                  Query::gpu_handles_amdsmi.at(device_index),
-                                  result_amdsmi,
-                                  &asic_info);
-
-            if (result_amdsmi == AMDSMI_STATUS_SUCCESS)
-            {
-                uint32_t device_id = static_cast<uint32_t>(asic_info.device_id);
-                architecture = _map_amd_device_id_to_arch(device_id);
-                is_ok = true;
-            }
-            else
-            {
-                OPTKIT_CORE_WARN("amdsmi_get_gpu_asic_info: {}", _amdsmi_status_to_string(result_amdsmi));
-                architecture = AMD_DEVICE_ARCH_UNKNOWN;
-            }
 
 #elif OPTKIT_ENV_LIB_ROCM_SMI
-            // ROCm SMI doesn't have direct architecture query
-            // We can get device ID and map it
-            uint64_t device_id = 0;
-            rsmi_status_t result;
-            uint32_t dv_ind = Query::gpu_handles_rocm_smi.at(device_index);
-            ROCM_EXEC_IF_SUPPORTS("rsmi_dev_id_get", dv_ind, result, &device_id);
-
-            if (OPT_LIKELY(result == RSMI_STATUS_SUCCESS))
-            {
-                architecture = _map_amd_device_id_to_arch(static_cast<uint32_t>(device_id));
-                is_ok = true;
-                OPTKIT_CORE_DEBUG("ROCm SMI retrieved architecture for device {}: 0x{:X}", device_index, architecture);
-            }
-            else
-            {
-                OPTKIT_CORE_WARN("rsmi_dev_id_get: {}", _rocm_smi_status_to_string(result));
-                architecture = 0xFFFFFFFF; // Unknown
-            }
-#endif
-        }
-        else if (vendor == GpuVendor::UNKNOWN || (vendor != GpuVendor::NVIDIA && vendor != GpuVendor::AMD))
+        rsmi_version_t version;
+        rsmi_status_t result = rsmi_version_get(&version);
+        if (result == RSMI_STATUS_SUCCESS)
         {
-            OPTKIT_CORE_WARN("Unsupported vendor for architecture query");
-            architecture = 0xFFFFFFFF; // return unknown architecture
+            is_ok = true;
+            driver_version = version.major + version.minor / 10.0;
+            OPTKIT_CORE_DEBUG("ROCm SMI driver version: {}.{}", version.major, version.minor);
         }
-
-        return is_ok;
+        else
+        {
+            OPTKIT_CORE_ERROR("ROCm SMI failed to get version: {}", _rocm_smi_status_to_string(result));
+        }
+#endif
     }
-
-    bool Query::get_device_temperature_thresholds(GpuVendor vendor, uint32_t device_index,
-                                                  double &max_gpu_temp_celsius,
-                                                  double &max_mem_temp_celsius,
-                                                  double &min_gpu_temp_celsius,
-                                                  double &min_mem_temp_celsius)
+    else if (vendor == GpuVendor::UNKNOWN || (vendor != GpuVendor::NVIDIA && vendor != GpuVendor::AMD))
     {
-        if (!IS_DEVICE_INDEX_VALID(vendor, device_index))
-        {
-            OPTKIT_CORE_ERROR("Invalid device index {} for vendor {}", device_index, to_string(vendor));
-            return false;
-        }
-        bool is_ok = true;
-        max_gpu_temp_celsius = 0.0;
-        max_mem_temp_celsius = 0.0;
-        min_gpu_temp_celsius = 0.0;
-        min_mem_temp_celsius = 0.0;
-
-        if (vendor == GpuVendor::NVIDIA && initialized[GpuVendor::NVIDIA])
-        {
-#if OPTKIT_ENV_LIB_NVML
-            uint32_t temp;
-            nvmlReturn_t result;
-            NVML_EXEC_IF_SUPPORTS("nvmlDeviceGetTemperatureThreshold",
-                                  Query::gpu_handles_nvml.at(device_index),
-                                  result,
-                                  NVML_TEMPERATURE_THRESHOLD_GPU_MAX,
-                                  &temp);
-            if (OPT_LIKELY(result == NVML_SUCCESS))
-            {
-                max_gpu_temp_celsius = static_cast<double>(temp);
-            }
-            else
-            {
-                is_ok = false;
-                OPTKIT_CORE_WARN("Failed to get NVIDIA max temperature threshold: {}", std::string(nvmlErrorString(result)));
-            }
-
-            NVML_EXEC_IF_SUPPORTS("nvmlDeviceGetTemperatureThreshold",
-                                  Query::gpu_handles_nvml.at(device_index),
-                                  result,
-                                  NVML_TEMPERATURE_THRESHOLD_MEM_MAX,
-                                  &temp);
-            if (OPT_LIKELY(result == NVML_SUCCESS))
-            {
-                max_mem_temp_celsius = static_cast<double>(temp);
-            }
-            else
-            {
-                is_ok = false;
-                OPTKIT_CORE_WARN("Failed to get NVIDIA max memory temperature threshold: {}", std::string(nvmlErrorString(result)));
-            }
-#endif
-        }
-        else if (vendor == GpuVendor::AMD && initialized[GpuVendor::AMD])
-        {
-#if OPTKIT_ENV_LIB_AMDSMI
-            uint32_t temperature;
-            amdsmi_status_t result;
-            ROCM_EXEC_IF_SUPPORTS("amdsmi_get_temp_metric",
-                                  Query::gpu_handles_amdsmi.at(device_index),
-                                  result,
-                                  AMDSMI_TEMPERATURE_TYPE_EDGE,
-                                  AMDSMI_TEMP_MAX,
-                                  &temperature);
-            if (result == AMDSMI_STATUS_SUCCESS)
-            {
-                max_gpu_temp_celsius = static_cast<double>(temperature) / 1000.0; // Convert from millidegrees to degrees
-            }
-            else
-            {
-                is_ok = false;
-                OPTKIT_CORE_WARN("amdsmi_get_cpu_socket_temperature: {}", _amdsmi_status_to_string(result));
-            }
-            ROCM_EXEC_IF_SUPPORTS("amdsmi_get_temp_metric",
-                                  Query::gpu_handles_amdsmi.at(device_index),
-                                  result,
-                                  AMDSMI_TEMPERATURE_TYPE_EDGE,
-                                  AMDSMI_TEMP_MIN,
-                                  &temperature);
-            if (result == AMDSMI_STATUS_SUCCESS)
-            {
-                min_gpu_temp_celsius = static_cast<double>(temperature) / 1000.0; // Convert from millidegrees to degrees
-            }
-            else
-            {
-                is_ok = false;
-                OPTKIT_CORE_WARN("amdsmi_get_cpu_socket_temperature: {}", _amdsmi_status_to_string(result));
-            }
-
-            ROCM_EXEC_IF_SUPPORTS("amdsmi_get_temp_metric",
-                                  Query::gpu_handles_amdsmi.at(device_index),
-                                  result,
-                                  AMDSMI_TEMPERATURE_TYPE_VRAM,
-                                  AMDSMI_TEMP_MAX,
-                                  &temperature);
-            if (result == AMDSMI_STATUS_SUCCESS)
-            {
-                max_mem_temp_celsius = static_cast<double>(temperature) / 1000.0; // Convert from millidegrees to degrees
-            }
-            else
-            {
-                is_ok = false;
-                OPTKIT_CORE_WARN("amdsmi_get_cpu_socket_temperature: {}", _amdsmi_status_to_string(result));
-            }
-            ROCM_EXEC_IF_SUPPORTS("amdsmi_get_temp_metric",
-                                  Query::gpu_handles_amdsmi.at(device_index),
-                                  result,
-                                  AMDSMI_TEMPERATURE_TYPE_VRAM,
-                                  AMDSMI_TEMP_MIN,
-                                  &temperature);
-            if (result == AMDSMI_STATUS_SUCCESS)
-            {
-                min_mem_temp_celsius = static_cast<double>(temperature) / 1000.0; // Convert from millidegrees to degrees
-            }
-            else
-            {
-                is_ok = false;
-                OPTKIT_CORE_WARN("amdsmi_get_cpu_socket_temperature: {}", _amdsmi_status_to_string(result));
-            }
-#elif OPTKIT_ENV_LIB_ROCM_SMI
-            int64_t temperature;
-            rsmi_status_t result;
-            uint32_t dv_ind = Query::gpu_handles_rocm_smi.at(device_index);
-
-            // Get max GPU (edge) temperature
-            ROCM_EXEC_IF_SUPPORTS("rsmi_dev_temp_metric_get", dv_ind, result,
-                                  RSMI_TEMP_TYPE_EDGE, RSMI_TEMP_MAX, &temperature);
-            if (result == RSMI_STATUS_SUCCESS)
-            {
-                max_gpu_temp_celsius = static_cast<double>(temperature) / 1000.0; // Convert from millidegrees
-            }
-            else
-            {
-                is_ok = false;
-                OPTKIT_CORE_WARN("rsmi_dev_temp_metric_get (edge max): {}", _rocm_smi_status_to_string(result));
-            }
-
-            // Get min GPU (edge) temperature
-            ROCM_EXEC_IF_SUPPORTS("rsmi_dev_temp_metric_get", dv_ind, result,
-                                  RSMI_TEMP_TYPE_EDGE, RSMI_TEMP_MIN, &temperature);
-            if (result == RSMI_STATUS_SUCCESS)
-            {
-                min_gpu_temp_celsius = static_cast<double>(temperature) / 1000.0;
-            }
-            else
-            {
-                is_ok = false;
-                OPTKIT_CORE_WARN("rsmi_dev_temp_metric_get (edge min): {}", _rocm_smi_status_to_string(result));
-            }
-
-            // Get max memory temperature
-            ROCM_EXEC_IF_SUPPORTS("rsmi_dev_temp_metric_get", dv_ind, result,
-                                  RSMI_TEMP_TYPE_MEMORY, RSMI_TEMP_MAX, &temperature);
-            if (result == RSMI_STATUS_SUCCESS)
-            {
-                max_mem_temp_celsius = static_cast<double>(temperature) / 1000.0;
-            }
-            else
-            {
-                is_ok = false;
-                OPTKIT_CORE_WARN("rsmi_dev_temp_metric_get (memory max): {}", _rocm_smi_status_to_string(result));
-            }
-
-            // Get min memory temperature
-            ROCM_EXEC_IF_SUPPORTS("rsmi_dev_temp_metric_get", dv_ind, result,
-                                  RSMI_TEMP_TYPE_MEMORY, RSMI_TEMP_MIN, &temperature);
-            if (result == RSMI_STATUS_SUCCESS)
-            {
-                min_mem_temp_celsius = static_cast<double>(temperature) / 1000.0;
-            }
-            else
-            {
-                is_ok = false;
-                OPTKIT_CORE_WARN("rsmi_dev_temp_metric_get (memory min): {}", _rocm_smi_status_to_string(result));
-            }
-#endif
-        }
-        return is_ok;
+        OPTKIT_CORE_WARN("Driver version query not supported without NVML or ROCm SMI");
     }
+    return is_ok;
+}
+
+bool Query::get_library_version(GpuVendor vendor, std::string &library_version)
+{
+    bool is_ok = false;
+
+    library_version = "";
+    if (vendor == GpuVendor::NVIDIA && initialized[GpuVendor::NVIDIA])
+    {
+#if OPTKIT_ENV_LIB_NVML
+        char version[NVML_SYSTEM_NVML_VERSION_BUFFER_SIZE] = {0};
+        nvmlReturn_t result_nvidia = nvmlSystemGetNVMLVersion(version, NVML_SYSTEM_NVML_VERSION_BUFFER_SIZE);
+        if (result_nvidia == NVML_SUCCESS)
+        {
+            is_ok = true;
+            library_version = std::string(version);
+        }
+        else
+        {
+            library_version = "0.0";
+            OPTKIT_CORE_ERROR("NVML error in nvmlSystemGetNVMLVersion: {}", std::string(nvmlErrorString(result_nvidia)));
+        }
+#endif
+    }
+    else if (vendor == GpuVendor::AMD && initialized[GpuVendor::AMD])
+    {
+#if OPTKIT_ENV_LIB_AMDSMI
+        amdsmi_version_t amdsmi_version{};
+        amdsmi_status_t result_amd = amdsmi_get_lib_version(&amdsmi_version);
+        if (result_amd == AMDSMI_STATUS_SUCCESS)
+        {
+            is_ok = true;
+            int32_t major = amdsmi_version.major;
+            int32_t minor = amdsmi_version.minor;
+            library_version = std::to_string(major) + "." + std::to_string(minor); // major.minor as string
+        }
+        else
+        {
+            library_version = "0.0";
+            OPTKIT_CORE_ERROR("ROCm SMI failed to get version: {}", _amdsmi_status_to_string(result_amd));
+        }
+#elif OPTKIT_ENV_LIB_ROCM_SMI
+        rsmi_version_t version;
+        rsmi_status_t result = rsmi_version_get(&version);
+        if (result == RSMI_STATUS_SUCCESS)
+        {
+            is_ok = true;
+            library_version = std::to_string(version.major) + "." +
+                              std::to_string(version.minor) + "." +
+                              std::to_string(version.patch);
+            if (version.build != nullptr && strlen(version.build) > 0)
+            {
+                library_version += "-" + std::string(version.build);
+            }
+            OPTKIT_CORE_DEBUG("ROCm SMI library version: {}", library_version);
+        }
+        else
+        {
+            library_version = "0.0";
+            OPTKIT_CORE_ERROR("ROCm SMI failed to get library version: {}", _rocm_smi_status_to_string(result));
+        }
+#endif
+    }
+    else if (vendor == GpuVendor::UNKNOWN || (vendor != GpuVendor::NVIDIA && vendor != GpuVendor::AMD))
+    {
+        OPTKIT_CORE_WARN("Library version query not supported without NVML or ROCm SMI");
+    }
+    return is_ok;
+}
+
+bool Query::get_device_count(GpuVendor vendor, uint32_t &device_count)
+{
+    bool is_ok = false;
+    device_count = 0;
+    if (vendor == GpuVendor::NVIDIA && initialized[GpuVendor::NVIDIA])
+    {
+#if OPTKIT_ENV_LIB_NVML
+        device_count = Query::gpu_handles_nvml.size();
+        is_ok = true;
+#endif
+    }
+    else if (vendor == GpuVendor::AMD && initialized[GpuVendor::AMD])
+    {
+#if OPTKIT_ENV_LIB_AMDSMI
+        device_count = gpu_handles_amdsmi.size();
+        is_ok = true; // AMD device enumeration succeeded
+#elif OPTKIT_ENV_LIB_ROCM_SMI
+        device_count = Query::gpu_handles_rocm_smi.size();
+        is_ok = true; // ROCm SMI device enumeration succeeded
+#endif
+    }
+    else if (vendor == GpuVendor::UNKNOWN || (vendor != GpuVendor::NVIDIA && vendor != GpuVendor::AMD))
+    {
+        OPTKIT_CORE_WARN("Device count query not supported without NVML or ROCm AMDSMI");
+    }
+    return is_ok;
+}
+
+bool Query::get_device_power(GpuVendor vendor, uint32_t device_index, double &power_watts)
+{
+    if (!IS_DEVICE_INDEX_VALID(vendor, device_index))
+    {
+        OPTKIT_CORE_ERROR("Invalid device index {} for vendor {}", device_index, to_string(vendor));
+        return false;
+    }
+    bool is_ok = false;
+
+    power_watts = 0.0;
+
+    if (vendor == GpuVendor::NVIDIA && initialized[GpuVendor::NVIDIA])
+    {
+#if OPTKIT_ENV_LIB_NVML
+        nvmlDevice_t device = Query::gpu_handles_nvml.at(device_index);
+        nvmlReturn_t result_nvidia;
+        uint32_t power_mw;
+        NVML_EXEC_IF_SUPPORTS("nvmlDeviceGetPowerUsage", device, result_nvidia, &power_mw);
+        if (result_nvidia == NVML_SUCCESS)
+        {
+            // note that this is 1 seconds average power usage
+            is_ok = true;
+            power_watts = power_mw / 1000.0; // Convert from milliwatts to watts
+        }
+        else
+        {
+            OPTKIT_CORE_WARN("nvmlDeviceGetPowerUsage: {}", nvmlErrorString(result_nvidia));
+        }
+#endif
+    }
+
+    else if (vendor == GpuVendor::AMD && initialized[GpuVendor::AMD])
+    {
+#if OPTKIT_ENV_LIB_AMDSMI
+        amdsmi_power_info_t power_info;
+        amdsmi_status_t result_amd;
+        // Returns the current power and voltage of the GPU.
+        ROCM_EXEC_IF_SUPPORTS("amdsmi_get_power_info",
+                              Query::gpu_handles_amdsmi.at(device_index),
+                              result_amd,
+                              &power_info);
+        if (result_amd == AMDSMI_STATUS_SUCCESS)
+        {
+            is_ok = true;
+            power_watts = power_info.average_socket_power;
+        }
+        else
+        {
+            OPTKIT_CORE_WARN("amdsmi_get_power_info: {}", _amdsmi_status_to_string(result_amd));
+        }
+#elif OPTKIT_ENV_LIB_ROCM_SMI
+        uint64_t power_uw; // Microwatts
+        rsmi_status_t result;
+        uint32_t dv_ind = Query::gpu_handles_rocm_smi.at(device_index);
+
+        ROCM_EXEC_IF_SUPPORTS("rsmi_dev_power_ave_get", dv_ind, result, 0, &power_uw);
+        if (result == RSMI_STATUS_SUCCESS)
+        {
+            is_ok = true;
+            power_watts = static_cast<double>(power_uw) / 1000000.0; // Convert from microwatts to watts
+            OPTKIT_CORE_DEBUG("ROCm SMI power for device {}: {} W", device_index, power_watts);
+        }
+        else
+        {
+            OPTKIT_CORE_WARN("rsmi_dev_power_ave_get: {}", _rocm_smi_status_to_string(result));
+        }
+#endif
+    }
+    else if (vendor == GpuVendor::UNKNOWN || (vendor != GpuVendor::NVIDIA && vendor != GpuVendor::AMD))
+    {
+        OPTKIT_CORE_WARN("Device power query not supported without NVML or ROCm SMI");
+    }
+    return is_ok;
+}
+
+bool Query::get_device_power_limits(GpuVendor vendor, uint32_t device_index, double &limit_watts, double &default_power, double &min_limit_watts, double &max_limit_watts, bool &is_configurable)
+{
+    if (!IS_DEVICE_INDEX_VALID(vendor, device_index))
+    {
+        OPTKIT_CORE_ERROR("Invalid device index {} for vendor {}", device_index, to_string(vendor));
+        return false;
+    }
+    bool is_ok = true;
+
+    limit_watts = 0.0;
+    min_limit_watts = 0.0;
+    max_limit_watts = 0.0;
+    default_power = 0.0;
+    is_configurable = false;
+
+    if (vendor == GpuVendor::NVIDIA && initialized[GpuVendor::NVIDIA])
+    {
+#if OPTKIT_ENV_LIB_NVML
+        nvmlDevice_t device = Query::gpu_handles_nvml.at(device_index);
+        nvmlReturn_t result_nvidia;
+        uint32_t limit_mw;
+        nvmlEnableState_t power_management_state;
+
+        NVML_EXEC_IF_SUPPORTS(
+            "nvmlDeviceGetPowerManagementMode",
+            device,
+            result_nvidia,
+            &power_management_state);
+        if (result_nvidia == NVML_SUCCESS)
+        {
+            is_configurable = (power_management_state == NVML_FEATURE_ENABLED);
+        }
+        else
+        {
+            is_ok = false;
+            OPTKIT_CORE_WARN("nvmlDeviceGetPowerManagementMode: {}", nvmlErrorString(result_nvidia));
+        }
+
+        NVML_EXEC_IF_SUPPORTS(
+            "nvmlDeviceGetPowerManagementLimit",
+            device,
+            result_nvidia,
+            &limit_mw);
+        if (result_nvidia == NVML_SUCCESS)
+        {
+            limit_watts = limit_mw / 1000.0; // Convert from milliwatts to watts
+        }
+        else
+        {
+            is_ok = false;
+            OPTKIT_CORE_WARN("nvmlDeviceGetPowerManagementLimit: {}", nvmlErrorString(result_nvidia));
+            limit_watts = 0.0; // Not supported
+        }
+
+        uint32_t min_power_mw, max_power_mw;
+        NVML_EXEC_IF_SUPPORTS(
+            "nvmlDeviceGetPowerManagementLimitConstraints",
+            device,
+            result_nvidia,
+            &min_power_mw,
+            &max_power_mw);
+        if (result_nvidia == NVML_SUCCESS)
+        {
+            min_limit_watts = min_power_mw / 1000.0;
+            max_limit_watts = max_power_mw / 1000.0;
+        }
+        else
+        {
+            is_ok = false;
+            OPTKIT_CORE_WARN("nvmlDeviceGetPowerManagementLimitConstraints: {}", nvmlErrorString(result_nvidia));
+        }
+
+        uint32_t default_power_mw;
+        NVML_EXEC_IF_SUPPORTS(
+            "nvmlDeviceGetPowerManagementDefaultLimit",
+            device,
+            result_nvidia,
+            &default_power_mw);
+        if (result_nvidia == NVML_SUCCESS)
+        {
+            default_power = default_power_mw / 1000.0;
+        }
+        else
+        {
+            is_ok = false;
+            OPTKIT_CORE_WARN("nvmlDeviceGetPowerManagementDefaultLimit: {}", nvmlErrorString(result_nvidia));
+        }
+#endif
+    }
+
+    else if (vendor == GpuVendor::AMD && initialized[GpuVendor::AMD])
+    {
+#if OPTKIT_ENV_LIB_AMDSMI
+
+        amdsmi_power_info_t power_info;
+        amdsmi_status_t result_amd;
+        // Returns the current power and voltage of the GPU.
+        ROCM_EXEC_IF_SUPPORTS("amdsmi_get_power_info",
+                              Query::gpu_handles_amdsmi.at(device_index),
+                              result_amd,
+                              &power_info);
+        if (result_amd == AMDSMI_STATUS_SUCCESS)
+        {
+            limit_watts = power_info.power_limit;
+        }
+        else
+        {
+            is_ok = false;
+            OPTKIT_CORE_WARN("amdsmi_get_power_info: {}", _amdsmi_status_to_string(result_amd));
+        }
+#elif OPTKIT_ENV_LIB_ROCM_SMI
+        uint64_t power_cap_uw; // Power cap in microwatts
+        rsmi_status_t result;
+        uint32_t dv_ind = Query::gpu_handles_rocm_smi.at(device_index);
+
+        // Get current power cap
+        ROCM_EXEC_IF_SUPPORTS("rsmi_dev_power_cap_get", dv_ind, result, 0, &power_cap_uw);
+        if (result == RSMI_STATUS_SUCCESS)
+        {
+            limit_watts = static_cast<double>(power_cap_uw) / 1000000.0; // Convert from microwatts
+        }
+        else
+        {
+            is_ok = false;
+            OPTKIT_CORE_WARN("rsmi_dev_power_cap_get: {}", _rocm_smi_status_to_string(result));
+        }
+
+        // Get power cap range (min and max)
+        uint64_t min_power_uw, max_power_uw;
+        ROCM_EXEC_IF_SUPPORTS("rsmi_dev_power_cap_range_get", dv_ind, result, 0, &max_power_uw, &min_power_uw);
+        if (result == RSMI_STATUS_SUCCESS)
+        {
+            min_limit_watts = static_cast<double>(min_power_uw) / 1000000.0;
+            max_limit_watts = static_cast<double>(max_power_uw) / 1000000.0;
+            is_configurable = true; // If we can get the range, it's configurable
+            OPTKIT_CORE_DEBUG("ROCm SMI power limits for device {}: min={} W, max={} W",
+                              device_index, min_limit_watts, max_limit_watts);
+        }
+        else
+        {
+            is_ok = false;
+            OPTKIT_CORE_WARN("rsmi_dev_power_cap_range_get: {}", _rocm_smi_status_to_string(result));
+        }
+
+        // ROCm SMI doesn't have a direct "default" power, use current cap as default
+        default_power = limit_watts;
+#endif
+    }
+    else if (vendor == GpuVendor::UNKNOWN || (vendor != GpuVendor::NVIDIA && vendor != GpuVendor::AMD))
+    {
+        is_ok = false;
+        OPTKIT_CORE_WARN("Device power limit query not supported without NVML or ROCm SMI");
+    }
+
+    return is_ok;
+}
+
+bool Query::get_device_temperature(GpuVendor vendor, uint32_t device_index, double &temp_device_celsius, double &temp_mem_celsius)
+{
+    if (!IS_DEVICE_INDEX_VALID(vendor, device_index))
+    {
+        OPTKIT_CORE_ERROR("Invalid device index {} for vendor {}", device_index, to_string(vendor));
+        return false;
+    }
+    bool is_ok = false;
+    temp_device_celsius = 0.0;
+    temp_mem_celsius = 0.0; // rand() % 10 + 30.0; // Dummy memory temp between 30 and 40 C
+
+    if (vendor == GpuVendor::NVIDIA && initialized[GpuVendor::NVIDIA])
+    {
+#if OPTKIT_ENV_LIB_NVML
+        nvmlDevice_t device = Query::gpu_handles_nvml.at(device_index);
+        nvmlReturn_t result;
+        uint32_t temp;
+
+        NVML_EXEC_IF_SUPPORTS("nvmlDeviceGetTemperature", device, result, NVML_TEMPERATURE_GPU, &temp);
+        if (OPT_LIKELY(result == NVML_SUCCESS))
+        {
+            is_ok = true;
+            temp_device_celsius = static_cast<double>(temp);
+        }
+        else
+        {
+            OPTKIT_CORE_WARN("nvmlDeviceGetTemperature: {}", nvmlErrorString(result));
+        }
+#endif
+    }
+
+    else if (vendor == GpuVendor::AMD && initialized[GpuVendor::AMD])
+    {
+#if OPTKIT_ENV_LIB_AMDSMI
+        uint32_t temperature;
+        amdsmi_status_t result;
+        ROCM_EXEC_IF_SUPPORTS("amdsmi_get_temp_metric",
+                              Query::gpu_handles_amdsmi.at(device_index),
+                              result,
+                              AMDSMI_TEMPERATURE_TYPE_EDGE,
+                              AMDSMI_TEMP_CURRENT,
+                              &temperature);
+        if (result == AMDSMI_STATUS_SUCCESS)
+        {
+            is_ok = true;
+            temp_device_celsius = static_cast<double>(temperature) / 1000.0; // Convert from millidegrees to degrees
+        }
+        else
+        {
+            OPTKIT_CORE_WARN("amdsmi_get_cpu_socket_temperature: {}", _amdsmi_status_to_string(result));
+        }
+
+        ROCM_EXEC_IF_SUPPORTS("amdsmi_get_temp_metric",
+                              Query::gpu_handles_amdsmi.at(device_index),
+                              result,
+                              AMDSMI_TEMPERATURE_TYPE_VRAM,
+                              AMDSMI_TEMP_CURRENT,
+                              &temperature);
+        if (result == AMDSMI_STATUS_SUCCESS)
+        {
+            is_ok = true;
+            temp_mem_celsius = static_cast<double>(temperature) / 1000.0; // Convert from millidegrees to degrees
+        }
+        else
+        {
+            OPTKIT_CORE_WARN("amdsmi_get_cpu_socket_temperature: {}", _amdsmi_status_to_string(result));
+        }
+#elif OPTKIT_ENV_LIB_ROCM_SMI
+        int64_t temperature;
+        rsmi_status_t result;
+        uint32_t dv_ind = Query::gpu_handles_rocm_smi.at(device_index);
+
+        // Get current edge (GPU die) temperature
+        ROCM_EXEC_IF_SUPPORTS("rsmi_dev_temp_metric_get", dv_ind, result,
+                              RSMI_TEMP_TYPE_EDGE, RSMI_TEMP_CURRENT, &temperature);
+        if (result == RSMI_STATUS_SUCCESS)
+        {
+            is_ok = true;
+            temp_device_celsius = static_cast<double>(temperature) / 1000.0; // Convert from millidegrees
+            OPTKIT_CORE_DEBUG("ROCm SMI device temperature for device {}: {} C", device_index, temp_device_celsius);
+        }
+        else
+        {
+            OPTKIT_CORE_WARN("rsmi_dev_temp_metric_get (edge): {}", _rocm_smi_status_to_string(result));
+        }
+
+        // Get current memory temperature
+        ROCM_EXEC_IF_SUPPORTS("rsmi_dev_temp_metric_get", dv_ind, result,
+                              RSMI_TEMP_TYPE_MEMORY, RSMI_TEMP_CURRENT, &temperature);
+        if (result == RSMI_STATUS_SUCCESS)
+        {
+            temp_mem_celsius = static_cast<double>(temperature) / 1000.0;
+            OPTKIT_CORE_DEBUG("ROCm SMI memory temperature for device {}: {} C", device_index, temp_mem_celsius);
+        }
+        else
+        {
+            // Memory temperature might not be available on all devices
+            OPTKIT_CORE_WARN("rsmi_dev_temp_metric_get (memory): {}", _rocm_smi_status_to_string(result));
+        }
+#endif
+    }
+
+    else if (vendor == GpuVendor::UNKNOWN || (vendor != GpuVendor::NVIDIA && vendor != GpuVendor::AMD))
+    {
+        OPTKIT_CORE_WARN("Device temperature query not supported without NVML or ROCm SMI");
+    }
+    return is_ok;
+}
+
+bool Query::get_device_name(GpuVendor vendor, uint32_t device_index, std::string &device_name)
+{
+    if (!IS_DEVICE_INDEX_VALID(vendor, device_index))
+    {
+        OPTKIT_CORE_ERROR("Invalid device index {} for vendor {}", device_index, to_string(vendor));
+        return false;
+    }
+    bool is_ok = false;
+
+    device_name = "Unknown";
+
+    if (vendor == GpuVendor::NVIDIA && initialized[GpuVendor::NVIDIA])
+    {
+#if OPTKIT_ENV_LIB_NVML
+        nvmlDevice_t device = Query::gpu_handles_nvml.at(device_index);
+        nvmlReturn_t result;
+        // Get device name
+        char name[NVML_DEVICE_NAME_BUFFER_SIZE];
+        NVML_EXEC_IF_SUPPORTS("nvmlDeviceGetName", device, result, &name[0], NVML_DEVICE_NAME_BUFFER_SIZE);
+        if (OPT_LIKELY(result == NVML_SUCCESS))
+        {
+            is_ok = true;
+            device_name = std::string(name);
+        }
+        else
+        {
+            OPTKIT_CORE_WARN("nvmlDeviceGetName: {}", nvmlErrorString(result));
+        }
+#endif
+    }
+    else if (vendor == GpuVendor::AMD && initialized[GpuVendor::AMD])
+    {
+#if OPTKIT_ENV_LIB_AMDSMI
+        amdsmi_board_info_t info;
+        amdsmi_status_t result;
+        ROCM_EXEC_IF_SUPPORTS("amdsmi_get_gpu_board_info",
+                              Query::gpu_handles_amdsmi.at(device_index),
+                              result,
+                              &info);
+        if (result == AMDSMI_STATUS_SUCCESS)
+        {
+            is_ok = true;
+            device_name = std::string(info.product_name);
+        }
+        else
+        {
+            OPTKIT_CORE_WARN("amdsmi_get_gpu_board_info: {}", _amdsmi_status_to_string(result));
+        }
+#elif OPTKIT_ENV_LIB_ROCM_SMI
+        char name[256];
+        rsmi_status_t result;
+        uint32_t dv_ind = Query::gpu_handles_rocm_smi.at(device_index);
+        ROCM_EXEC_IF_SUPPORTS("rsmi_dev_name_get", dv_ind, result, name, sizeof(name));
+        if (OPT_LIKELY(result == RSMI_STATUS_SUCCESS))
+        {
+            is_ok = true;
+            device_name = std::string(name);
+            OPTKIT_CORE_DEBUG("ROCm SMI retrieved device name for device {}: {}", device_index, device_name);
+        }
+        else
+        {
+            OPTKIT_CORE_WARN("rsmi_dev_name_get: {}", _rocm_smi_status_to_string(result));
+        }
+#endif
+    }
+    else if (vendor == GpuVendor::UNKNOWN || (vendor != GpuVendor::NVIDIA && vendor != GpuVendor::AMD))
+    {
+        OPTKIT_CORE_WARN("Device name query not supported without NVML or ROCm SMI");
+    }
+    return is_ok;
+}
+
+bool Query::get_architecture(GpuVendor vendor, uint32_t device_index, uint32_t &architecture)
+{
+    if (!IS_DEVICE_INDEX_VALID(vendor, device_index))
+    {
+        OPTKIT_CORE_ERROR("Invalid device index {} for vendor {}", device_index, to_string(vendor));
+        return false;
+    }
+    bool is_ok = false;
+
+    if (vendor == GpuVendor::NVIDIA && initialized[GpuVendor::NVIDIA])
+    {
+#if OPTKIT_ENV_LIB_NVML
+        uint32_t arch;
+        nvmlDevice_t device = Query::gpu_handles_nvml.at(device_index);
+        nvmlReturn_t result_nvidia;
+        NVML_EXEC_IF_SUPPORTS("nvmlDeviceGetArchitecture", device, result_nvidia, &arch);
+        if (result_nvidia == NVML_SUCCESS)
+        {
+            architecture = static_cast<uint32_t>(arch);
+            is_ok = true;
+        }
+        else
+        {
+            OPTKIT_CORE_WARN("nvmlDeviceGetArchitecture: {}", nvmlErrorString(result_nvidia));
+            architecture = NVML_DEVICE_ARCH_UNKNOWN; // Unknown architecture
+        }
+
+#endif
+    }
+    else if (vendor == GpuVendor::AMD && initialized[GpuVendor::AMD])
+    {
+#if OPTKIT_ENV_LIB_AMDSMI
+        // Try to get device ID from ASIC info
+        amdsmi_asic_info_t asic_info{};
+        amdsmi_status_t result_amdsmi;
+        ROCM_EXEC_IF_SUPPORTS("amdsmi_get_gpu_asic_info",
+                              Query::gpu_handles_amdsmi.at(device_index),
+                              result_amdsmi,
+                              &asic_info);
+
+        if (result_amdsmi == AMDSMI_STATUS_SUCCESS)
+        {
+            uint32_t device_id = static_cast<uint32_t>(asic_info.device_id);
+            architecture = _map_amd_device_id_to_arch(device_id);
+            is_ok = true;
+        }
+        else
+        {
+            OPTKIT_CORE_WARN("amdsmi_get_gpu_asic_info: {}", _amdsmi_status_to_string(result_amdsmi));
+            architecture = AMD_DEVICE_ARCH_UNKNOWN;
+        }
+
+#elif OPTKIT_ENV_LIB_ROCM_SMI
+        // ROCm SMI doesn't have direct architecture query
+        // We can get device ID and map it
+        uint64_t device_id = 0;
+        rsmi_status_t result;
+        uint32_t dv_ind = Query::gpu_handles_rocm_smi.at(device_index);
+        ROCM_EXEC_IF_SUPPORTS("rsmi_dev_id_get", dv_ind, result, &device_id);
+
+        if (OPT_LIKELY(result == RSMI_STATUS_SUCCESS))
+        {
+            architecture = _map_amd_device_id_to_arch(static_cast<uint32_t>(device_id));
+            is_ok = true;
+            OPTKIT_CORE_DEBUG("ROCm SMI retrieved architecture for device {}: 0x{:X}", device_index, architecture);
+        }
+        else
+        {
+            OPTKIT_CORE_WARN("rsmi_dev_id_get: {}", _rocm_smi_status_to_string(result));
+            architecture = 0xFFFFFFFF; // Unknown
+        }
+#endif
+    }
+    else if (vendor == GpuVendor::UNKNOWN || (vendor != GpuVendor::NVIDIA && vendor != GpuVendor::AMD))
+    {
+        OPTKIT_CORE_WARN("Unsupported vendor for architecture query");
+        architecture = 0xFFFFFFFF; // return unknown architecture
+    }
+
+    return is_ok;
+}
+
+bool Query::get_device_temperature_thresholds(GpuVendor vendor, uint32_t device_index,
+                                              double &max_gpu_temp_celsius,
+                                              double &max_mem_temp_celsius,
+                                              double &min_gpu_temp_celsius,
+                                              double &min_mem_temp_celsius)
+{
+    if (!IS_DEVICE_INDEX_VALID(vendor, device_index))
+    {
+        OPTKIT_CORE_ERROR("Invalid device index {} for vendor {}", device_index, to_string(vendor));
+        return false;
+    }
+    bool is_ok = true;
+    max_gpu_temp_celsius = 0.0;
+    max_mem_temp_celsius = 0.0;
+    min_gpu_temp_celsius = 0.0;
+    min_mem_temp_celsius = 0.0;
+
+    if (vendor == GpuVendor::NVIDIA && initialized[GpuVendor::NVIDIA])
+    {
+#if OPTKIT_ENV_LIB_NVML
+        uint32_t temp;
+        nvmlReturn_t result;
+        NVML_EXEC_IF_SUPPORTS("nvmlDeviceGetTemperatureThreshold",
+                              Query::gpu_handles_nvml.at(device_index),
+                              result,
+                              NVML_TEMPERATURE_THRESHOLD_GPU_MAX,
+                              &temp);
+        if (OPT_LIKELY(result == NVML_SUCCESS))
+        {
+            max_gpu_temp_celsius = static_cast<double>(temp);
+        }
+        else
+        {
+            is_ok = false;
+            OPTKIT_CORE_WARN("Failed to get NVIDIA max temperature threshold: {}", std::string(nvmlErrorString(result)));
+        }
+
+        NVML_EXEC_IF_SUPPORTS("nvmlDeviceGetTemperatureThreshold",
+                              Query::gpu_handles_nvml.at(device_index),
+                              result,
+                              NVML_TEMPERATURE_THRESHOLD_MEM_MAX,
+                              &temp);
+        if (OPT_LIKELY(result == NVML_SUCCESS))
+        {
+            max_mem_temp_celsius = static_cast<double>(temp);
+        }
+        else
+        {
+            is_ok = false;
+            OPTKIT_CORE_WARN("Failed to get NVIDIA max memory temperature threshold: {}", std::string(nvmlErrorString(result)));
+        }
+#endif
+    }
+    else if (vendor == GpuVendor::AMD && initialized[GpuVendor::AMD])
+    {
+#if OPTKIT_ENV_LIB_AMDSMI
+        uint32_t temperature;
+        amdsmi_status_t result;
+        ROCM_EXEC_IF_SUPPORTS("amdsmi_get_temp_metric",
+                              Query::gpu_handles_amdsmi.at(device_index),
+                              result,
+                              AMDSMI_TEMPERATURE_TYPE_EDGE,
+                              AMDSMI_TEMP_MAX,
+                              &temperature);
+        if (result == AMDSMI_STATUS_SUCCESS)
+        {
+            max_gpu_temp_celsius = static_cast<double>(temperature) / 1000.0; // Convert from millidegrees to degrees
+        }
+        else
+        {
+            is_ok = false;
+            OPTKIT_CORE_WARN("amdsmi_get_cpu_socket_temperature: {}", _amdsmi_status_to_string(result));
+        }
+        ROCM_EXEC_IF_SUPPORTS("amdsmi_get_temp_metric",
+                              Query::gpu_handles_amdsmi.at(device_index),
+                              result,
+                              AMDSMI_TEMPERATURE_TYPE_EDGE,
+                              AMDSMI_TEMP_MIN,
+                              &temperature);
+        if (result == AMDSMI_STATUS_SUCCESS)
+        {
+            min_gpu_temp_celsius = static_cast<double>(temperature) / 1000.0; // Convert from millidegrees to degrees
+        }
+        else
+        {
+            is_ok = false;
+            OPTKIT_CORE_WARN("amdsmi_get_cpu_socket_temperature: {}", _amdsmi_status_to_string(result));
+        }
+
+        ROCM_EXEC_IF_SUPPORTS("amdsmi_get_temp_metric",
+                              Query::gpu_handles_amdsmi.at(device_index),
+                              result,
+                              AMDSMI_TEMPERATURE_TYPE_VRAM,
+                              AMDSMI_TEMP_MAX,
+                              &temperature);
+        if (result == AMDSMI_STATUS_SUCCESS)
+        {
+            max_mem_temp_celsius = static_cast<double>(temperature) / 1000.0; // Convert from millidegrees to degrees
+        }
+        else
+        {
+            is_ok = false;
+            OPTKIT_CORE_WARN("amdsmi_get_cpu_socket_temperature: {}", _amdsmi_status_to_string(result));
+        }
+        ROCM_EXEC_IF_SUPPORTS("amdsmi_get_temp_metric",
+                              Query::gpu_handles_amdsmi.at(device_index),
+                              result,
+                              AMDSMI_TEMPERATURE_TYPE_VRAM,
+                              AMDSMI_TEMP_MIN,
+                              &temperature);
+        if (result == AMDSMI_STATUS_SUCCESS)
+        {
+            min_mem_temp_celsius = static_cast<double>(temperature) / 1000.0; // Convert from millidegrees to degrees
+        }
+        else
+        {
+            is_ok = false;
+            OPTKIT_CORE_WARN("amdsmi_get_cpu_socket_temperature: {}", _amdsmi_status_to_string(result));
+        }
+#elif OPTKIT_ENV_LIB_ROCM_SMI
+        int64_t temperature;
+        rsmi_status_t result;
+        uint32_t dv_ind = Query::gpu_handles_rocm_smi.at(device_index);
+
+        // Get max GPU (edge) temperature
+        ROCM_EXEC_IF_SUPPORTS("rsmi_dev_temp_metric_get", dv_ind, result,
+                              RSMI_TEMP_TYPE_EDGE, RSMI_TEMP_MAX, &temperature);
+        if (result == RSMI_STATUS_SUCCESS)
+        {
+            max_gpu_temp_celsius = static_cast<double>(temperature) / 1000.0; // Convert from millidegrees
+        }
+        else
+        {
+            is_ok = false;
+            OPTKIT_CORE_WARN("rsmi_dev_temp_metric_get (edge max): {}", _rocm_smi_status_to_string(result));
+        }
+
+        // Get min GPU (edge) temperature
+        ROCM_EXEC_IF_SUPPORTS("rsmi_dev_temp_metric_get", dv_ind, result,
+                              RSMI_TEMP_TYPE_EDGE, RSMI_TEMP_MIN, &temperature);
+        if (result == RSMI_STATUS_SUCCESS)
+        {
+            min_gpu_temp_celsius = static_cast<double>(temperature) / 1000.0;
+        }
+        else
+        {
+            is_ok = false;
+            OPTKIT_CORE_WARN("rsmi_dev_temp_metric_get (edge min): {}", _rocm_smi_status_to_string(result));
+        }
+
+        // Get max memory temperature
+        ROCM_EXEC_IF_SUPPORTS("rsmi_dev_temp_metric_get", dv_ind, result,
+                              RSMI_TEMP_TYPE_MEMORY, RSMI_TEMP_MAX, &temperature);
+        if (result == RSMI_STATUS_SUCCESS)
+        {
+            max_mem_temp_celsius = static_cast<double>(temperature) / 1000.0;
+        }
+        else
+        {
+            is_ok = false;
+            OPTKIT_CORE_WARN("rsmi_dev_temp_metric_get (memory max): {}", _rocm_smi_status_to_string(result));
+        }
+
+        // Get min memory temperature
+        ROCM_EXEC_IF_SUPPORTS("rsmi_dev_temp_metric_get", dv_ind, result,
+                              RSMI_TEMP_TYPE_MEMORY, RSMI_TEMP_MIN, &temperature);
+        if (result == RSMI_STATUS_SUCCESS)
+        {
+            min_mem_temp_celsius = static_cast<double>(temperature) / 1000.0;
+        }
+        else
+        {
+            is_ok = false;
+            OPTKIT_CORE_WARN("rsmi_dev_temp_metric_get (memory min): {}", _rocm_smi_status_to_string(result));
+        }
+#endif
+    }
+    return is_ok;
+}
 }
