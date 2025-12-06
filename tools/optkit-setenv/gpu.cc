@@ -18,17 +18,80 @@ bool GPU::is_valid() const
 {
     bool result = true;
 
-    if (fan_speed != "auto" || (atoi(fan_speed.c_str()) < 0 || atoi(fan_speed.c_str()) > 100))
+    OPTKIT_GPU_VENDOR_TRAVERSE(vendor)
     {
-        OPTKIT_WARN("Fan speed must be auto or between 0 and 100: fan_speed={}", fan_speed);
-        result = false;
+        if (optkit::gpu::Query::is_device_exists(vendor))
+        {
+            optkit::gpu::Query::GpuDeviceInfo device_info{};
+            optkit::gpu::Query::device_query(vendor, 0, device_info);
+
+            if (fan_speed != "auto")
+            {
+                try
+                {
+                    int speed = std::stoi(fan_speed);
+                    if (speed < 0 || speed > 100)
+                    {
+                        OPTKIT_WARN("Fan speed must be between 0 and 100: fan_speed={}", speed);
+                        result = false;
+                    }
+                }
+                catch (...)
+                {
+                    OPTKIT_WARN("Invalid fan speed format (must be 'auto' or 0-100): fan_speed={}", fan_speed);
+                    result = false;
+                }
+            }
+            if (core_freq_mhz < device_info.clocks.min_graphics_clock_MHz || core_freq_mhz > device_info.clocks.max_graphics_clock_MHz)
+            {
+                OPTKIT_WARN("Core frequency out of range: core_freq_mhz={} (min {} max {})", core_freq_mhz, device_info.clocks.min_graphics_clock_MHz, device_info.clocks.max_graphics_clock_MHz);
+                result = false;
+            }
+            if (mem_freq_mhz < device_info.clocks.min_memory_clock_MHz || mem_freq_mhz > device_info.clocks.max_memory_clock_MHz)
+            {
+                OPTKIT_WARN("Memory frequency out of range: mem_freq_mhz={} (min {} max {})", mem_freq_mhz, device_info.clocks.min_memory_clock_MHz, device_info.clocks.max_memory_clock_MHz);
+                result = false;
+            }
+
+            break;
+        }
     }
+
     return result;
 }
 
 bool GPU::apply(pid_t pid)
 {
-    return true;
+    bool result = true;
+    OPTKIT_GPU_VENDOR_TRAVERSE(vendor)
+    {
+        if (optkit::gpu::Query::is_device_exists(vendor))
+        {
+            for (int device_index = 0; device_index < optkit::gpu::Query::get_device_count(vendor); ++device_index)
+            {
+                result = result && optkit::gpu::Query::set_persistence_mode(vendor, device_index, (persistence_mode == "on"));
+
+                if (fan_speed != "auto")
+                    result = result && optkit::gpu::Query::set_fan_speed(vendor, device_index, fan_speed);
+                else
+                    result = result && optkit::gpu::Query::reset_fan_speed(vendor, device_index);
+
+                if (core_freq_mhz > 0 && mem_freq_mhz > 0)
+                {
+                    result = result && optkit::gpu::Query::set_clock(vendor, device_index, static_cast<uint32_t>(mem_freq_mhz), static_cast<uint32_t>(core_freq_mhz));
+                }
+                if (power_limit_watts > 0)
+                {
+                    result = result && optkit::gpu::Query::set_power_limit(vendor, device_index, static_cast<double>(power_limit_watts));
+                }
+                if (reset_device)
+                {
+                    result = result && optkit::gpu::Query::reset_device(vendor, device_index);
+                }
+            }
+        }
+    }
+    return result;
 }
 
 void GPU::load_current_settings(pid_t pid)

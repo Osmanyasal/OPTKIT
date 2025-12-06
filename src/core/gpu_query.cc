@@ -2002,6 +2002,100 @@ namespace optkit::gpu
         return is_ok;
     }
 
+    bool Query::set_power_limit(GpuVendor vendor, uint32_t device_index, uint32_t power_limit_watts)
+    {
+
+        if (!IS_DEVICE_INDEX_VALID(vendor, device_index))
+        {
+            OPTKIT_CORE_ERROR("Invalid device index {} for vendor {}", device_index, to_string(vendor));
+            return false;
+        }
+        bool is_ok = true;
+        if (vendor == GpuVendor::NVIDIA && initialized[GpuVendor::NVIDIA])
+        {
+#if OPTKIT_ENV_LIB_NVML
+            nvmlReturn_t result;
+            auto device = Query::gpu_handles_nvml.at(device_index);
+            uint32_t power_limit_mw = power_limit_watts * 1000; // NVML uses milliwatts
+            NVML_EXEC_IF_SUPPORTS("nvmlDeviceSetPowerManagementLimit", device, result, power_limit_mw);
+            if (OPT_LIKELY(result == NVML_SUCCESS))
+            {
+                is_ok = true;
+            }
+            else
+            {
+                is_ok = false;
+                OPTKIT_CORE_WARN("nvmlDeviceSetPowerManagementLimit: {}", nvmlErrorString(result));
+            }
+#endif
+        }
+
+        else if (vendor == GpuVendor::AMD && initialized[GpuVendor::AMD])
+        {
+#if OPTKIT_ENV_LIB_AMDSMI
+            amdsmi_status_t result;
+            auto device = Query::gpu_handles_amdsmi.at(device_index);
+
+            amdsmi_power_cap_info_t power_cap_info;
+            ROCM_EXEC_IF_SUPPORTS("amdsmi_get_power_cap_info", device, result, 0, &power_cap_info);
+
+            power_limit_watts *= 1000000; // watt to uW
+            if (power_limit_watts < power_cap_info.min_power_limit_watts ||
+                power_limit_watts > power_cap_info.max_power_limit_watts)
+            {
+                OPTKIT_CORE_ERROR("Requested power limit {} uW is out of range ({} uW - {} uW)",
+                                  power_limit_watts,
+                                  power_cap_info.min_power_limit_watts,
+                                  power_cap_info.max_power_limit_watts);
+                return false;
+            }
+
+            ROCM_EXEC_IF_SUPPORTS("amdsmi_set_power_cap", device, result, 0, power_limit_watts);
+            if (OPT_LIKELY(result == AMDSMI_STATUS_SUCCESS))
+            {
+                is_ok = true;
+            }
+            else
+            {
+                is_ok = false;
+                OPTKIT_CORE_WARN("amdsmi_set_power_cap: {}", _amdsmi_status_to_string(result));
+            }
+#endif
+
+#elif OPTKIT_ENV_LIB_ROCM_SMI
+            amdsmi_status_t result;
+            auto device = Query::gpu_handles_amdsmi.at(device_index);
+
+            uint64_t min, max;
+            ROCM_EXEC_IF_SUPPORTS("rsmi_dev_power_cap_range_get", device, result, 0, &max, &min);
+
+            power_limit_watts *= 1000000; // watt to uW
+            if (power_limit_watts < min ||
+                power_limit_watts > max)
+            {
+                OPTKIT_CORE_ERROR("Requested power limit {} uW is out of range ({} uW - {} uW)",
+                                  power_limit_watts,
+                                  min,
+                                  max);
+                return false;
+            }
+
+            ROCM_EXEC_IF_SUPPORTS("rsmi_dev_power_cap_set", device, result, 0, power_limit_watts);
+            if (OPT_LIKELY(result == AMDSMI_STATUS_SUCCESS))
+            {
+                is_ok = true;
+            }
+            else
+            {
+                is_ok = false;
+                OPTKIT_CORE_WARN("amdsmi_set_power_cap: {}", _amdsmi_status_to_string(result));
+            }
+#endif
+        }
+
+        return is_ok;
+    }
+
     bool Query::set_fan_speed(GpuVendor vendor, uint32_t device_index, const std::string &fan_speed_percent)
     {
         if (!IS_DEVICE_INDEX_VALID(vendor, device_index))
@@ -2019,11 +2113,11 @@ namespace optkit::gpu
             uint32_t speed_percent = 0;
             try
             {
-                speed_percent = std::stoul(fan_speed);
+                speed_percent = std::stoul(fan_speed_percent);
             }
             catch (const std::exception &e)
             {
-                OPTKIT_CORE_ERROR("Invalid fan speed value '{}': {}", fan_speed, e.what());
+                OPTKIT_CORE_ERROR("Invalid fan speed value '{}': {}", fan_speed_percent, e.what());
                 return false;
             }
 
@@ -2439,10 +2533,10 @@ bool Query::get_device_count(GpuVendor vendor, uint32_t &device_count)
         is_ok = true; // ROCm SMI device enumeration succeeded
 #endif
     }
-    else if (vendor == GpuVendor::UNKNOWN || (vendor != GpuVendor::NVIDIA && vendor != GpuVendor::AMD))
-    {
-        OPTKIT_CORE_WARN("Device count query not supported without NVML or ROCm AMDSMI");
-    }
+    // else if (vendor == GpuVendor::UNKNOWN || (vendor != GpuVendor::NVIDIA && vendor != GpuVendor::AMD))
+    // {
+    //     OPTKIT_CORE_WARN("Device count query not supported without NVML or ROCm AMDSMI");
+    // }
     return is_ok;
 }
 

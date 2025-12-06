@@ -59,6 +59,19 @@ namespace optkit::gpu
         static bool reset_device(GpuVendor vendor, uint32_t device_index);
         static bool set_persistence_mode(GpuVendor vendor, uint32_t device_index, bool enable);
         static bool set_fan_speed(GpuVendor vendor, uint32_t device_index, const std::string &fan_speed_percent);
+
+        /**
+         * Set new power limit of this device.
+         *
+         * For Kepler &tm; or newer fully supported devices.
+         * Requires root/admin permissions.
+         *
+         * See \ref nvmlDeviceGetPowerManagementLimitConstraints to check the allowed ranges of values.
+         *
+         * \note Limit is not persistent across reboots or driver unloads.
+         * Enable persistent mode to prevent driver from unloading when no application is using the device.
+         */
+        static bool set_power_limit(GpuVendor vendor, uint32_t device_index, uint32_t power_limit_watts);
         static bool reset_fan_speed(GpuVendor vendor, uint32_t device_index);
         //****** these may not be supported on consumer grade GPUs ****** //
 
