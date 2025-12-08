@@ -118,6 +118,7 @@ bool CGroup::create_cgroup()
         return false;
     }
 
+    OPTKIT_INFO("CGroup created at path: {}", cgroup_path);
     return true;
 }
 
@@ -161,6 +162,7 @@ bool CGroup::destroy_cgroup()
         return false;
     }
 
+    OPTKIT_INFO("CGroup destroyed at path: {}", cgroup_path);
     return true;
 }
 
@@ -199,6 +201,51 @@ bool CGroup::add_process(pid_t process_pid)
     }
 }
 
+bool CGroup::is_valid() const
+{
+    if (cpu.period_us != -1 && cpu.period_us <= 0)
+    {
+        OPTKIT_WARN("cpu.period_us must be positive or -1 for max: {}", cpu.period_us);
+        return false;
+    }
+
+    // if (cpu.weight < 1 || cpu.weight > 10000)
+    // {
+    //     OPTKIT_WARN("cpu.weight must be between 1 and 10000: {}", cpu.weight);
+    //     return false;
+    // }
+
+    if (cpu.weight_nice < -20 || cpu.weight_nice > 19)
+    {
+        OPTKIT_WARN("cpu.weight_nice must be between -20 and 19: {}", cpu.weight_nice);
+        return false;
+    }
+    if (cpu.uclamp_min < 0 || cpu.uclamp_min > 100)
+    {
+        OPTKIT_WARN("cpu.uclamp_min must be between 0 and 100: {}", cpu.uclamp_min);
+        return false;
+    }
+
+    if (cpu.uclamp_max < 0 || cpu.uclamp_max > 100)
+    {
+        OPTKIT_WARN("cpu.uclamp_max must be between 0 and 100: {}", cpu.uclamp_max);
+        return false;
+    }
+
+    if (cpu.uclamp_min > cpu.uclamp_max)
+    {
+        OPTKIT_WARN("cpu.uclamp_min must not be greater than cpu.uclamp_max: {} > {}", cpu.uclamp_min, cpu.uclamp_max);
+        return false;
+    }
+    if (pid.max < -1)
+    {
+        OPTKIT_WARN("pid.max must be greater than or equal to -1: {}", pid.max);
+        return false;
+    }
+
+    return true;
+}
+
 bool CGroup::apply(pid_t pid)
 {
     if (!is_cgroup_v2())
@@ -217,129 +264,37 @@ bool CGroup::apply(pid_t pid)
     try
     {
         // Apply CPU settings
-        if (cpu.quota_us != -1 || cpu.period_us != 100000)
-        {
-            std::string cpu_max = (cpu.quota_us == -1) ? "max" : std::to_string(cpu.quota_us);
-            cpu_max += " " + std::to_string(cpu.period_us);
-            optkit::utils::write_file(cgroup_path + "/cpu.max", cpu_max, true);
-        }
+        std::string cpu_max = (cpu.quota_us == -1) ? "max" : std::to_string(cpu.quota_us);
+        cpu_max += " " + std::to_string(cpu.period_us);
+        optkit::utils::write_file(cgroup_path + "/cpu.max", cpu_max, true);
 
-        if (cpu.max_burst_us > 0)
-        {
-            optkit::utils::write_file(cgroup_path + "/cpu.max.burst", std::to_string(cpu.max_burst_us), true);
-        }
+        optkit::utils::write_file(cgroup_path + "/cpu.max.burst", std::to_string(cpu.max_burst_us), true);
+        // optkit::utils::write_file(cgroup_path + "/cpu.weight", std::to_string(cpu.weight), true);
+        optkit::utils::write_file(cgroup_path + "/cpu.weight.nice", std::to_string(cpu.weight_nice), true);
+        optkit::utils::write_file(cgroup_path + "/cpu.uclamp.min", std::to_string(cpu.uclamp_min) + ".00", true);
+        optkit::utils::write_file(cgroup_path + "/cpu.uclamp.max", std::to_string(cpu.uclamp_max) + ".00", true);
+        optkit::utils::write_file(cgroup_path + "/cpu.idle", "1", true);
 
-        if (cpu.weight != 100)
-        {
-            optkit::utils::write_file(cgroup_path + "/cpu.weight", std::to_string(cpu.weight), true);
-        }
+        optkit::utils::write_file(cgroup_path + "/memory.max", memory.max, true);
+        optkit::utils::write_file(cgroup_path + "/memory.high", memory.high, true);
+        optkit::utils::write_file(cgroup_path + "/memory.low", memory.low, true);
+        optkit::utils::write_file(cgroup_path + "/memory.min", memory.min, true);
+        optkit::utils::write_file(cgroup_path + "/memory.swap.max", memory.swap_max, true);
+        optkit::utils::write_file(cgroup_path + "/memory.swap.high", memory.swap_high, true);
+        optkit::utils::write_file(cgroup_path + "/memory.zswap.max", memory.zswap_max, true);
+        optkit::utils::write_file(cgroup_path + "/memory.oom.group", "1", true);
+        optkit::utils::write_file(cgroup_path + "/memory.zswap.writeback", "0", true);
 
-        if (cpu.weight_nice != 0)
-        {
-            optkit::utils::write_file(cgroup_path + "/cpu.weight.nice", std::to_string(cpu.weight_nice), true);
-        }
-
-        if (cpu.uclamp_min > 0)
-        {
-            optkit::utils::write_file(cgroup_path + "/cpu.uclamp.min", std::to_string(cpu.uclamp_min) + ".00", true);
-        }
-
-        if (cpu.uclamp_max < 100)
-        {
-            optkit::utils::write_file(cgroup_path + "/cpu.uclamp.max", std::to_string(cpu.uclamp_max) + ".00", true);
-        }
-
-        if (cpu.idle)
-        {
-            optkit::utils::write_file(cgroup_path + "/cpu.idle", "1", true);
-        }
-
-        // Apply Memory settings
-        if (!memory.max.empty() && memory.max != "max")
-        {
-            optkit::utils::write_file(cgroup_path + "/memory.max", memory.max, true);
-        }
-
-        if (!memory.high.empty() && memory.high != "max")
-        {
-            optkit::utils::write_file(cgroup_path + "/memory.high", memory.high, true);
-        }
-
-        if (!memory.low.empty() && memory.low != "0")
-        {
-            optkit::utils::write_file(cgroup_path + "/memory.low", memory.low, true);
-        }
-
-        if (!memory.min.empty() && memory.min != "0")
-        {
-            optkit::utils::write_file(cgroup_path + "/memory.min", memory.min, true);
-        }
-
-        if (!memory.swap_max.empty() && memory.swap_max != "max")
-        {
-            optkit::utils::write_file(cgroup_path + "/memory.swap.max", memory.swap_max, true);
-        }
-
-        if (!memory.swap_high.empty() && memory.swap_high != "max")
-        {
-            optkit::utils::write_file(cgroup_path + "/memory.swap.high", memory.swap_high, true);
-        }
-
-        if (!memory.zswap_max.empty() && memory.zswap_max != "max")
-        {
-            optkit::utils::write_file(cgroup_path + "/memory.zswap.max", memory.zswap_max, true);
-        }
-
-        if (memory.oom_group)
-        {
-            optkit::utils::write_file(cgroup_path + "/memory.oom.group", "1", true);
-        }
-
-        if (!memory.zswap_writeback)
-        {
-            optkit::utils::write_file(cgroup_path + "/memory.zswap.writeback", "0", true);
-        }
-
-        // Apply IO settings
-        if (!io.max.empty())
-        {
-            optkit::utils::write_file(cgroup_path + "/io.max", io.max, true);
-        }
-
-        if (!io.weight.empty() && io.weight != "100")
-        {
-            optkit::utils::write_file(cgroup_path + "/io.weight", io.weight, true);
-        }
-
-        // Apply PID settings
-        if (this->pid.max != -1)
-        {
-            optkit::utils::write_file(cgroup_path + "/pids.max", std::to_string(this->pid.max), true);
-        }
-
-        // Apply Core settings
-        if (core.freeze)
-        {
-            optkit::utils::write_file(cgroup_path + "/cgroup.freeze", "1", true);
-        }
-
-        if (core.max_depth != -1)
-        {
-            optkit::utils::write_file(cgroup_path + "/cgroup.max.depth", std::to_string(core.max_depth), true);
-        }
-
-        if (core.max_descendants != -1)
-        {
-            optkit::utils::write_file(cgroup_path + "/cgroup.max.descendants", std::to_string(core.max_descendants), true);
-        }
-
-        if (!core.pressure)
-        {
-            optkit::utils::write_file(cgroup_path + "/cgroup.pressure", "0", true);
-        }
+        optkit::utils::write_file(cgroup_path + "/io.max", io.max, true);
+        optkit::utils::write_file(cgroup_path + "/io.weight", io.weight, true);
+        optkit::utils::write_file(cgroup_path + "/pids.max", std::to_string(this->pid.max), true);
+        optkit::utils::write_file(cgroup_path + "/cgroup.freeze", "1", true);
+        optkit::utils::write_file(cgroup_path + "/cgroup.max.depth", std::to_string(core.max_depth), true);
+        optkit::utils::write_file(cgroup_path + "/cgroup.max.descendants", std::to_string(core.max_descendants), true);
+        optkit::utils::write_file(cgroup_path + "/cgroup.pressure", "0", true);
 
         // Add current process to cgroup
-        add_process(getpid());
+        add_process(pid);
     }
     catch (const std::exception &e)
     {
@@ -408,52 +363,6 @@ void CGroup::load_current_settings(pid_t process_pid)
     {
         std::cerr << "Failed to load cgroup settings: " << e.what() << "\n";
     }
-}
-
-bool CGroup::is_valid() const
-{
-    // Validate CPU settings
-    if (cpu.period_us <= 0)
-    {
-        OPTKIT_WARN("cpu.period_us must be positive: {}", cpu.period_us);
-        return false;
-    }
-
-    if (cpu.weight < 1 || cpu.weight > 10000)
-    {
-        OPTKIT_WARN("cpu.weight must be between 1 and 10000: {}", cpu.weight);
-        return false;
-    }
-
-    if (cpu.weight_nice < -20 || cpu.weight_nice > 19)
-    {
-        OPTKIT_WARN("cpu.weight_nice must be between -20 and 19: {}", cpu.weight_nice);
-        return false;
-    }
-    if (cpu.uclamp_min < 0 || cpu.uclamp_min > 100)
-    {
-        OPTKIT_WARN("cpu.uclamp_min must be between 0 and 100: {}", cpu.uclamp_min);
-        return false;
-    }
-
-    if (cpu.uclamp_max < 0 || cpu.uclamp_max > 100)
-    {
-        OPTKIT_WARN("cpu.uclamp_max must be between 0 and 100: {}", cpu.uclamp_max);
-        return false;
-    }
-
-    if (cpu.uclamp_min > cpu.uclamp_max)
-    {
-        OPTKIT_WARN("cpu.uclamp_min must not be greater than cpu.uclamp_max: {} > {}", cpu.uclamp_min, cpu.uclamp_max);
-        return false;
-    }
-    if (pid.max < -1)
-    {
-        OPTKIT_WARN("pid.max must be greater than or equal to -1: {}", pid.max);
-        return false;
-    }
-
-    return true;
 }
 
 nlohmann::json CGroup::to_json() const

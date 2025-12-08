@@ -91,6 +91,7 @@ inline SysConfig &load_system_config(const std::string &json_path)
         if (j.contains("gpu") && j["gpu"].is_object())
         {
             const auto &gpu_json = j["gpu"];
+            gpu.device_name = get_string_or(gpu_json, "device_name", "");
             gpu.persistence_mode = get_string_or(gpu_json, "persistence_mode", "off");
             gpu.fan_speed = get_string_or(gpu_json, "fan_speed", "auto");
             gpu.core_freq_mhz = get_int64_or(gpu_json, "core_freq_mhz", 0);
@@ -116,7 +117,7 @@ inline SysConfig &load_system_config(const std::string &json_path)
                 cg.cpu.quota_us = get_int64_or(cpu_json, "quota_us", -1);
                 cg.cpu.period_us = get_int64_or(cpu_json, "period_us", 100000);
                 cg.cpu.max_burst_us = get_int64_or(cpu_json, "max_burst_us", 0);
-                cg.cpu.weight = get_int64_or(cpu_json, "weight", 100);
+                // cg.cpu.weight = get_int64_or(cpu_json, "weight", 100);
                 cg.cpu.weight_nice = get_int64_or(cpu_json, "weight_nice", 0);
                 cg.cpu.uclamp_min = get_int64_or(cpu_json, "uclamp_min", 0);
                 cg.cpu.uclamp_max = get_int64_or(cpu_json, "uclamp_max", 100);

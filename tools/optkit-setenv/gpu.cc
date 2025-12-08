@@ -5,7 +5,8 @@ const std::string GPU::name = "gpu";
 std::string GPU::to_string() const
 {
     std::ostringstream oss;
-    oss << "GPU{persistence=" << persistence_mode
+    oss << "GPU{device_name=" << device_name
+        << ", persistence=" << persistence_mode
         << ", fan=" << fan_speed
         << ", core_freq=" << core_freq_mhz << "MHz"
         << ", mem_freq=" << mem_freq_mhz << "MHz"
@@ -22,7 +23,7 @@ bool GPU::is_valid() const
     {
         if (optkit::gpu::Query::is_device_exists(vendor))
         {
-            optkit::gpu::Query::GpuDeviceInfo device_info{};
+            optkit::gpu::GpuDeviceInfo device_info{};
             optkit::gpu::Query::device_query(vendor, 0, device_info);
 
             if (fan_speed != "auto")
@@ -52,8 +53,6 @@ bool GPU::is_valid() const
                 OPTKIT_WARN("Memory frequency out of range: mem_freq_mhz={} (min {} max {})", mem_freq_mhz, device_info.clocks.min_memory_clock_MHz, device_info.clocks.max_memory_clock_MHz);
                 result = false;
             }
-
-            break;
         }
     }
 
@@ -67,7 +66,9 @@ bool GPU::apply(pid_t pid)
     {
         if (optkit::gpu::Query::is_device_exists(vendor))
         {
-            for (int device_index = 0; device_index < optkit::gpu::Query::get_device_count(vendor); ++device_index)
+            uint32_t device_count = 0;
+            optkit::gpu::Query::get_device_count(vendor, device_count);
+            for (int device_index = 0; device_index < device_count; ++device_index)
             {
                 result = result && optkit::gpu::Query::set_persistence_mode(vendor, device_index, (persistence_mode == "on"));
 
@@ -103,7 +104,7 @@ void GPU::load_current_settings(pid_t pid)
     {
         if (optkit::gpu::Query::is_device_exists(vendor))
         {
-            optkit::gpu::Query::GpuDeviceInfo device_info{};
+            optkit::gpu::GpuDeviceInfo device_info{};
             optkit::gpu::Query::device_query(vendor, 0, device_info);
             this->persistence_mode = device_info.capabilities.persistence_mode_enabled ? "on" : "off";
             this->fan_speed = "auto";
@@ -119,6 +120,7 @@ void GPU::load_current_settings(pid_t pid)
 nlohmann::json GPU::to_json() const
 {
     nlohmann::json j;
+    j["device_name"] = device_name;
     j["persistence_mode"] = persistence_mode;
     j["fan_speed"] = fan_speed;
     j["core_freq_mhz"] = core_freq_mhz;

@@ -40,6 +40,7 @@ public:
     std::string possible_values() const override;
 
 public:
+    std::string device_name;
     std::string persistence_mode; // on, off
     std::string fan_speed;        // percentage (e.g., "50%" or auto)
     int64_t core_freq_mhz;        // lock frequency

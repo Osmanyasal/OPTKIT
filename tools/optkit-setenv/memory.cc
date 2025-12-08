@@ -110,6 +110,7 @@ Memory::Backend Memory::get_malloc_backend() const
     // Default to glibc if no recognized malloc library found
     return Backend::GLIBC;
 }
+
 bool Memory::set_hugepages_count(int64_t count)
 {
     const std::string path = "/sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages";
@@ -173,37 +174,6 @@ bool Memory::set_mlock_all(bool enable)
 
     this->mlock_all = enable;
     return true;
-}
-
-bool Memory::is_valid() const
-{
-    bool result = true;
-
-    if (hugepages_count < 0)
-    {
-        OPTKIT_WARN("hugepages_count cannot be negative: {}", hugepages_count);
-        result = false;
-    }
-
-    if (arena_max < 0)
-    {
-        OPTKIT_WARN("arena_max cannot be negative: {}", arena_max);
-        result = false;
-    }
-
-    if (swappiness < 0 || swappiness > 100)
-    {
-        OPTKIT_WARN("swappiness must be between 0 and 100: {}", swappiness);
-        result = false;
-    }
-
-    if (oom_kill_task < -1000 || oom_kill_task > 1000)
-    {
-        OPTKIT_WARN("oom_kill_task must be between -1000 and 1000: {}", oom_kill_task);
-        result = false;
-    }
-
-    return result;
 }
 
 void Memory::load_current_settings(pid_t pid)
@@ -328,10 +298,41 @@ std::string Memory::possible_values() const
         << "\tHugepages Count: non-negative integer\n"
         << "\tArena Max: non-negative integer\n"
         << "\tSwappiness: 0-100\n"
-        << "\tOOM Kill Task Score: -1000 to 1000\n"
+        << "\tOOM Kill Task Score: -1000 - 1000\n"
         << "\tDrop Caches: true, false\n"
         << "\tMlock All: true, false";
     return oss.str();
+}
+
+bool Memory::is_valid() const
+{
+    bool result = true;
+
+    if (hugepages_count < 0)
+    {
+        OPTKIT_WARN("hugepages_count cannot be negative: {}", hugepages_count);
+        result = false;
+    }
+
+    if (arena_max < 0)
+    {
+        OPTKIT_WARN("arena_max cannot be negative: {}", arena_max);
+        result = false;
+    }
+
+    if (swappiness < 0 || swappiness > 100)
+    {
+        OPTKIT_WARN("swappiness must be between 0 and 100: {}", swappiness);
+        result = false;
+    }
+
+    if (oom_kill_task < -1000 || oom_kill_task > 1000)
+    {
+        OPTKIT_WARN("oom_kill_task must be between -1000 and 1000: {}", oom_kill_task);
+        result = false;
+    }
+
+    return result;
 }
 
 bool Memory::apply(pid_t pid)

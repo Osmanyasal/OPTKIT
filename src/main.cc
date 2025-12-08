@@ -21,14 +21,42 @@ int32_t main(int32_t argc, char **argv)
     std::cout << "GPU Device Query Example" << std::endl;
     std::cout << "========================" << std::endl;
 
+    OPTKIT_GPU_VENDOR_TRAVERSE(vendor)
+    {
+        if (optkit::gpu::Query::is_device_exists(vendor))
+        {
+            std::cout << "device exists for " << optkit::gpu::to_string(vendor) << "\n";
+            uint32_t device_count = 0;
+            for (uint32_t device_index = 0;; device_index++)
+            {
+                optkit::gpu::GpuDeviceInfo device_info;
+                if (optkit::gpu::Query::device_query(vendor, device_index, device_info))
+                {
+                    std::cout << "Vendor: " << vendor << ", Device Index: " << device_index << "\n";
+                    // std::cout << device_info << "\n";
+                    device_count++;
+                }
+                else
+                {
+                    break; // No more devices
+                }
+            }
+            std::cout << "Total devices found for vendor " << vendor << ": " << device_count << "\n";
+        }
+        else
+        {
+            std::cout << "No devices found for vendor " << vendor << "\n";
+        }
+    }
+    return 0;
     optkit::gpu::GpuDeviceInfo device_info;
     optkit::gpu::Query::device_query(optkit::gpu::GpuVendor::AMD, 0, device_info);
     std::cout << device_info << "\n";
 
     // OPTKIT_GPU_ENERGY("main gpu energy");
-    OPTKIT_CPU_ENERGY("main cpu energy");
+    // OPTKIT_CPU_ENERGY("main cpu energy");
 
-    OPTKIT_DISK_EVENTS("main disk");
+    // OPTKIT_DISK_EVENTS("main disk");
 
     // optkit::gpu::GpuClockInfo clock_info;
     // optkit::gpu::Query::get_clock_info(optkit::gpu::GpuVendor::NVIDIA, 0, clock_info);
