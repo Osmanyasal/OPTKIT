@@ -8,6 +8,10 @@ class CGroup : public Module
 public:
     static const std::string name;
 
+    /**
+     * Returns cgroup path and name for a given process ID.
+     */
+    static std::pair<std::string, std::string> get_cgroup_path_and_name_of_process(pid_t pid);
     // Singleton access
     static CGroup &instance()
     {
@@ -27,18 +31,15 @@ public:
         int64_t quota_us;     // cpu.max: max CPU time per period (-1 = unlimited)
         int64_t period_us;    // cpu.max: period (default 100000us = 100ms)
         int64_t max_burst_us; // cpu.max.burst: accumulated unused quota
-        // int64_t weight;       // cpu.weight: relative CPU time (1-10000, default 100)
-        int64_t weight_nice; // cpu.weight.nice: nice value (-20 to 19)
-        int64_t uclamp_min;  // cpu.uclamp.min: minimum utilization clamp (0-100)
-        int64_t uclamp_max;  // cpu.uclamp.max: maximum utilization clamp (0-100)
-        bool idle;           // cpu.idle: mark as idle workload (0 or 1)
+        int64_t weight;       // cpu.weight: relative CPU time (1-10000, default 100)
+        int64_t weight_nice;  // cpu.weight.nice: nice value (-20 to 19)
+        int64_t uclamp_min;   // cpu.uclamp.min: minimum utilization clamp (0-100)
+        int64_t uclamp_max;   // cpu.uclamp.max: maximum utilization clamp (0-100)
+        bool idle;            // cpu.idle: mark as idle workload (0 or 1)
 
         CPU() : quota_us(-1), period_us(100000), max_burst_us(0),
-                // weight(100),
-                weight_nice(0), uclamp_min(0), uclamp_max(100),
-                idle(false)
-        {
-        }
+                weight(100), weight_nice(0), uclamp_min(0), uclamp_max(100),
+                idle(false) {}
 
         std::string to_string() const;
     };
@@ -99,10 +100,7 @@ public:
 
 private:
     CGroup() = default;
-    virtual ~CGroup()
-    {
-        destroy_cgroup();
-    };
+    virtual ~CGroup() = default;
 
 public:
     bool is_valid() const override;

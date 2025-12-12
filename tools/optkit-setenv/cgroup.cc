@@ -10,6 +10,48 @@
 
 const std::string CGroup::name = "cgroup";
 
+std::pair<std::string, std::string> CGroup::get_cgroup_path_and_name_of_process(pid_t pid)
+{
+    try
+    {
+        // Construct path to the process's cgroup file
+        std::string cgroup_file = "/proc/" + std::to_string(pid) + "/cgroup";
+        std::string content = optkit::utils::read_file(cgroup_file);
+
+        // Parse cgroup v2 format: "0::/path/to/cgroup"
+        size_t pos = content.find("::");
+        if (pos == std::string::npos)
+        {
+            return {"", ""};
+        }
+
+        // Extract relative path after "::"
+        std::string rel_path = content.substr(pos + 2);
+
+        // Trim trailing whitespace
+        size_t end = rel_path.find_last_not_of(" \n\r\t");
+        if (end != std::string::npos)
+        {
+            rel_path = rel_path.substr(0, end + 1);
+        }
+
+        // Build absolute cgroup path
+        std::string cgroup_path = CGroup::instance().get_cgroup_root() + rel_path;
+
+        // Extract cgroup name (last component of path)
+        std::string cgroup_name;
+        size_t last_slash = rel_path.find_last_of('/');
+        cgroup_name = (last_slash != std::string::npos) ? rel_path.substr(last_slash + 1) : rel_path;
+
+        return {cgroup_path, cgroup_name};
+    }
+    catch (const std::exception &e)
+    {
+        OPTKIT_WARN("Failed to get cgroup for PID {}: {}", pid, e.what());
+        return {"", ""};
+    }
+}
+
 // CPU sub-struct implementation
 std::string CGroup::CPU::to_string() const
 {
@@ -17,7 +59,6 @@ std::string CGroup::CPU::to_string() const
     oss << "CPU{quota=" << quota_us << "us"
         << ", period=" << period_us << "us"
         << ", burst=" << max_burst_us << "us"
-        << ", weight=" << weight
         << ", weight_nice=" << weight_nice
         << ", uclamp=[" << uclamp_min << "," << uclamp_max << "]"
         << ", idle=" << (idle ? "yes" : "no")
@@ -101,7 +142,6 @@ std::string CGroup::get_cgroup_root() const
 {
     return "/sys/fs/cgroup";
 }
-
 bool CGroup::create_cgroup()
 {
     if (cgroup_name.empty())
@@ -209,12 +249,6 @@ bool CGroup::is_valid() const
         return false;
     }
 
-    // if (cpu.weight < 1 || cpu.weight > 10000)
-    // {
-    //     OPTKIT_WARN("cpu.weight must be between 1 and 10000: {}", cpu.weight);
-    //     return false;
-    // }
-
     if (cpu.weight_nice < -20 || cpu.weight_nice > 19)
     {
         OPTKIT_WARN("cpu.weight_nice must be between -20 and 19: {}", cpu.weight_nice);
@@ -269,11 +303,10 @@ bool CGroup::apply(pid_t pid)
         optkit::utils::write_file(cgroup_path + "/cpu.max", cpu_max, true);
 
         optkit::utils::write_file(cgroup_path + "/cpu.max.burst", std::to_string(cpu.max_burst_us), true);
-        // optkit::utils::write_file(cgroup_path + "/cpu.weight", std::to_string(cpu.weight), true);
         optkit::utils::write_file(cgroup_path + "/cpu.weight.nice", std::to_string(cpu.weight_nice), true);
         optkit::utils::write_file(cgroup_path + "/cpu.uclamp.min", std::to_string(cpu.uclamp_min) + ".00", true);
         optkit::utils::write_file(cgroup_path + "/cpu.uclamp.max", std::to_string(cpu.uclamp_max) + ".00", true);
-        optkit::utils::write_file(cgroup_path + "/cpu.idle", "1", true);
+        optkit::utils::write_file(cgroup_path + "/cpu.idle", cpu.idle ? "1" : "0", true);
 
         optkit::utils::write_file(cgroup_path + "/memory.max", memory.max, true);
         optkit::utils::write_file(cgroup_path + "/memory.high", memory.high, true);
@@ -282,16 +315,16 @@ bool CGroup::apply(pid_t pid)
         optkit::utils::write_file(cgroup_path + "/memory.swap.max", memory.swap_max, true);
         optkit::utils::write_file(cgroup_path + "/memory.swap.high", memory.swap_high, true);
         optkit::utils::write_file(cgroup_path + "/memory.zswap.max", memory.zswap_max, true);
-        optkit::utils::write_file(cgroup_path + "/memory.oom.group", "1", true);
+        optkit::utils::write_file(cgroup_path + "/memory.oom.group", memory.oom_group ? "1" : "0", true);
         optkit::utils::write_file(cgroup_path + "/memory.zswap.writeback", "0", true);
 
         optkit::utils::write_file(cgroup_path + "/io.max", io.max, true);
         optkit::utils::write_file(cgroup_path + "/io.weight", io.weight, true);
         optkit::utils::write_file(cgroup_path + "/pids.max", std::to_string(this->pid.max), true);
-        optkit::utils::write_file(cgroup_path + "/cgroup.freeze", "1", true);
+        optkit::utils::write_file(cgroup_path + "/cgroup.freeze", core.freeze ? "1" : "0", true);
         optkit::utils::write_file(cgroup_path + "/cgroup.max.depth", std::to_string(core.max_depth), true);
         optkit::utils::write_file(cgroup_path + "/cgroup.max.descendants", std::to_string(core.max_descendants), true);
-        optkit::utils::write_file(cgroup_path + "/cgroup.pressure", "0", true);
+        optkit::utils::write_file(cgroup_path + "/cgroup.pressure", core.pressure ? "1" : "0", true);
 
         // Add current process to cgroup
         add_process(pid);
@@ -308,56 +341,73 @@ bool CGroup::apply(pid_t pid)
 void CGroup::load_current_settings(pid_t process_pid)
 {
     // Read current cgroup path for the process
-    std::string cgroup_file = "/proc/" + std::to_string(process_pid) + "/cgroup";
     try
     {
-        std::string content = optkit::utils::read_file(cgroup_file);
-
-        // Parse cgroup v2 format: "0::/path/to/cgroup"
-        size_t pos = content.find("::");
-        if (pos != std::string::npos)
-        {
-            std::string rel_path = content.substr(pos + 2);
-            // Trim whitespace
-            rel_path.erase(rel_path.find_last_not_of(" \n\r\t") + 1);
-            cgroup_path = get_cgroup_root() + rel_path;
-
-            // Extract cgroup name
-            size_t last_slash = rel_path.find_last_of('/');
-            cgroup_name = (last_slash != std::string::npos) ? rel_path.substr(last_slash + 1) : rel_path;
-        }
+        auto cgroup_path_and_name = get_cgroup_path_and_name_of_process(process_pid);
+        this->cgroup_path = cgroup_path_and_name.first;
+        this->cgroup_name = cgroup_path_and_name.second;
 
         if (cgroup_path.empty() || cgroup_path == get_cgroup_root())
         {
             // Process is in root cgroup, can't read settings
+            std::cout << "Process is in root cgroup, no specific settings to load.\n";
             return;
+        }
+        else
+        {
+
+            std::cout << "Loading cgroup settings from path: " << cgroup_path << "\n";
+            std::cout << "CGroup name: " << cgroup_name << "\n";
         }
 
         // Load CPU settings
-        std::string cpu_max_str = optkit::utils::read_file(cgroup_path + "/cpu.max");
+        std::string cpu_max_str = optkit::utils::read_file(cgroup_path + "/cpu.max", true);
         auto tokens = optkit::utils::str_split(cpu_max_str, " ");
         if (tokens.size() >= 2)
         {
             cpu.quota_us = (tokens[0] == "max") ? -1 : std::stoll(tokens[0]);
             cpu.period_us = std::stoll(tokens[1]);
         }
-
-        std::string cpu_weight_str = optkit::utils::read_file(cgroup_path + "/cpu.weight");
-        cpu.weight = std::stoll(optkit::utils::str_trim(cpu_weight_str));
+        std::string cpu_max_burst_str = optkit::utils::read_file(cgroup_path + "/cpu.max.burst", true);
+        cpu.max_burst_us = std::stoll(optkit::utils::str_trim(cpu_max_burst_str));
+        std::string cpu_weight_nice_str = optkit::utils::read_file(cgroup_path + "/cpu.weight.nice", true);
+        cpu.weight_nice = std::stoll(optkit::utils::str_trim(cpu_weight_nice_str));
+        std::string cpu_uclamp_min_str = optkit::utils::read_file(cgroup_path + "/cpu.uclamp.min", true);
+        cpu.uclamp_min = std::stoll(optkit::utils::str_trim(cpu_uclamp_min_str));
+        std::string cpu_uclamp_max_str = optkit::utils::read_file(cgroup_path + "/cpu.uclamp.max", true);
+        std::string trimmed_cpu_uclamp_max_str = optkit::utils::str_trim(cpu_uclamp_max_str);
+        cpu.uclamp_max = std::stoll(trimmed_cpu_uclamp_max_str == "max" ? "100" : trimmed_cpu_uclamp_max_str);
+        std::string cpu_idle_str = optkit::utils::read_file(cgroup_path + "/cpu.idle");
+        cpu.idle = (optkit::utils::str_trim(cpu_idle_str) == "1");
 
         // Load Memory settings
-        memory.max = optkit::utils::str_trim(optkit::utils::read_file(cgroup_path + "/memory.max"));
-        memory.high = optkit::utils::str_trim(optkit::utils::read_file(cgroup_path + "/memory.high"));
-        memory.swap_max = optkit::utils::str_trim(optkit::utils::read_file(cgroup_path + "/memory.swap.max"));
+        memory.max = optkit::utils::str_trim(optkit::utils::read_file(cgroup_path + "/memory.max", true));
+        memory.high = optkit::utils::str_trim(optkit::utils::read_file(cgroup_path + "/memory.high", true));
+        memory.low = optkit::utils::str_trim(optkit::utils::read_file(cgroup_path + "/memory.low", true));
+        memory.min = optkit::utils::str_trim(optkit::utils::read_file(cgroup_path + "/memory.min", true));
+        memory.swap_max = optkit::utils::str_trim(optkit::utils::read_file(cgroup_path + "/memory.swap.max", true));
+        memory.swap_high = optkit::utils::str_trim(optkit::utils::read_file(cgroup_path + "/memory.swap.high", true));
+        memory.zswap_max = optkit::utils::str_trim(optkit::utils::read_file(cgroup_path + "/memory.zswap.max", true));
+        // memory.zswap_writeback = optkit::utils::str_trim(optkit::utils::read_file(cgroup_path + "/memory.zswap.writeback",true));
+
+        // Load IO settings
+        io.max = optkit::utils::str_trim(optkit::utils::read_file(cgroup_path + "/io.max", true));
+        io.weight = optkit::utils::str_trim(optkit::utils::read_file(cgroup_path + "/io.weight", true));
 
         // Load PID settings
-        std::string pids_max_str = optkit::utils::read_file(cgroup_path + "/pids.max");
+        std::string pids_max_str = optkit::utils::read_file(cgroup_path + "/pids.max", true);
         pids_max_str = optkit::utils::str_trim(pids_max_str);
         pid.max = (pids_max_str == "max") ? -1 : std::stoll(pids_max_str);
 
         // Load Core settings
-        std::string freeze_str = optkit::utils::read_file(cgroup_path + "/cgroup.freeze");
+        std::string freeze_str = optkit::utils::read_file(cgroup_path + "/cgroup.freeze", true);
         core.freeze = (optkit::utils::str_trim(freeze_str) == "1");
+        std::string max_depth_str = optkit::utils::read_file(cgroup_path + "/cgroup.max.depth", true);
+        core.max_depth = std::stoll(optkit::utils::str_trim(max_depth_str));
+        std::string max_descendants_str = optkit::utils::read_file(cgroup_path + "/cgroup.max.descendants", true);
+        core.max_descendants = std::stoll(optkit::utils::str_trim(max_descendants_str));
+        std::string pressure_str = optkit::utils::read_file(cgroup_path + "/cgroup.pressure", true);
+        core.pressure = (optkit::utils::str_trim(pressure_str) == "1");
     }
     catch (const std::exception &e)
     {
@@ -375,7 +425,6 @@ nlohmann::json CGroup::to_json() const
     j["cpu"]["quota_us"] = cpu.quota_us;
     j["cpu"]["period_us"] = cpu.period_us;
     j["cpu"]["max_burst_us"] = cpu.max_burst_us;
-    j["cpu"]["weight"] = cpu.weight;
     j["cpu"]["weight_nice"] = cpu.weight_nice;
     j["cpu"]["uclamp_min"] = cpu.uclamp_min;
     j["cpu"]["uclamp_max"] = cpu.uclamp_max;

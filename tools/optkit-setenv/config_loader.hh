@@ -58,7 +58,7 @@ inline SysConfig &load_system_config(const std::string &json_path)
         nlohmann::json j = nlohmann::json::parse(content);
 
         // Load CPU configuration
-        CPU &cpu = CPU::instance();
+        CPU &cpu = *static_cast<CPU *>(config.get_module(CPU::name));
         if (j.contains("cpu") && j["cpu"].is_object())
         {
             const auto &cpu_json = j["cpu"];
@@ -72,7 +72,7 @@ inline SysConfig &load_system_config(const std::string &json_path)
         }
 
         // Load Memory configuration
-        Memory &mem = Memory::instance();
+        Memory &mem = *static_cast<Memory *>(config.get_module(Memory::name));
         if (j.contains("memory") && j["memory"].is_object())
         {
             const auto &mem_json = j["memory"];
@@ -87,7 +87,7 @@ inline SysConfig &load_system_config(const std::string &json_path)
         }
 
         // Load GPU configuration
-        GPU &gpu = GPU::instance();
+        GPU &gpu = *static_cast<GPU *>(config.get_module(GPU::name));
         if (j.contains("gpu") && j["gpu"].is_object())
         {
             const auto &gpu_json = j["gpu"];
@@ -101,7 +101,7 @@ inline SysConfig &load_system_config(const std::string &json_path)
         }
 
         // Load CGroup configuration
-        CGroup &cg = CGroup::instance();
+        CGroup &cg = *static_cast<CGroup *>(config.get_module(CGroup::name));
         if (j.contains("cgroup") && j["cgroup"].is_object())
         {
             const auto &cg_json = j["cgroup"];
@@ -144,7 +144,6 @@ inline SysConfig &load_system_config(const std::string &json_path)
             {
                 const auto &io_json = cg_json["io"];
                 cg.io.max = get_string_or(io_json, "max", "");
-                cg.io.weight = get_string_or(io_json, "weight", "100");
             }
 
             // Load PID controller settings
