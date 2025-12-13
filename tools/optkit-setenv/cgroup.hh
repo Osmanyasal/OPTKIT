@@ -64,36 +64,12 @@ public:
         std::string to_string() const;
     };
 
-    // IO controller settings
-    struct IO
-    {
-        std::string max;    // io.max: bandwidth/iops limits (format: "major:minor rbps=X wbps=Y")
-        std::string weight; // io.weight: relative IO time (1-10000, default 100)
-
-        IO() : max(""), weight("100") {}
-
-        std::string to_string() const;
-    };
-
     // PID controller settings
     struct PID
     {
         int64_t max; // pids.max: maximum number of processes/threads (-1 = unlimited)
 
         PID() : max(-1) {}
-
-        std::string to_string() const;
-    };
-
-    // Core cgroup settings
-    struct Core
-    {
-        bool freeze;             // cgroup.freeze: freeze all processes (0 or 1)
-        int64_t max_depth;       // cgroup.max.depth: max nesting depth (-1 = unlimited)
-        int64_t max_descendants; // cgroup.max.descendants: max child cgroups (-1 = unlimited)
-        bool pressure;           // cgroup.pressure: enable PSI (0 or 1)
-
-        Core() : freeze(false), max_depth(-1), max_descendants(-1), pressure(true) {}
 
         std::string to_string() const;
     };
@@ -121,9 +97,7 @@ public:
     // Resource controller configurations
     CGroup::CPU cpu;
     CGroup::Memory memory;
-    CGroup::IO io;
     CGroup::PID pid;
-    CGroup::Core core;
 
     // Cgroup path and name
     std::string cgroup_path; // e.g., "/sys/fs/cgroup/optkit_experiment"

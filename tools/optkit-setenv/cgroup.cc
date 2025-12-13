@@ -52,82 +52,6 @@ std::pair<std::string, std::string> CGroup::get_cgroup_path_and_name_of_process(
     }
 }
 
-// CPU sub-struct implementation
-std::string CGroup::CPU::to_string() const
-{
-    std::ostringstream oss;
-    oss << "CPU{quota=" << quota_us << "us"
-        << ", period=" << period_us << "us"
-        << ", burst=" << max_burst_us << "us"
-        << ", weight_nice=" << weight_nice
-        << ", uclamp=[" << uclamp_min << "," << uclamp_max << "]"
-        << ", idle=" << (idle ? "yes" : "no")
-        << "}";
-    return oss.str();
-}
-
-// Memory sub-struct implementation
-std::string CGroup::Memory::to_string() const
-{
-    std::ostringstream oss;
-    oss << "Memory{max=" << max
-        << ", high=" << high
-        << ", low=" << low
-        << ", min=" << min
-        << ", swap_max=" << swap_max
-        << ", swap_high=" << swap_high
-        << ", zswap_max=" << zswap_max
-        << ", oom_group=" << (oom_group ? "yes" : "no")
-        << ", zswap_writeback=" << (zswap_writeback ? "yes" : "no")
-        << "}";
-    return oss.str();
-}
-
-// IO sub-struct implementation
-std::string CGroup::IO::to_string() const
-{
-    std::ostringstream oss;
-    oss << "IO{max=" << (max.empty() ? "none" : max)
-        << ", weight=" << weight
-        << "}";
-    return oss.str();
-}
-
-// PID sub-struct implementation
-std::string CGroup::PID::to_string() const
-{
-    std::ostringstream oss;
-    oss << "PID{max=" << (max == -1 ? "unlimited" : std::to_string(max)) << "}";
-    return oss.str();
-}
-
-// Core sub-struct implementation
-std::string CGroup::Core::to_string() const
-{
-    std::ostringstream oss;
-    oss << "Core{freeze=" << (freeze ? "yes" : "no")
-        << ", max_depth=" << max_depth
-        << ", max_descendants=" << max_descendants
-        << ", pressure=" << (pressure ? "yes" : "no")
-        << "}";
-    return oss.str();
-}
-
-// Main CGroup implementation
-std::string CGroup::to_string() const
-{
-    std::ostringstream oss;
-    oss << "CGroup{name=" << cgroup_name
-        << ", path=" << cgroup_path
-        << ", " << cpu.to_string()
-        << ", " << memory.to_string()
-        << ", " << io.to_string()
-        << ", " << pid.to_string()
-        << ", " << core.to_string()
-        << "}";
-    return oss.str();
-}
-
 bool CGroup::is_cgroup_v2() const
 {
     struct statfs buf;
@@ -214,11 +138,11 @@ bool CGroup::enable_controllers()
     try
     {
         // Enable all controllers
-        optkit::utils::write_file(subtree_control, "+cpu +memory +io +pids", true);
+        optkit::utils::write_file(subtree_control, "+cpuset +cpu +io +memory +hugetlb +pids +rdma +misc +dmem", true);
     }
     catch (const std::exception &e)
     {
-        // May fail if already enabled or insufficient permissions
+        // May fail if already enabled, insufficient permissions
         // Not critical, continue
     }
 
@@ -240,45 +164,6 @@ bool CGroup::add_process(pid_t process_pid)
     }
 }
 
-bool CGroup::is_valid() const
-{
-    if (cpu.period_us != -1 && cpu.period_us <= 0)
-    {
-        OPTKIT_WARN("cpu.period_us must be positive or -1 for max: {}", cpu.period_us);
-        return false;
-    }
-
-    if (cpu.weight_nice < -20 || cpu.weight_nice > 19)
-    {
-        OPTKIT_WARN("cpu.weight_nice must be between -20 and 19: {}", cpu.weight_nice);
-        return false;
-    }
-    if (cpu.uclamp_min < 0 || cpu.uclamp_min > 100)
-    {
-        OPTKIT_WARN("cpu.uclamp_min must be between 0 and 100: {}", cpu.uclamp_min);
-        return false;
-    }
-
-    if (cpu.uclamp_max < 0 || cpu.uclamp_max > 100)
-    {
-        OPTKIT_WARN("cpu.uclamp_max must be between 0 and 100: {}", cpu.uclamp_max);
-        return false;
-    }
-
-    if (cpu.uclamp_min > cpu.uclamp_max)
-    {
-        OPTKIT_WARN("cpu.uclamp_min must not be greater than cpu.uclamp_max: {} > {}", cpu.uclamp_min, cpu.uclamp_max);
-        return false;
-    }
-    if (pid.max < -1)
-    {
-        OPTKIT_WARN("pid.max must be greater than or equal to -1: {}", pid.max);
-        return false;
-    }
-
-    return true;
-}
-
 bool CGroup::apply(pid_t pid)
 {
     if (!is_cgroup_v2())
@@ -296,7 +181,7 @@ bool CGroup::apply(pid_t pid)
 
     try
     {
-        // Apply CPU settings
+        // Apply CPU settings, try to write all settings, report on failure and continue.
         std::string cpu_max = (cpu.quota_us == -1) ? "max" : std::to_string(cpu.quota_us);
         cpu_max += " " + std::to_string(cpu.period_us);
         optkit::utils::write_file(cgroup_path + "/cpu.max", cpu_max, true);
@@ -455,7 +340,205 @@ nlohmann::json CGroup::to_json() const
 
     return j;
 }
+
+bool CGroup::is_valid() const
+{
+    // check cpu settings
+    if (cpu.quota_us < -1)
+    {
+        OPTKIT_WARN("cpu.quota_us must be greater than, equal to -1: {}", cpu.quota_us);
+        return false;
+    }
+    if (cpu.period_us != -1 && cpu.period_us <= 0)
+    {
+        OPTKIT_WARN("cpu.period_us must be positive, -1 for max: {}", cpu.period_us);
+        return false;
+    }
+
+    if (cpu.max_burst_us < 0)
+    {
+        OPTKIT_WARN("cpu.max_burst_us must be non-negative: {}", cpu.max_burst_us);
+        return false;
+    }
+
+    if (cpu.weight_nice < -20 || cpu.weight_nice > 19)
+    {
+        OPTKIT_WARN("cpu.weight_nice must be between -20 and 19: {}", cpu.weight_nice);
+        return false;
+    }
+    if (cpu.uclamp_min < 0 || cpu.uclamp_min > 100)
+    {
+        OPTKIT_WARN("cpu.uclamp_min must be between 0 and 100: {}", cpu.uclamp_min);
+        return false;
+    }
+
+    if (cpu.uclamp_max < 0 || cpu.uclamp_max > 100)
+    {
+        OPTKIT_WARN("cpu.uclamp_max must be between 0 and 100: {}", cpu.uclamp_max);
+        return false;
+    }
+
+    if (cpu.uclamp_min > cpu.uclamp_max)
+    {
+        OPTKIT_WARN("cpu.uclamp_min must not be greater than cpu.uclamp_max: {} > {}", cpu.uclamp_min, cpu.uclamp_max);
+        return false;
+    }
+
+    // check pid settings
+    if (pid.max < -1)
+    {
+        OPTKIT_WARN("pid.max must be greater than, equal to -1: {}", pid.max);
+        return false;
+    }
+
+    // check memory settings
+    auto is_valid_memory_value = [](const std::string &val) -> bool
+    {
+        if (val == "max" || val == "0" || val.empty())
+            return true;
+
+        // Check for size suffixes: B, KB, MB, GB, TB, etc.
+        if (val.length() > 2)
+        {
+            try
+            {
+                std::string num_part = val.substr(0, val.length() - 2);
+                std::stoll(num_part);
+                std::string suffix = val.substr(val.length() - 2);
+                std::transform(suffix.begin(), suffix.end(), suffix.begin(), ::toupper);
+                return suffix == "B" || suffix == "KB" || suffix == "MB" || suffix == "GB" || suffix == "TB";
+            }
+            catch (...)
+            {
+                OPTKIT_ERROR("Invalid memory value format: {}", val);
+            }
+        }
+        return false;
+    };
+
+    if (!is_valid_memory_value(memory.max))
+    {
+        OPTKIT_WARN("memory.max must be 'max', integer with size with suffix (B/KB/MB/GB/TB): {}", memory.max);
+        return false;
+    }
+
+    if (!is_valid_memory_value(memory.high))
+    {
+        OPTKIT_WARN("memory.high must be 'max', integer with size with suffix (B/KB/MB/GB/TB): {}", memory.high);
+        return false;
+    }
+
+    if (!is_valid_memory_value(memory.low))
+    {
+        OPTKIT_WARN("memory.low must be 'max', integer with size with suffix (B/KB/MB/GB/TB): {}", memory.low);
+        return false;
+    }
+
+    if (!is_valid_memory_value(memory.min))
+    {
+        OPTKIT_WARN("memory.min must be 'max', integer with size with suffix (B/KB/MB/GB/TB): {}", memory.min);
+        return false;
+    }
+
+    if (!is_valid_memory_value(memory.swap_max))
+    {
+        OPTKIT_WARN("memory.swap_max must be 'max', integer with size with suffix (B/KB/MB/GB/TB): {}", memory.swap_max);
+        return false;
+    }
+
+    if (!is_valid_memory_value(memory.swap_high))
+    {
+        OPTKIT_WARN("memory.swap_high must be 'max', integer with size with suffix (B/KB/MB/GB/TB): {}", memory.swap_high);
+        return false;
+    }
+
+    if (!is_valid_memory_value(memory.zswap_max))
+    {
+        OPTKIT_WARN("memory.zswap_max must be 'max', integer with size with suffix (B/KB/MB/GB/TB): {}", memory.zswap_max);
+        return false;
+    }
+
+    return true;
+}
+
 std::string CGroup::possible_values() const
 {
-    return "";
+    std::ostringstream oss;
+
+    oss << "CPU Settings:\n"
+        << "  quota_us: -1 (max), positive integer (microseconds), typically 100000-1000000\n"
+        << "  period_us: positive integer (microseconds), typically 100000-1000000\n"
+        << "  max_burst_us: non-negative integer (microseconds)\n"
+        << "  weight_nice: -20 to 19 (weight priority)\n"
+        << "  uclamp_min: 0-100 (minimum CPU utilization percentage)\n"
+        << "  uclamp_max: 0-100 (maximum CPU utilization percentage)\n"
+        << "  idle: true, false (enable/disable idle CPU time)\n\n"
+
+        << "Memory Settings:\n"
+        << "  max: 'max', size string (e.g., '512M', '1G', bytes as number)\n"
+        << "  high: 'max', size string (memory high threshold)\n"
+        << "  low: 'max', size string (memory low threshold)\n"
+        << "  min: 'max', size string (minimum memory guarantee)\n"
+        << "  swap_max: 'max', size string (maximum swap usage)\n"
+        << "  swap_high: 'max', size string (swap high threshold)\n"
+        << "  zswap_max: 'max', size string (zswap max usage)\n"
+        << "  oom_group: true, false (OOM killer for entire group)\n"
+        << "  zswap_writeback: true, false (enable zswap writeback)\n\n"
+
+        << "PID Settings:\n"
+        << "  max: -1 (unlimited), positive integer (max process count)\n\n";
+
+    return oss.str();
+}
+
+// CPU sub-struct implementation
+std::string CGroup::CPU::to_string() const
+{
+    std::ostringstream oss;
+    oss << "CPU{quota=" << quota_us << "us"
+        << ", period=" << period_us << "us"
+        << ", burst=" << max_burst_us << "us"
+        << ", weight_nice=" << weight_nice
+        << ", uclamp=[" << uclamp_min << "," << uclamp_max << "]"
+        << ", idle=" << (idle ? "yes" : "no")
+        << "}";
+    return oss.str();
+}
+
+// Memory sub-struct implementation
+std::string CGroup::Memory::to_string() const
+{
+    std::ostringstream oss;
+    oss << "Memory{max=" << max
+        << ", high=" << high
+        << ", low=" << low
+        << ", min=" << min
+        << ", swap_max=" << swap_max
+        << ", swap_high=" << swap_high
+        << ", zswap_max=" << zswap_max
+        << ", oom_group=" << (oom_group ? "yes" : "no")
+        << ", zswap_writeback=" << (zswap_writeback ? "yes" : "no")
+        << "}";
+    return oss.str();
+}
+
+// PID sub-struct implementation
+std::string CGroup::PID::to_string() const
+{
+    std::ostringstream oss;
+    oss << "PID{max=" << (max == -1 ? "unlimited" : std::to_string(max)) << "}";
+    return oss.str();
+}
+
+// Main CGroup implementation
+std::string CGroup::to_string() const
+{
+    std::ostringstream oss;
+    oss << "CGroup{name=" << cgroup_name
+        << ", path=" << cgroup_path
+        << ", " << cpu.to_string()
+        << ", " << memory.to_string()
+        << ", " << pid.to_string()
+        << "}";
+    return oss.str();
 }

@@ -24,10 +24,21 @@ inline std::string get_string_or(const nlohmann::json &j, const std::string &key
 }
 
 // Helper to safely extract bool with default value
+// Accepts: true/false (boolean), 1/0 (number), or "true"/"false" (string)
 inline bool get_bool_or(const nlohmann::json &j, const std::string &key, bool default_val)
 {
-    if (j.contains(key) && !j[key].is_null() && j[key].is_boolean())
-        return j[key].get<bool>();
+    if (j.contains(key) && !j[key].is_null())
+    {
+        if (j[key].is_boolean())
+            return j[key].get<bool>();
+        if (j[key].is_number_integer())
+            return j[key].get<int64_t>() != 0;
+        if (j[key].is_string())
+        {
+            std::string val = j[key].get<std::string>();
+            return val == "true" || val == "1" || val == "yes" || val == "on";
+        }
+    }
     return default_val;
 }
 
@@ -139,28 +150,11 @@ inline SysConfig &load_system_config(const std::string &json_path)
                 cg.memory.zswap_writeback = get_bool_or(mem_json, "zswap_writeback", true);
             }
 
-            // Load IO controller settings
-            if (cg_json.contains("io") && cg_json["io"].is_object())
-            {
-                const auto &io_json = cg_json["io"];
-                cg.io.max = get_string_or(io_json, "max", "");
-            }
-
             // Load PID controller settings
             if (cg_json.contains("pid") && cg_json["pid"].is_object())
             {
                 const auto &pid_json = cg_json["pid"];
-                cg.pid.max = get_int64_or(pid_json, "max", -1);
-            }
-
-            // Load Core cgroup settings
-            if (cg_json.contains("core") && cg_json["core"].is_object())
-            {
-                const auto &core_json = cg_json["core"];
-                cg.core.freeze = get_bool_or(core_json, "freeze", false);
-                cg.core.max_depth = get_int64_or(core_json, "max_depth", -1);
-                cg.core.max_descendants = get_int64_or(core_json, "max_descendants", -1);
-                cg.core.pressure = get_bool_or(core_json, "pressure", true);
+                cg.pid.max = get_string_or(pid_json, "max", "max");
             }
         }
     }
