@@ -155,7 +155,7 @@ bool CGroup::create_cgroup()
     if (mkdir(cgroup_path.c_str(), 0755) != 0 && errno != EEXIST)
     {
         std::cerr << "Failed to create cgroup: " << cgroup_path << " (" << strerror(errno) << ")\n";
-        return false;
+        exit(EXIT_FAILURE);
     }
 
     OPTKIT_INFO("CGroup created at path: {}", cgroup_path);
@@ -172,6 +172,7 @@ bool CGroup::destroy_cgroup()
     {
         std::string procs = optkit::utils::read_file(cgroup_path + "/cgroup.procs");
         std::string parent_procs = get_cgroup_root() + "/cgroup.procs";
+        OPTKIT_INFO("Moving processes {} out of cgroup before destruction", procs);
 
         std::istringstream iss(procs);
         std::string pid_str;
@@ -181,7 +182,7 @@ bool CGroup::destroy_cgroup()
             {
                 try
                 {
-                    optkit::utils::write_file(parent_procs, pid_str);
+                    optkit::utils::write_file(parent_procs, pid_str, false);
                 }
                 catch (...)
                 {
@@ -194,14 +195,12 @@ bool CGroup::destroy_cgroup()
     {
         // Continue
     }
-
     // Remove directory
     if (rmdir(cgroup_path.c_str()) != 0)
     {
-        std::cerr << "Failed to remove cgroup: " << cgroup_path << " (" << strerror(errno) << ")\n";
+        OPTKIT_ERROR("CGroup destruction failed at path: {}", cgroup_path);
         return false;
     }
-
     OPTKIT_INFO("CGroup destroyed at path: {}", cgroup_path);
     return true;
 }

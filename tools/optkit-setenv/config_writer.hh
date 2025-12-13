@@ -17,7 +17,7 @@ inline void save_system_config(const SysConfig &config, const std::string &json_
     {
         nlohmann::json j = config.to_json();
         if (truncate && optkit::utils::is_path_exists(json_path))
-            optkit::utils::remove_file(json_path);
+            optkit::utils::remove_file(json_path, true);
         optkit::utils::write_file(json_path, j.dump(indent));
     }
     catch (const std::exception &e)
@@ -39,7 +39,7 @@ inline void save_system_config(const std::string &config_str, const std::string 
     try
     {
         if (truncate && optkit::utils::is_path_exists(json_path))
-            optkit::utils::remove_file(json_path);
+            optkit::utils::remove_file(json_path, true);
         optkit::utils::write_file(json_path, config_str);
     }
     catch (const std::exception &e)

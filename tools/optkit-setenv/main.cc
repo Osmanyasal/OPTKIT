@@ -26,9 +26,10 @@ int main(int argc, char **argv)
     if (argc == 2 && std::string(argv[1]) == "--backup")
     {
         SysConfig &config = SysConfig::instance();
+
         config.load_current_settings(getpid());
         save_system_config(config, "/tmp/optkit_env_backup.json");
-        std::cout << "✓ Created backup of current environment at /tmp/optkit_env_backup.json\n";
+        OPTKIT_INFO("✓ Created backup of current environment at /tmp/optkit_env_backup.json");
     }
     else if (argc == 2 && std::string(argv[1]) == "--init")
     {
@@ -36,28 +37,29 @@ int main(int argc, char **argv)
         config.load_current_settings(getpid());
         save_system_config(config, "current_config.json");
         save_system_config(config.possible_values(), "possible_config.txt", true);
-        std::cout << "✓ Created current_config.json (current system state)\n";
-        std::cout << "✓ Created possible_config.txt (possible values reference)\n";
+        OPTKIT_INFO("✓ Created current_config.json (current system state)");
+        OPTKIT_INFO("✓ Created possible_config.txt (possible values reference)");
     }
     else if (argc == 2 && std::string(argv[1]) == "--restore")
     {
         EXEC_IF_ROOT_RETURN(1);
         SysConfig &config = load_system_config("/tmp/optkit_env_backup.json");
+
         if (config.is_valid())
         {
             if (config.apply(getpid()))
             {
-                std::cout << "✓ Restored environment from /tmp/optkit_env_backup.json\n";
+                OPTKIT_INFO("✓ Restored environment from /tmp/optkit_env_backup.json");
             }
             else
             {
-                std::cerr << "✗ Failed to apply some settings during restore\n";
+                OPTKIT_ERROR("✗ Failed to apply some settings during restore");
                 return 1;
             }
         }
         else
         {
-            std::cerr << "✗ Backup configuration is invalid\n";
+            OPTKIT_ERROR("✗ Backup configuration is invalid");
             return 1;
         }
     }
@@ -65,9 +67,10 @@ int main(int argc, char **argv)
     {
         EXEC_IF_ROOT_RETURN(1);
         SysConfig &config = load_system_config(argv[1]);
-        std::cout << "Configuration to apply:\n"
-                  << config << "\n";
+        CGroup::instance().create_cgroup();
+        CGroup::instance().add_process(getpid());
 
+        OPTKIT_INFO("Loaded configuration from " + std::string(argv[1]) + ":");
         if (config.is_valid())
         {
             // if (config.apply(getpid()))
@@ -82,15 +85,16 @@ int main(int argc, char **argv)
         }
         else
         {
-            std::cerr << "\n✗ Configuration is invalid\n";
+            OPTKIT_ERROR("✗ Configuration is invalid");
             return 1;
         }
+
+        CGroup::instance().destroy_cgroup();
     }
     else
     {
         return help(argc, argv);
     }
 
-    // todo: delete cgroup after termination of the process created.
     return 0;
 }

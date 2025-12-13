@@ -110,6 +110,14 @@ public:
     std::string possible_values() const override;
     nlohmann::json to_json() const override;
 
+    bool is_cgroup_v2() const;
+    std::string get_cgroup_root() const;
+    bool create_cgroup();
+    bool destroy_cgroup();
+    bool enable_controllers();
+    bool add_process(pid_t pid);
+
+public:
     // Resource controller configurations
     CGroup::CPU cpu;
     CGroup::Memory memory;
@@ -120,14 +128,6 @@ public:
     // Cgroup path and name
     std::string cgroup_path; // e.g., "/sys/fs/cgroup/optkit_experiment"
     std::string cgroup_name; // e.g., "optkit_experiment"
-
-private:
-    bool is_cgroup_v2() const;
-    std::string get_cgroup_root() const;
-    bool create_cgroup();
-    bool destroy_cgroup();
-    bool enable_controllers();
-    bool add_process(pid_t pid);
 };
 
 inline std::ostream &operator<<(std::ostream &os, const CGroup &cg)
