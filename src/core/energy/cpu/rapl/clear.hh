@@ -1,0 +1,15 @@
+#pragma once
+
+#undef OPTKIT_CPU_ENERGY
+#undef OPTKIT_CPU_ENERGY_REPEAT
+#undef OPTKIT_CPU_ENERGY_REPEAT_READ_AND_STORE
+#undef OPTKIT_CPU_ENERGY_WITH_METRICS
+#undef OPTKIT_CPU_ENERGY_REPEAT_WITH_METRICS
+#undef OPTKIT_CPU_ENERGY_REPEAT_READ_AND_STORE_WITH_METRICS
+
+#define OPTKIT_CPU_ENERGY(block_name)
+#define OPTKIT_CPU_ENERGY_REPEAT(block_name, count)
+#define OPTKIT_CPU_ENERGY_REPEAT_READ_AND_STORE(block_name, count)
+#define OPTKIT_CPU_ENERGY_WITH_METRICS(block_name, metric_builder)
+#define OPTKIT_CPU_ENERGY_REPEAT_WITH_METRICS(block_name, count, metric_builder)
+#define OPTKIT_CPU_ENERGY_REPEAT_READ_AND_STORE_WITH_METRICS(block_name, count, metric_builder)

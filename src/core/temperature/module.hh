@@ -23,6 +23,5 @@
         }                                                                                                    \
     }
 #else
-#define OPTKIT_HWMON_TEMPERATURE(block_name)
-#define OPTKIT_GPU_TEMPERATURE(block_name)
+#include "core/temperature/clear.hh"
 #endif

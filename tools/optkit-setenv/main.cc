@@ -36,7 +36,7 @@ int main(int argc, char **argv)
         SysConfig &config = SysConfig::instance();
         config.load_current_settings(getpid());
         save_system_config(config, "current_config.json");
-        save_system_config(config.possible_values(), "possible_config.txt", true);
+        save_system_config(config.possible_values(), "possible_config.txt");
         OPTKIT_INFO("✓ Created current_config.json (current system state)");
         OPTKIT_INFO("✓ Created possible_config.txt (possible values reference)");
     }

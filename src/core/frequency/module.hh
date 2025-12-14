@@ -20,13 +20,6 @@
 #define OPTKIT_RESET_GPU_FREQ(vendor, device_id) optkit::gpu::Query::reset_clock(vendor, device_id)
 #else
 
-#define OPTKIT_SET_CPU_CORE_FREQ(frequency, socket)
-#define OPTKIT_SET_CPU_UNCORE_FREQ(frequency, socket)
-#define OPTKIT_SET_CPU_FREQ(frequency, socket)
-#define OPTKIT_RESET_CPU_CORE_FREQ(socket)
-#define OPTKIT_RESET_CPU_UNCORE_FREQ(socket)
-
-#define OPTKIT_SET_GPU_FREQ(vendor, device_id, mem_clk_mhz, graphics_clk_mhz)
-#define OPTKIT_RESET_GPU_FREQ(vendor, device_id)
+#include "core/frequency/clear.hh"
 
 #endif

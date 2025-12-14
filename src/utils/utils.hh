@@ -350,7 +350,7 @@ namespace optkit::utils
         std::ofstream file(location, std::ios_base::out | std::ios_base::app); // create & append mode
         if (OPT_UNLIKELY(!file.is_open()))
         {
-            if (verbose)
+            if (is_verbose)
             {
                 OPTKIT_CORE_ERROR("Failed to open the file: {}", location);
             }
@@ -372,11 +372,6 @@ namespace optkit::utils
 
         file << text;
         file.close();
-
-        if (is_verbose)
-        {
-            OPTKIT_CORE_INFO("Data successfully written to file: {}", location);
-        }
     }
 
     OPT_FORCE_INLINE bool remove_file(const std::string &location, bool is_verbose)
