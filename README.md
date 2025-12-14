@@ -24,14 +24,6 @@ make -j$(nproc) config=test optkit_static ## this converts some private or prote
 make -j$(nproc) config=debug optkit_test  ## no optimization in tests, raw results are viewed.
 ./bin/Debug/optkit_test
 
-## 🔍 List All Available Tests
-./bin/Debug/optkit_test --gtest_list_tests
-
-## ▶️ Run Specific Test(s)
-./bin/Debug/optkit_test --gtest_filter=MyTestSuite.MyTestCase
-./bin/Debug/optkit_test --gtest_filter="CPUFreqTest.*"
-./bin/Debug/optkit_test --gtest_filter="*Freq*:MemoryTest.*"
-
 ```
 
 For quick introduction check out the [Introduction Slide](https://docs.google.com/presentation/d/1ghTQz3BauL1c7P96y3Rod4U9ncjqSUFk3FekvKx_URA/edit?usp=sharing)
