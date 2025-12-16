@@ -39,7 +39,6 @@ inline void save_system_config(const SysConfig &config, const std::string &json_
 {
     try
     {
-        std::cout << config << "\n";
         nlohmann::json j = config.to_json();
         if (truncate && optkit::utils::is_path_exists(json_path))
             optkit::utils::remove_file(json_path, true);

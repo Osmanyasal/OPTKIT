@@ -105,15 +105,20 @@ bool CPU::set_all_cores_online()
     {
         while (true)
         {
-            optkit::utils::write_file("/sys/devices/system/cpu/cpu" + std::to_string(core) + "/online", "1");
-            this->offline_cores.erase(std::remove(this->offline_cores.begin(), this->offline_cores.end(), core), this->offline_cores.end());
-            ++core;
+            std::string path = "/sys/devices/system/cpu/cpu" + std::to_string(core) + "/online";
+            if (optkit::utils::is_path_exists(path))
+            {
+                optkit::utils::write_file("/sys/devices/system/cpu/cpu" + std::to_string(core) + "/online", "1");
+                ++core;
+            }
+            else
+                break;
         }
     }
     catch (const std::exception &e)
     {
     }
-    return this->offline_cores.size() == 0;
+    return true;
 }
 bool CPU::set_all_cores_offline()
 {
@@ -321,28 +326,42 @@ bool CPU::is_valid() const
 
 bool CPU::apply(pid_t pid)
 {
-    // Apply governor
-    set_governor(governor);
+    bool result = true;
 
-    // Apply core frequency
+    // Apply governor - continue on failure
+    if (!set_governor(governor))
+        result = false;
+
+    // Apply core frequency - continue on failure
     if (core_freq > 0)
-        set_core_freq(core_freq);
+    {
+        if (!set_core_freq(core_freq))
+            result = false;
+    }
 
-    // Apply uncore frequency
+    // Apply uncore frequency - continue on failure
     if (uncore_freq > 0)
-        set_uncore_freq(uncore_freq);
+    {
+        if (!set_uncore_freq(uncore_freq))
+            result = false;
+    }
 
-    // Apply SMT state
-    set_smt_enabled(smt_enabled ? Switch::ON : Switch::OFF);
+    // Apply SMT state - continue on failure
+    if (!set_smt_enabled(smt_enabled ? Switch::ON : Switch::OFF))
+        result = false;
 
-    // Apply offline cores
-    set_all_cores_online(); // First online all cores
-    set_offline_cores(offline_cores);
+    // Apply offline cores - continue on failure
+    if (!set_all_cores_online()) // First online all cores
+        result = false;
 
-    // Apply turbo
-    set_turbo(turbo ? Switch::ON : Switch::OFF);
+    if (!set_offline_cores(offline_cores))
+        result = false;
 
-    return true;
+    // Apply turbo - continue on failure
+    if (!set_turbo(turbo ? Switch::ON : Switch::OFF))
+        result = false;
+
+    return result;
 }
 
 void CPU::load_current_settings(pid_t pid)

@@ -27,28 +27,35 @@ int main(int argc, char **argv)
     {
         EXEC_IF_ROOT_RETURN(1);
         SysConfig &config = SysConfig::instance();
-
+        CGroup::instance().cgroup_name = "optkit_backup";
+        CGroup::instance().create_cgroup();
+        CGroup::instance().add_process(getpid());
         config.load_current_settings(getpid());
         save_system_config(config, "/tmp/optkit_env_backup.json");
         OPTKIT_INFO("✓ Created backup of current environment at /tmp/optkit_env_backup.json");
+        CGroup::instance().destroy_cgroup();
     }
     else if (argc == 2 && std::string(argv[1]) == "--init")
     {
         EXEC_IF_ROOT_RETURN(1);
         SysConfig &config = SysConfig::instance();
+        CGroup::instance().create_cgroup();
+        CGroup::instance().add_process(getpid());
         config.load_current_settings(getpid());
         save_system_config(config, "current_config.json");
         save_system_config(config.possible_values(), "possible_config.txt");
         OPTKIT_INFO("✓ Created current_config.json (current system state)");
         OPTKIT_INFO("✓ Created possible_config.txt (possible values reference)");
+        CGroup::instance().destroy_cgroup();
     }
     else if (argc == 2 && std::string(argv[1]) == "--restore")
     {
         EXEC_IF_ROOT_RETURN(1);
         SysConfig &config = load_system_config("/tmp/optkit_env_backup.json");
-
         if (config.is_valid())
         {
+            CGroup::instance().create_cgroup();
+            CGroup::instance().add_process(getpid());
             if (config.apply(getpid()))
             {
                 OPTKIT_INFO("✓ Restored environment from /tmp/optkit_env_backup.json");
@@ -69,12 +76,12 @@ int main(int argc, char **argv)
     {
         EXEC_IF_ROOT_RETURN(1);
         SysConfig &config = load_system_config(argv[1]);
-        CGroup::instance().create_cgroup();
-        CGroup::instance().add_process(getpid());
-
         OPTKIT_INFO("Loaded configuration from " + std::string(argv[1]) + ":");
         if (config.is_valid())
         {
+            CGroup::instance().create_cgroup();
+            CGroup::instance().add_process(getpid());
+
             if (config.apply(getpid()))
                 std::cout << "\n✓ Configuration applied successfully\n";
             else
@@ -88,8 +95,6 @@ int main(int argc, char **argv)
             OPTKIT_ERROR("✗ Configuration is invalid");
             return 1;
         }
-
-        // CGroup::instance().destroy_cgroup();
     }
     else
     {

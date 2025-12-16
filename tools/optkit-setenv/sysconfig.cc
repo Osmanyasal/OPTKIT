@@ -3,12 +3,10 @@
 std::string SysConfig::to_string() const
 {
     std::ostringstream oss;
-    oss << "SysConfig{\n"
-        << "  " << get_module(CPU::name)->to_string() << "\n"
-        << "  " << get_module(Memory::name)->to_string() << "\n"
-        << "  " << get_module(GPU::name)->to_string() << "\n"
-        << "  " << get_module(CGroup::name)->to_string() << "\n"
-        << "}";
+    oss << "SysConfig{\n";
+    for (const auto &pair : this->modules)
+        oss << pair.second->to_string() << "\n";
+    oss << "}";
     return oss.str();
 }
 bool SysConfig::is_valid() const
@@ -22,7 +20,10 @@ bool SysConfig::apply(pid_t pid)
 {
     bool res = true;
     for (auto &pair : this->modules)
-        res = res && pair.second->apply(pid);
+    {
+        if (!pair.second->apply(pid))
+            res = false;
+    }
     return res;
 }
 void SysConfig::load_current_settings(pid_t pid)

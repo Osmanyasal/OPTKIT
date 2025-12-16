@@ -172,7 +172,7 @@ bool CGroup::add_process(pid_t process_pid)
     std::string procs_path = cgroup_path + "/cgroup.procs";
     try
     {
-        optkit::utils::write_file(procs_path, std::to_string(process_pid), true);
+        optkit::utils::write_file(procs_path, std::to_string(process_pid));
         return true;
     }
     catch (const std::exception &e)
@@ -190,54 +190,199 @@ bool CGroup::apply(pid_t pid)
         return false;
     }
 
-    // Normalize memory values to bytes
-    normalize_memory_values();
-
     // Create cgroup
     if (!create_cgroup())
         return false;
 
-    // Enable controllers
-    enable_controllers();
+    bool result = true;
 
+    // Normalize memory values to bytes
+    normalize_memory_values();
+
+    // Enable controllers - continue on failure
+    if (!enable_controllers())
+        result = false;
+
+    // Apply CPU settings - try to write all settings, report on failure and continue
     try
     {
-        // Apply CPU settings, try to write all settings, report on failure and continue.
         std::string cpu_max = (cpu.quota_us == -1) ? "max" : std::to_string(cpu.quota_us);
         cpu_max += " " + std::to_string(cpu.period_us);
-        optkit::utils::write_file(cgroup_path + "/cpu.max", cpu_max, true);
 
-        optkit::utils::write_file(cgroup_path + "/cpu.max.burst", std::to_string(cpu.max_burst_us), true);
-        optkit::utils::write_file(cgroup_path + "/cpu.weight.nice", std::to_string(cpu.weight_nice), true);
-        optkit::utils::write_file(cgroup_path + "/cpu.uclamp.min", std::to_string(cpu.uclamp_min) + ".00", true);
-        optkit::utils::write_file(cgroup_path + "/cpu.uclamp.max", std::to_string(cpu.uclamp_max) + ".00", true);
-        optkit::utils::write_file(cgroup_path + "/cpu.idle", cpu.idle ? "1" : "0", true);
+        try
+        {
+            optkit::utils::write_file(cgroup_path + "/cpu.max", cpu_max);
+        }
+        catch (const std::exception &e)
+        {
+            OPTKIT_WARN("Failed to set cpu.max: {}", e.what());
+            result = false;
+        }
 
-        optkit::utils::write_file(cgroup_path + "/memory.max", memory.max, true);
-        optkit::utils::write_file(cgroup_path + "/memory.high", memory.high, true);
-        optkit::utils::write_file(cgroup_path + "/memory.low", memory.low, true);
-        optkit::utils::write_file(cgroup_path + "/memory.min", memory.min, true);
-        optkit::utils::write_file(cgroup_path + "/memory.swap.max", memory.swap_max, true);
-        optkit::utils::write_file(cgroup_path + "/memory.swap.high", memory.swap_high, true);
-        optkit::utils::write_file(cgroup_path + "/memory.zswap.max", memory.zswap_max, true);
-        optkit::utils::write_file(cgroup_path + "/memory.oom.group", memory.oom_group ? "1" : "0", true);
-        optkit::utils::write_file(cgroup_path + "/memory.zswap.writeback", "0", true);
+        try
+        {
+            optkit::utils::write_file(cgroup_path + "/cpu.max.burst", std::to_string(cpu.max_burst_us));
+        }
+        catch (const std::exception &e)
+        {
+            OPTKIT_WARN("Failed to set cpu.max.burst: {}", e.what());
+            result = false;
+        }
 
+        try
+        {
+            optkit::utils::write_file(cgroup_path + "/cpu.weight.nice", std::to_string(cpu.weight_nice));
+        }
+        catch (const std::exception &e)
+        {
+            OPTKIT_WARN("Failed to set cpu.weight.nice: {}", e.what());
+            result = false;
+        }
+
+        try
+        {
+            optkit::utils::write_file(cgroup_path + "/cpu.uclamp.min", std::to_string(cpu.uclamp_min) + ".00");
+        }
+        catch (const std::exception &e)
+        {
+            OPTKIT_WARN("Failed to set cpu.uclamp.min: {}", e.what());
+            result = false;
+        }
+
+        try
+        {
+            optkit::utils::write_file(cgroup_path + "/cpu.uclamp.max", std::to_string(cpu.uclamp_max) + ".00");
+        }
+        catch (const std::exception &e)
+        {
+            OPTKIT_WARN("Failed to set cpu.uclamp.max: {}", e.what());
+            result = false;
+        }
+
+        try
+        {
+            optkit::utils::write_file(cgroup_path + "/cpu.idle", cpu.idle ? "1" : "0");
+        }
+        catch (const std::exception &e)
+        {
+            OPTKIT_WARN("Failed to set cpu.idle: {}", e.what());
+            result = false;
+        }
+
+        // Apply Memory settings
+        try
+        {
+            optkit::utils::write_file(cgroup_path + "/memory.max", memory.max);
+        }
+        catch (const std::exception &e)
+        {
+            OPTKIT_WARN("Failed to set memory.max: {}", e.what());
+            result = false;
+        }
+
+        try
+        {
+            optkit::utils::write_file(cgroup_path + "/memory.high", memory.high);
+        }
+        catch (const std::exception &e)
+        {
+            OPTKIT_WARN("Failed to set memory.high: {}", e.what());
+            result = false;
+        }
+
+        try
+        {
+            optkit::utils::write_file(cgroup_path + "/memory.low", memory.low);
+        }
+        catch (const std::exception &e)
+        {
+            OPTKIT_WARN("Failed to set memory.low: {}", e.what());
+            result = false;
+        }
+
+        try
+        {
+            optkit::utils::write_file(cgroup_path + "/memory.min", memory.min);
+        }
+        catch (const std::exception &e)
+        {
+            OPTKIT_WARN("Failed to set memory.min: {}", e.what());
+            result = false;
+        }
+
+        try
+        {
+            optkit::utils::write_file(cgroup_path + "/memory.swap.max", memory.swap_max);
+        }
+        catch (const std::exception &e)
+        {
+            OPTKIT_WARN("Failed to set memory.swap.max: {}", e.what());
+            result = false;
+        }
+
+        try
+        {
+            optkit::utils::write_file(cgroup_path + "/memory.swap.high", memory.swap_high);
+        }
+        catch (const std::exception &e)
+        {
+            OPTKIT_WARN("Failed to set memory.swap.high: {}", e.what());
+            result = false;
+        }
+
+        try
+        {
+            optkit::utils::write_file(cgroup_path + "/memory.zswap.max", memory.zswap_max);
+        }
+        catch (const std::exception &e)
+        {
+            OPTKIT_WARN("Failed to set memory.zswap.max: {}", e.what());
+            result = false;
+        }
+
+        try
+        {
+            optkit::utils::write_file(cgroup_path + "/memory.oom.group", memory.oom_group ? "1" : "0");
+        }
+        catch (const std::exception &e)
+        {
+            OPTKIT_WARN("Failed to set memory.oom.group: {}", e.what());
+            result = false;
+        }
+
+        try
+        {
+            optkit::utils::write_file(cgroup_path + "/memory.zswap.writeback", "0");
+        }
+        catch (const std::exception &e)
+        {
+            OPTKIT_WARN("Failed to set memory.zswap.writeback: {}", e.what());
+            result = false;
+        }
+
+        // Apply PID settings
         std::string pid_max_str = (this->pid.max == -1) ? "max" : std::to_string(this->pid.max);
-        optkit::utils::write_file(cgroup_path + "/pids.max", pid_max_str, true);
+        try
+        {
+            optkit::utils::write_file(cgroup_path + "/pids.max", pid_max_str);
+        }
+        catch (const std::exception &e)
+        {
+            OPTKIT_WARN("Failed to set pids.max: {}", e.what());
+            result = false;
+        }
 
-        std::cout << memory.to_string() << "\n";
-
-        // Add current process to cgroup
-        add_process(pid);
+        // Add current process to cgroup - continue on failure
+        if (!add_process(pid))
+            result = false;
     }
     catch (const std::exception &e)
     {
-        std::cerr << "Failed to apply cgroup settings: " << e.what() << "\n";
-        return false;
+        std::cerr << "Unexpected error during cgroup setup: " << e.what() << "\n";
+        result = false;
     }
 
-    return true;
+    return result;
 }
 
 void CGroup::load_current_settings(pid_t process_pid)
@@ -328,6 +473,8 @@ nlohmann::json CGroup::to_json() const
     j["memory"]["zswap_max"] = memory.zswap_max;
     j["memory"]["oom_group"] = memory.oom_group;
     j["memory"]["zswap_writeback"] = memory.zswap_writeback;
+
+    j["pid"]["max"] = pid.max;
 
     return j;
 }
@@ -451,24 +598,24 @@ std::string CGroup::possible_values() const
     std::ostringstream oss;
 
     oss << "CPU Settings:\n"
-        << "  period_us: positive integer (microseconds), typically up to 100000\n"
-        << "  quota_us: (max if -1), positive integer (microseconds), typically up to 100000\n"
-        << "  max_burst_us: positive integer (microseconds)\n"
-        << "  weight_nice: -20 to 19 (weight priority)\n"
-        << "  uclamp_min: 0-100 (minimum CPU utilization percentage)\n"
-        << "  uclamp_max: 0-100 (maximum CPU utilization percentage)\n"
-        << "  idle: true, false (enable/disable idle CPU time)\n\n"
+        << "\tperiod_us: positive integer (microseconds), typically up to 100000\n"
+        << "\tquota_us: (max if -1), positive integer (microseconds), typically up to 100000\n"
+        << "\tmax_burst_us: positive integer (microseconds)\n"
+        << "\tweight_nice: -20 to 19 (weight priority)\n"
+        << "\tuclamp_min: 0-100 (minimum CPU utilization percentage)\n"
+        << "\tuclamp_max: 0-100 (maximum CPU utilization percentage)\n"
+        << "\tidle: true, false (enable/disable idle CPU time)\n\n"
 
         << "Memory Settings:\n"
-        << "  max: 'max', size string (e.g., '512M', '1G', bytes as number)\n"
-        << "  high: 'max', size string (memory high threshold)\n"
-        << "  low: 'max', size string (memory low threshold)\n"
-        << "  min: 'max', size string (minimum memory guarantee)\n"
-        << "  swap_max: 'max', size string (maximum swap usage)\n"
-        << "  swap_high: 'max', size string (swap high threshold)\n"
-        << "  zswap_max: 'max', size string (zswap max usage)\n"
-        << "  oom_group: true, false (OOM killer for entire group)\n"
-        << "  zswap_writeback: true, false (enable zswap writeback)\n\n"
+        << "\tmax: 'max', size string (e.g., '512M', '1G', bytes as number)\n"
+        << "\thigh: 'max', size string (memory high threshold)\n"
+        << "\tlow: 'max', size string (memory low threshold)\n"
+        << "\tmin: 'max', size string (minimum memory guarantee)\n"
+        << "\tswap_max: 'max', size string (maximum swap usage)\n"
+        << "\tswap_high: 'max', size string (swap high threshold)\n"
+        << "\tzswap_max: 'max', size string (zswap max usage)\n"
+        << "\toom_group: true, false (OOM killer for entire group)\n"
+        << "\tzswap_writeback: true, false (enable zswap writeback)\n\n"
 
         << "PID Settings:\n"
         << "  max (unlimited), positive integer (max process count)\n\n";
@@ -551,7 +698,7 @@ std::string CGroup::CPU::to_string() const
         << ", burst=" << max_burst_us << "us"
         << ", weight_nice=" << weight_nice
         << ", uclamp=[" << uclamp_min << "," << uclamp_max << "]"
-        << ", idle=" << (idle ? "yes" : "no")
+        << ", idle=" << (idle ? "true" : "false")
         << "}";
     return oss.str();
 }
@@ -567,8 +714,8 @@ std::string CGroup::Memory::to_string() const
         << ", swap_max=" << swap_max
         << ", swap_high=" << swap_high
         << ", zswap_max=" << zswap_max
-        << ", oom_group=" << (oom_group ? "yes" : "no")
-        << ", zswap_writeback=" << (zswap_writeback ? "yes" : "no")
+        << ", oom_group=" << (oom_group ? "true" : "false")
+        << ", zswap_writeback=" << (zswap_writeback ? "true" : "false")
         << "}";
     return oss.str();
 }

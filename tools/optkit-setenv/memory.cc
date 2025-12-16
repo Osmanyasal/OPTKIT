@@ -337,30 +337,42 @@ bool Memory::is_valid() const
 
 bool Memory::apply(pid_t pid)
 {
-    // Apply THP mode
-    set_thp_mode(thp_mode);
+    bool result = true;
 
-    // Apply malloc backend
-    set_malloc_backend(malloc_backend);
+    // Apply THP mode - continue on failure
+    if (!set_thp_mode(thp_mode))
+        result = false;
 
-    // Apply hugepages count
-    set_hugepages_count(hugepages_count);
+    // Apply malloc backend - continue on failure
+    if (!set_malloc_backend(malloc_backend))
+        result = false;
 
-    // Apply arena max
-    set_arena_max(arena_max);
+    // Apply hugepages count - continue on failure
+    if (!set_hugepages_count(hugepages_count))
+        result = false;
 
-    // Apply swappiness
-    set_swappiness(swappiness);
+    // Apply arena max - continue on failure
+    if (!set_arena_max(arena_max))
+        result = false;
 
-    // Apply OOM kill task score
-    set_oom_kill_task(oom_kill_task, pid);
+    // Apply swappiness - continue on failure
+    if (!set_swappiness(swappiness))
+        result = false;
 
-    // Apply drop caches if requested
+    // Apply OOM kill task score - continue on failure
+    if (!set_oom_kill_task(oom_kill_task, pid))
+        result = false;
+
+    // Apply drop caches if requested - continue on failure
     if (drop_caches)
-        drop_caches_now();
+    {
+        if (!drop_caches_now())
+            result = false;
+    }
 
-    // Apply mlock_all
-    set_mlock_all(mlock_all);
+    // Apply mlock_all - continue on failure
+    if (!set_mlock_all(mlock_all))
+        result = false;
 
-    return true;
+    return result;
 }

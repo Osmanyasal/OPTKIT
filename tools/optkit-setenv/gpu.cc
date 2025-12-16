@@ -70,24 +70,35 @@ bool GPU::apply(pid_t pid)
             optkit::gpu::Query::get_device_count(vendor, device_count);
             for (int device_index = 0; device_index < device_count; ++device_index)
             {
-                result = result && optkit::gpu::Query::set_persistence_mode(vendor, device_index, (persistence_mode == "on"));
+                // Apply all settings, continue on failure but track overall result
+                if (!optkit::gpu::Query::set_persistence_mode(vendor, device_index, (persistence_mode == "on")))
+                    result = false;
 
                 if (fan_speed != "auto")
-                    result = result && optkit::gpu::Query::set_fan_speed(vendor, device_index, fan_speed);
+                {
+                    if (!optkit::gpu::Query::set_fan_speed(vendor, device_index, fan_speed))
+                        result = false;
+                }
                 else
-                    result = result && optkit::gpu::Query::reset_fan_speed(vendor, device_index);
+                {
+                    if (!optkit::gpu::Query::reset_fan_speed(vendor, device_index))
+                        result = false;
+                }
 
                 if (core_freq_mhz > 0 && mem_freq_mhz > 0)
                 {
-                    result = result && optkit::gpu::Query::set_clock(vendor, device_index, static_cast<uint32_t>(mem_freq_mhz), static_cast<uint32_t>(core_freq_mhz));
+                    if (!optkit::gpu::Query::set_clock(vendor, device_index, static_cast<uint32_t>(mem_freq_mhz), static_cast<uint32_t>(core_freq_mhz)))
+                        result = false;
                 }
                 if (power_limit_watts > 0)
                 {
-                    result = result && optkit::gpu::Query::set_power_limit(vendor, device_index, static_cast<double>(power_limit_watts));
+                    if (!optkit::gpu::Query::set_power_limit(vendor, device_index, static_cast<double>(power_limit_watts)))
+                        result = false;
                 }
                 if (reset_device)
                 {
-                    result = result && optkit::gpu::Query::reset_device(vendor, device_index);
+                    if (!optkit::gpu::Query::reset_device(vendor, device_index))
+                        result = false;
                 }
             }
         }
@@ -106,6 +117,7 @@ void GPU::load_current_settings(pid_t pid)
         {
             optkit::gpu::GpuDeviceInfo device_info{};
             optkit::gpu::Query::device_query(vendor, 0, device_info);
+            this->device_name = device_info.basic.device_name;
             this->persistence_mode = device_info.capabilities.persistence_mode_enabled ? "on" : "off";
             this->fan_speed = "auto";
             this->core_freq_mhz = device_info.clocks.current_graphics_clock_MHz;
