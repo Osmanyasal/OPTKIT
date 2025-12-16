@@ -118,8 +118,8 @@ inline SysConfig &load_system_config(const std::string &json_path)
             const auto &cg_json = j["cgroup"];
 
             // Load cgroup path and name
-            cg.cgroup_path = get_string_or(cg_json, "cgroup_path", "/sys/fs/cgroup/optkit");
-            cg.cgroup_name = get_string_or(cg_json, "cgroup_name", "optkit");
+            cg.cgroup_path = get_string_or(cg_json, "path", "/sys/fs/cgroup/optkit");
+            cg.cgroup_name = get_string_or(cg_json, "name", "optkit");
 
             // Load CPU controller settings
             if (cg_json.contains("cpu") && cg_json["cpu"].is_object())
@@ -154,7 +154,7 @@ inline SysConfig &load_system_config(const std::string &json_path)
             if (cg_json.contains("pid") && cg_json["pid"].is_object())
             {
                 const auto &pid_json = cg_json["pid"];
-                cg.pid.max = get_string_or(pid_json, "max", "max");
+                cg.pid.max = get_int64_or(pid_json, "max", -1);
             }
         }
     }

@@ -27,9 +27,9 @@ private:
 
     void initialize_modules()
     {
-        modules[CPU::name] = &CPU::instance();
-        modules[Memory::name] = &Memory::instance();
-        modules[GPU::name] = &GPU::instance();
+        // modules[CPU::name] = &CPU::instance();
+        // modules[Memory::name] = &Memory::instance();
+        // modules[GPU::name] = &GPU::instance();
         modules[CGroup::name] = &CGroup::instance();
     }
 
@@ -48,7 +48,8 @@ public:
         {
             return it->second;
         }
-        throw std::runtime_error("Module not found: " + module_name);
+        OPTKIT_WARN("Module '{}' not found in SysConfig", module_name);
+        return nullptr;
     }
 
 private:

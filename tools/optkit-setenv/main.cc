@@ -25,6 +25,7 @@ int main(int argc, char **argv)
 
     if (argc == 2 && std::string(argv[1]) == "--backup")
     {
+        EXEC_IF_ROOT_RETURN(1);
         SysConfig &config = SysConfig::instance();
 
         config.load_current_settings(getpid());
@@ -33,6 +34,7 @@ int main(int argc, char **argv)
     }
     else if (argc == 2 && std::string(argv[1]) == "--init")
     {
+        EXEC_IF_ROOT_RETURN(1);
         SysConfig &config = SysConfig::instance();
         config.load_current_settings(getpid());
         save_system_config(config, "current_config.json");
@@ -73,15 +75,13 @@ int main(int argc, char **argv)
         OPTKIT_INFO("Loaded configuration from " + std::string(argv[1]) + ":");
         if (config.is_valid())
         {
-            // if (config.apply(getpid()))
-            // {
-            //     std::cout << "\n✓ Configuration applied successfully\n";
-            // }
-            // else
-            // {
-            //     std::cerr << "\n✗ Failed to apply some settings\n";
-            //     return 1;
-            // }
+            if (config.apply(getpid()))
+                std::cout << "\n✓ Configuration applied successfully\n";
+            else
+            {
+                std::cerr << "\n✗ Failed to apply some settings\n";
+                return 1;
+            }
         }
         else
         {
@@ -89,7 +89,7 @@ int main(int argc, char **argv)
             return 1;
         }
 
-        CGroup::instance().destroy_cgroup();
+        // CGroup::instance().destroy_cgroup();
     }
     else
     {

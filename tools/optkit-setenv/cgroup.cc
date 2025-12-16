@@ -10,6 +10,10 @@
 
 const std::string CGroup::name = "cgroup";
 
+#ifndef CGROUP2_SUPER_MAGIC
+#define CGROUP2_SUPER_MAGIC 0x63677270
+#endif
+
 std::pair<std::string, std::string> CGroup::get_cgroup_path_and_name_of_process(pid_t pid)
 {
     try
@@ -57,7 +61,7 @@ bool CGroup::is_cgroup_v2() const
     struct statfs buf;
     if (statfs("/sys/fs/cgroup", &buf) == 0)
     {
-        return buf.f_type == 0x63677270; // CGROUP2_SUPER_MAGIC
+        return buf.f_type == CGROUP2_SUPER_MAGIC;
     }
     return false;
 }
@@ -94,7 +98,7 @@ bool CGroup::destroy_cgroup()
     // Move all processes out first
     try
     {
-        std::string procs = optkit::utils::read_file(cgroup_path + "/cgroup.procs");
+        std::string procs = optkit::utils::str_trim(optkit::utils::read_file(cgroup_path + "/cgroup.procs"));
         std::string parent_procs = get_cgroup_root() + "/cgroup.procs";
         OPTKIT_INFO("Moving processes {} out of cgroup before destruction", procs);
 
@@ -138,7 +142,21 @@ bool CGroup::enable_controllers()
     try
     {
         // Enable all controllers
-        optkit::utils::write_file(subtree_control, "+cpuset +cpu +io +memory +hugetlb +pids +rdma +misc +dmem", true);
+
+        // NOTE!
+        // # echo "+cpu +memory -io" > cgroup.subtree_control
+        // When multiple operations are specified as above, either they all succeed or fail.
+        // If multiple operations on the same controller are specified, the last one is effective.
+        // That's why we do them one by one here.
+        optkit::utils::write_file(subtree_control, "+cpuset ", true);
+        optkit::utils::write_file(subtree_control, "+cpu", true);
+        optkit::utils::write_file(subtree_control, "+io", true);
+        optkit::utils::write_file(subtree_control, "+memory", true);
+        optkit::utils::write_file(subtree_control, "+hugetlb", true);
+        optkit::utils::write_file(subtree_control, "+pids", true);
+        optkit::utils::write_file(subtree_control, "+rdma", true);
+        optkit::utils::write_file(subtree_control, "+misc", true);
+        optkit::utils::write_file(subtree_control, "+dmem", true);
     }
     catch (const std::exception &e)
     {
@@ -172,6 +190,9 @@ bool CGroup::apply(pid_t pid)
         return false;
     }
 
+    // Normalize memory values to bytes
+    normalize_memory_values();
+
     // Create cgroup
     if (!create_cgroup())
         return false;
@@ -202,13 +223,10 @@ bool CGroup::apply(pid_t pid)
         optkit::utils::write_file(cgroup_path + "/memory.oom.group", memory.oom_group ? "1" : "0", true);
         optkit::utils::write_file(cgroup_path + "/memory.zswap.writeback", "0", true);
 
-        optkit::utils::write_file(cgroup_path + "/io.max", io.max, true);
-        optkit::utils::write_file(cgroup_path + "/io.weight", io.weight, true);
-        optkit::utils::write_file(cgroup_path + "/pids.max", std::to_string(this->pid.max), true);
-        optkit::utils::write_file(cgroup_path + "/cgroup.freeze", core.freeze ? "1" : "0", true);
-        optkit::utils::write_file(cgroup_path + "/cgroup.max.depth", std::to_string(core.max_depth), true);
-        optkit::utils::write_file(cgroup_path + "/cgroup.max.descendants", std::to_string(core.max_descendants), true);
-        optkit::utils::write_file(cgroup_path + "/cgroup.pressure", core.pressure ? "1" : "0", true);
+        std::string pid_max_str = (this->pid.max == -1) ? "max" : std::to_string(this->pid.max);
+        optkit::utils::write_file(cgroup_path + "/pids.max", pid_max_str, true);
+
+        std::cout << memory.to_string() << "\n";
 
         // Add current process to cgroup
         add_process(pid);
@@ -274,24 +292,10 @@ void CGroup::load_current_settings(pid_t process_pid)
         memory.zswap_max = optkit::utils::str_trim(optkit::utils::read_file(cgroup_path + "/memory.zswap.max", true));
         // memory.zswap_writeback = optkit::utils::str_trim(optkit::utils::read_file(cgroup_path + "/memory.zswap.writeback",true));
 
-        // Load IO settings
-        io.max = optkit::utils::str_trim(optkit::utils::read_file(cgroup_path + "/io.max", true));
-        io.weight = optkit::utils::str_trim(optkit::utils::read_file(cgroup_path + "/io.weight", true));
-
         // Load PID settings
         std::string pids_max_str = optkit::utils::read_file(cgroup_path + "/pids.max", true);
         pids_max_str = optkit::utils::str_trim(pids_max_str);
         pid.max = (pids_max_str == "max") ? -1 : std::stoll(pids_max_str);
-
-        // Load Core settings
-        std::string freeze_str = optkit::utils::read_file(cgroup_path + "/cgroup.freeze", true);
-        core.freeze = (optkit::utils::str_trim(freeze_str) == "1");
-        std::string max_depth_str = optkit::utils::read_file(cgroup_path + "/cgroup.max.depth", true);
-        core.max_depth = std::stoll(optkit::utils::str_trim(max_depth_str));
-        std::string max_descendants_str = optkit::utils::read_file(cgroup_path + "/cgroup.max.descendants", true);
-        core.max_descendants = std::stoll(optkit::utils::str_trim(max_descendants_str));
-        std::string pressure_str = optkit::utils::read_file(cgroup_path + "/cgroup.pressure", true);
-        core.pressure = (optkit::utils::str_trim(pressure_str) == "1");
     }
     catch (const std::exception &e)
     {
@@ -324,19 +328,6 @@ nlohmann::json CGroup::to_json() const
     j["memory"]["zswap_max"] = memory.zswap_max;
     j["memory"]["oom_group"] = memory.oom_group;
     j["memory"]["zswap_writeback"] = memory.zswap_writeback;
-
-    // IO
-    j["io"]["max"] = io.max;
-    j["io"]["weight"] = io.weight;
-
-    // PID
-    j["pids"]["max"] = pid.max;
-
-    // Core
-    j["core"]["freeze"] = core.freeze;
-    j["core"]["max_depth"] = core.max_depth;
-    j["core"]["max_descendants"] = core.max_descendants;
-    j["core"]["pressure"] = core.pressure;
 
     return j;
 }
@@ -387,33 +378,27 @@ bool CGroup::is_valid() const
     // check pid settings
     if (pid.max < -1)
     {
-        OPTKIT_WARN("pid.max must be greater than, equal to -1: {}", pid.max);
+        OPTKIT_WARN("pid.max must be greater than or equal to -1 (unlimited): {}", pid.max);
         return false;
     }
 
-    // check memory settings
+    // check memory settings - values should already be normalized to bytes
     auto is_valid_memory_value = [](const std::string &val) -> bool
     {
-        if (val == "max" || val == "0" || val.empty())
+        if (val == "max" || val.empty())
             return true;
 
-        // Check for size suffixes: B, KB, MB, GB, TB, etc.
-        if (val.length() > 2)
+        // After normalization, should be a plain number (bytes)
+        try
         {
-            try
-            {
-                std::string num_part = val.substr(0, val.length() - 2);
-                std::stoll(num_part);
-                std::string suffix = val.substr(val.length() - 2);
-                std::transform(suffix.begin(), suffix.end(), suffix.begin(), ::toupper);
-                return suffix == "B" || suffix == "KB" || suffix == "MB" || suffix == "GB" || suffix == "TB";
-            }
-            catch (...)
-            {
-                OPTKIT_ERROR("Invalid memory value format: {}", val);
-            }
+            std::stoll(val);
+            return true;
         }
-        return false;
+        catch (...)
+        {
+            OPTKIT_ERROR("Invalid memory value format: {}", val);
+            return false;
+        }
     };
 
     if (!is_valid_memory_value(memory.max))
@@ -466,9 +451,9 @@ std::string CGroup::possible_values() const
     std::ostringstream oss;
 
     oss << "CPU Settings:\n"
-        << "  quota_us: -1 (max), positive integer (microseconds), typically 100000-1000000\n"
-        << "  period_us: positive integer (microseconds), typically 100000-1000000\n"
-        << "  max_burst_us: non-negative integer (microseconds)\n"
+        << "  period_us: positive integer (microseconds), typically up to 100000\n"
+        << "  quota_us: (max if -1), positive integer (microseconds), typically up to 100000\n"
+        << "  max_burst_us: positive integer (microseconds)\n"
         << "  weight_nice: -20 to 19 (weight priority)\n"
         << "  uclamp_min: 0-100 (minimum CPU utilization percentage)\n"
         << "  uclamp_max: 0-100 (maximum CPU utilization percentage)\n"
@@ -486,9 +471,75 @@ std::string CGroup::possible_values() const
         << "  zswap_writeback: true, false (enable zswap writeback)\n\n"
 
         << "PID Settings:\n"
-        << "  max: -1 (unlimited), positive integer (max process count)\n\n";
+        << "  max (unlimited), positive integer (max process count)\n\n";
 
     return oss.str();
+}
+
+void CGroup::normalize_memory_values()
+{
+    // Helper to convert memory size string to bytes
+    auto memory_to_bytes = [](const std::string &val) -> std::string
+    {
+        if (val == "max" || val.empty())
+            return val;
+
+        std::string trimmed = optkit::utils::str_trim(val);
+
+        // Plain number (already in bytes)
+        if (std::all_of(trimmed.begin(), trimmed.end(), ::isdigit))
+        {
+            return trimmed;
+        }
+
+        // Extract numeric part and suffix
+        size_t suffix_pos = trimmed.find_first_not_of("0123456789");
+        if (suffix_pos == std::string::npos)
+        {
+            return trimmed;
+        }
+
+        std::string num_str = trimmed.substr(0, suffix_pos);
+        std::string suffix = trimmed.substr(suffix_pos);
+
+        // Convert suffix to uppercase for comparison
+        std::transform(suffix.begin(), suffix.end(), suffix.begin(), ::toupper);
+
+        int64_t value = std::stoll(num_str);
+        int64_t multiplier = 1;
+
+        // Binary (IEC) units - base 1024
+        if (suffix == "KB" || suffix == "K")
+            multiplier = 1024LL;
+        else if (suffix == "MB" || suffix == "M")
+            multiplier = 1024LL * 1024LL;
+        else if (suffix == "GB" || suffix == "G")
+            multiplier = 1024LL * 1024LL * 1024LL;
+        else if (suffix == "TB" || suffix == "T")
+            multiplier = 1024LL * 1024LL * 1024LL * 1024LL;
+        else if (suffix == "B")
+            multiplier = 1;
+        else
+            throw std::invalid_argument("Unknown memory suffix: " + suffix);
+
+        return std::to_string(value * multiplier);
+    };
+
+    // Normalize all memory values to bytes
+    try
+    {
+        memory.max = memory_to_bytes(memory.max);
+        memory.high = memory_to_bytes(memory.high);
+        memory.low = memory_to_bytes(memory.low);
+        memory.min = memory_to_bytes(memory.min);
+        memory.swap_max = memory_to_bytes(memory.swap_max);
+        memory.swap_high = memory_to_bytes(memory.swap_high);
+        memory.zswap_max = memory_to_bytes(memory.zswap_max);
+    }
+    catch (const std::exception &e)
+    {
+        OPTKIT_ERROR("Failed to normalize memory values: {}", e.what());
+    }
 }
 
 // CPU sub-struct implementation
@@ -526,7 +577,7 @@ std::string CGroup::Memory::to_string() const
 std::string CGroup::PID::to_string() const
 {
     std::ostringstream oss;
-    oss << "PID{max=" << (max == -1 ? "unlimited" : std::to_string(max)) << "}";
+    oss << "PID{max=" << max << "}";
     return oss.str();
 }
 

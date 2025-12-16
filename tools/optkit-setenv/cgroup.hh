@@ -85,6 +85,7 @@ public:
     void load_current_settings(pid_t pid) override;
     std::string possible_values() const override;
     nlohmann::json to_json() const override;
+    void normalize_memory_values();
 
     bool is_cgroup_v2() const;
     std::string get_cgroup_root() const;
