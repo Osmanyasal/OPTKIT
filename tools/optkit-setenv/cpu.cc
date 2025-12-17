@@ -30,6 +30,13 @@ bool CPU::set_governor(const std::string &gov)
 
 bool CPU::set_affinity_cores(pid_t pid, const std::vector<int16_t> &cores)
 {
+    if (cores.empty())
+    {
+        cores.reserve(OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS);
+        // add all cores
+        for (int16_t core = 0; core < OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS; core++)
+            this->affinity_cores.push_back(core);
+    }
     cpu_set_t mask;
     CPU_ZERO(&mask);
     for (auto core : cores)
@@ -39,7 +46,10 @@ bool CPU::set_affinity_cores(pid_t pid, const std::vector<int16_t> &cores)
     {
         return false;
     }
-
+    std::cout << "setting affinity cores for PID " << pid << " to cores: ";
+    for (auto core : cores)
+        std::cout << core << " ";
+    std::cout << "\n";
     this->affinity_cores = cores;
     return true;
 }
@@ -359,6 +369,9 @@ bool CPU::apply(pid_t pid)
 
     // Apply turbo - continue on failure
     if (!set_turbo(turbo ? Switch::ON : Switch::OFF))
+        result = false;
+
+    if (!set_affinity_cores(pid, affinity_cores))
         result = false;
 
     return result;

@@ -29,8 +29,8 @@ int main(int argc, char **argv)
         SysConfig &config = SysConfig::instance();
         CGroup::instance().cgroup_name = "optkit_backup";
         CGroup::instance().create_cgroup();
-        CGroup::instance().add_process(getpid());
-        config.load_current_settings(getpid());
+        CGroup::instance().add_process(getppid());
+        config.load_current_settings(getppid());
         save_system_config(config, "/tmp/optkit_env_backup.json");
         OPTKIT_INFO("✓ Created backup of current environment at /tmp/optkit_env_backup.json");
         CGroup::instance().destroy_cgroup();
@@ -40,8 +40,8 @@ int main(int argc, char **argv)
         EXEC_IF_ROOT_RETURN(1);
         SysConfig &config = SysConfig::instance();
         CGroup::instance().create_cgroup();
-        CGroup::instance().add_process(getpid());
-        config.load_current_settings(getpid());
+        CGroup::instance().add_process(getppid());
+        config.load_current_settings(getppid());
         save_system_config(config, "current_config.json");
         save_system_config(config.possible_values(), "possible_config.txt");
         OPTKIT_INFO("✓ Created current_config.json (current system state)");
@@ -55,8 +55,8 @@ int main(int argc, char **argv)
         if (config.is_valid())
         {
             CGroup::instance().create_cgroup();
-            CGroup::instance().add_process(getpid());
-            if (config.apply(getpid()))
+            CGroup::instance().add_process(getppid());
+            if (config.apply(getppid()))
             {
                 OPTKIT_INFO("✓ Restored environment from /tmp/optkit_env_backup.json");
             }
@@ -84,9 +84,10 @@ int main(int argc, char **argv)
         if (config.is_valid())
         {
             CGroup::instance().create_cgroup();
-            CGroup::instance().add_process(getpid());
+            config.apply(getppid());
+            CGroup::instance().add_process(getppid());
 
-            if (config.apply(getpid()))
+            if (config.apply(getppid()))
             {
                 std::cout << "\n✓ Configuration applied successfully\n";
 
