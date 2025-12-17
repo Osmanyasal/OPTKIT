@@ -17,6 +17,12 @@ optkit-setenv --init
 # Load configuration from file (after changes)
 optkit-setenv ./env.json
 
+# Execute script (optionally created for LD_PRELOAD settings)
+./optkit_execute_me.sh
+
+## Execute your program here!!
+./<your_program>
+
 # Restore system to defaults (backup file is restored as current settings)
 optkit-setenv --restore
 ```
