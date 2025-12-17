@@ -75,6 +75,10 @@ int main(int argc, char **argv)
     else if (argc == 2 && std::string(argv[1]).find(".json") != std::string::npos)
     {
         EXEC_IF_ROOT_RETURN(1);
+
+        // Clear any previous shell script
+        std::remove("optkit_env.sh");
+
         SysConfig &config = load_system_config(argv[1]);
         OPTKIT_INFO("Loaded configuration from " + std::string(argv[1]) + ":");
         if (config.is_valid())
@@ -83,7 +87,17 @@ int main(int argc, char **argv)
             CGroup::instance().add_process(getpid());
 
             if (config.apply(getpid()))
+            {
                 std::cout << "\n✓ Configuration applied successfully\n";
+
+                // If shell script was created, instruct user to source it
+                std::ifstream shell_script("optkit_env.sh");
+                if (shell_script.good())
+                {
+                    std::cout << "\n📝 To apply environment variables to your current shell, run:\n"
+                              << "   source optkit_env.sh\n\n";
+                }
+            }
             else
             {
                 std::cerr << "\n✗ Failed to apply some settings\n";

@@ -5,29 +5,6 @@
 #include <cstdlib>
 
 /**
- * @brief Set file ownership to the user who invoked sudo
- *
- * @param file_path Path to the file
- */
-inline void set_original_user_ownership(const std::string &file_path)
-{
-    // Check if running under sudo
-    const char *sudo_uid_str = std::getenv("SUDO_UID");
-    const char *sudo_gid_str = std::getenv("SUDO_GID");
-
-    if (sudo_uid_str && sudo_gid_str)
-    {
-        uid_t uid = static_cast<uid_t>(std::stoul(sudo_uid_str));
-        gid_t gid = static_cast<gid_t>(std::stoul(sudo_gid_str));
-
-        if (chown(file_path.c_str(), uid, gid) != 0)
-        {
-            OPTKIT_WARN("Failed to change ownership of {}: {}", file_path, strerror(errno));
-        }
-    }
-}
-
-/**
  * @brief Write system configuration to JSON file
  *
  * @param config SysConfig to write

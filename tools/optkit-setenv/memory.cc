@@ -5,7 +5,7 @@ const std::string Memory::name = "memory";
 bool Memory::set_thp_mode(THPMode mode)
 {
     std::string mode_str = to_string_thp_mode(mode);
-    optkit::utils::write_file("/sys/kernel/mm/transparent_hugepage/enabled", mode_str);
+    optkit::utils::write_file("/sys/kernel/mm/transparent_hugepage/enabled", mode_str, true);
     this->thp_mode = mode;
     return true;
 }
@@ -70,14 +70,31 @@ bool Memory::set_malloc_backend(Backend backend)
         break;
     }
 
-    // Set or unset LD_PRELOAD
+    // Set LD_PRELOAD for child processes
     if (new_preload.empty())
     {
         unsetenv("LD_PRELOAD");
+
+        optkit::utils::remove_file(OPTKIT_EXECUTEME, true); // Remove existing script if any
+        optkit::utils::write_file(OPTKIT_EXECUTEME, OPTKIT_EXECUTEME_header);
+        optkit::utils::write_file(OPTKIT_EXECUTEME, "unset LD_PRELOAD\n");
+        optkit::utils::write_file(OPTKIT_EXECUTEME, OPTKIT_EXECUTEME_footer);
+        set_original_user_ownership(OPTKIT_EXECUTEME);
+        chmod(OPTKIT_EXECUTEME, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH); // Make script executable
     }
     else
     {
+        // Use setenv with overwrite flag - this sets it for this process and children
         setenv("LD_PRELOAD", new_preload.c_str(), 1);
+
+        // Print to stdout so user can copy the command
+        optkit::utils::remove_file(OPTKIT_EXECUTEME, true); // Remove existing script if any
+        optkit::utils::write_file(OPTKIT_EXECUTEME, OPTKIT_EXECUTEME_header);
+        optkit::utils::write_file(OPTKIT_EXECUTEME, "export LD_PRELOAD=" + new_preload + "\n");
+        optkit::utils::write_file(OPTKIT_EXECUTEME, OPTKIT_EXECUTEME_footer);
+        // set owner as user
+        set_original_user_ownership(OPTKIT_EXECUTEME);
+        chmod(OPTKIT_EXECUTEME, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH); // Make script executable
     }
 
     this->malloc_backend = backend;
@@ -114,7 +131,7 @@ Memory::Backend Memory::get_malloc_backend() const
 bool Memory::set_hugepages_count(int64_t count)
 {
     const std::string path = "/sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages";
-    optkit::utils::write_file(path, std::to_string(count));
+    optkit::utils::write_file(path, std::to_string(count), true);
     auto read = std::stoll(optkit::utils::str_trim(optkit::utils::read_file(path)));
     if (read == 0)
     {
@@ -134,14 +151,14 @@ bool Memory::set_arena_max(int64_t max)
 
 bool Memory::set_swappiness(int64_t value)
 {
-    optkit::utils::write_file("/proc/sys/vm/swappiness", std::to_string(value));
+    optkit::utils::write_file("/proc/sys/vm/swappiness", std::to_string(value), true);
     this->swappiness = value;
     return true;
 }
 
 bool Memory::set_oom_kill_task(int64_t score, pid_t pid)
 {
-    optkit::utils::write_file("/proc/" + std::to_string(pid) + "/oom_score_adj", std::to_string(score));
+    optkit::utils::write_file("/proc/" + std::to_string(pid) + "/oom_score_adj", std::to_string(score), true);
     this->oom_kill_task = score;
     return true;
 }
@@ -152,7 +169,7 @@ bool Memory::drop_caches_now()
     sync();
 
     // 1 = pagecache, 2 = dentries/inodes, 3 = both
-    optkit::utils::write_file("/proc/sys/vm/drop_caches", "3");
+    optkit::utils::write_file("/proc/sys/vm/drop_caches", "3", true);
     this->drop_caches = true;
     return true;
 }
