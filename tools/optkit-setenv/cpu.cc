@@ -28,14 +28,14 @@ bool CPU::set_governor(const std::string &gov)
     return false;
 }
 
-bool CPU::set_affinity_cores(pid_t pid, const std::vector<int16_t> &cores)
+bool CPU::set_affinity_cores(pid_t pid, std::vector<int16_t> cores)
 {
     if (cores.empty())
     {
         cores.reserve(OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS);
         // add all cores
         for (int16_t core = 0; core < OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS; core++)
-            this->affinity_cores.push_back(core);
+            cores.push_back(core);
     }
     cpu_set_t mask;
     CPU_ZERO(&mask);

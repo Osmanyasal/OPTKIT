@@ -35,7 +35,7 @@ private:
 
 public:
     bool set_governor(const std::string &gov);
-    bool set_affinity_cores(pid_t pid, const std::vector<int16_t> &cores);
+    bool set_affinity_cores(pid_t pid, std::vector<int16_t> cores);
     bool set_offline_cores(const std::vector<int16_t> &cores);
     bool set_online_cores(const std::vector<int16_t> &cores);
     bool set_all_cores_offline();
