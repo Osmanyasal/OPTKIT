@@ -6,6 +6,19 @@ OPTKIT integrates seamlessly into the development workflow like any other librar
 
 The library provides comprehensive monitoring capabilities for CPUs, GPUs, and I/O systems across multiple architectures including Intel, AMD, ARM, and NVIDIA platforms. It supports real-time frequency control, energy monitoring via RAPL, performance monitoring through PMU events, and includes a rich set of utility tools for performance analysis and optimization.
 
+
+## Hardware Support Matrix
+
+| Feature            | Intel | AMD Zen | ARM Neoverse | NVIDIA GPU | AMD GPU |
+|--------------------|:-----:|:-------:|:------------:|:----------:|:-------:|
+| PMU Events         | ✅    | ✅      | ✅ (N1+, V1+)  | ❌         | ❌      |
+| Energy (RAPL)      | ✅    | ✅ (Zen2+) | N/A         | N/A         | N/A      |
+| GPU Power          | N/A   | N/A     | N/A          | ✅         | ✅      |
+| Temperature        | ✅    | ✅      | ✅           | ✅         | ✅      |
+| Frequency Tuning   | ✅    | ✅      | ✅           | ✅         | ✅      |
+
+
+
 ## Download and Install 🚀
 
 ```bash
