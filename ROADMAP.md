@@ -9,18 +9,21 @@
 - [ ] Basic test suite
 - [ ] Documentation improvements
 
-## v0.6 (Q2 2026)
+## v0.6 (Q1 2026)
 - [ ] CUPTI integration for NVIDIA kernel profiling
 - [ ] AMD GPU PMU events
 - [ ] ARM SVE event support
 - [ ] Python bindings (Issue #5)
 
-## v0.7 (Q3 2026)
-- [ ] C wrapper (Issue #136)
+## v0.7 (Q2 2026)
+- [ ] Python bindings
+- [ ] C wrapper
+
+## v0.8 (Q3 2026)
 - [ ] Java bindings (Issue #135)
 - [ ] Fortran bindings (Issue #137)
 
-## v1.0 (Q4 2026)
+## v0.9 (Q4 2026)
 - [ ] API stability guarantee
 - [ ] Comprehensive documentation
 - [ ] Mimic (Digital Twin) system
