@@ -21,8 +21,8 @@
 - [ ] C wrapper
 
 ## v0.8 (Q3 2026)
-- [ ] Java bindings (Issue #135)
-- [ ] Fortran bindings (Issue #137)
+- [ ] Java bindings
+- [ ] Fortran bindings
 
 ## v0.9 (Q4 2026)
 - [ ] API stability guarantee
