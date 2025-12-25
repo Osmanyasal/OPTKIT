@@ -11,9 +11,7 @@
 
 ## v0.6 (Q1 2026)
 - [ ] CUPTI integration for NVIDIA kernel profiling
-- [ ] AMD GPU PMU events
-- [ ] ARM SVE event support
-- [ ] Python bindings (Issue #5)
+- [ ] AMD GPU PMU events 
 
 ## v0.7 (Q2 2026)
 - [ ] Python bindings
