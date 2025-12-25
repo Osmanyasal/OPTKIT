@@ -4,14 +4,14 @@
 - [x] Multi-architecture CPU PMU support (Intel/AMD/ARM)
 - [x] RAPL energy monitoring
 - [x] GPU power monitoring (NVIDIA/AMD)
-- [x] Metric first profiling approach
-- [ ] Error handling refactor
-- [ ] Basic test suite
-- [ ] Documentation improvements
+- [x] Metric first profiling approach 
 
 ## v0.6 (Q1 2026)
 - [ ] CUPTI integration for NVIDIA kernel profiling
 - [ ] AMD GPU PMU events 
+- [ ] Error handling refactor
+- [ ] Basic test suite
+- [ ] Documentation improvements
 
 ## v0.7 (Q2 2026)
 - [ ] Python bindings
