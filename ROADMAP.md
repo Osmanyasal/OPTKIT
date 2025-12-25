@@ -5,6 +5,9 @@
 - [x] RAPL energy monitoring
 - [x] GPU power monitoring (NVIDIA/AMD)
 - [x] Metric first profiling approach 
+- [x] Disk, Temperature, Frequency support
+- [x] optkit-setenv development
+- [x] optkit-cli development 
 
 ## v0.6 (Q1 2026)
 - [ ] CUPTI integration for NVIDIA kernel profiling
