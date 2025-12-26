@@ -14,6 +14,7 @@
 - [ ] AMD GPU PMU events 
 - [ ] Error handling refactor
 - [ ] Basic test suite
+- [ ] Counter overlow handling
 - [ ] Documentation improvements
 
 ## v0.7 (Q2 2026)
