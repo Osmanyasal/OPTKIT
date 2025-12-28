@@ -32,6 +32,12 @@ premake5 gmake
 make -j$(nproc) config=release optkit_static  # for static 
 make -j$(nproc) config=release optkit_dynamic  # for dynamic 
 
+## To compile tools
+cd tools
+cd optkit-cli; make -j$(nproc); alias optkit-cli=$(pwd)/optkit; cd ..
+cd optkit-setenv; make -j$(nproc); alias optkit-setenv=$(pwd)/optkit-setenv; cd ..
+cd ..
+
 ## To Run Tests:
 make -j$(nproc) config=test optkit_static ## this converts some private or protected fields to public and being tested
 make -j$(nproc) config=debug optkit_test  ## no optimization in tests, raw results are viewed.

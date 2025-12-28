@@ -9,23 +9,27 @@
 - [x] optkit-setenv development
 - [x] optkit-cli development 
 
-## v0.6 (Q1 2026)
+## v0.6 (Q4 - 2025)
+- [x] Counter overlow handling
+- [x] Documentation improvements
+
+## v0.7 (Q1 2026)
 - [ ] CUPTI integration for NVIDIA kernel profiling
 - [ ] AMD GPU PMU events 
 - [ ] Error handling refactor
 - [ ] Basic test suite
-- [ ] Counter overlow handling
+- [x] Counter overlow handling
 - [ ] Documentation improvements
 
-## v0.7 (Q2 2026)
+## v0.8 (Q2 2026)
 - [ ] Python bindings
 - [ ] C wrapper
 
-## v0.8 (Q3 2026)
+## v0.9 (Q3 2026)
 - [ ] Java bindings
 - [ ] Fortran bindings
 
-## v0.9 (Q4 2026)
+## v1.0 (Q4 2026)
 - [ ] API stability guarantee
 - [ ] Comprehensive documentation
 - [ ] Mimic (Digital Twin) system

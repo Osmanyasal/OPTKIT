@@ -81,6 +81,8 @@ namespace optkit::pmu::cpu::perf
         const PerfProfilerConfig profiler_config;
         const optkit::metrics::MetricBuilder<uint64_t> metric_builder;
         std::vector<std::pair<std::string, double>> metric_results;
+        std::thread sampling_thread;
+        std::atomic<bool> is_sampling;
     };
 
 } // namespace optkit::pmu::cpu::perf

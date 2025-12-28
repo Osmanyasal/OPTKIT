@@ -6,6 +6,7 @@ namespace optkit::pmu::cpu::perf
 
     PerfProfilerConfig::PerfProfilerConfig(
         const char *block_name,
+        bool is_sampling,
         bool is_grouped,
         int32_t pid,
         int32_t cpu,
@@ -13,7 +14,7 @@ namespace optkit::pmu::cpu::perf
         bool is_reset_after_read,
         bool dump_results_to_file,
         bool verbose)
-        : optkit::ProfilerConfig(block_name, measurement_type, is_reset_after_read, dump_results_to_file, verbose),
+        : optkit::ProfilerConfig(block_name, measurement_type, is_reset_after_read, is_sampling, dump_results_to_file, verbose),
           is_grouped(is_grouped),
           pid(pid),
           cpu(cpu)
@@ -31,6 +32,7 @@ namespace optkit::pmu::cpu::perf
     PerfProfilerConfig::PerfProfilerConfig(
         const char *block_name,
         const perf_event_attr &perf_event_config,
+        bool is_sampling,
         bool is_grouped,
         int32_t pid,
         int32_t cpu,
@@ -38,7 +40,7 @@ namespace optkit::pmu::cpu::perf
         bool is_reset_after_read,
         bool dump_results_to_file,
         bool verbose)
-        : optkit::ProfilerConfig(block_name, measurement_type, is_reset_after_read, dump_results_to_file, verbose),
+        : optkit::ProfilerConfig(block_name, measurement_type, is_reset_after_read, is_sampling, dump_results_to_file, verbose),
           is_grouped(is_grouped),
           pid(pid),
           cpu(cpu),

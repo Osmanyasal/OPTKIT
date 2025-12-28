@@ -5,6 +5,14 @@
 namespace optkit::pmu::cpu::perf
 {
 
+    // this is the sampling function that runs in a separate thread
+    // it calls read_and_store every sampling_frequency_sec seconds
+    OPT_FORCE_INLINE void sampling_function(BlockGroupProfiler &profiler)
+    {
+        // std::cout << "Sampling function for pmu group\n";
+        profiler.read_and_store();
+    }
+
     BlockGroupProfiler::BlockGroupProfiler(const PerfProfilerConfig &profiler_config, const optkit::metrics::MetricBuilder<uint64_t> &mb)
         : BaseProfiler{static_cast<const ProfilerConfig &>(profiler_config)}, group_leader{-1}, profiler_config{profiler_config}, metric_builder{mb}
     {
@@ -41,6 +49,16 @@ namespace optkit::pmu::cpu::perf
             }
         }
 
+        if (OPT_UNLIKELY(this->profiler_config.is_sampling))
+            this->sampling_thread = std::thread([this]()
+                                                {
+            this->is_sampling = true;
+            while (this->is_sampling)
+            { 
+                sampling_function(*this);
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+            } });
+
         this->reset();
         start = std::chrono::high_resolution_clock::now();
         PMUEventManager::enable_all_events();
@@ -52,6 +70,12 @@ namespace optkit::pmu::cpu::perf
 
         if (!is_configured || !is_enabled)
             return;
+
+        if (this->profiler_config.is_sampling && this->sampling_thread.joinable())
+        {
+            this->is_sampling = false;
+            this->sampling_thread.join();
+        }
 
         this->read_and_store(); // read the last one.
 

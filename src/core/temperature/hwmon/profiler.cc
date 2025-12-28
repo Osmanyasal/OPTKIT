@@ -23,7 +23,7 @@ namespace optkit::temperature::hwmon
         // Take initial snapshot
         last_snapshot = read_temperature_sensors();
 
-        // TODO: We disabled the grouping feature.
+        // IMPORTANT: We disabled the grouping feature.
         metric_builder = {};
         for (auto &&i : last_snapshot)
         {
