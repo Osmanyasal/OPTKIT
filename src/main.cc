@@ -2,6 +2,7 @@
 #include "optkit.hh"
 #include <immintrin.h> // AVX intrinsics
 #include <utils/gpu.hh>
+#include <cmath>
 
 #define VECTOR_SIZE 1000000
 
@@ -15,43 +16,70 @@ inline std::vector<T> generate_vector(size_t n = VECTOR_SIZE)
     return vec;
 }
 
+const int SIZE = 10000000;
+// LOW INTENSITY: Vector Addition
+// 1 Addition per 12 bytes (Read A, Read B, Write C)
+void lowIntensity(const std::vector<float> &a, const std::vector<float> &b, std::vector<float> &c)
+{
+    for (int i = 0; i < SIZE; ++i)
+    {
+        c[i] = a[i] + b[i];
+    }
+}
+
+// HIGH INTENSITY: Heavy Math on same data
+// Many trig operations per 8 bytes (Read A, Write C)
+void highIntensity(const std::vector<float> &a, std::vector<float> &c)
+{
+    for (int i = 0; i < SIZE; ++i)
+    {
+        float val = a[i];
+        // Performing many FLOPs on a single piece of loaded data
+        for (int j = 0; j < 100; ++j)
+        {
+            val = std::sin(val) * std::cos(val) + 0.1f;
+        }
+        c[i] = val;
+    }
+}
+
 int32_t main(int32_t argc, char **argv)
 {
-    OPTKIT_INIT(true);
-    std::cout << "GPU Device Query Example" << std::endl;
-    std::cout << "========================" << std::endl;
+    OPTKIT_INIT(false);
+    // std::cout << "GPU Device Query Example" << std::endl;
+    // std::cout << "========================" << std::endl;
 
-    OPTKIT_GPU_VENDOR_TRAVERSE(vendor)
-    {
-        if (optkit::gpu::Query::is_device_exists(vendor))
-        {
-            std::cout << "device exists for " << optkit::gpu::to_string(vendor) << "\n";
-            uint32_t device_count = 0;
-            for (uint32_t device_index = 0;; device_index++)
-            {
-                optkit::gpu::GpuDeviceInfo device_info;
-                if (optkit::gpu::Query::device_query(vendor, device_index, device_info))
-                {
-                    std::cout << "Vendor: " << vendor << ", Device Index: " << device_index << "\n";
-                    // std::cout << device_info << "\n";
-                    device_count++;
-                }
-                else
-                {
-                    break; // No more devices
-                }
-            }
-            std::cout << "Total devices found for vendor " << vendor << ": " << device_count << "\n";
-        }
-        else
-        {
-            std::cout << "No devices found for vendor " << vendor << "\n";
-        }
-    }
-    return 0;
-    optkit::gpu::GpuDeviceInfo device_info;
-    optkit::gpu::Query::device_query(optkit::gpu::GpuVendor::AMD, 0, device_info);
-    std::cout << device_info << "\n";
+    // OPTKIT_GPU_VENDOR_TRAVERSE(vendor)
+    // {
+    //     if (optkit::gpu::Query::is_device_exists(vendor))
+    //     {
+    //         std::cout << "device exists for " << optkit::gpu::to_string(vendor) << "\n";
+    //         uint32_t device_count = 0;
+    //         for (uint32_t device_index = 0;; device_index++)
+    //         {
+    //             optkit::gpu::GpuDeviceInfo device_info;
+    //             if (optkit::gpu::Query::device_query(vendor, device_index, device_info))
+    //             {
+    //                 std::cout << "Vendor: " << vendor << ", Device Index: " << device_index << "\n";
+    //                 // std::cout << device_info << "\n";
+    //                 device_count++;
+    //             }
+    //             else
+    //             {
+    //                 break; // No more devices
+    //             }
+    //         }
+    //         std::cout << "Total devices found for vendor " << vendor << ": " << device_count << "\n";
+    //     }
+    //     else
+    //     {
+    //         std::cout << "No devices found for vendor " << vendor << "\n";
+    //     }
+    // }
+    // return 0;
+    // optkit::gpu::GpuDeviceInfo device_info;
+    // optkit::gpu::Query::device_query(optkit::gpu::GpuVendor::AMD, 0, device_info);
+    // std::cout << device_info << "\n";
 
     // OPTKIT_GPU_ENERGY("main gpu energy");
     // OPTKIT_CPU_ENERGY("main cpu energy");
@@ -109,9 +137,32 @@ int32_t main(int32_t argc, char **argv)
     }
 #endif
 
-    sleep(15);
+    {
+        OPTKIT_CPU_ENERGY("main cpu energy");
+        OPTKIT_CPU_EVENTS("main cpu events", optkit::metrics::performance::cpu_metrics::ai());
+
+        for (int i = 0; i < 5; i++)
+        {
+            std::vector<float> A(SIZE, 1.0f), B(SIZE, 2.0f), C(SIZE);
+
+            // Measure Low Intensity
+            auto s1 = std::chrono::high_resolution_clock::now();
+            lowIntensity(A, B, C);
+            auto e1 = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double> d1 = e1 - s1;
+
+            // Measure High Intensity
+            auto s2 = std::chrono::high_resolution_clock::now();
+            highIntensity(A, C);
+            auto e2 = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double> d2 = e2 - s2;
+
+            std::cout << "Low Intensity Time:  " << d1.count() << "s\n";
+            std::cout << "High Intensity Time: " << d2.count() << "s\n";
+        }
+    }
+    // sleep(15);
     // var24.read_and_store();
-    sleep(5);
 
     // optkit::gpu::Query::device_query(optkit::gpu::GpuVendor::NVIDIA, 0, info);
     // std::cout << info << "\n";
