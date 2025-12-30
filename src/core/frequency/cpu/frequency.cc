@@ -32,7 +32,7 @@ namespace optkit::frequency::cpu
     else                                                 \
         for (int32_t __cpu : package_info.at(socket))
 
-    void Frequency::set_core_frequency(int64_t frequency, int16_t socket)
+    bool Frequency::set_core_frequency(int64_t frequency, int16_t socket)
     {
         try
         {
@@ -44,23 +44,25 @@ namespace optkit::frequency::cpu
             if (frequency < min_freq || frequency > max_freq)
             {
                 OPTKIT_CORE_WARN("Frequency {} is outside valid range [{} - {}] KHz for socket {}", frequency, min_freq, max_freq, socket);
-                return;
+                return false;
             }
 
             // Set optkit frequency for all cores
             TRAVERSE_CORES(socket)
             {
-                optkit::utils::write_file("/sys/devices/system/cpu/cpu" + std::to_string(__cpu) + "/cpufreq/scaling_max_freq", std::to_string(frequency));
-                optkit::utils::write_file("/sys/devices/system/cpu/cpu" + std::to_string(__cpu) + "/cpufreq/scaling_min_freq", std::to_string(frequency));
+                optkit::utils::write_file("/sys/devices/system/cpu/cpu" + std::to_string(__cpu) + "/cpufreq/scaling_max_freq", std::to_string(frequency), false);
+                optkit::utils::write_file("/sys/devices/system/cpu/cpu" + std::to_string(__cpu) + "/cpufreq/scaling_min_freq", std::to_string(frequency), false);
             }
         }
         catch (const std::runtime_error &err)
         {
             OPTKIT_CORE_ERROR(err.what());
+            return false;
         }
+        return true;
     }
 
-    void Frequency::set_core_frequency(int64_t frequency, int16_t cpu, int16_t socket)
+    bool Frequency::set_core_frequency(int64_t frequency, int16_t cpu, int16_t socket)
     {
         if (cpu >= 0 && cpu < OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS)
         {
@@ -75,7 +77,7 @@ namespace optkit::frequency::cpu
                 {
 
                     OPTKIT_CORE_WARN("Frequency {} is outside valid range [{} - {}] KHz for CPU {}", frequency, min_freq, max_freq, cpu);
-                    return;
+                    return false;
                 }
 
                 TRAVERSE_CORES(socket)
@@ -90,20 +92,23 @@ namespace optkit::frequency::cpu
             catch (const std::runtime_error &err)
             {
                 OPTKIT_CORE_ERROR(err.what());
+                return false;
             }
         }
         else
         {
             OPTKIT_CORE_WARN("Invalid range cpu={}", cpu);
+            return false;
         }
+        return true;
     }
 
-    void Frequency::set_core_frequency(int64_t frequency, int16_t cpu_start, int16_t cpu_end, int16_t socket)
+    bool Frequency::set_core_frequency(int64_t frequency, int16_t cpu_start, int16_t cpu_end, int16_t socket)
     {
         if (cpu_start < 0 || cpu_end >= OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS || cpu_start > cpu_end)
         {
             OPTKIT_CORE_WARN("Invalid range cpu_start={} cpu_end={}", cpu_start, cpu_end);
-            return;
+            return false;
         }
 
         try
@@ -114,7 +119,7 @@ namespace optkit::frequency::cpu
             if (frequency < min_freq || frequency > max_freq)
             {
                 OPTKIT_CORE_WARN("Frequency {} is outside valid range [{} - {}] KHz for CPU {}", frequency, min_freq, max_freq, cpu_start);
-                return;
+                return false;
             }
 
             TRAVERSE_CORES(socket)
@@ -129,7 +134,9 @@ namespace optkit::frequency::cpu
         catch (const std::runtime_error &err)
         {
             OPTKIT_CORE_ERROR(err.what());
+            return false;
         }
+        return true;
     }
 
     int64_t Frequency::get_core_frequency(int16_t cpu)
@@ -284,26 +291,26 @@ namespace optkit::frequency::cpu
         return frequencies;
     }
 
-    void Frequency::reset_uncore_frequency(int16_t socket)
+    bool Frequency::reset_uncore_frequency(int16_t socket)
     {
         std::pair<int64_t, int64_t> default_uncore = get_uncore_min_max(socket);
         uint64_t MSR_UNCORE_RATIO_LIMIT_bits = ((default_uncore.first / 100000) << MSR_UNCORE_RATIO_LIMIT_min_shift) + default_uncore.second / 100000;
-        optkit::utils::write_msr(socket, MSR_UNCORE_RATIO_LIMIT, MSR_UNCORE_RATIO_LIMIT_bits);
+        return optkit::utils::write_msr(socket, MSR_UNCORE_RATIO_LIMIT, MSR_UNCORE_RATIO_LIMIT_bits);
     }
 
-    void Frequency::set_uncore_frequency(int64_t frequency, int16_t socket)
+    bool Frequency::set_uncore_frequency(int64_t frequency, int16_t socket)
     {
         uint64_t MSR_UNCORE_RATIO_LIMIT_bits = ((frequency / 100000) << MSR_UNCORE_RATIO_LIMIT_min_shift) + frequency / 100000;
-        optkit::utils::write_msr(socket, MSR_UNCORE_RATIO_LIMIT, MSR_UNCORE_RATIO_LIMIT_bits);
+        return optkit::utils::write_msr(socket, MSR_UNCORE_RATIO_LIMIT, MSR_UNCORE_RATIO_LIMIT_bits);
     }
 #else
     int64_t Frequency::get_uncore_frequency(int16_t socket) { return -1; };
     std::pair<int64_t, int64_t> Frequency::get_uncore_min_max(int16_t socket) { return {}; };
-    void Frequency::reset_uncore_frequency(int16_t socket) {};
-    void Frequency::set_uncore_frequency(int64_t frequency, int16_t socket) {};
+    bool Frequency::reset_uncore_frequency(int16_t socket) { return false; };
+    bool Frequency::set_uncore_frequency(int64_t frequency, int16_t socket) { return false; };
     std::vector<int64_t> Frequency::get_scaling_available_uncore_frequencies(int16_t socket, int64_t step_khz) { return {}; };
 #endif
-    void Frequency::reset_core_frequency(int16_t socket)
+    bool Frequency::reset_core_frequency(int16_t socket)
     {
         try
         {
@@ -317,7 +324,9 @@ namespace optkit::frequency::cpu
         catch (const std::runtime_error &err)
         {
             OPTKIT_CORE_ERROR(err.what());
+            return false;
         }
+        return true;
     }
     std::string to_string(const std::pair<int64_t, int64_t> &pair)
     {

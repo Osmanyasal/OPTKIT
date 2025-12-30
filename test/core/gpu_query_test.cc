@@ -19,7 +19,7 @@ public:
     GPUVendors()
     {
         // init all vendors
-        for (GpuVendor vendor = GpuVendor::NVIDIA; vendor < GpuVendor::END; vendor = static_cast<GpuVendor>(static_cast<int>(vendor) + 1))
+        OPTKIT_GPU_VENDOR_TRAVERSE(vendor)
         {
             bool is_vendor_available = Query::init(vendor);
             if (is_vendor_available)
@@ -66,7 +66,7 @@ public:
 TEST(GpuQueryTest, InitializationAndShutdown)
 {
     // init
-    for (GpuVendor vendor = GpuVendor::NVIDIA; vendor < GpuVendor::END; vendor = static_cast<GpuVendor>(static_cast<int>(vendor) + 1))
+    OPTKIT_GPU_VENDOR_TRAVERSE(vendor)
     {
         bool is_vendor_available = Query::init(vendor);
         if (is_vendor_available)
@@ -81,7 +81,7 @@ TEST(GpuQueryTest, InitializationAndShutdown)
     }
 
     // shutdown
-    for (GpuVendor vendor = GpuVendor::NVIDIA; vendor < GpuVendor::END; vendor = static_cast<GpuVendor>(static_cast<int>(vendor) + 1))
+    OPTKIT_GPU_VENDOR_TRAVERSE(vendor)
     {
         if (Query::shutdown(vendor))
             std::cout << "Shutdown vendor " << to_string(vendor) << " successfully." << std::endl;
@@ -90,7 +90,7 @@ TEST(GpuQueryTest, InitializationAndShutdown)
 
 TEST(GpuQueryTest, MultipleInitializationsSafe)
 {
-    for (GpuVendor vendor = GpuVendor::NVIDIA; vendor < GpuVendor::END; vendor = static_cast<GpuVendor>(static_cast<int>(vendor) + 1))
+    OPTKIT_GPU_VENDOR_TRAVERSE(vendor)
     {
         bool result1 = Query::init(vendor);
         bool result2 = Query::init(vendor);

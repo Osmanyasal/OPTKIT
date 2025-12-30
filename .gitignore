@@ -35,8 +35,9 @@
 src/utils/environment_config.hh
 test/utils/environment_config.hh
 
-# Binaries
+# Binaries (except examples)
 bin/
+!examples/**/bin/
 
 # event file
 src/core/pmu/cpu/perf/events

@@ -89,7 +89,8 @@ namespace optkit::metrics::performance
                 "ip_arith_vector_any",
                 // removed: scalarp_arith_vector (not implemented)
                 "ip_swpf",
-
+                "ai",
+                "gflops",
                 // Topdown
                 "frontend_bound",
                 "bad_speculation",

@@ -53,7 +53,7 @@ namespace optkit::metrics::energy
             static const MetricBuilder<double> empty{};
             return empty;
         }
-        static optkit::metrics::MetricBuilder<double> all_domains()
+        static const optkit::metrics::MetricBuilder<double> &all_domains()
         {
             static const optkit::metrics::MetricBuilder<double> mb = []
             {
@@ -63,7 +63,7 @@ namespace optkit::metrics::energy
             }();
             return mb;
         }
-        static optkit::metrics::MetricBuilder<double> k_edp()
+        static const optkit::metrics::MetricBuilder<double> &k_edp()
         {
             static const optkit::metrics::MetricBuilder<double> mb = []
             {
@@ -92,7 +92,7 @@ namespace optkit::metrics::energy
             return mb;
         }
 
-        static optkit::metrics::MetricBuilder<double> watt_hour()
+        static const optkit::metrics::MetricBuilder<double> &watt_hour()
         {
             static const optkit::metrics::MetricBuilder<double> mb = []
             {
@@ -108,7 +108,7 @@ namespace optkit::metrics::energy
             return mb;
         }
 
-        static optkit::metrics::MetricBuilder<double> all_metrics()
+        static const MetricBuilder<double> &all_metrics()
         {
             static const MetricBuilder<double> mb = []
             {

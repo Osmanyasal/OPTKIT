@@ -2,6 +2,15 @@
 
 namespace optkit::energy::rapl
 {
+
+    // this is the sampling function that runs in a separate thread
+    // it calls read_and_store every sampling_frequency_sec seconds
+    OPT_FORCE_INLINE void sampling_function(Profiler &profiler) // in seconds
+    {
+        // std::cout << "hello from sampling function rapl\n";
+        profiler.read_and_store();
+    }
+
     Profiler::Profiler(const ProfilerConfig &profiler_config, const optkit::metrics::MetricBuilder<double> &mb) : BaseProfiler{profiler_config}, metric_builder{mb}
     {
         auto &packages = optkit::Query::detect_cpu_packages();
@@ -37,10 +46,26 @@ namespace optkit::energy::rapl
                 }
             }
         }
+
+        if (OPT_UNLIKELY(this->config.is_sampling))
+            this->sampling_thread = std::thread([this]()
+                                                {
+            this->is_sampling = true;
+            while (this->is_sampling)
+            { 
+                sampling_function(*this);
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+            } });
     }
 
     Profiler::~Profiler()
     {
+        if (this->config.is_sampling && this->sampling_thread.joinable())
+        {
+            this->is_sampling = false;
+            this->sampling_thread.join();
+        }
+
         read_and_store();
 
         // socket_id_str - <socket_id - <rapl_domain - read value>>

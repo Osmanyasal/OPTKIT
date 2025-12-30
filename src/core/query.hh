@@ -56,6 +56,15 @@ namespace optkit
                 content.pop_back();
             return static_cast<bool>(std::strtol(content.c_str(), nullptr, 10) != 0);
         }
+        static bool is_turbo_enabled()
+        {
+            std::string content = optkit::utils::read_file("/sys/devices/system/cpu/cpufreq/boost");
+            if (content.empty())
+                return false; // file missing or empty
+            if (!content.empty() && content.back() == '\n')
+                content.pop_back();
+            return static_cast<bool>(std::strtol(content.c_str(), nullptr, 10) != 0);
+        }
 
         /**
          * @brief Returns current perf_event_paranoid value from "/proc/sys/kernel/perf_event_paranoid"<br>

@@ -108,7 +108,8 @@ namespace optkit::metrics::performance
                 "backend_bound_cpu",
                 "retiring_fastpath",
                 "retiring_microcode",
-
+                "ai",
+                "gflops",
                 // Aggregates
                 "topdown_l1",
                 "topdown_l2",

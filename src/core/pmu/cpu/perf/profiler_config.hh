@@ -42,6 +42,7 @@ namespace optkit::pmu::cpu::perf
 
         PerfProfilerConfig(
             const char *block_name,
+            bool is_sampling = false,
             bool is_grouped = false,
             int32_t pid = 0,  // current process
             int32_t cpu = -1, // any cpu
@@ -53,6 +54,7 @@ namespace optkit::pmu::cpu::perf
         PerfProfilerConfig(
             const char *block_name,
             const perf_event_attr &perf_event_config,
+            bool is_sampling = false,
             bool is_grouped = false,
             int32_t pid = 0,  // current process
             int32_t cpu = -1, // any cpu

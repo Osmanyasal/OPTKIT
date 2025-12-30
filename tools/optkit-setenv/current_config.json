@@ -1,0 +1,57 @@
+{
+    "cgroup": {
+        "cpu": {
+            "idle": false,
+            "max_burst_us": 0,
+            "period_us": 100000,
+            "quota_us": -1,
+            "uclamp_max": 100,
+            "uclamp_min": 0,
+            "weight_nice": 0
+        },
+        "memory": {
+            "high": "max",
+            "low": "0",
+            "max": "max",
+            "min": "0",
+            "oom_group": false,
+            "swap_high": "max",
+            "swap_max": "max",
+            "zswap_max": "max",
+            "zswap_writeback": true
+        },
+        "name": "optkit_5e5a166c1f",
+        "path": "/sys/fs/cgroup/optkit_5e5a166c1f",
+        "pid": {
+            "max": -1
+        }
+    },
+    "cpu": {
+        "affinity_cores": [],
+        "core_freq": 5449388,
+        "governor": "performance",
+        "offline_cores": [],
+        "smt_enabled": true,
+        "turbo": true,
+        "uncore_freq": -1
+    },
+    "gpu": {
+        "core_freq_mhz": 180,
+        "device_name": "NVIDIA GeForce RTX 5080",
+        "fan_speed": "auto",
+        "mem_freq_mhz": 810,
+        "persistence_mode": "on",
+        "power_limit_watts": 360,
+        "reset_device": false
+    },
+    "memory": {
+        "arena_max": 0,
+        "drop_caches": false,
+        "hugepages_count": 0,
+        "malloc_backend": "glibc",
+        "mlock_all": false,
+        "oom_kill_task": 100,
+        "swappiness": 60,
+        "thp_mode": "madvise"
+    }
+}

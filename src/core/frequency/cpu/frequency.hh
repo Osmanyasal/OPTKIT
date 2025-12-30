@@ -45,9 +45,9 @@ namespace optkit::frequency::cpu
     class Frequency final
     {
     public:
-        static void set_core_frequency(int64_t frequency, int16_t socket);
-        static void set_core_frequency(int64_t frequency, int16_t cpu, int16_t socket);
-        static void set_core_frequency(int64_t frequency, int16_t cpu_start, int16_t cpu_end, int16_t socket);
+        static bool set_core_frequency(int64_t frequency, int16_t socket);
+        static bool set_core_frequency(int64_t frequency, int16_t cpu, int16_t socket);
+        static bool set_core_frequency(int64_t frequency, int16_t cpu_start, int16_t cpu_end, int16_t socket);
         static int64_t get_core_frequency(int16_t cpu);
         static std::vector<int64_t> get_core_frequencies(int16_t socket);
         static std::vector<int64_t> get_core_frequency(int16_t cpu_start, int16_t cpu_end, int16_t socket);
@@ -56,10 +56,10 @@ namespace optkit::frequency::cpu
         static std::pair<int64_t, int64_t> get_uncore_min_max(int16_t socket);
         static std::vector<int64_t> get_scaling_available_uncore_frequencies(int16_t socket, int64_t step_khz = 200000);
         static int64_t get_uncore_frequency(int16_t socket);
-        static void set_uncore_frequency(int64_t frequency, int16_t socket);
-        static void reset_uncore_frequency(int16_t socket);
+        static bool set_uncore_frequency(int64_t frequency, int16_t socket);
+        static bool reset_uncore_frequency(int16_t socket);
         // #endif
-        static void reset_core_frequency(int16_t socket);
+        static bool reset_core_frequency(int16_t socket);
 
     private:
         Frequency() = delete;

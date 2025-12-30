@@ -16,10 +16,12 @@ namespace optkit
         ProfilerConfig(const char *block_name,
                        const char *measurement_type,
                        bool is_reset_after_read,
+                       bool is_sampling,
                        bool dump_results_to_file,
                        bool verbose) : block_name{block_name},
                                        measurement_type{measurement_type},
                                        is_reset_after_read{is_reset_after_read},
+                                       is_sampling{is_sampling},
                                        dump_results_to_file{dump_results_to_file},
                                        verbose{verbose}
         {
@@ -29,6 +31,7 @@ namespace optkit
         const char *block_name;
         const char *measurement_type;
         bool is_reset_after_read;
+        bool is_sampling;
         bool dump_results_to_file;
         bool verbose;
     };

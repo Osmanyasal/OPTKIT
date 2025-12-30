@@ -56,6 +56,24 @@ namespace optkit::gpu
         //****** these may not be supported on consumer grade GPUs ****** //
         static bool set_clock(GpuVendor vendor, uint32_t device_index, uint32_t mem_clk_mhz, uint32_t graphics_clk_mhz);
         static bool reset_clock(GpuVendor vendor, uint32_t device_index);
+        static bool reset_device(GpuVendor vendor, uint32_t device_index);
+        static bool set_persistence_mode(GpuVendor vendor, uint32_t device_index, bool enable);
+        static bool set_fan_speed(GpuVendor vendor, uint32_t device_index, const std::string &fan_speed_percent);
+        static bool get_fan_count(GpuVendor vendor, uint32_t device_index, uint32_t &fan_count);
+
+        /**
+         * Set new power limit of this device.
+         *
+         * For Kepler &tm; or newer fully supported devices.
+         * Requires root/admin permissions.
+         *
+         * See \ref nvmlDeviceGetPowerManagementLimitConstraints to check the allowed ranges of values.
+         *
+         * \note Limit is not persistent across reboots or driver unloads.
+         * Enable persistent mode to prevent driver from unloading when no application is using the device.
+         */
+        static bool set_power_limit(GpuVendor vendor, uint32_t device_index, uint32_t power_limit_watts);
+        static bool reset_fan_speed(GpuVendor vendor, uint32_t device_index);
         //****** these may not be supported on consumer grade GPUs ****** //
 
         // utilities to be called by above methods.
@@ -101,6 +119,7 @@ namespace optkit::gpu
             uint32_t socket_count = 0;
 
             result = amdsmi_get_socket_handles(&socket_count, nullptr);
+            OPTKIT_CORE_DEBUG("AMDSMI reported socket count: {}", socket_count);
             if (result == AMDSMI_STATUS_SUCCESS)
             {
                 Query::socket_handles_amdsmi.reserve(socket_count);
@@ -116,7 +135,7 @@ namespace optkit::gpu
                     }
                     else
                     {
-                        OPTKIT_WARN("Failed to get socket handle {}: {}", i, _amdsmi_status_to_string(result));
+                        OPTKIT_CORE_WARN("Failed to get socket handle {}: {}", i, _amdsmi_status_to_string(result));
                     }
                 }
 
@@ -145,18 +164,18 @@ namespace optkit::gpu
                         }
                         else
                         {
-                            OPTKIT_WARN("Failed to get processor handles for socket: {}", _amdsmi_status_to_string(result));
+                            OPTKIT_CORE_WARN("Failed to get processor handles for socket: {}", _amdsmi_status_to_string(result));
                         }
                     }
                     else
                     {
-                        OPTKIT_WARN("Failed to get processor count for socket: {}", _amdsmi_status_to_string(result));
+                        OPTKIT_CORE_WARN("Failed to get processor count for socket: {}", _amdsmi_status_to_string(result));
                     }
                 }
             }
             else
             {
-                OPTKIT_ERROR("AMD SMI error in amdsmi_get_socket_handles: {}", _amdsmi_status_to_string(result));
+                OPTKIT_CORE_ERROR("AMD SMI error in amdsmi_get_socket_handles: {}", _amdsmi_status_to_string(result));
             }
         }
 

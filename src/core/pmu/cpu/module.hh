@@ -11,8 +11,7 @@
 #elif OPTKIT_CONF_PMU_MACROS_ENABLED && OPTKIT_CONF_PMU_USE_MSR
 #include "core/pmu/cpu/msr/module.hh"
 #else
-#define OPTKIT_CPU_EVENTS(block_name, event_name, ...)
-#define OPTKIT_CPU_BLOCK_EVENTS(block_name, event_name, ...)
+#include "core/pmu/cpu/clear.hh"
 #endif
 
 using optkit::pmu::cpu::operator<<; // make available to global namespace

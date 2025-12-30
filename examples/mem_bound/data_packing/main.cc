@@ -79,64 +79,64 @@ int main()
     std::vector<S> arr(DATA_PACKING_N);
     init<S>(arr);
 
-    auto expected = arr;
-    solution(arr);
-    if (!std::is_sorted(arr.begin(), arr.end()))
-    {
-        std::cerr << "Validation Failed. Array is not properly sorted." << std::endl;
-        return 1;
-    }
-    auto cmp_eq = [](const S a, const S b)
-    {
-        return std::tie(a.i, a.s, a.l, a.d, a.b) == std::tie(b.i, b.s, b.l, b.d, b.b);
-    };
-    auto cmp_less = [](const S a, const S b)
-    {
-        return std::tie(a.i, a.s, a.l, a.d, a.b) < std::tie(b.i, b.s, b.l, b.d, b.b);
-    };
-    std::sort(expected.begin(), expected.end(), cmp_less);
-    std::sort(arr.begin(), arr.end(), cmp_less);
+    // auto expected = arr;
+    // solution(arr);
+    // if (!std::is_sorted(arr.begin(), arr.end()))
+    // {
+    //     std::cerr << "Validation Failed. Array is not properly sorted." << std::endl;
+    //     return 1;
+    // }
+    // auto cmp_eq = [](const S a, const S b)
+    // {
+    //     return std::tie(a.i, a.s, a.l, a.d, a.b) == std::tie(b.i, b.s, b.l, b.d, b.b);
+    // };
+    // auto cmp_less = [](const S a, const S b)
+    // {
+    //     return std::tie(a.i, a.s, a.l, a.d, a.b) < std::tie(b.i, b.s, b.l, b.d, b.b);
+    // };
+    // std::sort(expected.begin(), expected.end(), cmp_less);
+    // std::sort(arr.begin(), arr.end(), cmp_less);
 
-    for (int i = 0; i < DATA_PACKING_N; i++)
-    {
-        if (!cmp_eq(arr[i], expected[i]))
-        {
-            std::cerr << "Validation Failed. Result[" << i << "] = " << arr[i]
-                      << ". Expected[" << i << "] = " << expected[i] << std::endl;
-            return 1;
-        }
-    }
+    // for (int i = 0; i < DATA_PACKING_N; i++)
+    // {
+    //     if (!cmp_eq(arr[i], expected[i]))
+    //     {
+    //         std::cerr << "Validation Failed. Result[" << i << "] = " << arr[i]
+    //                   << ". Expected[" << i << "] = " << expected[i] << std::endl;
+    //         return 1;
+    //     }
+    // }
 
-    bool checks_passed = check_entry(DATA_PACKING_MIN_RANDOM, DATA_PACKING_MIN_RANDOM);
-    checks_passed = check_entry(DATA_PACKING_MIN_RANDOM, DATA_PACKING_MAX_RANDOM) && checks_passed;
-    checks_passed = check_entry(DATA_PACKING_MIN_RANDOM + 1, DATA_PACKING_MAX_RANDOM - 1) && checks_passed;
-    checks_passed = check_entry(DATA_PACKING_MAX_RANDOM, DATA_PACKING_MIN_RANDOM) && checks_passed;
-    checks_passed = check_entry(DATA_PACKING_MAX_RANDOM, DATA_PACKING_MAX_RANDOM) && checks_passed;
+    // bool checks_passed = check_entry(DATA_PACKING_MIN_RANDOM, DATA_PACKING_MIN_RANDOM);
+    // checks_passed = check_entry(DATA_PACKING_MIN_RANDOM, DATA_PACKING_MAX_RANDOM) && checks_passed;
+    // checks_passed = check_entry(DATA_PACKING_MIN_RANDOM + 1, DATA_PACKING_MAX_RANDOM - 1) && checks_passed;
+    // checks_passed = check_entry(DATA_PACKING_MAX_RANDOM, DATA_PACKING_MIN_RANDOM) && checks_passed;
+    // checks_passed = check_entry(DATA_PACKING_MAX_RANDOM, DATA_PACKING_MAX_RANDOM) && checks_passed;
 
-    if (!checks_passed)
-    {
-        return 2;
-    }
+    // if (!checks_passed)
+    // {
+    //     return 2;
+    // }
 
-    std::cout << "Validation Successful" << std::endl;
+    // std::cout << "Validation Successful" << std::endl;
 
     double first_duration_ms = 0.0;
     double second_duration_ms = 0.0;
     // START BENCHMARKING
-    {
-        std::cout << "Size of S: " << sizeof(S) << " bytes" << std::endl;
+    // {
+    //     std::cout << "Size of S: " << sizeof(S) << " bytes" << std::endl;
 
-        optkit::utils::BlockTimer block_timer("baseline", first_duration_ms);
-        // OPTKIT_CPU_EVENTS("solution", optkit::metrics::performance::cpu_metrics::topdown_l1());
-        // OPTKIT_CPU_EVENTS("solution", optkit::metrics::performance::cpu_metrics::topdown_l2());
-        OPTKIT_CPU_EVENTS("solution", optkit::metrics::performance::cpu_metrics::all_mpki());
-        std::vector<S> arr(DATA_PACKING_N);
-        init<S>(arr);
-        for (int i = 0; i < BENCHMARK_ITERATIONS; i++)
-        {
-            solution(arr);
-        }
-    }
+    //     optkit::utils::BlockTimer block_timer("baseline", first_duration_ms);
+    //     // OPTKIT_CPU_EVENTS("solution", optkit::metrics::performance::cpu_metrics::topdown_l1());
+    //     // OPTKIT_CPU_EVENTS("solution", optkit::metrics::performance::cpu_metrics::topdown_l2());
+    //     OPTKIT_CPU_EVENTS("solution", optkit::metrics::performance::cpu_metrics::all_mpki());
+    //     std::vector<S> arr(DATA_PACKING_N);
+    //     init<S>(arr);
+    //     for (int i = 0; i < BENCHMARK_ITERATIONS; i++)
+    //     {
+    //         solution(arr);
+    //     }
+    // }
     {
         std::cout << "Size of S: " << sizeof(S_patch) << " bytes" << std::endl;
 

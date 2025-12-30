@@ -1,0 +1,2 @@
+[
+{"readings":[{"core_frequency_khz": 683000, "uncore_frequency_khz": 0, "duration":19165.489990234375,"duration_unit":"ms","measurement_type":"cpu_pmu","socket_number":-1}]}]

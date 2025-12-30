@@ -295,3 +295,7 @@ namespace optkit::gpu
 } // namespace optkit::gpu
 
 using optkit::gpu::operator<<; // make available to global namespace
+
+#ifndef OPTKIT_GPU_VENDOR_TRAVERSE
+#define OPTKIT_GPU_VENDOR_TRAVERSE(vendor) for (optkit::gpu::GpuVendor vendor = optkit::gpu::GpuVendor::BEGIN; vendor < optkit::gpu::GpuVendor::END; vendor = static_cast<optkit::gpu::GpuVendor>(static_cast<int>(vendor) + 1))
+#endif

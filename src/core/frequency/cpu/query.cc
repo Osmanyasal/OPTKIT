@@ -68,9 +68,8 @@ namespace optkit::frequency::cpu
                     if (max_freq > 0)
                         frequencies.push_back(max_freq);
                 }
-
-                return frequencies;
             }
+            return frequencies;
         }
     }
 
@@ -132,7 +131,7 @@ namespace optkit::frequency::cpu
             return "";
         }
     }
-    void Query::set_scaling_governor(const std::string &governor, int32_t socket)
+    bool Query::set_scaling_governor(const std::string &governor, int32_t socket)
     {
         try
         {
@@ -140,7 +139,7 @@ namespace optkit::frequency::cpu
             if (it == package_info.end() || it->second.empty())
             {
                 OPTKIT_CORE_ERROR("No cores found for socket {}", socket);
-                return;
+                return false;
             }
 
             int32_t sample_core = it->second.front(); // First core in this socket
@@ -161,7 +160,7 @@ namespace optkit::frequency::cpu
                 for (const auto &g : available_governors)
                     msg << " " << g;
                 OPTKIT_CORE_DEBUG("Available governors: {}", msg.str());
-                return;
+                return false;
             }
 
             // Apply governor to all cores in socket
@@ -176,10 +175,12 @@ namespace optkit::frequency::cpu
         catch (const std::exception &e)
         {
             OPTKIT_CORE_ERROR("Failed to set scaling governor for socket {}: {}", socket, e.what());
+            return false;
         }
+        return true;
     }
 
-    void Query::set_scaling_governor_percore(const std::string &governor, int32_t core)
+    bool Query::set_scaling_governor_percore(const std::string &governor, int32_t core)
     {
         try
         {
@@ -202,7 +203,7 @@ namespace optkit::frequency::cpu
                     msg << " " << g;
 
                 OPTKIT_CORE_WARN("{}", msg.str());
-                return;
+                return false;
             }
 
             // Apply governor
@@ -214,7 +215,9 @@ namespace optkit::frequency::cpu
         catch (const std::exception &e)
         {
             OPTKIT_CORE_ERROR("Failed to set scaling governor for core {}: {}", core, e.what());
+            return false;
         }
+        return true;
     }
 
     std::vector<std::string> Query::get_available_governors(int32_t core)

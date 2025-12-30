@@ -1,0 +1,7 @@
+#pragma once
+
+#undef OPTKIT_HWMON_TEMPERATURE
+#undef OPTKIT_GPU_TEMPERATURE
+
+#define OPTKIT_HWMON_TEMPERATURE(block_name)
+#define OPTKIT_GPU_TEMPERATURE(block_name)

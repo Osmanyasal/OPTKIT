@@ -23,8 +23,8 @@ namespace optkit::temperature::gpu
             {
                 for (uint32_t i = 0; i < device_count; i++)
                 {
-                    double temp_device_celsius;
-                    double temp_mem_celsius;
+                    double temp_device_celsius = 0.0;
+                    double temp_mem_celsius = 0.0;
                     if (optkit::gpu::Query::get_device_temperature(vendor, i, temp_device_celsius, temp_mem_celsius))
                     {
                         last_snapshot[device_index] = std::make_pair(temp_device_celsius, temp_mem_celsius);
@@ -91,8 +91,8 @@ namespace optkit::temperature::gpu
             {
                 for (uint32_t i = 0; i < device_count; i++)
                 {
-                    double temp_device_celsius;
-                    double temp_mem_celsius;
+                    double temp_device_celsius = 0.0;
+                    double temp_mem_celsius = 0.0;
                     if (optkit::gpu::Query::get_device_temperature(vendor, i, temp_device_celsius, temp_mem_celsius))
                     {
                         current_snapshot[device_index] = std::make_pair(temp_device_celsius, temp_mem_celsius);

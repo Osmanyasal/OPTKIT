@@ -73,6 +73,22 @@ namespace optkit::utils
         return res;
     }
 
+    std::string str_trim(const std::string &s)
+    {
+        // Find the first non-whitespace character
+        size_t start = s.find_first_not_of(" \t\n\r\f\v");
+        if (start == std::string::npos)
+        {
+            return "";
+        }
+
+        // Find the last non-whitespace character
+        size_t end = s.find_last_not_of(" \t\n\r\f\v");
+
+        // Return the substring between start and end
+        return s.substr(start, end - start + 1);
+    }
+
     std::string get_date(const std::string &format)
     {
         // Get the current time point

@@ -124,6 +124,7 @@ namespace optkit::utils
     std::string get_time(const std::string &format = "%H_%M_%S");
     std::vector<std::string> get_all_files(const std::string &directory_name);
     std::vector<std::string> str_split(const std::string &s, const std::string &delimiter);
+    std::string str_trim(const std::string &s);
 
     // Helper functions for C++11 compatible type handling
     template <typename T>
@@ -311,6 +312,25 @@ namespace optkit::utils
         }
     }
 
+    OPT_FORCE_INLINE std::string read_file(const std::string &location, bool verbose) noexcept
+    {
+        std::stringstream buffer;
+        std::ifstream file(location);
+
+        if (OPT_UNLIKELY(!file.is_open()))
+        {
+            if (verbose)
+            {
+                OPTKIT_CORE_ERROR("Failed to open the file: {}", location);
+            }
+            return "";
+        }
+        buffer << file.rdbuf();
+        file.close();
+
+        return buffer.str();
+    }
+
     OPT_FORCE_INLINE std::string read_file(const std::string &location)
     {
         std::stringstream buffer;
@@ -324,7 +344,27 @@ namespace optkit::utils
 
         return buffer.str();
     }
-    OPT_FORCE_INLINE void write_file(const std::string &location, const std::string &text, bool is_verbose = false)
+
+    OPT_FORCE_INLINE void write_file(const std::string &location, const std::string &text, bool is_verbose) noexcept
+    {
+        std::ofstream file(location, std::ios_base::out | std::ios_base::app); // create & append mode
+        if (OPT_UNLIKELY(!file.is_open()))
+        {
+            if (is_verbose)
+            {
+                OPTKIT_CORE_ERROR("Failed to open the file: {}", location);
+            }
+        }
+
+        file << text;
+        file.close();
+        if (is_verbose)
+        {
+            OPTKIT_CORE_INFO("Data successfully written to file: {}", location);
+        }
+    }
+
+    OPT_FORCE_INLINE void write_file(const std::string &location, const std::string &text)
     {
         std::ofstream file(location, std::ios_base::out | std::ios_base::app); // create & append mode
         if (OPT_UNLIKELY(!file.is_open()))
@@ -332,46 +372,76 @@ namespace optkit::utils
 
         file << text;
         file.close();
-
-        if (is_verbose)
-        {
-            OPTKIT_CORE_INFO("Data successfully written to file: {}", location);
-        }
     }
 
-    OPT_FORCE_INLINE void read_msr(int32_t cpuid, off_t MSR_REGISTER_address, uint64_t *MSR_REGISTER_bits)
+    OPT_FORCE_INLINE bool remove_file(const std::string &location, bool is_verbose)
+    {
+        if (std::remove(location.c_str()) != 0)
+        {
+            if (is_verbose)
+            {
+                OPTKIT_CORE_ERROR("Error deleting file: {}", location);
+            }
+            return false;
+        }
+        else
+        {
+            if (is_verbose)
+            {
+                OPTKIT_CORE_INFO("File deleted successfully: {}", location);
+            }
+        }
+        return true;
+    }
+
+    OPT_FORCE_INLINE bool read_msr(int32_t cpuid, off_t MSR_REGISTER_address, uint64_t *MSR_REGISTER_bits, bool is_verbose = false)
     {
         char msr_file_name[64];
         sprintf(msr_file_name, "/dev/cpu/%d/msr_safe", cpuid);
         int32_t fd = open(msr_file_name, O_RDONLY);
         if (fd < 0)
         {
-            OPTKIT_CORE_WARN("read msr error [{}]", cpuid);
-            return;
+            if (is_verbose)
+            {
+                OPTKIT_CORE_WARN("read msr error [{}]", cpuid);
+            }
+            return false;
         }
 
         if (pread(fd, MSR_REGISTER_bits, sizeof MSR_REGISTER_bits, MSR_REGISTER_address) != sizeof MSR_REGISTER_bits)
         {
-            OPTKIT_CORE_WARN("read msr error -- cannot read register {}", MSR_REGISTER_address);
+            if (is_verbose)
+            {
+                OPTKIT_CORE_WARN("read msr error -- cannot read register {}", MSR_REGISTER_address);
+            }
+            return false;
         }
         close(fd);
+        return true;
     }
 
-    OPT_FORCE_INLINE void write_msr(int32_t cpuid, off_t MSR_REGISTER_address, uint64_t MSR_REGISTER_bits)
+    OPT_FORCE_INLINE bool write_msr(int32_t cpuid, off_t MSR_REGISTER_address, uint64_t MSR_REGISTER_bits, bool is_verbose = false)
     {
         char msr_file_name[64];
         sprintf(msr_file_name, "/dev/cpu/%d/msr_safe", cpuid);
         int32_t fd = open(msr_file_name, O_WRONLY);
         if (fd < 0)
         {
-            OPTKIT_CORE_WARN("write msr error [{}]", cpuid);
-            return;
+            if (is_verbose)
+            {
+                OPTKIT_CORE_WARN("write msr error [{}]", cpuid);
+            }
+            return false;
         }
 
         if (pwrite(fd, &MSR_REGISTER_bits, sizeof MSR_REGISTER_bits, MSR_REGISTER_address) != sizeof MSR_REGISTER_bits)
         {
-            OPTKIT_CORE_WARN("write msr error -- cannot write register {}", MSR_REGISTER_address);
+            if (is_verbose)
+            {
+                OPTKIT_CORE_WARN("write msr error -- cannot write register {}", MSR_REGISTER_address);
+            }
+            return false;
         }
+        return true;
     }
-
 }

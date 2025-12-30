@@ -15,9 +15,8 @@
     }
 
 #define OPTKIT_DISK_EVENTS_WITH_METRICS(block_name, metric_builder) \
-    optkit::disk::IoDiskProfiler EXPAND_AND_CONCAT(var, __LINE__) { {block_name, "disk_io", true, optkit::Query::create_folder, !optkit::Query::create_folder}, metric_builder }
+    optkit::disk::IoDiskProfiler EXPAND_AND_CONCAT(var, __LINE__) { {block_name, "disk_io", true, false, optkit::Query::create_folder, !optkit::Query::create_folder}, metric_builder }
 
 #else
-#define OPTKIT_DISK_EVENTS_WITH_METRICS(block_name)
-#define OPTKIT_DISK_EVENTS_WITH_METRICS(block_name, metric_builder)
+#include "core/disk/clear.hh"
 #endif

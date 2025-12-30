@@ -88,7 +88,7 @@ namespace optkit::energy::rapl
                         std::stod(scale),
                         units});
                 }
-                catch (const std::exception &)
+                catch (const std::exception &e)
                 {
                     std::cerr << "Failed to read RAPL domain info for " << domain_name << "\n";
                 }
