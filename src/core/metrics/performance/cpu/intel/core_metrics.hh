@@ -934,8 +934,8 @@ namespace optkit::metrics::performance
                                    inst_packed_256_single +
                                    inst_packed_512_double +
                                    inst_packed_512_single;
-                               double sp_ratio = (retired_scalar_sp_any + inst_packed_128_single + inst_packed_256_single + inst_packed_512_single) / total_flops;
-                               double dp_ratio = (retired_scalar_dp_any + inst_packed_128_double + inst_packed_256_double + inst_packed_512_double) / total_flops;
+                               double sp_ratio = (retired_scalar_sp_any + inst_packed_128_single + inst_packed_256_single + inst_packed_512_single) / static_cast<double>(total_flops);
+                               double dp_ratio = (retired_scalar_dp_any + inst_packed_128_double + inst_packed_256_double + inst_packed_512_double) / static_cast<double>(total_flops);
                                double mem_bytes = mem_inst_retired * (4 * sp_ratio + 8 * dp_ratio);
                                //    std::cout << "total_flops:" << total_flops << "\n";
                                //    std::cout << "mem bytes:" << mem_bytes << "\n";
