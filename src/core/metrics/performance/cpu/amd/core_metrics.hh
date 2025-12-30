@@ -110,6 +110,7 @@ namespace optkit::metrics::performance
                 "retiring_microcode",
                 "ai",
                 "gflops",
+                "carm",
                 // Aggregates
                 "topdown_l1",
                 "topdown_l2",

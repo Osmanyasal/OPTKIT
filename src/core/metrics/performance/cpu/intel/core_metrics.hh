@@ -91,6 +91,7 @@ namespace optkit::metrics::performance
                 "ip_swpf",
                 "ai",
                 "gflops",
+                "carm",
                 // Topdown
                 "frontend_bound",
                 "bad_speculation",
