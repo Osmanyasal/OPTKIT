@@ -53,7 +53,16 @@ function base_project_setup()
             includedirs { rocm_include }
         end
         libdirs { "/opt/rocm/lib" }
-        links { "rocm_smi64" }  -- ✅ correct link target
+        links { "rocm_smi64" }
+    end
+
+    if dynamic_lib_exists("cupti") then
+        local cupti_include = get_cupti_include()
+        if cupti_include then
+            includedirs { cupti_include }
+        end
+        libdirs { "/usr/local/cuda/lib64" }
+        links { "cupti" }
     end
 
 
@@ -184,6 +193,15 @@ function test_project_setup()
         end
         libdirs { "/opt/rocm/lib" }
         links { "rocm_smi64" }
+    end
+
+    if dynamic_lib_exists("cupti") then
+        local cupti_include = get_cupti_include()
+        if cupti_include then
+            includedirs { cupti_include }
+        end
+        libdirs { "/usr/local/cuda/lib64" }
+        links { "cupti" }
     end
 
     -- filter "configurations:Release"

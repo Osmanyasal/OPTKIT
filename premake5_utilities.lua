@@ -140,6 +140,13 @@ function get_rocm_include()
     return nil
 end
 
+function get_cupti_include()
+    if os.isdir("/usr/local/cuda/include/") then
+        return "/usr/local/cuda/include"
+    end
+    return nil
+end
+
 function dynamic_lib_exists(libname)
     -- First, try ldconfig (system-registered libraries)
     local pipe = io.popen("ldconfig -p 2>/dev/null | grep lib" .. libname .. ".so")
@@ -150,14 +157,14 @@ function dynamic_lib_exists(libname)
             return true
         end
     end
-    
+
     -- If not found in ldconfig, check common ROCm/CUDA library paths
     local search_paths = {
         "/opt/rocm/lib",
         "/usr/local/cuda/lib64",
         "/usr/lib/x86_64-linux-gnu",
     }
-    
+
     -- Also check LD_LIBRARY_PATH if set
     local ld_library_path = os.getenv("LD_LIBRARY_PATH")
     if ld_library_path then
@@ -165,14 +172,14 @@ function dynamic_lib_exists(libname)
             table.insert(search_paths, path)
         end
     end
-    
+
     -- Search for the library in these paths
     for _, path in ipairs(search_paths) do
         local lib_patterns = {
             path .. "/lib" .. libname .. ".so",
             path .. "/lib" .. libname .. ".so.*",
         }
-        
+
         for _, pattern in ipairs(lib_patterns) do
             local check_cmd = "ls " .. pattern .. " 2>/dev/null"
             local check_pipe = io.popen(check_cmd)
@@ -185,7 +192,7 @@ function dynamic_lib_exists(libname)
             end
         end
     end
-    
+
     return false
 end
 
