@@ -1,10 +1,11 @@
 #pragma once
 
+#include "utils/environment_config.hh"
+#if OPTKIT_ENV_LIB_NVML
+
 #include <iostream>
 #include <vector>
 #include "core/pmu/cpu/perf/profiler_config.hh"
-#include "utils/environment_config.hh"
-#if OPTKIT_ENV_LIB_NVML
 
 #include "utils/utils.hh"
 #include "utils/base_profiler.hh"
@@ -14,27 +15,13 @@
 namespace optkit::pmu::gpu::nvidia
 {
     /**
-     * @brief The BlockProfiler class utilizes the RAII technique to initiate and conclude profiling for a specific raw event.
+     * @brief The BlockProfiler class utilizes the RAII technique to initiate and conclude profiling for specific metrics.
      *        Profiling commences upon instantiation and persists until the current scope is exited.
-     *
-     *        Note that block profiler does NOT group raw_events!
-     *
-     *        Each raw_event creates seperate file_description (fd) to read data and each raw_event is treated seperately.<br>
-     *        In cases where CPU performs multiplexing and since each event treated seperately, you cannot gurantee that <br>
-     *        events E1 and E2 will record the same instructions.<br>
-     *        for more information about grouping @see https://man7.org/linux/man-pages/man2/perf_event_open.2.html
-     *
-     * @note In what order the event names and codes are added is IMPORTANT! it is read as it is added.
-     *       If you add event1, event2, event3 then the read buffer will contain the values in the same order.
-     *       Given the reason, we used vectors and pairs to store the data in metric Builder.
-     *
-     * @note Data type is chosen as uint64_t to match the syscall returns. Architectures usually have 48bits or 64 bits wide pmu counters.
-     *       uint64_t is used to comprehend all of them. https://www.man7.org/linux/man-pages/man2/perf_event_open.2.html#EXAMPLES
      */
     class BlockProfiler : public BaseProfiler<std::vector<uint64_t>, uint64_t>
     {
     public:
-        BlockProfiler(const ProfilerConfig &profiler_config, const optkit::metrics::MetricBuilder<uint64_t> &mb);
+        BlockProfiler(const ProfilerConfig &profiler_config, const optkit::metrics::MetricBuilder<uint64_t> &mb = {});
         virtual ~BlockProfiler();
         /**
          * @brief Disables this block profiler and associated events
@@ -72,11 +59,6 @@ namespace optkit::pmu::gpu::nvidia
 #if !OPTKIT_TESTING // if not testing (in prod) then make those private, in testin make those public
     private:
 #endif
-        /**
-         * @brief fd_list holds pmu events being monitor by this BlockProfiler Object.
-         * when created the same file description must be registered global fd_stack
-         */
-        std::vector<int32_t> fd_list;
         const ProfilerConfig profiler_config;
         const optkit::metrics::MetricBuilder<uint64_t> metric_builder;
         std::vector<std::pair<std::string, double>> metric_results;

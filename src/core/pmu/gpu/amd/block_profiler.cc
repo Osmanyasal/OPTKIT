@@ -1,11 +1,11 @@
-#include "core/pmu/gpu/nvidia/block_profiler.hh"
+
+#include "core/pmu/gpu/amd/block_profiler.hh"
 
 #if OPTKIT_ENV_LIB_NVML
-#include <memory>
-
-namespace optkit::pmu::gpu::nvidia
+namespace optkit::pmu::gpu::amd
 {
-    static std::unique_ptr<CUpti_ActivityKernel9> g_activity_kernel = nullptr;
+
+    CUpti_ActivityKernel9 *g_activity_kernel = nullptr;
 
     // Callback for buffer requests
     static void BufferRequested(uint8_t **buffer, size_t *size, size_t *maxNumRecords)
@@ -27,14 +27,7 @@ namespace optkit::pmu::gpu::nvidia
             {
                 if (record->kind == CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL)
                 {
-                    CUpti_ActivityKernel9 *kernel = (CUpti_ActivityKernel9 *)record;
-
-                    // Allocate and copy kernel data before buffer is freed
-                    if (g_activity_kernel == nullptr)
-                    {
-                        g_activity_kernel.reset(new CUpti_ActivityKernel9());
-                    }
-                    memcpy(g_activity_kernel.get(), kernel, sizeof(CUpti_ActivityKernel9));
+                    g_activity_kernel = (CUpti_ActivityKernel9 *)record;
                 }
             }
         }
@@ -56,14 +49,12 @@ namespace optkit::pmu::gpu::nvidia
 
         CUPTI_API_CALL(cuptiActivityFlushAll(1));
         CUPTI_API_CALL(cuptiActivityDisable(CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL));
-        printf("GPU Kernel Activity Profiling Result:\n");
-        printf("is null? %d\n", g_activity_kernel == nullptr);
-        if (g_activity_kernel != nullptr)
-        {
-            printf("kernel name = %s\n", g_activity_kernel->name);
-            printf("kernel duration (ns) = %llu\n", (unsigned long long)(g_activity_kernel->end - g_activity_kernel->start));
-            g_activity_kernel.reset();
-        }
+
+        printf("activity kind=%d\n", g_activity_kernel->kind);
+        printf("kernel name = %s\n", g_activity_kernel->name);
+        printf("kernel duration (ns) = %llu\n", (unsigned long long)(g_activity_kernel->end - g_activity_kernel->start));
+        return;
+
         this->read_and_store();
         this->metric_results = this->metric_builder.calculate(aggregate());
         if (OPT_LIKELY(this->config.dump_results_to_file))
@@ -147,6 +138,6 @@ namespace optkit::pmu::gpu::nvidia
         return aggregated_events;
     }
 
-} // namespace optkit::pmu::gpu::nvidia
+} // namespace optkit::pmu::gpu::amd
 
 #endif

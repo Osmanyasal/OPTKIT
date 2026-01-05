@@ -4,6 +4,7 @@
 #include <vector>
 #include <cstdlib>
 #include "core/module.hh"
+#include <utils/gpu.hh>
 
 namespace optkit
 {
