@@ -13,3 +13,6 @@
 [submodule "lib/carm-roofline"]
 	path = lib/carm-roofline
 	url = https://github.com/champ-hub/carm-roofline.git
+[submodule "lib/FlameGraph"]
+	path = lib/FlameGraph
+	url = https://github.com/brendangregg/FlameGraph.git

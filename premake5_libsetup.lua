@@ -28,6 +28,11 @@ function base_project_setup()
     -- Always needed
     links { "pthread", "dl" }
     linkoptions { "-fopenmp" }
+    -- Needed for dladdr() to resolve symbols from the main executable.
+    -- (This must be a link option; putting it in buildoptions does not export symbols.)
+    filter "system:linux"
+    linkoptions { "-rdynamic" }
+    filter {}
     -- Always link static spdlog manually
     linkoptions { LIB_SPD_PATH .. "/build/libspdlog.a" }
 
@@ -221,6 +226,7 @@ function test_project_setup()
         "-fPIC",    -- Position-independent code,
         "-DOPTKIT_TESTING=1",
         "-fno-omit-frame-pointer",
+        "-rdynamic",
     }
 
     filter {}
@@ -237,6 +243,7 @@ function test_project_setup()
         "-fopenmp", -- Enable OpenMP if needed
         "-fPIC",    -- Position-independent code,
         "-fno-omit-frame-pointer",
+        "-rdynamic",
         "-DOPTKIT_TESTING=1",
     }
 end

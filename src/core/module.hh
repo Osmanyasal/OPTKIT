@@ -4,6 +4,7 @@
 // Include subsystem headers
 // =============================================
 
+#include "core/callstack/module.hh"
 #include "core/pmu/cpu/module.hh" // if use_msr is enabled, include defaults + use_msr module likewise for perf. same macro but different classes is defined for them.
 #include "core/pmu/gpu/module.hh"
 #include "core/energy/module.hh"

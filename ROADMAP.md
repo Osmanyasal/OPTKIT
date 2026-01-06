@@ -11,6 +11,7 @@
 
 ## v0.6 (Q4 - 2025)
 - [x] Counter overlow handling
+- [ ] Callstack analysis & flame graphs
 - [x] Documentation improvements
 
 ## v0.7 (Q1 2026)
