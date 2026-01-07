@@ -173,6 +173,7 @@ function test_project_setup()
         "gtest", "gtest_main", "pthread", "dl"
     }
     linkoptions { "-fopenmp" }
+    linkoptions { "-rdynamic" }
     linkoptions { "./bin/Test/liboptkit_static.a" }
 
     if dynamic_lib_exists("nvidia-ml") then
@@ -226,7 +227,6 @@ function test_project_setup()
         "-fPIC",    -- Position-independent code,
         "-DOPTKIT_TESTING=1",
         "-fno-omit-frame-pointer",
-        "-rdynamic",
     }
 
     filter {}
