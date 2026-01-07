@@ -28,13 +28,16 @@ __attribute__((noinline)) void test_me_bitch()
 int32_t main(int32_t argc, char **argv)
 {
     OPTKIT_INIT();
+    std::cout << "PID:" << getpid() << "\n";
     OPTKIT_CALLSTACK_PROFILER("optkit");
     deep_math_function();
     test_me_bitch();
+    sleep(15);
     // #pragma omp parallel
-    // {
-    // No manual registration needed. Sampler catches us via inherit=1.
-    // openmp_worker_task(omp_get_thread_num());
-    // }
+    //     {
+    //         // No manual registration needed. Sampler catches us via inherit=1.
+    //         deep_math_function();
+    //         test_me_bitch();
+    //     }
     return 0;
 }

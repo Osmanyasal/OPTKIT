@@ -9,6 +9,7 @@
 #include <iomanip>
 #include <cctype>
 #include <vector>
+#include <cstdlib>
 
 struct RunData
 {
@@ -49,6 +50,152 @@ static std::string filename_stem(const std::string &name)
 {
     size_t dot = name.find_last_of('.');
     return (dot == std::string::npos) ? name : name.substr(0, dot);
+}
+
+// Parse callstack JSON and generate FlameGraph SVG
+static void handle_callstack_json(const std::string &json_path)
+{
+    std::string content;
+    try
+    {
+        std::ifstream file(json_path);
+        content.assign((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+    }
+    catch (...)
+    {
+        return;
+    }
+
+    if (content.empty())
+        return;
+
+    // Extract folded stacks from JSON by finding all "stack" and "count" pairs
+    std::ofstream folded_file(filename_stem(json_path) + ".folded");
+    if (!folded_file)
+        return;
+
+    // Find the samples array - structure is: "readings": [ { "samples": [...] } ]
+    // So we need to find the first "samples" array
+    size_t samples_pos = content.find("\"samples\"");
+    if (samples_pos == std::string::npos)
+        return;
+
+    // Find the opening bracket [
+    size_t open_bracket = content.find('[', samples_pos);
+    if (open_bracket == std::string::npos)
+        return;
+
+    // Find the closing bracket ] by counting brackets
+    int bracket_depth = 0;
+    size_t max_pos = open_bracket;
+    for (size_t i = open_bracket; i < content.size(); ++i)
+    {
+        if (content[i] == '[')
+            bracket_depth++;
+        else if (content[i] == ']')
+        {
+            bracket_depth--;
+            if (bracket_depth == 0)
+            {
+                max_pos = i;
+                break;
+            }
+        }
+    }
+
+    size_t search_start = open_bracket + 1;
+
+    while (search_start < max_pos)
+    {
+        // Find next object containing "stack" or "count"
+        // Look for opening brace {
+        size_t obj_start = content.find('{', search_start);
+        if (obj_start == std::string::npos || obj_start >= max_pos)
+            break;
+
+        // Find closing brace }
+        size_t obj_end = content.find('}', obj_start);
+        if (obj_end == std::string::npos || obj_end > max_pos)
+            break;
+
+        // Extract the object content
+        std::string obj_content = content.substr(obj_start, obj_end - obj_start + 1);
+
+        // Find "stack" and "count" within this object
+        size_t stack_key = obj_content.find("\"stack\"");
+        size_t count_key = obj_content.find("\"count\"");
+
+        if (stack_key == std::string::npos || count_key == std::string::npos)
+        {
+            search_start = obj_end + 1;
+            continue;
+        }
+
+        // Extract stack value
+        size_t stack_colon = obj_content.find(':', stack_key);
+        size_t stack_quote = obj_content.find('"', stack_colon);
+        size_t stack_close = obj_content.find('"', stack_quote + 1);
+
+        if (stack_quote == std::string::npos || stack_close == std::string::npos)
+        {
+            search_start = obj_end + 1;
+            continue;
+        }
+
+        std::string stack = obj_content.substr(stack_quote + 1, stack_close - stack_quote - 1);
+
+        // Extract count value
+        size_t count_colon = obj_content.find(':', count_key);
+        size_t num_start = count_colon + 1;
+        while (num_start < obj_content.size() && std::isspace(obj_content[num_start]))
+            num_start++;
+
+        size_t num_end = num_start;
+        while (num_end < obj_content.size() && std::isdigit(obj_content[num_end]))
+            num_end++;
+
+        std::string count_str = obj_content.substr(num_start, num_end - num_start);
+        if (!count_str.empty())
+            folded_file << stack << " " << count_str << "\n";
+
+        // Move past this object
+        search_start = obj_end + 1;
+    }
+    folded_file.close();
+
+    // Execute flamegraph.pl to generate SVG
+    std::string folded_path = filename_stem(json_path) + ".folded";
+    std::string svg_path = filename_stem(json_path) + ".svg";
+
+    // Try to find flamegraph.pl under lib/FlameGraph or relative paths
+    std::string fg_script;
+    const char *search_paths[] = {
+        "lib/FlameGraph/flamegraph.pl",
+        "../../../lib/FlameGraph/flamegraph.pl",
+        "../../lib/FlameGraph/flamegraph.pl",
+        "/home/rt7/Desktop/OPTKIT/lib/FlameGraph/flamegraph.pl",
+        "/usr/local/FlameGraph/flamegraph.pl",
+        nullptr};
+
+    for (int i = 0; search_paths[i] != nullptr; i++)
+    {
+        std::ifstream test(search_paths[i]);
+        if (test.good())
+        {
+            fg_script = search_paths[i];
+            break;
+        }
+    }
+
+    if (!fg_script.empty())
+    {
+        std::string cmd = "perl " + fg_script + " " + folded_path + " > " + svg_path + " 2>/dev/null";
+        int ret = std::system(cmd.c_str());
+        if (ret == 0)
+        {
+            std::cout << "Generated: " << svg_path << "\n";
+        }
+    }
 }
 
 static bool find_first_number_after(const std::string &s, size_t pos, double &out)
@@ -386,7 +533,15 @@ static std::vector<RunData> parse_runs_from_paths(const std::vector<std::string>
     {
         const std::string &p = paths[i];
         if (!p.empty() && p.size() > 5 && p.substr(p.size() - 5) == ".json")
+        {
+            // Check if this is a callstack JSON (filename contains "callstack")
+            if (p.find("callstack") != std::string::npos)
+            {
+                handle_callstack_json(p);
+                continue; // Don't parse as RunData
+            }
             json_files.push_back(p);
+        }
     }
 
     std::vector<RunData> runs;
@@ -689,7 +844,7 @@ static void generate_carm_roofline_for_isa(const std::vector<RunData> &runs,
 
 static void generate_carm_roofline_chart(const std::vector<RunData> &runs)
 {
-#ifdef OPTKIT_ENV_CARM_AVX512_L1_BW &&OPTKIT_ENV_CARM_SCALAR_L2_BW &&OPTKIT_ENV_CARM_AVX2_L3_BW &&OPTKIT_ENV_CARM_SSE_DRAM_BW &&OPTKIT_ENV_CARM_AVX512_FP_FMA_GFLOPS
+#ifdef OPTKIT_ENV_CARM_AVX512_L1_BW && OPTKIT_ENV_CARM_SCALAR_L2_BW && OPTKIT_ENV_CARM_AVX2_L3_BW && OPTKIT_ENV_CARM_SSE_DRAM_BW && OPTKIT_ENV_CARM_AVX512_FP_FMA_GFLOPS
 
     // Check if we have any AI/GFlops data
     std::vector<RunData> valid_runs;

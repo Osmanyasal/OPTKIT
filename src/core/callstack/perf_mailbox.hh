@@ -10,11 +10,15 @@
 #include <cctype>
 #include <cstdint>
 #include <cstring>
+#include <cstdlib>
+#include <fstream>
 #include <memory>
 #include <mutex>
+#include <sstream>
 #include <string>
 #include <thread>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -31,8 +35,23 @@
 
 namespace optkit::callstack
 {
-    class Registry;
-    inline Registry &global_registry();
+    namespace proc
+    {
+        inline int32_t effective_pid(int32_t pid)
+        {
+            return (pid != 0) ? pid : static_cast<int32_t>(::getpid());
+        }
+
+        inline std::string task_dir(int32_t pid)
+        {
+            return "/proc/" + std::to_string(effective_pid(pid)) + "/task";
+        }
+
+        inline std::string maps_path(int32_t pid)
+        {
+            return "/proc/" + std::to_string(effective_pid(pid)) + "/maps";
+        }
+    } // namespace proc
 
     class ThreadBuffer // MailBox
     {
@@ -49,12 +68,14 @@ namespace optkit::callstack
         bool init(uint32_t sample_freq)
         {
             const int32_t tid = static_cast<int32_t>(syscall(SYS_gettid));
-            return init_for_tid(tid, sample_freq, /*use_current_thread*/ true);
+            std::cout << "Initializing ThreadBuffer for TID: " << tid << "\n";
+            return init_for_tid(tid, sample_freq);
         }
 
-        bool init_for_tid(int32_t tid, uint32_t sample_freq, bool use_current_thread)
+        bool init_for_tid(int32_t tid, uint32_t sample_freq)
         {
-            thread_id = tid;
+            std::cout << "init for tid: " << tid << "\n";
+            this->thread_id = tid;
 
             const size_t page_size = static_cast<size_t>(sysconf(_SC_PAGESIZE));
             const size_t mmap_pages = 1; // keep it small; one buffer per thread
@@ -74,8 +95,7 @@ namespace optkit::callstack
             pe.sample_type = PERF_SAMPLE_IP | PERF_SAMPLE_CALLCHAIN;
             pe.wakeup_events = 1;
 
-            const int32_t pid = use_current_thread ? 0 : tid;
-            fd = static_cast<int32_t>(syscall(__NR_perf_event_open, &pe, pid, -1, -1, 0));
+            fd = static_cast<int32_t>(syscall(__NR_perf_event_open, &pe, this->thread_id, -1, -1, 0));
             if (fd < 0)
                 return false;
 
@@ -173,74 +193,12 @@ namespace optkit::callstack
     class ThreadAttachManager
     {
     public:
-        void refresh(uint32_t sample_freq, int32_t exclude_tid)
-        {
-            const auto tids = list_tids();
-
-            std::unordered_map<int32_t, bool> alive;
-            alive.reserve(tids.size());
-            for (int32_t tid : tids)
-                alive[tid] = true;
-
-            // Build a set of already-registered TIDs (TLS samplers + attached ones).
-            std::unordered_map<int32_t, bool> registered;
-            {
-                auto buffers = global_registry().get_all_buffers();
-                registered.reserve(buffers.size());
-                for (auto *buf : buffers)
-                {
-                    if (buf)
-                        registered[buf->thread_id] = true;
-                }
-            }
-
-            // Remove stale buffers (threads that exited).
-            {
-                std::lock_guard<std::mutex> l(lock);
-                for (auto it = owned.begin(); it != owned.end();)
-                {
-                    if (alive.find(it->first) == alive.end())
-                    {
-                        global_registry().unregister_buffer(it->second.get());
-                        it = owned.erase(it);
-                    }
-                    else
-                    {
-                        ++it;
-                    }
-                }
-            }
-
-            // Attach buffers for new threads we haven't seen.
-            for (int32_t tid : tids)
-            {
-                if (tid == exclude_tid)
-                    continue;
-                if (registered.find(tid) != registered.end())
-                    continue;
-
-                std::unique_ptr<ThreadBuffer> buf(new ThreadBuffer());
-                if (!buf->init_for_tid(tid, sample_freq, /*use_current_thread*/ false))
-                    continue;
-
-                ThreadBuffer *raw = buf.get();
-                {
-                    std::lock_guard<std::mutex> l(lock);
-                    // Another refresh might have raced (rare); re-check ownership.
-                    if (owned.find(tid) != owned.end())
-                        continue;
-                    owned.emplace(tid, std::move(buf));
-                }
-
-                global_registry().register_buffer(raw);
-            }
-        }
-
-    private:
-        static std::vector<int32_t> list_tids()
+        static std::vector<int32_t> list_tids(int32_t target_pid)
         {
             std::vector<int32_t> tids;
-            DIR *dir = opendir("/proc/self/task");
+
+            const std::string dir_path = proc::task_dir(target_pid);
+            DIR *dir = opendir(dir_path.c_str());
             if (!dir)
                 return tids;
 
@@ -257,9 +215,75 @@ namespace optkit::callstack
             return tids;
         }
 
-        std::mutex lock;
-        std::unordered_map<int32_t, std::unique_ptr<ThreadBuffer>> owned;
+        static void refresh(uint32_t sample_freq, int32_t exclude_tid, int32_t target_pid)
+        {
+            // if you switch target process, clear all owned buffers
+            if (target_pid != current_pid)
+            {
+                for (auto &kv : owned)
+                    global_registry().unregister_buffer(kv.second.get());
+                owned.clear();
+                current_pid = target_pid;
+            }
+
+            // List all TIDs in the target process.
+            const auto tids = list_tids(target_pid);
+
+            std::unordered_set<int32_t> alive;
+            alive.reserve(tids.size());
+            for (int32_t tid : tids)
+                alive.insert(tid);
+
+            // Build a set of already-registered TIDs (TLS samplers + attached ones).
+            std::unordered_set<int32_t> registered;
+            auto buffers = global_registry().get_all_buffers();
+            registered.reserve(buffers.size());
+            for (auto *buf : buffers)
+            {
+                if (buf)
+                    registered.insert(buf->thread_id);
+            }
+
+            // Remove stale buffers (threads that exited).
+            for (auto it = owned.begin(); it != owned.end();)
+            {
+                if (alive.find(it->first) == alive.end())
+                {
+                    global_registry().unregister_buffer(it->second.get());
+                    it = owned.erase(it);
+                }
+                else
+                {
+                    ++it;
+                }
+            }
+
+            // Attach buffers for new threads we haven't seen.
+            for (int32_t tid : tids)
+            {
+                if (target_pid == 0 && tid == exclude_tid)
+                    continue;
+                if (registered.find(tid) != registered.end())
+                    continue;
+
+                std::unique_ptr<ThreadBuffer> buf(new ThreadBuffer());
+                if (!buf->init_for_tid(tid, sample_freq))
+                    continue;
+
+                ThreadBuffer *raw = buf.get();
+                if (owned.find(tid) != owned.end())
+                    continue;
+                owned.emplace(tid, std::move(buf));
+                global_registry().register_buffer(raw);
+            }
+        }
+
+    private:
+        static int32_t current_pid;
+        static std::unordered_map<int32_t, std::unique_ptr<ThreadBuffer>> owned;
     };
+    int32_t ThreadAttachManager::current_pid = 0;
+    std::unordered_map<int32_t, std::unique_ptr<ThreadBuffer>> ThreadAttachManager::owned;
 
     class ThreadLocalSampler
     {
@@ -293,69 +317,185 @@ namespace optkit::callstack
     class Symbolizer
     {
     public:
+        void set_target_pid(int32_t pid)
+        {
+            target_pid = pid;
+            cache.clear();
+            maps_cache.clear();
+            last_maps_load = std::chrono::steady_clock::time_point{};
+        }
+
         std::string symbolize(uint64_t addr)
         {
+            const int32_t self_pid = static_cast<int32_t>(::getpid());
+            const bool is_remote = (target_pid != 0 && target_pid != self_pid);
+
             // A tiny cache helps a lot (dladdr + demangle are expensive).
             {
-                std::lock_guard<std::mutex> l(cache_lock);
                 auto it = cache.find(addr);
                 if (it != cache.end())
                     return it->second;
             }
 
-            Dl_info info;
-            std::memset(&info, 0, sizeof(info));
-            std::string result = "?";
-            if (dladdr(reinterpret_cast<void *>(addr), &info))
-            {
-                if (info.dli_sname)
-                {
-                    int status = -1;
-                    std::unique_ptr<char, void (*)(void *)> nice_name{
-                        abi::__cxa_demangle(info.dli_sname, nullptr, nullptr, &status),
-                        std::free};
-                    result = (status == 0 && nice_name) ? nice_name.get() : info.dli_sname;
-
-                    // Clean arguments for readability: "func(int)" -> "func"
-                    const size_t paren = result.find('(');
-                    if (paren != std::string::npos)
-                        result = result.substr(0, paren);
-                }
-                else if (info.dli_fname && info.dli_fbase)
-                {
-                    // No symbol name available; show module + offset.
-                    const char *slash = std::strrchr(info.dli_fname, '/');
-                    const char *base = slash ? slash + 1 : info.dli_fname;
-                    const uint64_t off = addr - reinterpret_cast<uint64_t>(info.dli_fbase);
-                    char buf[256];
-                    std::snprintf(buf, sizeof(buf), "%s+0x%llx", base, static_cast<unsigned long long>(off));
-                    result = buf;
-                }
-            }
-
-            {
-                std::lock_guard<std::mutex> l(cache_lock);
-                cache.emplace(addr, result);
-            }
+            const std::string result = is_remote ? symbolize_remote(addr) : symbolize_self(addr);
+            cache.emplace(addr, result);
             return result;
         }
 
     private:
-        std::mutex cache_lock;
+        struct MapEntry
+        {
+            uint64_t start{0};
+            uint64_t end{0};
+            uint64_t file_offset{0};
+            std::string path;
+        };
+
+        void load_maps()
+        {
+            maps_cache.clear();
+
+            const std::string maps_path = proc::maps_path(target_pid);
+
+            std::ifstream in(maps_path);
+            if (!in)
+                return;
+
+            std::string line;
+            while (std::getline(in, line))
+            {
+                // Format: start-end perms offset dev inode pathname
+                // pathname is optional.
+                std::istringstream iss(line);
+                std::string range;
+                std::string perms;
+                std::string offset_hex;
+                std::string dev;
+                std::string inode;
+                if (!(iss >> range >> perms >> offset_hex >> dev >> inode))
+                    continue;
+
+                std::string path;
+                std::getline(iss, path);
+                // trim leading spaces
+                while (!path.empty() && std::isspace(static_cast<unsigned char>(path.front())))
+                    path.erase(path.begin());
+
+                const size_t dash = range.find('-');
+                if (dash == std::string::npos)
+                    continue;
+
+                const std::string start_hex = range.substr(0, dash);
+                const std::string end_hex = range.substr(dash + 1);
+
+                MapEntry e;
+                e.start = std::strtoull(start_hex.c_str(), nullptr, 16);
+                e.end = std::strtoull(end_hex.c_str(), nullptr, 16);
+                e.file_offset = std::strtoull(offset_hex.c_str(), nullptr, 16);
+                e.path = std::move(path);
+                if (e.start < e.end)
+                    maps_cache.push_back(std::move(e));
+            }
+        }
+
+        const MapEntry *find_map(uint64_t addr) const
+        {
+            for (const auto &m : maps_cache)
+            {
+                if (addr >= m.start && addr < m.end)
+                    return &m;
+            }
+            return nullptr;
+        }
+
+        void ensure_maps_loaded()
+        {
+            const auto now = std::chrono::steady_clock::now();
+            if (!maps_cache.empty() && (now - last_maps_load) <= std::chrono::seconds(1))
+                return;
+            load_maps();
+            last_maps_load = now;
+        }
+
+        std::string symbolize_remote(uint64_t addr)
+        {
+            ensure_maps_loaded();
+
+            const MapEntry *m = find_map(addr);
+            if (m && !m->path.empty())
+            {
+                const char *slash = std::strrchr(m->path.c_str(), '/');
+                const char *base = slash ? slash + 1 : m->path.c_str();
+                const uint64_t file_off = m->file_offset + (addr - m->start);
+                char buf[256];
+                std::snprintf(buf, sizeof(buf), "%s+0x%llx", base, static_cast<unsigned long long>(file_off));
+                return buf;
+            }
+
+            char buf[64];
+            std::snprintf(buf, sizeof(buf), "0x%llx", static_cast<unsigned long long>(addr));
+            return buf;
+        }
+
+        std::string symbolize_self(uint64_t addr)
+        {
+            Dl_info info;
+            std::memset(&info, 0, sizeof(info));
+            std::string result = "?";
+
+            if (!dladdr(reinterpret_cast<void *>(addr), &info))
+                return result;
+
+            if (info.dli_sname)
+            {
+                int status = -1;
+                std::unique_ptr<char, void (*)(void *)> nice_name{
+                    abi::__cxa_demangle(info.dli_sname, nullptr, nullptr, &status),
+                    std::free};
+                result = (status == 0 && nice_name) ? nice_name.get() : info.dli_sname;
+
+                const size_t paren = result.find('(');
+                if (paren != std::string::npos)
+                    result = result.substr(0, paren);
+                return result;
+            }
+
+            if (info.dli_fname && info.dli_fbase)
+            {
+                const char *slash = std::strrchr(info.dli_fname, '/');
+                const char *base = slash ? slash + 1 : info.dli_fname;
+                const uint64_t off = addr - reinterpret_cast<uint64_t>(info.dli_fbase);
+                char buf[256];
+                std::snprintf(buf, sizeof(buf), "%s+0x%llx", base, static_cast<unsigned long long>(off));
+                result = buf;
+            }
+
+            return result;
+        }
+
         std::unordered_map<uint64_t, std::string> cache;
+        int32_t target_pid{0};
+        std::vector<MapEntry> maps_cache;
+        std::chrono::steady_clock::time_point last_maps_load{};
     };
 
     class Sweeper // The Postman
     {
     public:
+        Sweeper() = default;
+        Sweeper(const Sweeper &) = delete;
+        Sweeper &operator=(const Sweeper &) = delete;
+
         void set_sample_freq(uint32_t hz)
         {
             sample_freq_hz.store(hz);
         }
 
-        Sweeper() = default;
-        Sweeper(const Sweeper &) = delete;
-        Sweeper &operator=(const Sweeper &) = delete;
+        void set_target_pid(int32_t pid)
+        {
+            target_pid.store(pid);
+            symbolizer.set_target_pid(pid);
+        }
 
         void start()
         {
@@ -398,15 +538,16 @@ namespace optkit::callstack
         void run()
         {
             const int32_t sweeper_tid = static_cast<int32_t>(syscall(SYS_gettid));
+            std::cout << "Sweeper started in TID: " << sweeper_tid << "\n";
             auto last_refresh = std::chrono::steady_clock::now();
 
             while (!stop_flag.load())
             {
                 // Periodically auto-attach to new threads (e.g., OpenMP workers).
                 const auto now = std::chrono::steady_clock::now();
-                if (now - last_refresh > std::chrono::milliseconds(100))
+                if (now - last_refresh > std::chrono::milliseconds(25))
                 {
-                    attach_manager.refresh(sample_freq_hz.load(), sweeper_tid);
+                    ThreadAttachManager::refresh(sample_freq_hz.load(), sweeper_tid, target_pid.load());
                     last_refresh = now;
                 }
 
@@ -499,12 +640,12 @@ namespace optkit::callstack
             }
         }
 
+    private:
         std::atomic<bool> running{false};
         std::atomic<bool> stop_flag{false};
         std::atomic<uint32_t> sample_freq_hz{100};
+        std::atomic<int32_t> target_pid{0};
         std::thread worker;
-
-        ThreadAttachManager attach_manager;
 
         std::mutex counts_lock;
         std::unordered_map<std::string, uint64_t> counts;

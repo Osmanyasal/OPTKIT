@@ -20,28 +20,30 @@ namespace optkit::callstack
                 return s;
             }
 
-            void acquire(uint32_t sample_freq)
+            void acquire(uint32_t sample_freq, int32_t target_pid)
             {
-                std::lock_guard<std::mutex> l(lock);
-                sample_freq_hz = sample_freq;
-                ref_count++;
-                sweeper.set_sample_freq(sample_freq);
+                this->sample_freq_hz = sample_freq;
+                sweeper.set_sample_freq(this->sample_freq_hz);
+
+                // Symbolization + thread discovery target.
+                sweeper.set_target_pid(target_pid);
+
+                // For self-profiling, ensure the current thread's TLS buffer exists
+                // before the sweeper starts scanning.
+                if (target_pid == 0)
+                    touch_thread(this->sample_freq_hz);
+
                 sweeper.start();
             }
 
             void release()
             {
-                std::lock_guard<std::mutex> l(lock);
-                if (ref_count == 0)
-                    return;
-                ref_count--;
-                if (ref_count == 0)
-                    sweeper.stop();
+                sweeper.stop();
             }
 
             void touch_current_thread()
             {
-                touch_thread(sample_freq_hz);
+                touch_thread(this->sample_freq_hz);
             }
 
             void reset_counts()
@@ -55,9 +57,7 @@ namespace optkit::callstack
             }
 
         private:
-            std::mutex lock;
             uint32_t sample_freq_hz{100};
-            uint32_t ref_count{0};
             Sweeper sweeper;
         };
 
@@ -71,33 +71,13 @@ namespace optkit::callstack
           profiler_config{config},
           sample_freq_hz{DEFAULT_SAMPLE_FREQ_HZ}
     {
-        // Ensure the current thread is registered (this is the library version of "touch_profiler()" in the sample).
-        CallstackSession::instance().acquire(sample_freq_hz);
-        CallstackSession::instance().touch_current_thread();
-
-        if (OPT_UNLIKELY(this->profiler_config.is_sampling))
-        {
-            this->sampling_thread = std::thread([this]()
-                                                {
-                this->is_sampling = true;
-                while (this->is_sampling)
-                {
-                    this->read_and_store();
-                    std::this_thread::sleep_for(std::chrono::milliseconds(500));
-                } });
-        }
-
+        // Use PerfProfilerConfig::pid as the target process ID. pid==0 means "self".
+        CallstackSession::instance().acquire(this->sample_freq_hz, this->profiler_config.pid);
         start = std::chrono::high_resolution_clock::now();
     }
 
     Profiler::~Profiler()
     {
-        if (this->profiler_config.is_sampling && this->sampling_thread.joinable())
-        {
-            this->is_sampling = false;
-            this->sampling_thread.join();
-        }
-
         this->read_and_store();
 
         (void)this->aggregate();
@@ -121,12 +101,13 @@ namespace optkit::callstack
     void Profiler::disable()
     {
         this->is_enabled = false;
+        CallstackSession::instance().release();
     }
 
     void Profiler::enable()
     {
         this->is_enabled = true;
-        CallstackSession::instance().touch_current_thread();
+        CallstackSession::instance().acquire(this->sample_freq_hz, this->profiler_config.pid);
     }
 
     void Profiler::reset()
@@ -166,7 +147,7 @@ namespace optkit::callstack
             return {};
 
         // Make sure this thread is included in the global registry.
-        CallstackSession::instance().touch_current_thread();
+        // CallstackSession::instance().touch_current_thread();
         return CallstackSession::instance().consume_counts(this->config.is_reset_after_read);
     }
 

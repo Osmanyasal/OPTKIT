@@ -76,8 +76,6 @@ namespace optkit::callstack
          */
         const optkit::pmu::cpu::perf::PerfProfilerConfig profiler_config;
         uint32_t sample_freq_hz;
-        std::thread sampling_thread;
-        std::atomic<bool> is_sampling{false};
     };
 
 } // namespace optkit::callstack
