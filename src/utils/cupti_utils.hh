@@ -1,7 +1,11 @@
 #pragma once
 
 #include "utils/logging/logger.hh"
+#if OPTKIT_ENV_LIB_NVML
+#include <cuda.h>
+#include <cuda_runtime_api.h>
 #include <cupti.h>
+
 
 #ifndef CUPTI_API_CALL
 #define CUPTI_API_CALL(apiFunctionCall)                                                             \
@@ -56,4 +60,5 @@
             exit(EXIT_FAILURE);                                                                        \
         }                                                                                              \
     } while (0)
+#endif
 #endif

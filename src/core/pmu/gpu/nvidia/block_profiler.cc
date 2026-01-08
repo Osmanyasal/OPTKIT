@@ -2,10 +2,17 @@
 
 #if OPTKIT_ENV_LIB_NVML
 #include <memory>
+#include <cupti_version.h>
 
 namespace optkit::pmu::gpu::nvidia
 {
-    static std::unique_ptr<CUpti_ActivityKernel9> g_activity_kernel = nullptr;
+    #if defined(CUPTI_API_VERSION) && (CUPTI_API_VERSION >= 16)
+    using ActivityKernel = CUpti_ActivityKernel6;
+    #else
+    using ActivityKernel = CUpti_ActivityKernel4;
+    #endif
+
+    static std::unique_ptr<ActivityKernel> g_activity_kernel = nullptr;
 
     // Callback for buffer requests
     static void BufferRequested(uint8_t **buffer, size_t *size, size_t *maxNumRecords)
@@ -27,14 +34,14 @@ namespace optkit::pmu::gpu::nvidia
             {
                 if (record->kind == CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL)
                 {
-                    CUpti_ActivityKernel9 *kernel = (CUpti_ActivityKernel9 *)record;
+                    ActivityKernel *kernel = (ActivityKernel *)record;
 
                     // Allocate and copy kernel data before buffer is freed
                     if (g_activity_kernel == nullptr)
                     {
-                        g_activity_kernel.reset(new CUpti_ActivityKernel9());
+                        g_activity_kernel.reset(new ActivityKernel());
                     }
-                    memcpy(g_activity_kernel.get(), kernel, sizeof(CUpti_ActivityKernel9));
+                    memcpy(g_activity_kernel.get(), kernel, sizeof(ActivityKernel));
                 }
             }
         }

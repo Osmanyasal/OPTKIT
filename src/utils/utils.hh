@@ -37,8 +37,8 @@
 #define CONCAT(a, b) a##b
 #define EXPAND_AND_CONCAT(a, b) CONCAT(a, b)
 
-#define BLOCK_TIMER(block_name) \
-    optkit::utils::BlockTimer block_timer { block_name }
+#define BLOCK_TIMER(block_name, out_duration_ms) \
+    optkit::utils::BlockTimer block_timer { block_name, out_duration_ms }
 
 #define EXEC_IF_ROOT                                                                                                 \
     if (!optkit::Query::is_root_priv_enabled)                                                                        \
