@@ -135,6 +135,7 @@ void create_child_process(const CommandArgs &args)
         optkit::pmu::cpu::perf::PerfProfilerConfig perf_config{"stat"};
         perf_config.pid = CHILD_PID;
         optkit::pmu::cpu::perf::BlockProfiler stat_metric_profiler(perf_config, _metric);
+        optkit::callstack::Profiler callstack_profiler{{"stat", true, false, CHILD_PID, -1, "callstack"}};
 
         OPTKIT_CPU_ENERGY("stat");
         OPTKIT_GPU_ENERGY("stat");

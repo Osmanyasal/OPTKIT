@@ -68,13 +68,13 @@ namespace optkit::callstack
         bool init(uint32_t sample_freq)
         {
             const int32_t tid = static_cast<int32_t>(syscall(SYS_gettid));
-            std::cout << "Initializing ThreadBuffer for TID: " << tid << "\n";
+            // std::cout << "Initializing ThreadBuffer for TID: " << tid << "\n";
             return init_for_tid(tid, sample_freq);
         }
 
         bool init_for_tid(int32_t tid, uint32_t sample_freq)
         {
-            std::cout << "init for tid: " << tid << "\n";
+            // std::cout << "init for tid: " << tid << "\n";
             this->thread_id = tid;
 
             const size_t page_size = static_cast<size_t>(sysconf(_SC_PAGESIZE));
@@ -538,7 +538,7 @@ namespace optkit::callstack
         void run()
         {
             const int32_t sweeper_tid = static_cast<int32_t>(syscall(SYS_gettid));
-            std::cout << "Sweeper started in TID: " << sweeper_tid << "\n";
+            // std::cout << "Sweeper started in TID: " << sweeper_tid << "\n";
             auto last_refresh = std::chrono::steady_clock::now();
 
             while (!stop_flag.load())
