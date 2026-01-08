@@ -8,6 +8,7 @@
 #include <atomic>
 #include <chrono>
 #include <cctype>
+#include <cstdio>
 #include <cstdint>
 #include <cstring>
 #include <cstdlib>
@@ -53,7 +54,7 @@ namespace optkit::callstack
         }
     } // namespace proc
 
-    class ThreadBuffer // MailBox
+    class ThreadBuffer // MailBox per software thread.
     {
     public:
         ThreadBuffer() = default;
@@ -63,13 +64,6 @@ namespace optkit::callstack
         ~ThreadBuffer()
         {
             shutdown();
-        }
-
-        bool init(uint32_t sample_freq)
-        {
-            const int32_t tid = static_cast<int32_t>(syscall(SYS_gettid));
-            // std::cout << "Initializing ThreadBuffer for TID: " << tid << "\n";
-            return init_for_tid(tid, sample_freq);
         }
 
         bool init_for_tid(int32_t tid, uint32_t sample_freq)
@@ -156,24 +150,22 @@ namespace optkit::callstack
         int32_t thread_id{0};
     };
 
-    class Registry // phone book for all mailboxes, Since every thread has its own private buffer, the Sweeper needs a way to find them
+    class Registry // phone book for all mailboxes, Since every thread has its own private buffer, the Postman needs a way to find them
     {
     public:
         void register_buffer(ThreadBuffer *buf)
         {
             std::lock_guard<std::mutex> l(lock);
-            active_buffers.push_back(buf);
+            active_buffers.insert(buf);
         }
 
         void unregister_buffer(ThreadBuffer *buf)
         {
             std::lock_guard<std::mutex> l(lock);
-            active_buffers.erase(
-                std::remove(active_buffers.begin(), active_buffers.end(), buf),
-                active_buffers.end());
+            active_buffers.erase(buf);
         }
 
-        std::vector<ThreadBuffer *> get_all_buffers()
+        std::unordered_set<ThreadBuffer *> get_all_buffers()
         {
             std::lock_guard<std::mutex> l(lock);
             return active_buffers;
@@ -181,7 +173,7 @@ namespace optkit::callstack
 
     private:
         std::mutex lock;
-        std::vector<ThreadBuffer *> active_buffers;
+        std::unordered_set<ThreadBuffer *> active_buffers;
     };
 
     inline Registry &global_registry()
@@ -218,12 +210,12 @@ namespace optkit::callstack
         static void refresh(uint32_t sample_freq, int32_t exclude_tid, int32_t target_pid)
         {
             // if you switch target process, clear all owned buffers
-            if (target_pid != current_pid)
+            if (target_pid != ThreadAttachManager::current_pid)
             {
                 for (auto &kv : owned)
                     global_registry().unregister_buffer(kv.second.get());
                 owned.clear();
-                current_pid = target_pid;
+                ThreadAttachManager::current_pid = target_pid;
             }
 
             // List all TIDs in the target process.
@@ -261,7 +253,7 @@ namespace optkit::callstack
             // Attach buffers for new threads we haven't seen.
             for (int32_t tid : tids)
             {
-                if (target_pid == 0 && tid == exclude_tid)
+                if (tid == exclude_tid)
                     continue;
                 if (registered.find(tid) != registered.end())
                     continue;
@@ -282,37 +274,8 @@ namespace optkit::callstack
         static int32_t current_pid;
         static std::unordered_map<int32_t, std::unique_ptr<ThreadBuffer>> owned;
     };
-    int32_t ThreadAttachManager::current_pid = 0;
+    int32_t ThreadAttachManager::current_pid = -1;
     std::unordered_map<int32_t, std::unique_ptr<ThreadBuffer>> ThreadAttachManager::owned;
-
-    class ThreadLocalSampler
-    {
-    public:
-        explicit ThreadLocalSampler(uint32_t sample_freq)
-        {
-            if (buffer.init(sample_freq))
-                global_registry().register_buffer(&buffer);
-        }
-
-        ~ThreadLocalSampler()
-        {
-            global_registry().unregister_buffer(&buffer);
-        }
-
-        ThreadBuffer buffer;
-    };
-
-    inline ThreadLocalSampler &tls_sampler(uint32_t sample_freq)
-    {
-        // Initialized on first use in the thread. This matches the sample's "touch_profiler" idea.
-        thread_local ThreadLocalSampler sampler(sample_freq);
-        return sampler;
-    }
-
-    inline void touch_thread(uint32_t sample_freq)
-    {
-        (void)tls_sampler(sample_freq);
-    }
 
     class Symbolizer
     {
@@ -479,12 +442,35 @@ namespace optkit::callstack
         std::chrono::steady_clock::time_point last_maps_load{};
     };
 
-    class Sweeper // The Postman
+    class Postman // The Postman
     {
+    private:
+        static inline uint64_t fnv1a_update(uint64_t h, const void *data, size_t len)
+        {
+            constexpr uint64_t FNV_PRIME = 1099511628211ULL;
+            const auto *p = static_cast<const unsigned char *>(data);
+            for (size_t i = 0; i < len; ++i)
+            {
+                h ^= static_cast<uint64_t>(p[i]);
+                h *= FNV_PRIME;
+            }
+            return h;
+        }
+
+        static inline uint64_t splitmix64(uint64_t x)
+        {
+            x += 0x9e3779b97f4a7c15ULL;
+            x = (x ^ (x >> 30)) * 0xbf58476d1ce4e5b9ULL;
+            x = (x ^ (x >> 27)) * 0x94d049bb133111ebULL;
+            return x ^ (x >> 31);
+        }
+
     public:
-        Sweeper() = default;
-        Sweeper(const Sweeper &) = delete;
-        Sweeper &operator=(const Sweeper &) = delete;
+        Postman() = default;
+        Postman(const Postman &) = delete;
+        Postman &operator=(const Postman &) = delete;
+        Postman(const Postman &&) = delete;
+        Postman &operator=(const Postman &&) = delete;
 
         void set_sample_freq(uint32_t hz)
         {
@@ -523,31 +509,50 @@ namespace optkit::callstack
         {
             std::lock_guard<std::mutex> l(counts_lock);
             counts.clear();
+            key_to_stack.clear();
         }
 
         std::unordered_map<std::string, uint64_t> consume_counts(bool reset_after)
         {
             std::lock_guard<std::mutex> l(counts_lock);
-            auto out = counts;
+            std::unordered_map<std::string, uint64_t> out;
+            out.reserve(counts.size());
+            for (const auto &kv : counts)
+            {
+                const auto it = key_to_stack.find(kv.first);
+                if (it != key_to_stack.end())
+                    out[it->second] += kv.second;
+            }
             if (reset_after)
+            {
                 counts.clear();
+                key_to_stack.clear();
+            }
             return out;
+        }
+
+        std::string symbolize(uint64_t addr)
+        {
+            return symbolizer.symbolize(addr);
         }
 
     private:
         void run()
         {
-            const int32_t sweeper_tid = static_cast<int32_t>(syscall(SYS_gettid));
-            // std::cout << "Sweeper started in TID: " << sweeper_tid << "\n";
+            const int32_t postman_tid = static_cast<int32_t>(syscall(SYS_gettid));
+            ThreadAttachManager::refresh(sample_freq_hz.load(), postman_tid, target_pid.load());
+
+            // std::cout << "Postman started in TID: " << postman_tid << "\n";
             auto last_refresh = std::chrono::steady_clock::now();
 
+            // init for first time
             while (!stop_flag.load())
             {
                 // Periodically auto-attach to new threads (e.g., OpenMP workers).
                 const auto now = std::chrono::steady_clock::now();
                 if (now - last_refresh > std::chrono::milliseconds(25))
                 {
-                    ThreadAttachManager::refresh(sample_freq_hz.load(), sweeper_tid, target_pid.load());
+                    ThreadAttachManager::refresh(sample_freq_hz.load(), postman_tid, target_pid.load());
                     last_refresh = now;
                 }
 
@@ -612,19 +617,50 @@ namespace optkit::callstack
                                 // perf callchain is usually leaf->root; FlameGraph expects root->leaf.
                                 std::reverse(chain.begin(), chain.end());
 
-                                std::string folded;
-                                folded.reserve(256);
+                                // Store raw addresses as semicolon-separated hex string, symbolization deferred to aggregate()
+                                std::string address_chain;
+                                address_chain.reserve(256);
+                                uint64_t key_hash = 14695981039346656037ULL; // FNV-1a offset basis
                                 for (size_t i = 0; i < chain.size(); i++)
                                 {
                                     if (i)
-                                        folded.push_back(';');
-                                    folded += symbolizer.symbolize(chain[i]);
+                                    {
+                                        address_chain.push_back(';');
+                                        const char sep = ';';
+                                        key_hash = fnv1a_update(key_hash, &sep, 1);
+                                    }
+                                    char hex_buf[2 + 16 + 1];
+                                    const int n = std::snprintf(hex_buf, sizeof(hex_buf), "0x%016llx",
+                                                                static_cast<unsigned long long>(chain[i]));
+                                    if (n > 0)
+                                    {
+                                        address_chain.append(hex_buf, static_cast<size_t>(n));
+                                        key_hash = fnv1a_update(key_hash, hex_buf, static_cast<size_t>(n));
+                                    }
                                 }
 
-                                if (!folded.empty())
+                                if (!address_chain.empty())
                                 {
                                     std::lock_guard<std::mutex> l(counts_lock);
-                                    counts[folded] += 1;
+                                    uint64_t key = key_hash;
+                                    auto it = key_to_stack.find(key);
+                                    if (it == key_to_stack.end())
+                                    {
+                                        key_to_stack.emplace(key, address_chain);
+                                    }
+                                    else if (it->second != address_chain)
+                                    {
+                                        // Extremely unlikely collision; probe to preserve correctness.
+                                        while (it != key_to_stack.end() && it->second != address_chain)
+                                        {
+                                            key = splitmix64(key);
+                                            it = key_to_stack.find(key);
+                                        }
+                                        if (it == key_to_stack.end())
+                                            key_to_stack.emplace(key, address_chain);
+                                    }
+
+                                    counts[key] += 1;
                                 }
                             }
                         }
@@ -648,7 +684,8 @@ namespace optkit::callstack
         std::thread worker;
 
         std::mutex counts_lock;
-        std::unordered_map<std::string, uint64_t> counts;
+        std::unordered_map<uint64_t, uint64_t> counts;
+        std::unordered_map<uint64_t, std::string> key_to_stack;
         Symbolizer symbolizer;
     };
 

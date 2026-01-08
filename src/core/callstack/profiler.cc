@@ -23,42 +23,47 @@ namespace optkit::callstack
             void acquire(uint32_t sample_freq, int32_t target_pid)
             {
                 this->sample_freq_hz = sample_freq;
-                sweeper.set_sample_freq(this->sample_freq_hz);
-
-                // Symbolization + thread discovery target.
-                sweeper.set_target_pid(target_pid);
-
-                // For self-profiling, ensure the current thread's TLS buffer exists
-                // before the sweeper starts scanning.
-                if (target_pid == 0)
-                    touch_thread(this->sample_freq_hz);
-
-                sweeper.start();
+                postman.set_sample_freq(this->sample_freq_hz);
+                postman.set_target_pid(target_pid);
+                postman.start();
             }
 
             void release()
             {
-                sweeper.stop();
-            }
-
-            void touch_current_thread()
-            {
-                touch_thread(this->sample_freq_hz);
+                postman.stop();
             }
 
             void reset_counts()
             {
-                sweeper.reset_counts();
+                postman.reset_counts();
             }
 
             std::unordered_map<std::string, uint64_t> consume_counts(bool reset_after)
             {
-                return sweeper.consume_counts(reset_after);
+                return postman.consume_counts(reset_after);
+            }
+
+            std::string symbolize(uint64_t addr)
+            {
+                return postman.symbolize(addr);
+            }
+
+            CallstackSession(const CallstackSession &) = delete;
+            CallstackSession(CallstackSession &&) = delete;
+
+            void operator=(const CallstackSession &) = delete;
+            void operator=(CallstackSession &&) = delete;
+
+        private:
+            CallstackSession() = default;
+            ~CallstackSession()
+            {
+                postman.stop();
             }
 
         private:
             uint32_t sample_freq_hz{100};
-            Sweeper sweeper;
+            Postman postman;
         };
 
     } // namespace
@@ -71,7 +76,7 @@ namespace optkit::callstack
           profiler_config{config},
           sample_freq_hz{DEFAULT_SAMPLE_FREQ_HZ}
     {
-        // Use PerfProfilerConfig::pid as the target process ID. pid==0 means "self".
+        // Use PerfProfilerConfig::pid as the target process ID. getpid() is set by default.
         CallstackSession::instance().acquire(this->sample_freq_hz, this->profiler_config.pid);
         start = std::chrono::high_resolution_clock::now();
     }
@@ -79,7 +84,6 @@ namespace optkit::callstack
     Profiler::~Profiler()
     {
         this->read_and_store();
-
         (void)this->aggregate();
 
         if (OPT_LIKELY(this->config.dump_results_to_file))
@@ -163,7 +167,42 @@ namespace optkit::callstack
         {
             total_duration += entry.first;
             for (const auto &kv : entry.second)
-                aggregated[kv.first] += kv.second;
+            {
+                // kv.first contains raw hex addresses separated by ';'
+                // Symbolize them now during aggregation
+                const auto &address_chain = kv.first;
+                std::string symbolized_stack;
+
+                symbolized_stack.reserve(address_chain.size());
+
+                // Parse and symbolize the address chain
+                size_t pos = 0;
+                bool first = true;
+                while (pos < address_chain.length())
+                {
+                    size_t semicolon_pos = address_chain.find(';', pos);
+                    if (semicolon_pos == std::string::npos)
+                        semicolon_pos = address_chain.length();
+
+                    std::string addr_str = address_chain.substr(pos, semicolon_pos - pos);
+
+                    if (!first)
+                        symbolized_stack.push_back(';');
+
+                    // Convert string to uint64_t (handles 0x prefix). Avoid exceptions on bad input.
+                    char *end = nullptr;
+                    const uint64_t addr = std::strtoull(addr_str.c_str(), &end, 0);
+                    if (end == addr_str.c_str())
+                        symbolized_stack += "?";
+                    else
+                        symbolized_stack += CallstackSession::instance().symbolize(addr);
+
+                    first = false;
+                    pos = semicolon_pos + 1;
+                }
+
+                aggregated[symbolized_stack] += kv.second;
+            }
         }
 
         std::vector<std::pair<std::string, uint64_t>> event_value(aggregated.begin(), aggregated.end());

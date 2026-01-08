@@ -10,7 +10,7 @@
     optkit::callstack::Profiler EXPAND_AND_CONCAT(var, __LINE__) \
     {                                                            \
         {                                                        \
-            block_name, true, false, 0, -1, "callstack"   \
+            block_name, true, false, ::getpid(), -1, "callstack"   \
         }                                                        \
     }
 #else
