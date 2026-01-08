@@ -9,9 +9,10 @@
 - [x] optkit-setenv development
 - [x] optkit-cli development 
 
-## v0.6 (Q4 - 2025)
+## v0.6 (Q1 - 2026)
 - [x] Counter overlow handling
-- [ ] Callstack analysis & flame graphs
+- [x] Callstack analysis & flame graphs
+- [x] Basic test suite
 - [x] Documentation improvements
 
 ## v0.7 (Q1 2026)
@@ -19,7 +20,6 @@
 - [ ] AMD GPU PMU events 
 - [ ] Error handling refactor
 - [ ] Basic test suite
-- [x] Counter overlow handling
 - [ ] Documentation improvements
 
 ## v0.8 (Q2 2026)

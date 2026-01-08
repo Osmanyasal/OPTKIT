@@ -228,14 +228,14 @@ TEST_F(CallstackTest, ShallowCallstack)
     {
         OPTKIT_CALLSTACK_PROFILER("shallow_nesting");
 
-        // Only call level_2 which has minimal depth
-        level_2();
+        // Only call level_4 which has minimal depth
+        level_4();
     }
 
     std::cout << "\n✓ Shallow callstack test completed.\n";
     std::cout << "  Expected stacks in output (limited depth):\n";
-    std::cout << "    - main -> level_1 -> level_2 -> level_3\n";
-    std::cout << "    - main -> level_1 -> level_2\n";
+    std::cout << "    - main -> level_4 -> level_5\n";
+    std::cout << "    - main -> level_4\n";
 }
 
 /**
