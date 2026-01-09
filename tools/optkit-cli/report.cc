@@ -10,6 +10,8 @@
 #include <cctype>
 #include <vector>
 #include <cstdlib>
+#include <limits.h>
+#include <unistd.h>
 
 struct RunData
 {
@@ -50,6 +52,51 @@ static std::string filename_stem(const std::string &name)
 {
     size_t dot = name.find_last_of('.');
     return (dot == std::string::npos) ? name : name.substr(0, dot);
+}
+
+static std::string join_path(const std::string &a, const std::string &b)
+{
+    if (a.empty())
+        return b;
+    if (!b.empty() && b[0] == '/')
+        return b;
+    if (a[a.size() - 1] == '/')
+        return a + b;
+    return a + "/" + b;
+}
+
+static std::string executable_dir()
+{
+    char buf[PATH_MAX];
+    ssize_t n = ::readlink("/proc/self/exe", buf, sizeof(buf) - 1);
+    if (n <= 0)
+        return std::string();
+    buf[n] = '\0';
+    std::string full(buf);
+    size_t s = full.find_last_of('/');
+    if (s == std::string::npos)
+        return std::string();
+    return full.substr(0, s);
+}
+
+static bool file_exists(const std::string &path)
+{
+    std::ifstream f(path.c_str());
+    return f.good();
+}
+
+static std::string detect_optkit_root_from_exe()
+{
+    // tools/optkit-cli/optkit -> repo root is ../..
+    std::string dir = executable_dir();
+    if (dir.empty())
+        return std::string();
+
+    char resolved[PATH_MAX];
+    std::string candidate = join_path(dir, "../..");
+    if (::realpath(candidate.c_str(), resolved) != nullptr)
+        return std::string(resolved);
+    return candidate;
 }
 
 // Parse callstack JSON and generate FlameGraph SVG
@@ -167,23 +214,35 @@ static void handle_callstack_json(const std::string &json_path)
     std::string folded_path = filename_stem(json_path) + ".folded";
     std::string svg_path = filename_stem(json_path) + ".svg";
 
-    // Try to find flamegraph.pl under lib/FlameGraph or relative paths
+    // Try to find flamegraph.pl under OPTKIT's lib/FlameGraph.
+    // Important: do NOT rely on current working directory; aliases may run from anywhere.
     std::string fg_script;
-    const char *search_paths[] = {
-        "lib/FlameGraph/flamegraph.pl",
-        "../../../lib/FlameGraph/flamegraph.pl",
-        "../../lib/FlameGraph/flamegraph.pl",
-        "/home/rt7/Desktop/OPTKIT/lib/FlameGraph/flamegraph.pl",
-        "/usr/local/FlameGraph/flamegraph.pl",
-        nullptr};
 
-    for (int i = 0; search_paths[i] != nullptr; i++)
+    const std::string optkit_root = detect_optkit_root_from_exe();
+    if (!optkit_root.empty())
     {
-        std::ifstream test(search_paths[i]);
-        if (test.good())
+        const std::string candidate = join_path(optkit_root, "lib/FlameGraph/flamegraph.pl");
+        if (file_exists(candidate))
+            fg_script = candidate;
+    }
+
+    if (fg_script.empty())
+    {
+        // Fallbacks (best effort): relative paths from CWD, or system install location.
+        const char *search_paths[] = {
+            "lib/FlameGraph/flamegraph.pl",
+            "../../../lib/FlameGraph/flamegraph.pl",
+            "../../lib/FlameGraph/flamegraph.pl",
+            "/usr/local/FlameGraph/flamegraph.pl",
+            nullptr};
+
+        for (int i = 0; search_paths[i] != nullptr; i++)
         {
-            fg_script = search_paths[i];
-            break;
+            if (file_exists(search_paths[i]))
+            {
+                fg_script = search_paths[i];
+                break;
+            }
         }
     }
 
