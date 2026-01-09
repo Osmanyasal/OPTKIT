@@ -16,6 +16,7 @@ The library provides comprehensive monitoring capabilities for CPUs, GPUs, and I
 | GPU Power          | N/A   | N/A     | N/A          | ✅         | ✅      |
 | Temperature        | ✅    | ✅      | ✅           | ✅         | ✅      |
 | Frequency Tuning   | ✅    | ✅      | ✅           | ✅         | ✅      |
+| Callstack Analysis | ✅    | ✅      | ?           | N/A         | N/A      |
 
 
 
