@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -std=c++11 -O2 -Wall -Wextra -fopenmp
+CXXFLAGS = -std=c++11 -O0 -g -rdynamic -fno-omit-frame-pointer -Wall -Wextra -fopenmp 
 LDFLAGS = -lpthread -ldl
 
 # Paths
@@ -46,7 +46,7 @@ $(TARGET): $(OBJECTS) $(OPTKIT_LIB)
 
 # Compile source files
 %.o: %.cc solution.hh solution_patch.hh
-	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
+	$(CXX) $(CXXFLAGS)  $(INCLUDES) -c $< -o $@
 
 # Run the example
 run: $(TARGET)
