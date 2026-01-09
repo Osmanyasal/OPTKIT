@@ -134,6 +134,8 @@ struct CommandArgs
     Target target = Target::ALL;
     BenchType bench_type = BenchType::DEFAULT;
     ListType list_type = ListType::ALL;
+    bool parse_error = false;
+    std::string parse_error_message;
     std::vector<std::string> events;                // PMU events to profile (-e)
     std::vector<std::string> metrics;               // Metrics to collect (-m)
     std::string program;                            // Program to execute
@@ -269,4 +271,43 @@ inline std::ostream &operator<<(std::ostream &os, const CommandArgs &args)
 {
     os << to_string(args);
     return os;
+}
+
+inline bool report_debug_enabled()
+{
+    const char *v = std::getenv("OPTKIT_CLI_DEBUG");
+    return (v != nullptr) && (v[0] == '1' || v[0] == 'y' || v[0] == 'Y' || v[0] == 't' || v[0] == 'T');
+}
+
+inline bool run_system_checked(const std::string &cmd, const std::string &what)
+{
+    int ret = std::system(cmd.c_str());
+    if (ret != 0)
+    {
+        std::cerr << "Error: failed to run " << what << " (exit=" << ret << ")\n";
+        if (report_debug_enabled())
+            std::cerr << "Command: " << cmd << "\n";
+        return false;
+    }
+    return true;
+}
+
+inline bool cli_debug_enabled()
+{
+    const char *v = std::getenv("OPTKIT_CLI_DEBUG");
+    return (v != nullptr) && (v[0] == '1' || v[0] == 'y' || v[0] == 'Y' || v[0] == 't' || v[0] == 'T');
+}
+
+inline bool parse_u32(const std::string &s, uint32_t &out)
+{
+    try
+    {
+        unsigned long v = std::stoul(s);
+        out = static_cast<uint32_t>(v);
+        return true;
+    }
+    catch (const std::exception &)
+    {
+        return false;
+    }
 }

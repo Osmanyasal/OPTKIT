@@ -84,7 +84,6 @@ int main(int argc, char **argv)
         if (config.is_valid())
         {
             CGroup::instance().create_cgroup();
-            config.apply(getppid());
             CGroup::instance().add_process(getppid());
 
             if (config.apply(getppid()))

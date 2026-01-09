@@ -1,6 +1,8 @@
 #include <iostream>
 #include <unordered_map>
 #include <algorithm>
+#include <cstdlib>
+#include <stdexcept>
 #include "utils.hh"
 
 Command parse_command(const std::string &cmd)
@@ -117,6 +119,13 @@ CommandArgs parse_arguments(int argc, char **argv)
         }
         break;
     case Command::STAT:
+        if (separator_it == tokens.end())
+        {
+            args.parse_error = true;
+            args.parse_error_message = "stat requires '-- <program>'";
+            args.command = Command::HELP;
+            break;
+        }
         // Parse all options before the separator
         for (size_t i = 1; i < separator_pos; ++i)
         {
@@ -126,7 +135,23 @@ CommandArgs parse_arguments(int argc, char **argv)
                 // Next token should be the sampling period in milliseconds
                 if (i + 1 < separator_pos)
                 {
-                    args.sampling_period_ms = static_cast<uint32_t>(std::stoul(tokens[++i]));
+                    uint32_t v = 0;
+                    if (!parse_u32(tokens[i + 1], v))
+                    {
+                        args.parse_error = true;
+                        args.parse_error_message = "Invalid value for -T: '" + tokens[i + 1] + "'";
+                        args.command = Command::HELP;
+                        break;
+                    }
+                    args.sampling_period_ms = v;
+                    ++i;
+                }
+                else
+                {
+                    args.parse_error = true;
+                    args.parse_error_message = "Missing value for -T";
+                    args.command = Command::HELP;
+                    break;
                 }
             }
             if (token == "-S")
@@ -134,7 +159,23 @@ CommandArgs parse_arguments(int argc, char **argv)
                 // Next token should be the socket ID
                 if (i + 1 < separator_pos)
                 {
-                    args.socket_id = static_cast<uint32_t>(std::stoul(tokens[++i]));
+                    uint32_t v = 0;
+                    if (!parse_u32(tokens[i + 1], v))
+                    {
+                        args.parse_error = true;
+                        args.parse_error_message = "Invalid value for -S: '" + tokens[i + 1] + "'";
+                        args.command = Command::HELP;
+                        break;
+                    }
+                    args.socket_id = v;
+                    ++i;
+                }
+                else
+                {
+                    args.parse_error = true;
+                    args.parse_error_message = "Missing value for -S";
+                    args.command = Command::HELP;
+                    break;
                 }
             }
             if (token == "-e" || token == "--event")
@@ -144,6 +185,13 @@ CommandArgs parse_arguments(int argc, char **argv)
                 {
                     args.events.push_back(tokens[++i]);
                 }
+                else
+                {
+                    args.parse_error = true;
+                    args.parse_error_message = "Missing value for -e/--event";
+                    args.command = Command::HELP;
+                    break;
+                }
             }
             else if (token == "-m" || token == "--metric")
             {
@@ -152,6 +200,13 @@ CommandArgs parse_arguments(int argc, char **argv)
                 {
                     args.metrics.push_back(tokens[++i]);
                 }
+                else
+                {
+                    args.parse_error = true;
+                    args.parse_error_message = "Missing value for -m/--metric";
+                    args.command = Command::HELP;
+                    break;
+                }
             }
             else if (token == "--bench")
             {
@@ -159,6 +214,13 @@ CommandArgs parse_arguments(int argc, char **argv)
                 if (i + 1 < separator_pos)
                 {
                     args.bench_type = parse_bench_type(tokens[++i]);
+                }
+                else
+                {
+                    args.parse_error = true;
+                    args.parse_error_message = "Missing value for --bench";
+                    args.command = Command::HELP;
+                    break;
                 }
             }
         }
@@ -173,8 +235,18 @@ CommandArgs parse_arguments(int argc, char **argv)
 
 void execute_command(const CommandArgs &args)
 {
-    std::cout << "Parsed Arguments:\n"
-              << to_string(args) << "\n\n";
+    if (args.parse_error)
+    {
+        std::cerr << "Error: " << args.parse_error_message << "\n\n";
+        print_help();
+        return;
+    }
+
+    if (cli_debug_enabled())
+    {
+        std::cout << "Parsed Arguments:\n"
+                  << to_string(args) << "\n\n";
+    }
     switch (args.command)
     {
     case Command::TOPOLOGY:

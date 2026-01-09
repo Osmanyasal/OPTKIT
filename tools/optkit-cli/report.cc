@@ -249,8 +249,7 @@ static void handle_callstack_json(const std::string &json_path)
     if (!fg_script.empty())
     {
         std::string cmd = "perl " + fg_script + " " + folded_path + " > " + svg_path + " 2>/dev/null";
-        int ret = std::system(cmd.c_str());
-        if (ret == 0)
+        if (run_system_checked(cmd, "FlameGraph (perl)"))
         {
             std::cout << "Generated: " << svg_path << "\n";
         }
@@ -581,7 +580,7 @@ static void generate_heatmap(const std::vector<RunData> &runs, const std::string
     gp.close();
     // Execute the generated gnuplot script to produce the PNG
     std::string cmd = std::string("gnuplot ") + gp_name;
-    system(cmd.c_str());
+    run_system_checked(cmd, "gnuplot heatmap");
 }
 
 static std::vector<RunData> parse_runs_from_paths(const std::vector<std::string> &paths)
@@ -665,7 +664,7 @@ static void generate_exec_time_chart(const std::vector<RunData> &runs)
     gp << "plot 'exec_time_per_core.dat' using 1:2 with linespoints lw 2 title 'Duration'\n";
     gp.close();
 
-    system("gnuplot exec_time_per_core.gp");
+    run_system_checked("gnuplot exec_time_per_core.gp", "gnuplot exec_time_per_core.gp");
 }
 
 static void generate_topdownl1_chart(const std::vector<RunData> &runs)
@@ -731,7 +730,7 @@ static void generate_topdownl1_chart(const std::vector<RunData> &runs)
           "'' using 0:($2+$3+$4+$5+$6/2):($6 > 3 ? sprintf('%.1f%%',$6) : '') with labels tc rgb 'black' font ',9' notitle\n";
     gp.close();
 
-    system("gnuplot topdown_blocksl1.gp");
+    run_system_checked("gnuplot topdown_blocksl1.gp", "gnuplot topdown_blocksl1.gp");
 }
 
 static void generate_topdownl2_chart(const std::vector<RunData> &runs)
@@ -803,7 +802,7 @@ static void generate_topdownl2_chart(const std::vector<RunData> &runs)
           "'' using 0:($2+$3+$4+$5+$6+$7+$8+$9/2):($9 > 3 ? sprintf('%.1f%%',$9) : '') with labels tc rgb 'black' font ',9' notitle\n";
     gp.close();
 
-    system("gnuplot topdownl2_blocks.gp");
+    run_system_checked("gnuplot topdownl2_blocks.gp", "gnuplot topdownl2_blocks.gp");
 }
 
 static void generate_carm_roofline_for_isa(const std::vector<RunData> &runs,
@@ -895,7 +894,7 @@ static void generate_carm_roofline_for_isa(const std::vector<RunData> &runs,
     gp.close();
 
     std::string cmd = "gnuplot " + gp_name;
-    system(cmd.c_str());
+    run_system_checked(cmd, "CARM roofline generation");
 
     std::cout << "  " << isa_name << ": " << output_name << " (Peak: " << compute_peak
               << " GFlops/s, DRAM: " << mem_bw << " GB/s)\n";
