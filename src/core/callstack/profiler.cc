@@ -1,10 +1,6 @@
 
 #include "core/callstack/profiler.hh"
 
-#include "core/callstack/perf_mailbox.hh"
-
-#include <chrono>
-
 #if OPTKIT_ENV_LIB_PERF_EVENT
 
 namespace optkit::callstack

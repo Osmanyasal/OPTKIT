@@ -16,11 +16,11 @@ inline void print_help()
 OPTKIT - Performance and Energy Profiling & Optimization Tool
 
 USAGE:
-    optkit <COMMAND> [OPTIONS] [-- <PROGRAM>]
+    optkit <COMMAND> [OPTIONS] [-o | --output <FILE>] [-- <PROGRAM>]
 
-COMMANDS:
+COMMAND:
     topology [cpu|gpu]              Show system topology
-    list <TYPE> [cpu|gpu]           List available components
+    list [cpu|gpu] <TYPE>            List available components
     stat [OPTIONS] -- <PROGRAM>     Run single-shot profiling (like perf stat)
 
 TOPOLOGY:
@@ -56,36 +56,8 @@ BENCHMARKING (--bench):
 VISUALISING REPORT (--report):
     Generate visual report from collected profiling data
 
-    optkit report -- <report_data_folder(s)>
-
-EXAMPLES:
-    # Topology queries
-    optkit topology
-    optkit topology cpu
-    optkit topology gpu
-
-    # List capabilities
-    optkit list all
-    optkit list cpu all
-    optkit list cpu events
-    optkit list cpu metrics
-    optkit list gpu all
-    optkit list gpu events
-    optkit list gpu metrics
-
-    # Single-shot profiling (executes once)
-    optkit stat -- ./my_program
-    optkit stat -e cycles -e instructions -- ./app
-    optkit stat -m ipc -m cache-miss-rate -- ./benchmark
-
-    # Benchmark analysis (executes multiple times)
-    optkit stat --bench freq-scaling -- ./compute_heavy
-    optkit stat --bench core-scaling -- ./parallel_app 
-
-    # Interleaved options (benchmark + specific profiling)
-    optkit stat --bench freq-scaling -e cycles -m ipc -- ./program --input data.txt
-    optkit stat -e cache-misses -m energy --bench core-scaling -- ./app 
-
+    optkit report <report_data_folder(s)>
+ 
 NOTE:
     - 'stat' without --bench <...>: Single execution, collects specified events/metrics
     - 'stat' with --bench <...>: Multiple executions with varying configurations
@@ -135,6 +107,7 @@ struct CommandArgs
     BenchType bench_type = BenchType::DEFAULT;
     ListType list_type = ListType::ALL;
     bool parse_error = false;
+    bool dump_to_file;
     std::string parse_error_message;
     std::vector<std::string> events;                // PMU events to profile (-e)
     std::vector<std::string> metrics;               // Metrics to collect (-m)

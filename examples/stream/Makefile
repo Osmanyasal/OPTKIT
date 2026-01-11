@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -O2 -fopenmp
+CFLAGS = -O2  -g -fno-omit-frame-pointer -rdynamic -fopenmp
 
 FC = gfortran
 FFLAGS = -O2 -fopenmp

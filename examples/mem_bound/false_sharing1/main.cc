@@ -22,7 +22,6 @@ size_t original_solution(const std::vector<uint32_t> &data)
 int main()
 {
     OPTKIT_INIT(); // Initialize OPTKIT
-    OPTKIT_CALLSTACK_PROFILER("main");
     const auto size = 16 * 1024 * 1024;
 
     std::vector<uint32_t> data;

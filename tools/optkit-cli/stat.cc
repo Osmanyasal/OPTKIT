@@ -380,7 +380,7 @@ void execute_stat_command(const CommandArgs &args)
 
     case BenchType::DEFAULT:
     {
-        OPTKIT_INIT({false});
+        OPTKIT_INIT({args.dump_to_file});
         std::cout << "\n[Will execute program once and collect metrics]\n";
         create_child_process(args);
         break;

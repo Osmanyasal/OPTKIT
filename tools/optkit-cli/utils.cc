@@ -223,6 +223,11 @@ CommandArgs parse_arguments(int argc, char **argv)
                     break;
                 }
             }
+            else if (token == "-o" || token == "--output")
+            {
+                args.dump_to_file = true;
+                i++;
+            }
         }
         break;
 

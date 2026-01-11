@@ -15,7 +15,6 @@ namespace optkit::pmu::cpu::msr
             struct perf_event_attr attr = this->profiler_config.perf_event_config; // copy default config.
             attr.config = raw_event.first;                                         // set an event
 
-            // TODO: alter this to configure msr.
             // fd = syscall(__NR_perf_event_open, &attr, this->profiler_config.pid, this->profiler_config.cpu, -1, 0); // <-- first becomes -1 and later we use the group_leader's fd.
             if (fd < 0)
             {

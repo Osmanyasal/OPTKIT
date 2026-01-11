@@ -1007,7 +1007,6 @@ namespace optkit::gpu
             compute_info.compute_capability_major = std::strtol(version.substr(0, version.find(".")).c_str(), nullptr, 10);
             compute_info.compute_capability_minor = std::strtol(version.substr(version.find(".") + 1).c_str(), nullptr, 10);
 
-            // TODO: Fix socket-device mapping issue
             // The current code incorrectly uses device_index for socket access
             // For now, use a safer approach and skip the complex socket enumeration
 
