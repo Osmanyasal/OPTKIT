@@ -7,9 +7,9 @@
     {                                                                        \
         optkit::ProfilerConfig(                                              \
             block_name,                                                      \
-            "gpu_pmu",                                                       \
+            "nvidia_gpu_pmu",                                                \
             true,                                                            \
             false,                                                           \
-            false,                                                           \
-            false)                                                           \
+            optkit::Query::create_folder,                                    \
+            !optkit::Query::create_folder)                                   \
     }

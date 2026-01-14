@@ -18,10 +18,10 @@ namespace optkit::pmu::gpu::nvidia
      * @brief The BlockProfiler class utilizes the RAII technique to initiate and conclude profiling for specific metrics.
      *        Profiling commences upon instantiation and persists until the current scope is exited.
      */
-    class BlockProfiler : public BaseProfiler<std::vector<uint64_t>, uint64_t>
+    class BlockProfiler : public BaseProfiler<std::vector<std::string>, std::string>
     {
     public:
-        BlockProfiler(const ProfilerConfig &profiler_config, const optkit::metrics::MetricBuilder<uint64_t> &mb = {});
+        BlockProfiler(const ProfilerConfig &profiler_config, const optkit::metrics::MetricBuilder<std::string> &mb = {});
         virtual ~BlockProfiler();
         /**
          * @brief Disables this block profiler and associated events
@@ -52,15 +52,15 @@ namespace optkit::pmu::gpu::nvidia
          *
          * @return std::vector<uint64_t> contains each raw_events' pmu data.
          */
-        virtual std::vector<uint64_t> read() override;
+        virtual std::vector<std::string> read() override;
 
-        virtual std::unordered_map<std::string, uint64_t> aggregate() override;
+        virtual std::unordered_map<std::string, std::string> aggregate() override;
 
 #if !OPTKIT_TESTING // if not testing (in prod) then make those private, in testin make those public
     private:
 #endif
         const ProfilerConfig profiler_config;
-        const optkit::metrics::MetricBuilder<uint64_t> metric_builder;
+        const optkit::metrics::MetricBuilder<std::string> metric_builder;
         std::vector<std::pair<std::string, double>> metric_results;
     };
 

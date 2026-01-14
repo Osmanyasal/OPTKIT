@@ -6,13 +6,16 @@
 
 namespace optkit::pmu::gpu::nvidia
 {
-    #if defined(CUPTI_API_VERSION) && (CUPTI_API_VERSION >= 16)
+#if defined(CUPTI_API_VERSION) && (CUPTI_API_VERSION >= 16)
     using ActivityKernel = CUpti_ActivityKernel6;
-    #else
+    using ActivityMemcpy = CUpti_ActivityMemcpy6;
+#else
     using ActivityKernel = CUpti_ActivityKernel4;
-    #endif
+    using ActivityMemcpy = CUpti_ActivityMemcpy4;
+#endif
 
     static std::unique_ptr<ActivityKernel> g_activity_kernel = nullptr;
+    static std::vector<std::unique_ptr<ActivityMemcpy>> g_activity_memcpy;
 
     // Callback for buffer requests
     static void BufferRequested(uint8_t **buffer, size_t *size, size_t *maxNumRecords)
@@ -43,12 +46,25 @@ namespace optkit::pmu::gpu::nvidia
                     }
                     memcpy(g_activity_kernel.get(), kernel, sizeof(ActivityKernel));
                 }
+                else if (record->kind == CUPTI_ACTIVITY_KIND_MEMCPY)
+                {
+                    ActivityMemcpy *memcpyCmd = (ActivityMemcpy *)record;
+
+                    std::unique_ptr<ActivityMemcpy> ptr{new ActivityMemcpy()};
+                    memcpy(ptr.get(), memcpyCmd, sizeof(ActivityMemcpy));
+                    g_activity_memcpy.push_back(std::move(ptr));
+                    // print those
+                    // std::cout << "Memcpy of " << g_activity_memcpy.back()->bytes << " bytes from "
+                    //           << getMemKindString((CUpti_ActivityMemoryKind)g_activity_memcpy.back()->srcKind)
+                    //           << " to " << getMemKindString((CUpti_ActivityMemoryKind)g_activity_memcpy.back()->dstKind)
+                    //           << " took " << (g_activity_memcpy.back()->end - g_activity_memcpy.back()->start) * 1e-6 << " ms\n";
+                }
             }
         }
         free(buffer);
     }
 
-    BlockProfiler::BlockProfiler(const ProfilerConfig &profiler_config, const optkit::metrics::MetricBuilder<uint64_t> &mb)
+    BlockProfiler::BlockProfiler(const ProfilerConfig &profiler_config, const optkit::metrics::MetricBuilder<std::string> &mb)
         : BaseProfiler{static_cast<const ProfilerConfig &>(profiler_config)}, profiler_config{profiler_config}, metric_builder{mb}
     {
         start = std::chrono::high_resolution_clock::now();
@@ -56,23 +72,84 @@ namespace optkit::pmu::gpu::nvidia
 
         CUPTI_API_CALL(cuptiActivityRegisterCallbacks(BufferRequested, BufferCompleted));
         CUPTI_API_CALL(cuptiActivityEnable(CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL));
+        CUPTI_API_CALL(cuptiActivityEnable(CUPTI_ACTIVITY_KIND_MEMCPY));
     }
+
+    struct MemcpyEvent
+    {
+        double duration_ms;
+        uint64_t bytes;
+        std::string src_memory_kind;
+        std::string dst_memory_kind;
+        uint64_t copy_kind;
+
+        std::string to_string() const
+        {
+            std::stringstream ss;
+            ss << "{duration_ms:" << duration_ms << ", "
+               << "bytes:" << bytes << ", "
+               << "src_kind:" << src_memory_kind << ", "
+               << "dst_kind:" << dst_memory_kind << ", "
+               << "copy_kind:" << copy_kind << "}";
+            return ss.str();
+        }
+    };
 
     BlockProfiler ::~BlockProfiler()
     {
-
         CUPTI_API_CALL(cuptiActivityFlushAll(1));
+        CUPTI_API_CALL(cuptiActivityDisable(CUPTI_ACTIVITY_KIND_MEMCPY));
         CUPTI_API_CALL(cuptiActivityDisable(CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL));
-        printf("GPU Kernel Activity Profiling Result:\n");
-        printf("is null? %d\n", g_activity_kernel == nullptr);
-        if (g_activity_kernel != nullptr)
-        {
-            printf("kernel name = %s\n", g_activity_kernel->name);
-            printf("kernel duration (ns) = %llu\n", (unsigned long long)(g_activity_kernel->end - g_activity_kernel->start));
-            g_activity_kernel.reset();
-        }
         this->read_and_store();
         this->metric_results = this->metric_builder.calculate(aggregate());
+        this->event_results.push_back({"kernel_duration_ms", g_activity_kernel != nullptr ? std::to_string((g_activity_kernel->end - g_activity_kernel->start) * 1e-6) : "0"});
+        double memcpy_total_duration_ms = 0.0;
+        double htod_duration_ms = 0.0;
+        double dtoh_duration_ms = 0.0;
+        double dtod_duration_ms = 0.0;
+        double htoh_duration_ms = 0.0;
+
+        for (auto &memcpy_rec_ptr : g_activity_memcpy)
+        {
+            if (memcpy_rec_ptr != nullptr)
+            {
+                MemcpyEvent event;
+                event.duration_ms = (memcpy_rec_ptr->end - memcpy_rec_ptr->start) * 1e-6;
+                memcpy_total_duration_ms += event.duration_ms;
+                event.bytes = memcpy_rec_ptr->bytes;
+                event.src_memory_kind = getMemKindString((CUpti_ActivityMemoryKind)memcpy_rec_ptr->srcKind);
+                event.dst_memory_kind = getMemKindString((CUpti_ActivityMemoryKind)memcpy_rec_ptr->dstKind);
+                event.copy_kind = static_cast<uint64_t>(memcpy_rec_ptr->copyKind);
+                this->event_results.push_back({"memcpy", event.to_string()});
+
+                switch (memcpy_rec_ptr->copyKind)
+                {
+                case CUPTI_ACTIVITY_MEMCPY_KIND_HTOD:
+                    htod_duration_ms += event.duration_ms;
+                    break;
+                case CUPTI_ACTIVITY_MEMCPY_KIND_DTOH:
+                    dtoh_duration_ms += event.duration_ms;
+                    break;
+                case CUPTI_ACTIVITY_MEMCPY_KIND_DTOD:
+                    dtod_duration_ms += event.duration_ms;
+                    break;
+                case CUPTI_ACTIVITY_MEMCPY_KIND_HTOH:
+                    htoh_duration_ms += event.duration_ms;
+                    break;
+                default:
+                    break;
+                }
+            }
+            memcpy_rec_ptr.reset();
+        }
+        this->event_results.insert(this->event_results.begin() + 1, {"memcpy_duration_ms", std::to_string(memcpy_total_duration_ms)});
+        this->event_results.insert(this->event_results.begin() + 2, {"memcpy_htod_duration_ms", std::to_string(htod_duration_ms)});
+        this->event_results.insert(this->event_results.begin() + 2, {"memcpy_dtoh_duration_ms", std::to_string(dtoh_duration_ms)});
+        this->event_results.insert(this->event_results.begin() + 2, {"memcpy_dtod_duration_ms", std::to_string(dtod_duration_ms)});
+        this->event_results.insert(this->event_results.begin() + 2, {"memcpy_htoh_duration_ms", std::to_string(htoh_duration_ms)});
+        g_activity_kernel.reset();
+        g_activity_memcpy.clear();
+
         if (OPT_LIKELY(this->config.dump_results_to_file))
             this->save();
 
@@ -110,32 +187,32 @@ namespace optkit::pmu::gpu::nvidia
         std::stringstream ss;
         ss << "[\n";
         // based on the insertion order.
-        ss << utils::to_json<uint64_t>(this->total_duration_ms, this->config.measurement_type, this->event_results, this->metric_results);
+        ss << utils::to_json<std::string>(this->total_duration_ms, this->config.measurement_type, this->event_results, this->metric_results);
         ss << "]\n";
         return ss.str();
     }
 
-    std::vector<uint64_t> BlockProfiler::read()
+    std::vector<std::string> BlockProfiler::read()
     {
         if (OPT_UNLIKELY(!is_enabled))
             return {};
 
-        std::vector<uint64_t> result;
+        std::vector<std::string> result;
         return result;
     }
-    std::unordered_map<std::string, uint64_t> BlockProfiler::aggregate()
+    std::unordered_map<std::string, std::string> BlockProfiler::aggregate()
     {
         if (OPT_UNLIKELY(!is_enabled))
             return {};
         double total_duration = 0.0;
-        std::unordered_map<std::string, uint64_t> aggregated_events;
+        std::unordered_map<std::string, std::string> aggregated_events;
         const std::vector<std::string> &event_names = this->metric_builder.event_names();
 
         for (const auto &entry : read_buffer)
         {
             total_duration += entry.first;
 
-            const std::vector<uint64_t> &values = entry.second;
+            const std::vector<std::string> &values = entry.second;
 
             // std::cout << "read buffer:";
             for (size_t j = 0; j < values.size(); ++j)
@@ -144,7 +221,7 @@ namespace optkit::pmu::gpu::nvidia
                 aggregated_events[event_names[j]] += values[j];
             }
         }
-        std::vector<std::pair<std::string, uint64_t>> event_value(
+        std::vector<std::pair<std::string, std::string>> event_value(
             aggregated_events.begin(), aggregated_events.end());
 
         this->event_results = std::move(event_value);

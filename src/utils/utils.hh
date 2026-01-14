@@ -135,6 +135,13 @@ namespace optkit::utils
     }
 
     template <typename T>
+    typename std::enable_if<std::is_same<T, std::string>::value, void>::type
+    format_result_value(std::ostringstream &ss, const T &value)
+    {
+        ss << std::fixed << value;
+    }
+
+    template <typename T>
     typename std::enable_if<std::is_same<T, std::unordered_map<uint32_t, double>>::value, void>::type
     format_result_value(std::ostringstream &ss, const T &value)
     {
@@ -160,7 +167,8 @@ namespace optkit::utils
     template <typename T>
     typename std::enable_if<!std::is_arithmetic<T>::value &&
                                 !std::is_same<T, std::unordered_map<uint32_t, double>>::value &&
-                                !std::is_same<T, std::pair<double, double>>::value,
+                                !std::is_same<T, std::pair<double, double>>::value &&
+                                !std::is_same<T, std::string>::value,
                             void>::type
     format_result_value(std::ostringstream &ss, const T &value)
     {
@@ -168,6 +176,10 @@ namespace optkit::utils
     }
 
     // Helper to get dtype string
+    template <typename T>
+    typename std::enable_if<std::is_same<T, std::string>::value, std::string>::type
+    get_dtype_string() { return "string"; }
+
     template <typename T>
     typename std::enable_if<std::is_same<T, uint64_t>::value, std::string>::type
     get_dtype_string() { return "uint64_t"; }
@@ -183,7 +195,8 @@ namespace optkit::utils
     template <typename T>
     typename std::enable_if<!std::is_same<T, uint64_t>::value &&
                                 !std::is_same<T, double>::value &&
-                                !std::is_same<T, std::pair<double, double>>::value,
+                                !std::is_same<T, std::pair<double, double>>::value &&
+                                !std::is_same<T, std::string>::value,
                             std::string>::type
     get_dtype_string() { return "double"; }
 

@@ -55,7 +55,7 @@ CUDA_LIB_DIR := $(shell \
 		echo $(CUDA_PATH)/lib64; \
 	fi)
 
-LDFLAGS = -lpthread -ldl -L$(CUDA_LIB_DIR) -lcudart
+LDFLAGS = -lpthread -ldl -L$(CUDA_LIB_DIR) -lcudart -lcupti
 
 # Detect additional GPU libraries
 NVML_LIB := $(shell \
