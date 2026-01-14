@@ -86,4 +86,40 @@ inline std::string getMemKindString(CUpti_ActivityMemoryKind kind)
         return "Other";
     }
 }
+
+inline std::string getOverheadKindString(CUpti_ActivityOverheadKind kind)
+{
+    switch (kind)
+    {
+    case CUPTI_ACTIVITY_OVERHEAD_DRIVER_COMPILER:
+        return "COMPILER";
+    case CUPTI_ACTIVITY_OVERHEAD_CUPTI_BUFFER_FLUSH:
+        return "BUFFER_FLUSH";
+    case CUPTI_ACTIVITY_OVERHEAD_CUPTI_INSTRUMENTATION:
+        return "INSTRUMENTATION";
+    case CUPTI_ACTIVITY_OVERHEAD_CUPTI_RESOURCE:
+        return "RESOURCE";
+    default:
+        return "UNKNOWN";
+    }
+}
+
+inline std::string getObjectKindString(CUpti_ActivityObjectKind kind)
+{
+    switch (kind)
+    {
+    case CUPTI_ACTIVITY_OBJECT_PROCESS:
+        return "PROCESS";
+    case CUPTI_ACTIVITY_OBJECT_THREAD:
+        return "THREAD";
+    case CUPTI_ACTIVITY_OBJECT_DEVICE:
+        return "DEVICE";
+    case CUPTI_ACTIVITY_OBJECT_CONTEXT:
+        return "CONTEXT";
+    case CUPTI_ACTIVITY_OBJECT_STREAM:
+        return "STREAM";
+    default:
+        return "UNKNOWN";
+    }
+}
 #endif

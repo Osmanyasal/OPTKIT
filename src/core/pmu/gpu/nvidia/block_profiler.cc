@@ -9,18 +9,21 @@ namespace optkit::pmu::gpu::nvidia
 #if defined(CUPTI_API_VERSION) && (CUPTI_API_VERSION >= 16)
     using ActivityKernel = CUpti_ActivityKernel6;
     using ActivityMemcpy = CUpti_ActivityMemcpy6;
+    using ActivityOverhead = CUpti_ActivityOverhead3;
 #else
     using ActivityKernel = CUpti_ActivityKernel4;
     using ActivityMemcpy = CUpti_ActivityMemcpy4;
+    using ActivityOverhead = CUpti_ActivityOverhead3;
 #endif
 
     static std::unique_ptr<ActivityKernel> g_activity_kernel = nullptr;
     static std::vector<std::unique_ptr<ActivityMemcpy>> g_activity_memcpy;
+    static std::vector<std::unique_ptr<ActivityOverhead>> g_activity_overhead;
 
     // Callback for buffer requests
     static void BufferRequested(uint8_t **buffer, size_t *size, size_t *maxNumRecords)
     {
-        *size = 8 * 1024 * 1024; // 8MB buffer
+        *size = 10 * 1024 * 1024; // 10MB buffer
         *maxNumRecords = 0;
         *buffer = (uint8_t *)malloc(*size);
     }
@@ -35,7 +38,9 @@ namespace optkit::pmu::gpu::nvidia
             // Parse CUPTI activity records here, print kernel name and duration
             while (cuptiActivityGetNextRecord(buffer, validSize, &record) == CUPTI_SUCCESS)
             {
-                if (record->kind == CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL)
+                switch (record->kind)
+                {
+                case CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL:
                 {
                     ActivityKernel *kernel = (ActivityKernel *)record;
 
@@ -45,19 +50,28 @@ namespace optkit::pmu::gpu::nvidia
                         g_activity_kernel.reset(new ActivityKernel());
                     }
                     memcpy(g_activity_kernel.get(), kernel, sizeof(ActivityKernel));
+                    break;
                 }
-                else if (record->kind == CUPTI_ACTIVITY_KIND_MEMCPY)
+                case CUPTI_ACTIVITY_KIND_MEMCPY:
                 {
                     ActivityMemcpy *memcpyCmd = (ActivityMemcpy *)record;
 
                     std::unique_ptr<ActivityMemcpy> ptr{new ActivityMemcpy()};
                     memcpy(ptr.get(), memcpyCmd, sizeof(ActivityMemcpy));
                     g_activity_memcpy.push_back(std::move(ptr));
-                    // print those
-                    // std::cout << "Memcpy of " << g_activity_memcpy.back()->bytes << " bytes from "
-                    //           << getMemKindString((CUpti_ActivityMemoryKind)g_activity_memcpy.back()->srcKind)
-                    //           << " to " << getMemKindString((CUpti_ActivityMemoryKind)g_activity_memcpy.back()->dstKind)
-                    //           << " took " << (g_activity_memcpy.back()->end - g_activity_memcpy.back()->start) * 1e-6 << " ms\n";
+                    break;
+                }
+
+                case CUPTI_ACTIVITY_KIND_OVERHEAD:
+                {
+                    ActivityOverhead *overhead = (ActivityOverhead *)record;
+                    std::unique_ptr<ActivityOverhead> ptr{new ActivityOverhead()};
+                    memcpy(ptr.get(), overhead, sizeof(ActivityOverhead));
+                    g_activity_overhead.push_back(std::move(ptr));
+                    break;
+                }
+                default:
+                    break;
                 }
             }
         }
@@ -71,6 +85,7 @@ namespace optkit::pmu::gpu::nvidia
         std::vector<std::string> event_names = mb.event_names();
 
         CUPTI_API_CALL(cuptiActivityRegisterCallbacks(BufferRequested, BufferCompleted));
+        CUPTI_API_CALL(cuptiActivityEnable(CUPTI_ACTIVITY_KIND_OVERHEAD));
         CUPTI_API_CALL(cuptiActivityEnable(CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL));
         CUPTI_API_CALL(cuptiActivityEnable(CUPTI_ACTIVITY_KIND_MEMCPY));
     }
@@ -95,11 +110,28 @@ namespace optkit::pmu::gpu::nvidia
         }
     };
 
+    struct OverheadEvent
+    {
+        double duration_ms;
+        std::string overhead_kind;
+        std::string object_kind;
+
+        std::string to_string() const
+        {
+            std::stringstream ss;
+            ss << "{duration_ms:" << duration_ms << ", "
+               << "overhead_kind:" << overhead_kind << ", "
+               << "object_kind:" << object_kind << "}";
+            return ss.str();
+        }
+    };
+
     BlockProfiler ::~BlockProfiler()
     {
         CUPTI_API_CALL(cuptiActivityFlushAll(1));
         CUPTI_API_CALL(cuptiActivityDisable(CUPTI_ACTIVITY_KIND_MEMCPY));
         CUPTI_API_CALL(cuptiActivityDisable(CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL));
+        CUPTI_API_CALL(cuptiActivityDisable(CUPTI_ACTIVITY_KIND_OVERHEAD));
         this->read_and_store();
         this->metric_results = this->metric_builder.calculate(aggregate());
         this->event_results.push_back({"kernel_duration_ms", g_activity_kernel != nullptr ? std::to_string((g_activity_kernel->end - g_activity_kernel->start) * 1e-6) : "0"});
@@ -142,13 +174,40 @@ namespace optkit::pmu::gpu::nvidia
             }
             memcpy_rec_ptr.reset();
         }
-        this->event_results.insert(this->event_results.begin() + 1, {"memcpy_duration_ms", std::to_string(memcpy_total_duration_ms)});
-        this->event_results.insert(this->event_results.begin() + 2, {"memcpy_htod_duration_ms", std::to_string(htod_duration_ms)});
-        this->event_results.insert(this->event_results.begin() + 2, {"memcpy_dtoh_duration_ms", std::to_string(dtoh_duration_ms)});
-        this->event_results.insert(this->event_results.begin() + 2, {"memcpy_dtod_duration_ms", std::to_string(dtod_duration_ms)});
-        this->event_results.insert(this->event_results.begin() + 2, {"memcpy_htoh_duration_ms", std::to_string(htoh_duration_ms)});
+        this->event_results.insert(this->event_results.begin() + 2, {"memcpy_duration_ms", std::to_string(memcpy_total_duration_ms)});
+        this->event_results.insert(this->event_results.begin() + 3, {"memcpy_htod_duration_ms", std::to_string(htod_duration_ms)});
+        this->event_results.insert(this->event_results.begin() + 4, {"memcpy_dtoh_duration_ms", std::to_string(dtoh_duration_ms)});
+        this->event_results.insert(this->event_results.begin() + 5, {"memcpy_dtod_duration_ms", std::to_string(dtod_duration_ms)});
+        this->event_results.insert(this->event_results.begin() + 6, {"memcpy_htoh_duration_ms", std::to_string(htoh_duration_ms)});
+
+        std::unordered_map<std::string, OverheadEvent> overhead_map;
+        double total_overhead_duration_ms = 0.0;
+        for (auto &overhead_ptr : g_activity_overhead)
+        {
+            if (overhead_ptr != nullptr)
+            {
+                OverheadEvent event;
+                event.duration_ms = (overhead_ptr->end - overhead_ptr->start) * 1e-6;
+                total_overhead_duration_ms += event.duration_ms;
+
+                event.overhead_kind = getOverheadKindString(overhead_ptr->overheadKind);
+                event.object_kind = getObjectKindString(overhead_ptr->objectKind);
+                auto it = overhead_map.find(event.overhead_kind + "_" + event.object_kind);
+                if (it != overhead_map.end())
+                    it->second.duration_ms += event.duration_ms;
+                else
+                    overhead_map[event.overhead_kind + "_" + event.object_kind] = event;
+            }
+            overhead_ptr.reset();
+        }
+        for (const auto &entry : overhead_map)
+        {
+            this->event_results.insert(this->event_results.begin(), {"overhead_" + entry.first, entry.second.to_string()});
+        }
+        this->event_results.insert(this->event_results.begin(), {"cupti_total_overhead_ms", std::to_string(total_overhead_duration_ms)});
         g_activity_kernel.reset();
         g_activity_memcpy.clear();
+        g_activity_overhead.clear();
 
         if (OPT_LIKELY(this->config.dump_results_to_file))
             this->save();
