@@ -902,7 +902,7 @@ static void generate_carm_roofline_for_isa(const std::vector<RunData> &runs,
 
 static void generate_carm_roofline_chart(const std::vector<RunData> &runs)
 {
-#ifdef OPTKIT_ENV_CARM_AVX512_L1_BW && OPTKIT_ENV_CARM_SCALAR_L2_BW && OPTKIT_ENV_CARM_AVX2_L3_BW && OPTKIT_ENV_CARM_SSE_DRAM_BW && OPTKIT_ENV_CARM_AVX512_FP_FMA_GFLOPS
+#ifdef OPTKIT_ENV_CARM_AVX512_L1_BW || OPTKIT_ENV_CARM_AVX2_L1_BW || OPTKIT_ENV_CARM_SSE_L1_BW || OPTKIT_ENV_CARM_SCALAR_L1_BW
 
     // Check if we have any AI/GFlops data
     std::vector<RunData> valid_runs;
@@ -936,29 +936,35 @@ static void generate_carm_roofline_chart(const std::vector<RunData> &runs)
 
     std::cout << "CARM Roofline charts generated:\n";
 
+#ifdef OPTKIT_ENV_CARM_AVX512_L1_BW
     // Generate roofline for each ISA
     generate_carm_roofline_for_isa(valid_runs, "AVX512",
                                    OPTKIT_ENV_CARM_AVX512_L1_BW, OPTKIT_ENV_CARM_AVX512_L2_BW,
                                    OPTKIT_ENV_CARM_AVX512_L3_BW, OPTKIT_ENV_CARM_AVX512_DRAM_BW,
                                    OPTKIT_ENV_CARM_AVX512_FP_FMA_GFLOPS);
+#endif
 
+#ifdef OPTKIT_ENV_CARM_AVX2_L1_BW
     generate_carm_roofline_for_isa(valid_runs, "AVX2",
                                    OPTKIT_ENV_CARM_AVX2_L1_BW, OPTKIT_ENV_CARM_AVX2_L2_BW,
                                    OPTKIT_ENV_CARM_AVX2_L3_BW, OPTKIT_ENV_CARM_AVX2_DRAM_BW,
                                    OPTKIT_ENV_CARM_AVX2_FP_FMA_GFLOPS);
+#endif
 
+#ifdef OPTKIT_ENV_CARM_SSE_L1_BW
     generate_carm_roofline_for_isa(valid_runs, "SSE",
                                    OPTKIT_ENV_CARM_SSE_L1_BW, OPTKIT_ENV_CARM_SSE_L2_BW,
                                    OPTKIT_ENV_CARM_SSE_L3_BW, OPTKIT_ENV_CARM_SSE_DRAM_BW,
                                    OPTKIT_ENV_CARM_SSE_FP_FMA_GFLOPS);
-
+#endif
+#ifdef OPTKIT_ENV_CARM_SCALAR_L1_BW
     generate_carm_roofline_for_isa(valid_runs, "SCALAR",
                                    OPTKIT_ENV_CARM_SCALAR_L1_BW, OPTKIT_ENV_CARM_SCALAR_L2_BW,
                                    OPTKIT_ENV_CARM_SCALAR_L3_BW, OPTKIT_ENV_CARM_SCALAR_DRAM_BW,
                                    OPTKIT_ENV_CARM_SCALAR_FP_FMA_GFLOPS);
 #endif
+#endif
 }
-
 void execute_report_command(const CommandArgs &args)
 {
     // Collect input paths (assume args.program is the first path, followed by program_args)
