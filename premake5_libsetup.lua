@@ -170,7 +170,7 @@ function test_project_setup()
     }
 
     links {
-        "gtest", "gtest_main", "pthread", "dl"
+        "gtest", "gtest_main", "pthread", "dl", "stdc++fs"
     }
     linkoptions { "-fopenmp" }
     linkoptions { "-rdynamic" }
