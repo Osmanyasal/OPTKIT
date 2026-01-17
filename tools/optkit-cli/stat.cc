@@ -202,6 +202,8 @@ void execute_stat_command(const CommandArgs &args)
             std::cerr << "Error: No available uncore frequencies found for scaling analysis\n";
             avail_uncore_freqs.push_back(0);
         }
+
+        // traverse all combinations of core and uncore frequencies
         for (const auto &core_freq : avail_core_freqs)
             for (const auto &uncore_freq : avail_uncore_freqs)
             {
@@ -232,6 +234,7 @@ void execute_stat_command(const CommandArgs &args)
             }
         optkit::utils::remove_directory(optkit::utils::EXECUTION_FOLDER_NAME);
 
+        // Restore original governors and frequencies
         for (size_t socket = 0; socket < OPTKIT_ENV_CPU_NUM_SOCKETS; socket++)
         {
             optkit::frequency::cpu::Query::set_scaling_governor(socket_curr_governor.at(socket), socket);

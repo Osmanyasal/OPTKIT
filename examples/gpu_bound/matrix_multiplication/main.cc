@@ -44,7 +44,7 @@ bool validate_results(const std::vector<float> &result, const std::vector<float>
 
 int main()
 {
-    OPTKIT_INIT(false);
+    OPTKIT_INIT();
 
     // Initialize matrices
     std::vector<float> A, B, C_naive, C_tiled, C_expected;
@@ -108,8 +108,8 @@ int main()
         std::cout << "\nBenchmarking naive GPU matrix multiplication..." << std::endl;
 
         optkit::utils::BlockTimer block_timer("naive GPU", naive_duration_ms);
-        OPTKIT_GPU_ENERGY_EVENTS_WITH_METRICS("naive_matrix_multiply", optkit::metrics::energy::gpu_metrics::all_metrics());
-
+        OPTKIT_GPU_ENERGY_WITH_METRICS("naive_matrix_multiply", optkit::metrics::energy::gpu_metrics::all_metrics());
+        OPTKIT_GPU_EVENTS("naive_matrix_multiply");
         for (int i = 0; i < BENCHMARK_ITERATIONS; i++)
         {
             // Reset result matrix
@@ -122,8 +122,8 @@ int main()
         std::cout << "\nBenchmarking tiled GPU matrix multiplication..." << std::endl;
 
         optkit::utils::BlockTimer block_timer("tiled GPU", tiled_duration_ms);
-        OPTKIT_GPU_ENERGY_EVENTS_WITH_METRICS("tiled_matrix_multiply", optkit::metrics::energy::gpu_metrics::all_metrics());
-
+        OPTKIT_GPU_ENERGY_WITH_METRICS("tiled_matrix_multiply", optkit::metrics::energy::gpu_metrics::all_metrics());
+        OPTKIT_GPU_EVENTS("tiled_matrix_multiply");
         for (int i = 0; i < BENCHMARK_ITERATIONS; i++)
         {
             // Reset result matrix
