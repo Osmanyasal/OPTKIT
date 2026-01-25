@@ -1,2 +1,0 @@
-[
-{"readings":[{"cores_used": 1, "duration":60288.15789794922,"duration_unit":"ms","measurement_type":"cpu_pmu","measurements":[{"dtype":"uint64_t","name":"MEM_INST_RETIRED","type":"event","value":"237239355352","value_unit":"None"},{"dtype":"uint64_t","name":"RETIRED_FLOPS_ANY","type":"event","value":"145803356519","value_unit":"None"},{"dtype":"double","name":"ai","type":"metric","value":"0.076823","value_unit":"None"},{"dtype":"double","name":"gflops","type":"metric","value":"2.418441","value_unit":"None"}],"socket_number":-1}]}]

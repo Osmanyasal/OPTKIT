@@ -26,7 +26,7 @@ struct RunData
     double gflops;                         // gigaflops
     std::map<std::string, double> topdown; // metric -> %
 
-    RunData() : duration_ms(0.0), cores_used(0), core_freq_khz(0), uncore_freq_khz(0), energy_pkg(0.0), kilo_edp_pkg(0.0), ai(0.0), gflops(0.0) {}
+    RunData() : duration_ms(0.0), cores_used(-1), core_freq_khz(0), uncore_freq_khz(0), energy_pkg(0.0), kilo_edp_pkg(0.0), ai(0.0), gflops(0.0) {}
 };
 
 static const std::vector<std::string> topdownl1_keys = {
@@ -334,7 +334,11 @@ static RunData parse_run(const std::string &json_path)
     if (extract_scalar_by_key(content, "duration", d))
         rd.duration_ms = d;
     if (extract_scalar_by_key(content, "cores_used", d))
+    {
         rd.cores_used = static_cast<int>(d);
+        if (rd.cores_used == 0)
+            rd.cores_used = -1; // Assume it is executed by any available cores.
+    }
 
     // parse core/uncore frequencies (kHz)
     if (extract_scalar_by_key(content, "core_frequency_khz", d))
@@ -660,7 +664,7 @@ static void generate_exec_time_chart(const std::vector<RunData> &runs)
     gp << "set ylabel 'Duration (ms)'\n";
     gp << "set grid\n";
     gp << xtics.str();
-    gp << "set xrange [0:" << (max_cores > 0 ? (max_cores * 1.1) : 1) << "]\n";
+    gp << "set xrange [-1:" << (max_cores > 0 ? (max_cores * 1.1) : 1) << "]\n";
     gp << "plot 'exec_time_per_core.dat' using 1:2 with linespoints lw 2 title 'Duration'\n";
     gp.close();
 

@@ -17,12 +17,12 @@
 
 ## v0.7 (Q1 2026)
 - [ ] CUPTI integration for NVIDIA kernel profiling
-- [ ] AMD GPU PMU events 
-- [ ] Error handling refactor
-- [ ] Basic test suite
+- [ ] Nvidia metrics
+- [ ] Refactoring
 - [ ] Documentation improvements
 
 ## v0.8 (Q2 2026)
+- [ ] AMD GPU PMU events 
 - [ ] Python bindings
 - [ ] C wrapper
 

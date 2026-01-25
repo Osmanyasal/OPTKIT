@@ -12,7 +12,7 @@
 // NESTED FUNCTION DEFINITIONS (Single-Threaded)
 // ============================================================================
 
-__attribute__((noinline)) void level_5()
+OPT_NOINLINE void level_5()
 {
     // Deepest level: 500M iterations
     volatile double x = 0;
@@ -22,7 +22,7 @@ __attribute__((noinline)) void level_5()
     }
 }
 
-__attribute__((noinline)) void level_4()
+OPT_NOINLINE void level_4()
 {
     // Mid-depth: 300M iterations
     volatile double x = 0;
@@ -34,7 +34,7 @@ __attribute__((noinline)) void level_4()
     x += 0.0; // Prevent tail-call optimization
 }
 
-__attribute__((noinline)) void level_3()
+OPT_NOINLINE void level_3()
 {
     // Shallow: 200M iterations
     volatile double x = 0;
@@ -46,7 +46,7 @@ __attribute__((noinline)) void level_3()
     x += 0.0;
 }
 
-__attribute__((noinline)) void level_2()
+OPT_NOINLINE void level_2()
 {
     // Very shallow: 100M iterations
     volatile double x = 0;
@@ -58,7 +58,7 @@ __attribute__((noinline)) void level_2()
     x += 0.0;
 }
 
-__attribute__((noinline)) void level_1()
+OPT_NOINLINE void level_1()
 {
     // Direct child of main: 50M iterations
     volatile double x = 0;
@@ -70,7 +70,7 @@ __attribute__((noinline)) void level_1()
     x += 0.0;
 }
 
-static __attribute__((noinline)) void workload_once()
+OPT_NOINLINE void workload_once()
 {
     level_1();
 }
