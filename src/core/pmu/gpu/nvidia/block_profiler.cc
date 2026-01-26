@@ -134,7 +134,7 @@ namespace optkit::pmu::gpu::nvidia
         CUPTI_API_CALL(cuptiActivityDisable(CUPTI_ACTIVITY_KIND_OVERHEAD));
         this->read_and_store();
         this->metric_results = this->metric_builder.calculate(aggregate());
-        this->event_results.push_back({"kernel_duration_ms", g_activity_kernel != nullptr ? std::to_string((g_activity_kernel->end - g_activity_kernel->start) * 1e-6) : "0"});
+        this->event_results.push_back({"kernel_total_duration_ms", g_activity_kernel != nullptr ? std::to_string((g_activity_kernel->end - g_activity_kernel->start) * 1e-6) : "0"});
         double memcpy_total_duration_ms = 0.0;
         double htod_duration_ms = 0.0;
         double dtoh_duration_ms = 0.0;
@@ -174,7 +174,7 @@ namespace optkit::pmu::gpu::nvidia
             }
             memcpy_rec_ptr.reset();
         }
-        this->event_results.insert(this->event_results.begin() + 2, {"memcpy_duration_ms", std::to_string(memcpy_total_duration_ms)});
+        this->event_results.insert(this->event_results.begin() + 2, {"memcpy_total_duration_ms", std::to_string(memcpy_total_duration_ms)});
         this->event_results.insert(this->event_results.begin() + 3, {"memcpy_htod_duration_ms", std::to_string(htod_duration_ms)});
         this->event_results.insert(this->event_results.begin() + 4, {"memcpy_dtoh_duration_ms", std::to_string(dtoh_duration_ms)});
         this->event_results.insert(this->event_results.begin() + 5, {"memcpy_dtod_duration_ms", std::to_string(dtod_duration_ms)});
