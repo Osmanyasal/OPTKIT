@@ -247,11 +247,11 @@ void execute_command(const CommandArgs &args)
         return;
     }
 
-    if (cli_debug_enabled())
-    {
-        std::cout << "Parsed Arguments:\n"
-                  << to_string(args) << "\n\n";
-    }
+    // if (cli_debug_enabled())
+    // {
+    std::cout << "Parsed Arguments:\n"
+              << to_string(args) << "\n\n";
+    // }
     switch (args.command)
     {
     case Command::TOPOLOGY:

@@ -2,6 +2,7 @@
 #include "utils/deployment/deployment_config.hh"
 #if OPTKIT_ENV_CPU_ARM
 #include <string>
+#include <vector>
 namespace optkit::metrics::performance::arm
 {
         /**
@@ -25,7 +26,22 @@ namespace optkit::metrics::performance::arm
 
                 END,
         };
-
+        static const std::vector<std::string> &get_native_events()
+        {
+                static std::vector<std::string> native_events{
+                    "L1D_CACHE_ACCESSES",
+                    "L2_CACHE_ACCESSES",
+                    "L3_CACHE_ACCESSES",
+                    "STALL_FRONTEND,",
+                    "STALL_BACKEND, ",
+                    "STALL_SLOT_FRONTEND",
+                    "STALL_SLOT_BACKEND",
+                    "STALL_SLOT",
+                    "OP_RETIRED",
+                    "OP_SPEC",
+                    "STALL_FRONTEND_FLUSH"};
+                return native_events;
+        }
         std::string to_string(NativeEvents event);
         std::ostream &operator<<(std::ostream &os, NativeEvents event);
 

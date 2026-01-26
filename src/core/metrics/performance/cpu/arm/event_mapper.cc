@@ -81,6 +81,79 @@ namespace optkit::metrics::performance::arm
         {performance::arm::NativeEvents::L2_CACHE_ACCESSES, {0x16}},  // L2D_CACHE
         {performance::arm::NativeEvents::L3_CACHE_ACCESSES, {0x36}},  // LL_CACHE_RD
     };
+    std::vector<uint64_t> EventMapper::get(std::string event)
+    {
+        if (event == "DISPATCH_SLOTS")
+            return EventMapper::get(CoreEvents::DISPATCH_SLOTS);
+        else if (event == "UNHALTED_CORE_CYCLES")
+            return EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES);
+        else if (event == "RESOURCE_STALLS")
+            return EventMapper::get(CoreEvents::RESOURCE_STALLS);
+        else if (event == "INST_RETIRED")
+            return EventMapper::get(CoreEvents::INST_RETIRED);
+        else if (event == "BRANCH_INST_RETIRED")
+            return EventMapper::get(CoreEvents::BRANCH_INST_RETIRED);
+        else if (event == "BRANCH_MISP_RETIRED")
+            return EventMapper::get(CoreEvents::BRANCH_MISP_RETIRED);
+        else if (event == "L1_MISSES")
+            return EventMapper::get(CoreEvents::L1_MISSES);
+        else if (event == "L1_HITS")
+            return EventMapper::get(CoreEvents::L1_HITS);
+        else if (event == "L2_MISSES")
+            return EventMapper::get(CoreEvents::L2_MISSES);
+        else if (event == "L2_HITS")
+            return EventMapper::get(CoreEvents::L2_HITS);
+        else if (event == "L3_MISSES")
+            return EventMapper::get(CoreEvents::L3_MISSES);
+        else if (event == "L3_HITS")
+            return EventMapper::get(CoreEvents::L3_HITS);
+        else if (event == "MEM_INST_RETIRED")
+            return EventMapper::get(CoreEvents::MEM_INST_RETIRED);
+        else if (event == "MEM_LOAD_RETIRED")
+            return EventMapper::get(CoreEvents::MEM_LOAD_RETIRED);
+        else if (event == "MEM_STORE_RETIRED")
+            return EventMapper::get(CoreEvents::MEM_STORE_RETIRED);
+        else if (event == "DTLB_MISSES")
+            return EventMapper::get(CoreEvents::DTLB_MISSES);
+        else if (event == "ITLB_MISSES")
+            return EventMapper::get(CoreEvents::ITLB_MISSES);
+        else if (event == "DTLB_MISSES_GOES_PAGE_WALK")
+            return EventMapper::get(CoreEvents::DTLB_MISSES_GOES_PAGE_WALK);
+        else if (event == "ITLB_MISSES_GOES_PAGE_WALK")
+            return EventMapper::get(CoreEvents::ITLB_MISSES_GOES_PAGE_WALK);
+        else if (event == "SW_LOAD_PREFETCH_ACCESS")
+            return EventMapper::get(CoreEvents::SW_LOAD_PREFETCH_ACCESS);
+        else if (event == "RETIRED_FLOPS_ANY")
+            return EventMapper::get(CoreEvents::RETIRED_FLOPS_ANY);
+        else if (event == "RETIRED_VECTOR")
+            return EventMapper::get(CoreEvents::RETIRED_VECTOR);
+        else if (event == "RETIRED_OPS")
+            return EventMapper::get(NativeEvents::RETIRED_OPS);
+        else if (event == "STALL_FRONTEND")
+            return EventMapper::get(NativeEvents::STALL_FRONTEND);
+        else if (event == "STALL_BACKEND")
+            return EventMapper::get(NativeEvents::STALL_BACKEND);
+        else if (event == "STALL_SLOT")
+            return EventMapper::get(NativeEvents::STALL_SLOT);
+        else if (event == "STALL_SLOT_FRONTEND")
+            return EventMapper::get(NativeEvents::STALL_SLOT_FRONTEND);
+        else if (event == "STALL_SLOT_BACKEND")
+            return EventMapper::get(NativeEvents::STALL_SLOT_BACKEND);
+        else if (event == "OP_RETIRED")
+            return EventMapper::get(NativeEvents::OP_RETIRED);
+        else if (event == "OP_SPEC")
+            return EventMapper::get(NativeEvents::OP_SPEC);
+        else if (event == "STALL_FRONTEND_FLUSH")
+            return EventMapper::get(NativeEvents::STALL_FRONTEND_FLUSH);
+        else if (event == "L1D_CACHE_ACCESSES")
+            return EventMapper::get(NativeEvents::L1D_CACHE_ACCESSES);
+        else if (event == "L2_CACHE_ACCESSES")
+            return EventMapper::get(NativeEvents::L2_CACHE_ACCESSES);
+        else if (event == "L3_CACHE_ACCESSES")
+            return EventMapper::get(NativeEvents::L3_CACHE_ACCESSES);
 
+        OPTKIT_CORE_WARN("EventMapper: No event found for event string: {}", event);
+        return {};
+    }
 }
 #endif // OPTKIT_ENV_CPU_ARM

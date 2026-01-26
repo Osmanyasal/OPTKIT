@@ -132,6 +132,9 @@ void create_child_process(const CommandArgs &args)
         for (auto &&i : args.metrics)
             _metric.add(optkit::metrics::performance::cpu_metrics::get_metric(i));
 
+        for (auto &&event_name : args.events)
+            _metric.add(event_name, optkit::metrics::performance::cpu_mapper::get(event_name));
+
         optkit::pmu::cpu::perf::PerfProfilerConfig perf_config{"stat"};
         perf_config.pid = CHILD_PID;
         optkit::pmu::cpu::perf::BlockProfiler stat_metric_profiler(perf_config, _metric);

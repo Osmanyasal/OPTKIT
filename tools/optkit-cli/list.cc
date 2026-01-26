@@ -33,53 +33,61 @@ void execute_list_command(const CommandArgs &args)
     }
 
     std::vector<int32_t> pmu_ids;
-    if (args.target == Target::CPU)
+    if (args.target == Target::CPU || args.target == Target::ALL)
         pmu_ids = optkit::pmu::cpu::Query::avail_pmu_ids();
 
     switch (args.list_type)
     {
     case ListType::ALL:
-        std::cout << "\tAvailable PMU info\n";
+        std::cout << "Available PMU info\n";
         for (auto &&id : pmu_ids)
             std::cout << optkit::pmu::cpu::Query::pmu_info(id) << "\n";
 
-        std::cout << "\tAvailable PMU events\n";
+        std::cout << "Available PMU events\n";
         for (const auto &pmu_id : pmu_ids)
         {
-            auto events = optkit::pmu::cpu::Query::get_avail_events(pmu_id);
-            for (const auto &event : events)
-                std::cout << "\t\t" << event << "\n";
+            // auto events = optkit::pmu::cpu::Query::get_avail_events(pmu_id);
+            auto core_events = optkit::metrics::performance::get_core_events();
+            auto native_events = optkit::metrics::performance::cpu_get_native_events();
+            for (const auto &event : core_events)
+                std::cout << "\t" << event << "\n";
+            for (const auto &event : native_events)
+                std::cout << "\t" << event << "\n";
         }
-        std::cout << "\tAvailable metrics\n";
+        std::cout << "Available metrics\n";
         for (const auto &metric : metrics_by_category)
         {
-            std::cout << "\t" << metric.first << "\n";
+            std::cout << metric.first << "\n";
             for (auto &&i : metric.second)
-                std::cout << "\t\t" << i << "\n";
+                std::cout << "\t" << i << "\n";
         }
         break;
     case ListType::EVENTS:
-        std::cout << "\tAvailable PMU events\n";
+        std::cout << "Available PMU events\n";
         for (const auto &pmu_id : pmu_ids)
         {
-            auto events = optkit::pmu::cpu::Query::get_avail_events(pmu_id);
-            for (const auto &event : events)
-                std::cout << "\t\t" << event << "\n";
+            // auto events = optkit::pmu::cpu::Query::get_avail_events(pmu_id);
+            auto core_events = optkit::metrics::performance::get_core_events();
+            auto native_events = optkit::metrics::performance::cpu_get_native_events();
+            for (const auto &event : core_events)
+                std::cout << "\t" << event << "\n";
+            for (const auto &event : native_events)
+                std::cout << "\t" << event << "\n";
         }
         break;
 
     case ListType::METRICS:
-        std::cout << "\tAvailable metrics\n";
+        std::cout << "Available metrics\n";
         for (const auto &metric : metrics_by_category)
         {
-            std::cout << "\t" << metric.first << "\n";
+            std::cout << metric.first << "\n";
             for (auto &&i : metric.second)
-                std::cout << "\t\t" << i << "\n";
+                std::cout << "\t" << i << "\n";
         }
         break;
 
     case ListType::PMU:
-        std::cout << "\tAvailable PMU info\n";
+        std::cout << "Available PMU info\n";
         for (const auto &pmu_id : pmu_ids)
         {
             std::cout << optkit::pmu::cpu::Query::pmu_info(pmu_id) << "\n";

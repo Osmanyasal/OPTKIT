@@ -3,6 +3,35 @@
 namespace optkit::metrics::performance
 {
 
+    const std::vector<std::string> &get_core_events()
+    {
+        static std::vector<std::string> core_events{
+            "DISPATCH_SLOTS",
+            "UNHALTED_CORE_CYCLES",
+            "RESOURCE_STALLS",
+            "INST_RETIRED",
+            "BRANCH_INST_RETIRED",
+            "BRANCH_MISP_RETIRED",
+            "L1_MISSES",
+            "L1_HITS",
+            "L2_MISSES",
+            "L2_HITS",
+            "L3_MISSES",
+            "L3_HITS",
+            "MEM_INST_RETIRED",
+            "MEM_LOAD_RETIRED",
+            "MEM_STORE_RETIRED",
+            "DTLB_MISSES",
+            "ITLB_MISSES",
+            "DTLB_MISSES_GOES_PAGE_WALK",
+            "ITLB_MISSES_GOES_PAGE_WALK",
+            "SW_LOAD_PREFETCH_ACCESS",
+            "RETIRED_FLOPS_ANY",
+            "RETIRED_VECTOR",
+        };
+        return core_events;
+    }
+
     std::string to_string(CoreEvents event)
     {
         switch (event)

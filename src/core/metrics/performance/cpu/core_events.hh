@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 namespace optkit::metrics::performance
 {
     /**
@@ -57,6 +58,7 @@ namespace optkit::metrics::performance
         END,
     };
 
+    const std::vector<std::string> &get_core_events();
     std::string to_string(CoreEvents event);
     std::ostream &operator<<(std::ostream &os, CoreEvents event);
 

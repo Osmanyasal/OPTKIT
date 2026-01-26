@@ -36,6 +36,7 @@ namespace optkit::metrics::performance::intel
             OPTKIT_CORE_WARN("EventMapper: No event found for core event: {}", to_string(event));
             return {};
         }
+        static std::vector<uint64_t> get(std::string event);
 
     private:
         EventMapper() {}

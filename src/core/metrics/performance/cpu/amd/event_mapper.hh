@@ -41,6 +41,7 @@ namespace optkit::metrics::performance::amd
             OPTKIT_CORE_WARN("EventMapper: No event found for core event: {}", to_string(event));
             return {};
         }
+        static std::vector<uint64_t> get(std::string event);
 
     private:
         EventMapper() {}
@@ -48,5 +49,6 @@ namespace optkit::metrics::performance::amd
         static const std::unordered_map<performance::CoreEvents, std::vector<uint64_t>> core_event_map;          // coreEvent - even nums to monitor.
         static const std::unordered_map<performance::amd::NativeEvents, std::vector<uint64_t>> native_event_map; // coreEvent - even nums to monitor.
     };
+
 };
 #endif // OPTKIT_ENV_CPU_AMD

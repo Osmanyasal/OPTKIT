@@ -104,5 +104,88 @@ namespace optkit::metrics::performance::amd
 #endif
 
         };
+
+        std::vector<uint64_t> EventMapper::get(std::string event)
+        {
+                if (event == "DISPATCH_SLOTS")
+                        return EventMapper::get(CoreEvents::DISPATCH_SLOTS);
+                else if (event == "UNHALTED_CORE_CYCLES")
+                        return EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES);
+                else if (event == "RESOURCE_STALLS")
+                        return EventMapper::get(CoreEvents::RESOURCE_STALLS);
+                else if (event == "INST_RETIRED")
+                        return EventMapper::get(CoreEvents::INST_RETIRED);
+                else if (event == "BRANCH_INST_RETIRED")
+                        return EventMapper::get(CoreEvents::BRANCH_INST_RETIRED);
+                else if (event == "BRANCH_MISP_RETIRED")
+                        return EventMapper::get(CoreEvents::BRANCH_MISP_RETIRED);
+                else if (event == "L1_MISSES")
+                        return EventMapper::get(CoreEvents::L1_MISSES);
+                else if (event == "L1_HITS")
+                        return EventMapper::get(CoreEvents::L1_HITS);
+                else if (event == "L2_MISSES")
+                        return EventMapper::get(CoreEvents::L2_MISSES);
+                else if (event == "L2_HITS")
+                        return EventMapper::get(CoreEvents::L2_HITS);
+                else if (event == "L3_MISSES")
+                        return EventMapper::get(CoreEvents::L3_MISSES);
+                else if (event == "L3_HITS")
+                        return EventMapper::get(CoreEvents::L3_HITS);
+                else if (event == "MEM_INST_RETIRED")
+                        return EventMapper::get(CoreEvents::MEM_INST_RETIRED);
+                else if (event == "MEM_LOAD_RETIRED")
+                        return EventMapper::get(CoreEvents::MEM_LOAD_RETIRED);
+                else if (event == "MEM_STORE_RETIRED")
+                        return EventMapper::get(CoreEvents::MEM_STORE_RETIRED);
+                else if (event == "DTLB_MISSES")
+                        return EventMapper::get(CoreEvents::DTLB_MISSES);
+                else if (event == "ITLB_MISSES")
+                        return EventMapper::get(CoreEvents::ITLB_MISSES);
+                else if (event == "DTLB_MISSES_GOES_PAGE_WALK")
+                        return EventMapper::get(CoreEvents::DTLB_MISSES_GOES_PAGE_WALK);
+                else if (event == "ITLB_MISSES_GOES_PAGE_WALK")
+                        return EventMapper::get(CoreEvents::ITLB_MISSES_GOES_PAGE_WALK);
+                else if (event == "SW_LOAD_PREFETCH_ACCESS")
+                        return EventMapper::get(CoreEvents::SW_LOAD_PREFETCH_ACCESS);
+                else if (event == "RETIRED_FLOPS_ANY")
+                        return EventMapper::get(CoreEvents::RETIRED_FLOPS_ANY);
+                else if (event == "RETIRED_VECTOR")
+                        return EventMapper::get(CoreEvents::RETIRED_VECTOR);
+                else if (event == "RETIRED_OPS")
+                        return EventMapper::get(NativeEvents::RETIRED_OPS);
+                else if (event == "RETIRED_MICROCODE_OPS")
+                        return EventMapper::get(NativeEvents::RETIRED_MICROCODE_OPS);
+                else if (event == "DISPATCH_STALLS_1")
+                        return EventMapper::get(NativeEvents::DISPATCH_STALLS_1);
+                else if (event == "DISPATCH_STALLS_1_0x6")
+                        return EventMapper::get(NativeEvents::DISPATCH_STALLS_1_0x6);
+                else if (event == "BACKEND_STALLS_1")
+                        return EventMapper::get(NativeEvents::BACKEND_STALLS_1);
+                else if (event == "SMT_STALLS_1")
+                        return EventMapper::get(NativeEvents::SMT_STALLS_1);
+                else if (event == "OPS_SOURCE_DISPATCHED_FROM_DECODER")
+                        return EventMapper::get(NativeEvents::OPS_SOURCE_DISPATCHED_FROM_DECODER);
+                else if (event == "RESYNCS")
+                        return EventMapper::get(NativeEvents::RESYNCS);
+                else if (event == "CYCLES_NO_RETIRE_NOT_COMPLETE")
+                        return EventMapper::get(NativeEvents::CYCLES_NO_RETIRE_NOT_COMPLETE);
+                else if (event == "CYCLES_NO_RETIRE_LOAD_NOT_COMPLETE")
+                        return EventMapper::get(NativeEvents::CYCLES_NO_RETIRE_LOAD_NOT_COMPLETE);
+                else if (event == "L3_CACHE_ACCESSES")
+                        return EventMapper::get(NativeEvents::L3_CACHE_ACCESSES);
+                else if (event == "L2_CACHE_ACCESSES")
+                        return EventMapper::get(NativeEvents::L2_CACHE_ACCESSES);
+                else if (event == "SCALAR_SINGLE_FLOPS")
+                        return EventMapper::get(NativeEvents::SCALAR_SINGLE_FLOPS);
+                else if (event == "PACKED_SINGLE_FLOPS")
+                        return EventMapper::get(NativeEvents::PACKED_SINGLE_FLOPS);
+                else if (event == "SCALAR_DOUBLE_FLOPS")
+                        return EventMapper::get(NativeEvents::SCALAR_DOUBLE_FLOPS);
+                else if (event == "PACKED_DOUBLE_FLOPS")
+                        return EventMapper::get(NativeEvents::PACKED_DOUBLE_FLOPS);
+
+                OPTKIT_CORE_WARN("EventMapper: No event found for event string: {}", event);
+                return {};
+        }
 }
 #endif // OPTKIT_ENV_CPU_AMD
