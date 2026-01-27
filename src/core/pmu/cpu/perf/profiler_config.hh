@@ -21,6 +21,7 @@ namespace optkit::pmu::cpu::perf
          * @brief Construct a new PerfProfilerConfig object
          *
          * @param block_name Name of the profiling block (base ProfilerConfig)
+         * @param is_sampling Indicates if sampling mode is enabled (base ProfilerConfig)
          * @param measurement_type Type of measurement (base ProfilerConfig)
          * @param is_grouped Indicates if all events in the BlockProfiler should be grouped (see perf_event_open man page)
          * @param pid See perf_event_open man page for meaning

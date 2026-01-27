@@ -19,3 +19,7 @@
 [submodule "lib/premake5"]
 	path = lib/premake5
 	url = https://github.com/premake/premake-core.git
+[submodule "lib/pybind11"]
+	path = lib/pybind11
+	url = ../../pybind/pybind11
+	branch = stable

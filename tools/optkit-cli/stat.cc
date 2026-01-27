@@ -135,7 +135,7 @@ void create_child_process(const CommandArgs &args)
         for (auto &&event_name : args.events)
             _metric.add(event_name, optkit::metrics::performance::cpu_mapper::get(event_name));
 
-        optkit::pmu::cpu::perf::PerfProfilerConfig perf_config{"stat"};
+        optkit::pmu::cpu::perf::PerfProfilerConfig perf_config{"stat", true /*is_sampling*/};
         perf_config.pid = CHILD_PID;
         optkit::pmu::cpu::perf::BlockProfiler stat_metric_profiler(perf_config, _metric);
         // open with sampling.

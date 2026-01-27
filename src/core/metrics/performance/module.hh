@@ -12,9 +12,9 @@ namespace optkit::metrics::performance
     using cpu_mapper = intel::EventMapper;
     using cpu_events = CoreEvents;
     using cpu_native_events = intel::NativeEvents;
-    inline const cpu_native_events &cpu_get_native_events()
+    inline const std::vector<std::string> &cpu_get_native_events()
     {
-        static const cpu_native_events events = intel::get_native_events();
+        static const std::vector<std::string> events = intel::get_native_events();
         return events;
     }
 }
@@ -27,9 +27,9 @@ namespace optkit::metrics::performance
     using cpu_mapper = amd::EventMapper;
     using cpu_events = CoreEvents;
     using cpu_native_events = amd::NativeEvents;
-    inline const cpu_native_events &cpu_get_native_events()
+    inline const std::vector<std::string> &cpu_get_native_events()
     {
-        static const cpu_native_events events = intel::get_native_events();
+        static const std::vector<std::string> events = amd::get_native_events();
         return events;
     }
 }
@@ -42,9 +42,9 @@ namespace optkit::metrics::performance
     using cpu_mapper = arm::EventMapper;
     using cpu_events = CoreEvents;
     using cpu_native_events = arm::NativeEvents;
-    inline const cpu_native_events &cpu_get_native_events()
+    inline const std::vector<std::string> &cpu_get_native_events()
     {
-        static const cpu_native_events events = intel::get_native_events();
+        static const std::vector<std::string> events = arm::get_native_events();
         return events;
     }
 }

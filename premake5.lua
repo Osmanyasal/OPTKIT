@@ -22,8 +22,8 @@ project(OPTKIT_LIB_DYNAMIC)
 kind "SharedLib"
 base_project_setup()
 removefiles { "./src/main.cc" }
-libdirs { LIB_PFM_PATH .. "/lib" } -- so that pfm.so can be found, we link this agains shared pfm
-links { "pfm" }
+-- Force use of the local shared library to avoid linking against system static libpfm.a (non-PIC)
+linkoptions { path.getabsolute(LIB_PFM_PATH .. "/lib/libpfm.so") }
 
 project(OPTKIT_LIB_STATIC)
 kind "StaticLib"
@@ -50,3 +50,30 @@ filter {}
 project(OPTKIT_TEST)
 kind "ConsoleApp"
 test_project_setup()
+
+project("optkit_py")
+kind "SharedLib"
+base_project_setup()
+targetprefix ""
+targetextension ".so"
+
+includedirs { "lib/pybind11/include" }
+
+-- We only want to compile the binding file here, the rest comes from the static lib
+removefiles { "./src/**.cc" }
+files { "src/optkit_py.cc" }
+
+links { OPTKIT_LIB_DYNAMIC }
+
+filter "system:linux"
+local python_flags = os.outputof("python3-config --cflags")
+local python_suffix = os.outputof("python3-config --extension-suffix")
+
+if python_flags then
+    buildoptions { python_flags }
+end
+
+if python_suffix then
+    targetextension(python_suffix:gsub("%s+", ""))
+end
+filter {}
