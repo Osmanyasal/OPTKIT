@@ -1,0 +1,100 @@
+{
+  "readings": [
+    {
+      "block_name": "callstack",
+      "duration": 28839.095703125,
+      "duration_unit": "ms",
+      "measurement_type": "callstack",
+      "samples": [
+        {
+          "count": 1,
+          "stack": "libc.so.6!clone3;libc.so.6!start_thread;libopenblas.so.0!openblas_read_env;libopenblas.so.0+0x13ec00"
+        },
+        {
+          "count": 8,
+          "stack": "_start;__libc_start_main;libc.so.6!__libc_start_call_main;Py_BytesMain;Py_RunMain;_PyRun_AnyFileObject;_PyRun_SimpleFileObject;python3+0x2b4853;python3+0x2087b2;PyEval_EvalCode;_PyEval_EvalFrameDefault;PyNumber_MatrixMultiply;python3+0x13c045;PyObject_CallFunctionObjArgs;python3+0x149fd7;_multiarray_umath.cpython-312-x86_64-linux-gnu.so!PyInit__multiarray_umath;_multiarray_umath.cpython-312-x86_64-linux-gnu.so!PyInit__multiarray_umath;_multiarray_umath.cpython-312-x86_64-linux-gnu.so+0x9b914;_multiarray_umath.cpython-312-x86_64-linux-gnu.so!void np::qsort_simd::QSort_AVX512_SPR<short>(short*, long);cblas_dgemm;dgemm_thread_nn;libopenblas.so.0!dsyr2k_kernel_L;exec_blas;libopenblas.so.0!dsyr2k_kernel_L"
+        },
+        {
+          "count": 409,
+          "stack": "libc.so.6!clone3;libc.so.6!start_thread;__sched_yield"
+        },
+        {
+          "count": 1,
+          "stack": "_start;__libc_start_main;libc.so.6!__libc_start_call_main;Py_BytesMain;Py_RunMain;_PyRun_AnyFileObject;_PyRun_SimpleFileObject;python3+0x2b4853;python3+0x2087b2;PyEval_EvalCode;_PyEval_EvalFrameDefault;PyNumber_MatrixMultiply;python3+0x13c045;PyObject_CallFunctionObjArgs;python3+0x149fd7;_multiarray_umath.cpython-312-x86_64-linux-gnu.so!PyInit__multiarray_umath;_multiarray_umath.cpython-312-x86_64-linux-gnu.so!PyInit__multiarray_umath;_multiarray_umath.cpython-312-x86_64-linux-gnu.so+0x9b914;_multiarray_umath.cpython-312-x86_64-linux-gnu.so!void np::qsort_simd::QSort_AVX512_SPR<short>(short*, long);cblas_dgemm;dgemm_thread_nn;libopenblas.so.0!dsyr2k_kernel_L;exec_blas;exec_blas_async_wait"
+        },
+        {
+          "count": 1,
+          "stack": "_start;__libc_start_main;libc.so.6!__libc_start_call_main;Py_BytesMain;Py_RunMain;_PyRun_AnyFileObject;_PyRun_SimpleFileObject;python3+0x2b4853;python3+0x2087b2;PyEval_EvalCode;_PyEval_EvalFrameDefault;PyImport_ImportModuleLevelObject;PyObject_CallMethodObjArgs;python3+0x149fd7;_PyEval_EvalFrameDefault;python3+0x181d4d;python3+0x1d31fc;PyEval_EvalCode;_PyEval_EvalFrameDefault;PyImport_ImportModuleLevelObject;PyObject_CallMethodObjArgs;python3+0x149fd7;_PyEval_EvalFrameDefault;python3+0x181d4d;python3+0x1d3544;PyImport_ImportModuleLevelObject;PyObject_CallMethodObjArgs;python3+0x149fd7;_PyEval_EvalFrameDefault;python3+0x181d4d;python3+0x1d31fc;PyEval_EvalCode;_PyEval_EvalFrameDefault;PyImport_ImportModuleLevelObject;PyObject_CallMethodObjArgs;python3+0x149fd7;_PyEval_EvalFrameDefault;python3+0x181d4d;python3+0x1d31fc;PyEval_EvalCode;_PyEval_EvalFrameDefault;PyObject_Vectorcall;python3+0x181d4d;python3+0x1d262b;_PyObject_MakeTpCall;python3+0x1998e7;python3+0x19ea73;_PyObject_Call_Prepend;_PyEval_EvalFrameDefault;PyObject_Call;python3+0x181ecf;python3+0x19ec1f;python3+0x19a310;python3+0x19c0e4;_PyDict_GetItem_KnownHash;python3+0x17254b"
+        },
+        {
+          "count": 22,
+          "stack": "libc.so.6!clone3;libc.so.6!start_thread;libopenblas.so.0!openblas_read_env"
+        },
+        {
+          "count": 1,
+          "stack": "_start;__libc_start_main;libc.so.6!__libc_start_call_main;Py_BytesMain;Py_RunMain;_PyRun_AnyFileObject;_PyRun_SimpleFileObject;python3+0x2b4853;python3+0x2087b2;PyEval_EvalCode;_PyEval_EvalFrameDefault;PyObject_Vectorcall;_multiarray_umath.cpython-312-x86_64-linux-gnu.so+0xce12c;_PyObject_MakeTpCall;python3+0x181ecf;_multiarray_umath.cpython-312-x86_64-linux-gnu.so+0x130ade;_multiarray_umath.cpython-312-x86_64-linux-gnu.so+0xcf8ea;_multiarray_umath.cpython-312-x86_64-linux-gnu.so+0x5a424"
+        },
+        {
+          "count": 1,
+          "stack": "_start;__libc_start_main;libc.so.6!__libc_start_call_main;Py_BytesMain;Py_RunMain;_PyRun_AnyFileObject;_PyRun_SimpleFileObject;python3+0x2b4853;python3+0x2087b2;PyEval_EvalCode;_PyEval_EvalFrameDefault;PyImport_ImportModuleLevelObject;PyObject_CallMethodObjArgs;python3+0x149fd7;_PyEval_EvalFrameDefault;python3+0x181d4d;python3+0x1d31fc;PyEval_EvalCode;_PyEval_EvalFrameDefault;PyImport_ImportModuleLevelObject;PyObject_CallMethodObjArgs;python3+0x149fd7;_PyEval_EvalFrameDefault;python3+0x181d4d;python3+0x1d31fc;PyEval_EvalCode;_PyEval_EvalFrameDefault;PyImport_ImportModuleLevelObject;PyObject_CallMethodObjArgs;python3+0x149fd7;_PyEval_EvalFrameDefault;python3+0x181d4d;python3+0x1d3544;PyImport_ImportModuleLevelObject;PyObject_CallMethodObjArgs;python3+0x149fd7;_PyEval_EvalFrameDefault;python3+0x181d4d;python3+0x1d31fc;PyEval_EvalCode;_PyEval_EvalFrameDefault;PyImport_ImportModuleLevelObject;PyObject_CallMethodObjArgs;python3+0x149fd7;_PyEval_EvalFrameDefault;python3+0x181d4d;python3+0x1d3544;PyImport_ImportModuleLevelObject;PyObject_CallMethodObjArgs;python3+0x149fd7;_PyEval_EvalFrameDefault;python3+0x181d4d;python3+0x1d31fc;PyEval_EvalCode;_PyEval_EvalFrameDefault;PyImport_ImportModuleLevelObject;PyObject_CallMethodObjArgs;python3+0x149fd7;_PyEval_EvalFrameDefault"
+        },
+        {
+          "count": 60565,
+          "stack": "libc.so.6!clone3;libc.so.6!start_thread;libopenblas.so.0!openblas_read_env;libopenblas.so.0!dsyr2k_kernel_L;dgemm_kernel_COOPERLAKE"
+        },
+        {
+          "count": 1,
+          "stack": "_start;__libc_start_main;libc.so.6!__libc_start_call_main;Py_BytesMain;Py_RunMain;_PyRun_AnyFileObject;_PyRun_SimpleFileObject;python3+0x2b4853;python3+0x2087b2;PyEval_EvalCode;_PyEval_EvalFrameDefault;PyImport_ImportModuleLevelObject;PyObject_CallMethodObjArgs;python3+0x149fd7;_PyEval_EvalFrameDefault;python3+0x181d4d;python3+0x1d31fc;PyEval_EvalCode;_PyEval_EvalFrameDefault;PyImport_ImportModuleLevelObject;PyObject_CallMethodObjArgs;python3+0x149fd7;_PyEval_EvalFrameDefault;python3+0x181d4d;python3+0x1d3544;PyImport_ImportModuleLevelObject;PyObject_CallMethodObjArgs;python3+0x149fd7;_PyEval_EvalFrameDefault;python3+0x181d4d;python3+0x1d31fc;PyEval_EvalCode;_PyEval_EvalFrameDefault;PyImport_ImportModuleLevelObject;PyObject_CallMethodObjArgs;python3+0x149fd7;_PyEval_EvalFrameDefault;python3+0x181d4d;python3+0x1d3544;PyImport_ImportModuleLevelObject;PyObject_CallMethodObjArgs;python3+0x149fd7;_PyEval_EvalFrameDefault;python3+0x181d4d;python3+0x1d31fc;PyEval_EvalCode;_PyEval_EvalFrameDefault;PyImport_ImportModuleLevelObject;PyObject_CallMethodObjArgs;python3+0x149fd7;_PyEval_EvalFrameDefault;python3+0x181d4d;python3+0x1d31fc;PyEval_EvalCode;_PyEval_EvalFrameDefault;PyImport_ImportModuleLevelObject;PyObject_CallMethodObjArgs;python3+0x149fd7;_PyEval_EvalFrameDefault;python3+0x181d4d;python3+0x1d3544;PyImport_ImportModuleLevelObject;PyObject_CallMethodObjArgs;python3+0x149fd7;_PyEval_EvalFrameDefault;python3+0x181d4d;python3+0x1d31fc;PyEval_EvalCode;_PyEval_EvalFrameDefault;PyImport_ImportModuleLevelObject;PyObject_CallMethodObjArgs;python3+0x149fd7;_PyEval_EvalFrameDefault;python3+0x181d4d;python3+0x1d31fc;PyEval_EvalCode;_PyEval_EvalFrameDefault;PyImport_ImportModuleLevelObject;PyObject_CallMethodObjArgs;python3+0x149fd7;_PyEval_EvalFrameDefault;python3+0x181d4d;python3+0x1d3544;PyImport_ImportModuleLevelObject;PyObject_CallMethodObjArgs;python3+0x149fd7;_PyEval_EvalFrameDefault;python3+0x181d4d;python3+0x1d31fc;PyEval_EvalCode;_PyEval_EvalFrameDefault;PyImport_ImportModuleLevelObject;PyObject_CallMethodObjArgs;python3+0x149fd7;_PyEval_EvalFrameDefault;python3+0x181d4d;python3+0x1d31fc;PyEval_EvalCode;_PyEval_EvalFrameDefault;PyImport_ImportModuleLevelObject;PyObject_CallMethodObjArgs;python3+0x149fd7;_PyEval_EvalFrameDefault;python3+0x181d4d;python3+0x1d31fc;PyEval_EvalCode;_PyEval_EvalFrameDefault;python3+0x1a10c5;_PyEval_EvalFrameDefault;PyObject_Call;python3+0x24fa43;_PyEval_EvalFrameDefault;python3+0x1a10c5;_PyEval_EvalFrameDefault;PyObject_Call;python3+0x24fa43;_PyEval_EvalFrameDefault;_PyObject_MakeTpCall;python3+0x199923;python3+0x19de4f;_PyObject_Call_Prepend;_PyEval_EvalFrameDefault"
+        },
+        {
+          "count": 1898,
+          "stack": "_start;__libc_start_main;libc.so.6!__libc_start_call_main;Py_BytesMain;Py_RunMain;_PyRun_AnyFileObject;_PyRun_SimpleFileObject;python3+0x2b4853;python3+0x2087b2;PyEval_EvalCode;_PyEval_EvalFrameDefault;PyNumber_MatrixMultiply;python3+0x13c045;PyObject_CallFunctionObjArgs;python3+0x149fd7;_multiarray_umath.cpython-312-x86_64-linux-gnu.so!PyInit__multiarray_umath;_multiarray_umath.cpython-312-x86_64-linux-gnu.so!PyInit__multiarray_umath;_multiarray_umath.cpython-312-x86_64-linux-gnu.so+0x9b914;_multiarray_umath.cpython-312-x86_64-linux-gnu.so!void np::qsort_simd::QSort_AVX512_SPR<short>(short*, long);cblas_dgemm;dgemm_thread_nn;libopenblas.so.0!dsyr2k_kernel_L;exec_blas;libopenblas.so.0!dsyr2k_kernel_L;dgemm_kernel_COOPERLAKE"
+        },
+        {
+          "count": 227,
+          "stack": "libc.so.6!clone3;libc.so.6!start_thread;libopenblas.so.0!openblas_read_env;libopenblas.so.0!dsyr2k_kernel_L"
+        },
+        {
+          "count": 5661,
+          "stack": "libc.so.6!clone3;libc.so.6!start_thread;libopenblas.so.0!openblas_read_env;__sched_yield"
+        },
+        {
+          "count": 2863,
+          "stack": "libc.so.6!clone3;libc.so.6!start_thread;libopenblas.so.0!openblas_read_env;libopenblas.so.0!dsyr2k_kernel_L;dgemm_beta_COOPERLAKE"
+        },
+        {
+          "count": 633,
+          "stack": "libc.so.6!clone3;libc.so.6!start_thread;libopenblas.so.0!openblas_read_env;libopenblas.so.0!dsyr2k_kernel_L;dgemm_itcopy_COOPERLAKE"
+        },
+        {
+          "count": 250,
+          "stack": "_start;__libc_start_main;libc.so.6!__libc_start_call_main;Py_BytesMain;Py_RunMain;_PyRun_AnyFileObject;_PyRun_SimpleFileObject;python3+0x2b4853;python3+0x2087b2;PyEval_EvalCode;_PyEval_EvalFrameDefault;PyNumber_MatrixMultiply;python3+0x13c045;PyObject_CallFunctionObjArgs;python3+0x149fd7;_multiarray_umath.cpython-312-x86_64-linux-gnu.so!PyInit__multiarray_umath;_multiarray_umath.cpython-312-x86_64-linux-gnu.so!PyInit__multiarray_umath;_multiarray_umath.cpython-312-x86_64-linux-gnu.so+0x9b914;_multiarray_umath.cpython-312-x86_64-linux-gnu.so!void np::qsort_simd::QSort_AVX512_SPR<short>(short*, long);cblas_dgemm;dgemm_thread_nn;libopenblas.so.0!dsyr2k_kernel_L;exec_blas;__sched_yield"
+        },
+        {
+          "count": 866,
+          "stack": "libc.so.6!clone3;libc.so.6!start_thread;libopenblas.so.0!openblas_read_env;libopenblas.so.0!dsyr2k_kernel_L;dgemm_oncopy_COOPERLAKE"
+        },
+        {
+          "count": 1,
+          "stack": "_start;__libc_start_main;libc.so.6!__libc_start_call_main;Py_BytesMain;Py_RunMain;_PyRun_AnyFileObject;_PyRun_SimpleFileObject;python3+0x2b4853;python3+0x2087b2;PyEval_EvalCode;_PyEval_EvalFrameDefault;PyImport_ImportModuleLevelObject;PyObject_CallMethodObjArgs;python3+0x149fd7;_PyEval_EvalFrameDefault;python3+0x181d4d;python3+0x1d31fc;PyEval_EvalCode;_PyEval_EvalFrameDefault;PyImport_ImportModuleLevelObject;PyObject_CallMethodObjArgs;python3+0x149fd7;_PyEval_EvalFrameDefault;python3+0x181d4d;python3+0x1d3544;PyImport_ImportModuleLevelObject;PyObject_CallMethodObjArgs;python3+0x149fd7;_PyEval_EvalFrameDefault;python3+0x181d4d;python3+0x1d31fc;PyEval_EvalCode;_PyEval_EvalFrameDefault;PyImport_ImportModuleLevelObject;PyObject_CallMethodObjArgs;python3+0x149fd7;_PyEval_EvalFrameDefault;python3+0x181d4d;python3+0x1d3544;PyImport_ImportModuleLevelObject;PyObject_CallMethodObjArgs;python3+0x149fd7;_PyEval_EvalFrameDefault;python3+0x181d4d;python3+0x1d31fc;PyEval_EvalCode;_PyEval_EvalFrameDefault;PyImport_ImportModuleLevelObject;PyObject_CallMethodObjArgs;python3+0x149fd7;_PyEval_EvalFrameDefault;python3+0x181d4d;python3+0x1d31fc;PyEval_EvalCode;_PyEval_EvalFrameDefault;PyImport_ImportModuleLevelObject;PyObject_CallMethodObjArgs;python3+0x149fd7;_PyEval_EvalFrameDefault;python3+0x181d4d;python3+0x1d31fc;PyEval_EvalCode;_PyEval_EvalFrameDefault;PyImport_ImportModuleLevelObject;PyObject_CallMethodObjArgs;python3+0x149fd7;_PyEval_EvalFrameDefault;python3+0x181d4d;python3+0x1d31fc;PyEval_EvalCode;_PyEval_EvalFrameDefault;PyImport_ImportModuleLevelObject;PyObject_CallMethodObjArgs;python3+0x149fd7;_PyEval_EvalFrameDefault"
+        },
+        {
+          "count": 79,
+          "stack": "_start;__libc_start_main;libc.so.6!__libc_start_call_main;Py_BytesMain;Py_RunMain;_PyRun_AnyFileObject;_PyRun_SimpleFileObject;python3+0x2b4853;python3+0x2087b2;PyEval_EvalCode;_PyEval_EvalFrameDefault;PyNumber_MatrixMultiply;python3+0x13c045;PyObject_CallFunctionObjArgs;python3+0x149fd7;_multiarray_umath.cpython-312-x86_64-linux-gnu.so!PyInit__multiarray_umath;_multiarray_umath.cpython-312-x86_64-linux-gnu.so!PyInit__multiarray_umath;_multiarray_umath.cpython-312-x86_64-linux-gnu.so+0x9b914;_multiarray_umath.cpython-312-x86_64-linux-gnu.so!void np::qsort_simd::QSort_AVX512_SPR<short>(short*, long);cblas_dgemm;dgemm_thread_nn;libopenblas.so.0!dsyr2k_kernel_L;exec_blas;libopenblas.so.0!dsyr2k_kernel_L;dgemm_beta_COOPERLAKE"
+        },
+        {
+          "count": 23,
+          "stack": "_start;__libc_start_main;libc.so.6!__libc_start_call_main;Py_BytesMain;Py_RunMain;_PyRun_AnyFileObject;_PyRun_SimpleFileObject;python3+0x2b4853;python3+0x2087b2;PyEval_EvalCode;_PyEval_EvalFrameDefault;PyNumber_MatrixMultiply;python3+0x13c045;PyObject_CallFunctionObjArgs;python3+0x149fd7;_multiarray_umath.cpython-312-x86_64-linux-gnu.so!PyInit__multiarray_umath;_multiarray_umath.cpython-312-x86_64-linux-gnu.so!PyInit__multiarray_umath;_multiarray_umath.cpython-312-x86_64-linux-gnu.so+0x9b914;_multiarray_umath.cpython-312-x86_64-linux-gnu.so!void np::qsort_simd::QSort_AVX512_SPR<short>(short*, long);cblas_dgemm;dgemm_thread_nn;libopenblas.so.0!dsyr2k_kernel_L;exec_blas;libopenblas.so.0!dsyr2k_kernel_L;dgemm_oncopy_COOPERLAKE"
+        },
+        {
+          "count": 20,
+          "stack": "_start;__libc_start_main;libc.so.6!__libc_start_call_main;Py_BytesMain;Py_RunMain;_PyRun_AnyFileObject;_PyRun_SimpleFileObject;python3+0x2b4853;python3+0x2087b2;PyEval_EvalCode;_PyEval_EvalFrameDefault;PyNumber_MatrixMultiply;python3+0x13c045;PyObject_CallFunctionObjArgs;python3+0x149fd7;_multiarray_umath.cpython-312-x86_64-linux-gnu.so!PyInit__multiarray_umath;_multiarray_umath.cpython-312-x86_64-linux-gnu.so!PyInit__multiarray_umath;_multiarray_umath.cpython-312-x86_64-linux-gnu.so+0x9b914;_multiarray_umath.cpython-312-x86_64-linux-gnu.so!void np::qsort_simd::QSort_AVX512_SPR<short>(short*, long);cblas_dgemm;dgemm_thread_nn;libopenblas.so.0!dsyr2k_kernel_L;exec_blas;libopenblas.so.0!dsyr2k_kernel_L;dgemm_itcopy_COOPERLAKE"
+        },
+        {
+          "count": 2,
+          "stack": "libc.so.6!clone3;libc.so.6!start_thread;libopenblas.so.0!openblas_read_env;dgemm_kernel_COOPERLAKE"
+        }
+      ]
+    }
+  ]
+}

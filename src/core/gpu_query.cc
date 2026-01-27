@@ -1950,23 +1950,32 @@ namespace optkit::gpu
         }
         bool is_ok = true;
         fan_count = 0;
-        uint32_t speed;
 
         if (vendor == GpuVendor::NVIDIA && initialized[GpuVendor::NVIDIA])
         {
 #if OPTKIT_ENV_LIB_NVML
             nvmlReturn_t result;
             auto device = Query::gpu_handles_nvml.at(device_index);
-            int i = 0;
-            while (true)
+
+            // Prefer the dedicated NVML API if present.
+            unsigned int fans = 0;
+            NVML_EXEC_IF_SUPPORTS("nvmlDeviceGetNumFans", device, result, &fans);
+            if (OPT_LIKELY(result == NVML_SUCCESS))
             {
-                NVML_EXEC_IF_SUPPORTS("nvmlDeviceGetFanSpeed", device, result, &speed);
-                if (OPT_LIKELY(result == NVML_SUCCESS))
-                    ++fan_count;
-                else
-                    break;
-                ++i;
+                fan_count = static_cast<uint32_t>(fans);
+                return true;
             }
+
+            // Fallback: some NVML versions only expose a single-fan query.
+            uint32_t speed = 0;
+            NVML_EXEC_IF_SUPPORTS("nvmlDeviceGetFanSpeed", device, result, &speed);
+            if (OPT_LIKELY(result == NVML_SUCCESS))
+            {
+                fan_count = 1;
+                return true;
+            }
+
+            is_ok = false;
 #endif
         }
         else if (vendor == GpuVendor::AMD && initialized[GpuVendor::AMD])
@@ -1975,6 +1984,7 @@ namespace optkit::gpu
 #if OPTKIT_ENV_LIB_AMDSMI
             amdsmi_status_t result;
             auto device = Query::gpu_handles_amdsmi.at(device_index);
+            uint32_t speed = 0;
             int i = 0;
             while (true)
             {
@@ -1988,6 +1998,7 @@ namespace optkit::gpu
 #elif OPTKIT_ENV_LIB_ROCM_SMI
             rsmi_status_t result;
             uint32_t device = Query::gpu_handles_rocm_smi.at(device_index);
+            uint32_t speed = 0;
             int i = 0;
             while (true)
             {
