@@ -3,6 +3,8 @@
 
 Run from this directory after building OPTKIT so the local optkit_py*.so link resolves.
 """
+import sys
+sys.path.append("../../../bin/Release")  # Adjust as needed to find optkit_py
 import optkit_py
 
 
@@ -34,15 +36,17 @@ def main() -> None:
     # Initialize the engine (creates output folder by default)
     optkit_py.init(create_folder=True, execution_file="perf_smoke_python")
 
+    # optkit_py.energy.start("smoke_cpu&gpu")
     # Start profiling a block named "smoke" with no explicit metrics/events
     # (uses the default config on the C++ side)
-    optkit_py.perf.start("smoke", ["carm"])
+    # optkit_py.perf.start("smoke", ["carm"])
 
     # Do a flops-heavy workload to exercise CARM metrics
-    total = _workload(iterations=60, size=192)
+    total = _workload(iterations=100, size=5000)
 
-    # Stop profiling
-    optkit_py.perf.stop()
+    # Stop profilinghto
+    # optkit_py.perf.stop()
+    # optkit_py.energy.stop()
 
     # Finalize to clean up
     optkit_py.finalize()
