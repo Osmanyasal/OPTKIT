@@ -13,7 +13,7 @@ from workload import workload_flops
 def main() -> None:
     optkit_py.init(create_folder=True, execution_file="callstack")
     try:
-        optkit_py.callstack.start("smoke_callstack")
+        optkit_py.callstack.start("callstack")
         total = workload_flops(iterations=20, size=256)
         optkit_py.callstack.stop()
         print("callstack example complete; total=", total)

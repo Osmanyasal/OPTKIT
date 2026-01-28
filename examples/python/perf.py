@@ -13,8 +13,13 @@ from workload import workload_flops
 def main() -> None:
     optkit_py.init(create_folder=True, execution_file="perf")
     try:
-        optkit_py.perf.start("smoke_perf", metrics=["carm"], events=[])
-        total = workload_flops(iterations=50, size=256)
+        optkit_py.perf.start("perf", metrics=["carm"], events=[])
+        optkit_py.energy.cpu.start("cpu_energy")
+
+        total = 0
+        total = total + workload_flops(iterations=50000, size=256)
+
+        optkit_py.energy.cpu.stop()
         optkit_py.perf.stop()
         print("perf example complete; total=", total)
     finally:
@@ -23,3 +28,6 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+
+

@@ -16,7 +16,7 @@ from workload import workload_flops
 def main() -> None:
     optkit_py.init(create_folder=True, execution_file="temperature_gpu")
     try:
-        optkit_py.temperature.gpu.start("smoke_temp_gpu")
+        optkit_py.temperature.gpu.start("temp_gpu")
         total = workload_flops(iterations=5, size=256)
         optkit_py.temperature.gpu.stop()
         print("gpu temperature example complete; total=", total)

@@ -13,7 +13,7 @@ from workload import workload_flops
 def main() -> None:
     optkit_py.init(create_folder=True, execution_file="temperature_hwmon")
     try:
-        optkit_py.temperature.hwmon.start("smoke_temp_hwmon")
+        optkit_py.temperature.hwmon.start("temp_hwmon")
         total = workload_flops(iterations=10, size=256)
         optkit_py.temperature.hwmon.stop()
         print("hwmon temperature example complete; total=", total)

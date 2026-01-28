@@ -25,7 +25,7 @@ def _small_io_workload(tmp_path: str = "/tmp/optkit_disk_smoke.bin", mb: int = 1
 def main() -> None:
     optkit_py.init(create_folder=True, execution_file="disk")
     try:
-        optkit_py.disk.start("smoke_disk")
+        optkit_py.disk.start("disk")
         _small_io_workload()
         optkit_py.disk.stop()
         print("disk example complete")

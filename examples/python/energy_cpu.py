@@ -13,7 +13,7 @@ from workload import workload_flops
 def main() -> None:
     optkit_py.init(create_folder=True, execution_file="energy_cpu")
     try:
-        optkit_py.energy.cpu.start("smoke_cpu_energy")
+        optkit_py.energy.cpu.start("cpu_energy")
         total = workload_flops(iterations=20, size=256)
         optkit_py.energy.cpu.stop()
         print("cpu energy example complete; total=", total)
