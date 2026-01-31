@@ -22,9 +22,8 @@ function base_project_setup()
         "./src/**.hh"
     }
     removefiles {
-        "./src/core/**/*_governor.cc",
-        "./src/core/**/*_governor.hh",
         "./src/optkit_py.cc",
+        "./src/optkit_c.cc",
     }
     -- Always needed
     links { "pthread", "dl" }
@@ -155,6 +154,10 @@ function test_project_setup()
         "./test/***test.cc",
         "./test/***test.hh",
         "./test/common/**.cc"
+    }
+    removefiles {
+        "./src/optkit_py.cc",
+        "./src/optkit_c.cc",
     }
 
     includedirs {

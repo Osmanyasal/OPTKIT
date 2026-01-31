@@ -15,6 +15,8 @@ OPTKIT_APP = "optkit_app"
 OPTKIT_LIB_DYNAMIC = "optkit_dynamic"
 OPTKIT_LIB_STATIC = "optkit_static"
 OPTKIT_TEST = "optkit_test"
+OPTKIT_PY = "optkit_py"
+OPTKIT_C = "optkit_c"
 
 -- custom actions also should be registered here.
 local allowed_actions = {

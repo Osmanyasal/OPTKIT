@@ -47,11 +47,7 @@ postbuildcommands {
 -- Reset filter to avoid affecting other sections
 filter {}
 
-project(OPTKIT_TEST)
-kind "ConsoleApp"
-test_project_setup()
-
-project("optkit_py")
+project(OPTKIT_PY)
 kind "SharedLib"
 base_project_setup()
 targetprefix ""
@@ -62,7 +58,6 @@ includedirs { "lib/pybind11/include" }
 -- We only want to compile the binding file here, the rest comes from the static lib
 removefiles { "./src/**.cc" }
 files { "src/optkit_py.cc" }
-
 links { OPTKIT_LIB_DYNAMIC }
 
 filter "system:linux"
@@ -77,3 +72,20 @@ if python_suffix then
     targetextension(python_suffix:gsub("%s+", ""))
 end
 filter {}
+
+project(OPTKIT_C)
+kind "SharedLib"
+base_project_setup()
+
+-- Build only the C wrapper; the core implementation comes from the main shared library.
+removefiles { "./src/**.cc" }
+files { "src/optkit_c.cc" }
+links { OPTKIT_LIB_DYNAMIC }
+
+filter "system:linux"
+targetextension ".so"
+filter {}
+
+project(OPTKIT_TEST)
+kind "ConsoleApp"
+test_project_setup()
