@@ -11,14 +11,10 @@ extern "C"
 {
 #endif
 
-#if defined(_WIN32) || defined(__CYGWIN__)
-#define OPTKIT_C_API
-#else
 #if defined(__GNUC__)
 #define OPTKIT_C_API __attribute__((visibility("default")))
 #else
 #define OPTKIT_C_API
-#endif
 #endif
 
     typedef enum optkit_status
@@ -34,36 +30,30 @@ extern "C"
     // -----------------------------------------------------------------------------
 
     // Returns a thread-local error message for the last failing call.
-    OPTKIT_C_API const char *optkit_last_error_message(void);
+    OPTKIT_C_API optkit_status_t optkit_last_error_message(const char **err_message);
 
     // Clears the thread-local error message.
-    OPTKIT_C_API void optkit_clear_error(void);
-
-    // Frees memory returned by OPTKIT C API (strings, buffers).
-    OPTKIT_C_API void optkit_free(void *p);
+    OPTKIT_C_API optkit_status_t optkit_clear_error(void);
 
     // -----------------------------------------------------------------------------
     // Engine lifecycle
     // -----------------------------------------------------------------------------
 
-    OPTKIT_C_API int optkit_is_initialized(void);
-    OPTKIT_C_API optkit_status_t optkit_init(int create_folder, const char *execution_file);
+    OPTKIT_C_API optkit_status_t optkit_is_initialized(int8_t *is_init);
+    OPTKIT_C_API optkit_status_t optkit_init(int8_t create_folder, const char *execution_file);
     OPTKIT_C_API optkit_status_t optkit_finalize(void);
 
     // -----------------------------------------------------------------------------
     // Query: system / CPU
     // -----------------------------------------------------------------------------
 
-    OPTKIT_C_API int16_t optkit_query_system_num_sockets(void);
-    OPTKIT_C_API int16_t optkit_query_system_num_logical_cores(void);
-    OPTKIT_C_API int optkit_query_system_is_root_priv_enabled(void);
+    OPTKIT_C_API optkit_status_t optkit_query_system_num_sockets(int16_t *out_num_sockets);
+    OPTKIT_C_API optkit_status_t optkit_query_system_num_logical_cores(int16_t *out_num_logical_cores);
+    OPTKIT_C_API optkit_status_t optkit_query_system_is_root_priv_enabled(int8_t *out_enabled);
 
     OPTKIT_C_API optkit_status_t optkit_query_system_paranoid(int32_t *out_paranoid);
-    OPTKIT_C_API optkit_status_t optkit_query_system_is_smt_enabled(int *out_enabled);
-    OPTKIT_C_API optkit_status_t optkit_query_system_is_turbo_enabled(int *out_enabled);
-
-    // Returns a human-readable string form of the CPU package/core topology.
-    // Caller owns the returned string and must free it via optkit_free().
+    OPTKIT_C_API optkit_status_t optkit_query_system_is_smt_enabled(int8_t *out_enabled);
+    OPTKIT_C_API optkit_status_t optkit_query_system_is_turbo_enabled(int8_t *out_enabled);
     OPTKIT_C_API optkit_status_t optkit_query_system_detect_cpu_packages_str(char **out_str);
 
     // -----------------------------------------------------------------------------
@@ -76,7 +66,7 @@ extern "C"
     // Prints to stdout.
     OPTKIT_C_API optkit_status_t optkit_query_pmu_list_avail_events(int32_t pmu_id);
 
-    OPTKIT_C_API optkit_status_t optkit_query_pmu_avail_pmu_ids(int32_t *out_ids, size_t capacity, size_t *out_count);
+    OPTKIT_C_API optkit_status_t optkit_query_pmu_avail_pmu_ids(int32_t **out_ids, size_t *out_count);
 
     // Returns "pmu_name::event_name" list separated by newlines.
     OPTKIT_C_API optkit_status_t optkit_query_pmu_get_avail_events_str(int32_t pmu_id, char **out_str);
@@ -90,10 +80,10 @@ extern "C"
     // -----------------------------------------------------------------------------
 
     // Bitmask of optkit::energy::rapl::RaplReadMethods.
-    OPTKIT_C_API int32_t optkit_query_rapl_avail_read_methods(void);
-    OPTKIT_C_API int optkit_query_rapl_is_perf_avail(void);
-    OPTKIT_C_API int optkit_query_rapl_is_sysfs_avail(void);
-    OPTKIT_C_API int optkit_query_rapl_is_msr_avail(void);
+    OPTKIT_C_API optkit_status_t optkit_query_rapl_avail_read_methods(int32_t *out_methods);
+    OPTKIT_C_API optkit_status_t optkit_query_rapl_is_perf_avail(int8_t *out_avail);
+    OPTKIT_C_API optkit_status_t optkit_query_rapl_is_sysfs_avail(int8_t *out_avail);
+    OPTKIT_C_API optkit_status_t optkit_query_rapl_is_msr_avail(int8_t *out_avail);
 
     // Returns domain info list separated by newlines.
     OPTKIT_C_API optkit_status_t optkit_query_rapl_domain_info_str(char **out_str);
@@ -115,8 +105,8 @@ extern "C"
 
     OPTKIT_C_API optkit_status_t optkit_query_gpu_init(optkit_gpu_vendor_t vendor);
     OPTKIT_C_API optkit_status_t optkit_query_gpu_shutdown(optkit_gpu_vendor_t vendor);
-    OPTKIT_C_API int optkit_query_gpu_is_init(optkit_gpu_vendor_t vendor);
-    OPTKIT_C_API int optkit_query_gpu_is_device_exists(optkit_gpu_vendor_t vendor);
+    OPTKIT_C_API optkit_status_t optkit_query_gpu_is_init(optkit_gpu_vendor_t vendor, int8_t *out_is_init);
+    OPTKIT_C_API optkit_status_t optkit_query_gpu_is_device_exists(optkit_gpu_vendor_t vendor, int8_t *out_exists);
 
     OPTKIT_C_API optkit_status_t optkit_query_gpu_get_device_count(optkit_gpu_vendor_t vendor, uint32_t *out_count);
 

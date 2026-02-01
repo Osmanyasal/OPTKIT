@@ -10,259 +10,255 @@
 
 #include "optkit.hh"
 
-namespace
+thread_local std::string g_last_error;
+void set_error(const std::string &msg)
 {
+    g_last_error = msg;
+}
 
-    thread_local std::string g_last_error;
+optkit_status_t set_error_status(optkit_status_t status, const char *msg)
+{
+    set_error(msg ? std::string(msg) : std::string("(null)"));
+    return status;
+}
 
-    void set_error(const std::string &msg)
+void clear_error()
+{
+    g_last_error.clear();
+}
+
+optkit_status_t require_initialized()
+{
+    int8_t is_init;
+    optkit_is_initialized(&is_init);
+    if (!is_init)
+        return set_error_status(OPTKIT_STATUS_NOT_INITIALIZED, "OPTKIT not initialized. Call optkit_init() first.");
+    return OPTKIT_STATUS_OK;
+}
+
+char *dup_cstr(const std::string &s)
+{
+    const size_t n = s.size();
+    char *p = static_cast<char *>(std::malloc(n + 1));
+    if (!p)
+        return nullptr;
+    std::memcpy(p, s.data(), n);
+    p[n] = '\0';
+    return p;
+}
+
+optkit_status_t set_out_string(char **out_str, const std::string &value)
+{
+    if (!out_str)
+        return set_error_status(OPTKIT_STATUS_INVALID_ARGUMENT, "out_str is null");
+    *out_str = nullptr;
+
+    char *p = dup_cstr(value);
+    if (!p)
+        return set_error_status(OPTKIT_STATUS_ERROR, "Out of memory");
+
+    *out_str = p;
+    return OPTKIT_STATUS_OK;
+}
+
+optkit::gpu::GpuVendor to_cpp_vendor(optkit_gpu_vendor_t v)
+{
+    switch (v)
     {
-        g_last_error = msg;
+    case OPTKIT_GPU_VENDOR_NVIDIA:
+        return optkit::gpu::GpuVendor::NVIDIA;
+    case OPTKIT_GPU_VENDOR_AMD:
+        return optkit::gpu::GpuVendor::AMD;
+    case OPTKIT_GPU_VENDOR_INTEL:
+        return optkit::gpu::GpuVendor::INTEL;
+    case OPTKIT_GPU_VENDOR_ARM_MALI:
+        return optkit::gpu::GpuVendor::ARM_MALI;
+    case OPTKIT_GPU_VENDOR_QUALCOMM_ADRENO:
+        return optkit::gpu::GpuVendor::QUALCOMM_ADRENO;
+    case OPTKIT_GPU_VENDOR_IMAGINATION_POWERVR:
+        return optkit::gpu::GpuVendor::IMAGINATION_POWERVR;
+    default:
+        return optkit::gpu::GpuVendor::UNKNOWN;
+    }
+}
+
+optkit::frequency::Unit to_cpp_unit(optkit_frequency_unit_t u)
+{
+    switch (u)
+    {
+    case OPTKIT_FREQUENCY_UNIT_HZ:
+        return optkit::frequency::Unit::Hz;
+    case OPTKIT_FREQUENCY_UNIT_KHZ:
+        return optkit::frequency::Unit::KHz;
+    case OPTKIT_FREQUENCY_UNIT_MHZ:
+        return optkit::frequency::Unit::MHz;
+    case OPTKIT_FREQUENCY_UNIT_GHZ:
+        return optkit::frequency::Unit::GHz;
+    default:
+        return optkit::frequency::Unit::Hz;
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Engine and profiler managers
+// -----------------------------------------------------------------------------
+
+static std::unique_ptr<optkit::OPTKIT> g_optkit;
+
+template <typename T, typename... Args>
+std::unique_ptr<T> make_unique(Args &&...args)
+{
+    return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+}
+
+static void ensure_pmu_query_initialized()
+{
+    static bool initialized = false;
+    if (!initialized)
+    {
+        optkit::pmu::cpu::Query::init();
+        initialized = true;
+    }
+}
+
+static void ensure_gpu_query_initialized(optkit::gpu::GpuVendor vendor)
+{
+    if (!optkit::gpu::Query::is_init(vendor))
+        optkit::gpu::Query::init(vendor);
+}
+
+static optkit::ProfilerConfig make_profiler_config(const std::string &block_name,
+                                                   const char *measurement_type,
+                                                   bool is_reset_after_read = true,
+                                                   bool is_sampling = true)
+{
+    return {block_name.c_str(),
+            measurement_type,
+            is_reset_after_read,
+            is_sampling,
+            optkit::Query::create_folder,
+            !optkit::Query::create_folder};
+}
+
+template <typename ProfilerT>
+struct SafePerfEventProfiler
+{
+    std::string name_storage;
+    std::unique_ptr<ProfilerT> profiler;
+
+    SafePerfEventProfiler(const optkit::pmu::cpu::perf::PerfProfilerConfig &config)
+    {
+        name_storage = config.block_name ? config.block_name : "unknown";
+        optkit::pmu::cpu::perf::PerfProfilerConfig safe_config = config;
+        safe_config.block_name = name_storage.c_str();
+        profiler = make_unique<ProfilerT>(safe_config);
     }
 
-    optkit_status_t set_error_status(optkit_status_t status, const char *msg)
+    SafePerfEventProfiler(const optkit::pmu::cpu::perf::PerfProfilerConfig &config,
+                          const optkit::metrics::MetricBuilder<uint64_t> &mb)
     {
-        set_error(msg ? std::string(msg) : std::string("(null)"));
-        return status;
+        name_storage = config.block_name ? config.block_name : "unknown";
+        optkit::pmu::cpu::perf::PerfProfilerConfig safe_config = config;
+        safe_config.block_name = name_storage.c_str();
+        profiler = make_unique<ProfilerT>(safe_config, mb);
+    }
+};
+
+template <typename ProfilerT, typename builderT>
+struct SafeProfiler
+{
+    std::string name_storage;
+    std::unique_ptr<ProfilerT> profiler;
+
+    SafeProfiler(const optkit::ProfilerConfig &config,
+                 const optkit::metrics::MetricBuilder<builderT> &mb)
+    {
+        name_storage = config.block_name ? config.block_name : "unknown";
+
+        optkit::ProfilerConfig safe_config{name_storage.c_str(),
+                                           config.measurement_type,
+                                           config.is_reset_after_read,
+                                           config.is_sampling,
+                                           config.dump_results_to_file,
+                                           config.verbose};
+
+        profiler = make_unique<ProfilerT>(safe_config, mb);
+    }
+};
+
+using SafePerfProfiler = SafePerfEventProfiler<optkit::pmu::cpu::perf::BlockProfiler>;
+using SafeCallstackProfiler = SafePerfEventProfiler<optkit::callstack::Profiler>;
+
+using SafeRaplProfiler = SafeProfiler<optkit::energy::rapl::Profiler, double>;
+using SafeNvidiaProfiler = SafeProfiler<optkit::energy::gpu::nvidia::Profiler, double>;
+using SafeAmdProfiler = SafeProfiler<optkit::energy::gpu::amd::Profiler, double>;
+using SafeDiskProfiler = SafeProfiler<optkit::disk::IoDiskProfiler, uint64_t>;
+using SafeHwmonTempProfiler = SafeProfiler<optkit::temperature::hwmon::Profiler, double>;
+using SafeGpuTempProfiler = SafeProfiler<optkit::temperature::gpu::Profiler, std::pair<double, double>>;
+
+template <typename T>
+class ProfilerManager
+{
+public:
+    static void push(std::unique_ptr<T> profiler)
+    {
+        get_stack().push_back(std::move(profiler));
     }
 
-    void clear_error()
+    static void pop()
     {
-        g_last_error.clear();
+        auto &s = get_stack();
+        if (!s.empty())
+            s.pop_back();
     }
 
-    optkit_status_t require_initialized()
+    static void clear()
     {
-        if (!::optkit_is_initialized())
-            return set_error_status(OPTKIT_STATUS_NOT_INITIALIZED, "OPTKIT not initialized. Call optkit_init() first.");
-        return OPTKIT_STATUS_OK;
+        get_stack().clear();
     }
 
-    char *dup_cstr(const std::string &s)
+    static size_t size()
     {
-        const size_t n = s.size();
-        char *p = static_cast<char *>(std::malloc(n + 1));
-        if (!p)
-            return nullptr;
-        std::memcpy(p, s.data(), n);
-        p[n] = '\0';
-        return p;
+        return get_stack().size();
     }
 
-    optkit_status_t set_out_string(char **out_str, const std::string &value)
+private:
+    static std::vector<std::unique_ptr<T>> &get_stack()
     {
-        if (!out_str)
-            return set_error_status(OPTKIT_STATUS_INVALID_ARGUMENT, "out_str is null");
-        *out_str = nullptr;
-
-        char *p = dup_cstr(value);
-        if (!p)
-            return set_error_status(OPTKIT_STATUS_ERROR, "Out of memory");
-
-        *out_str = p;
-        return OPTKIT_STATUS_OK;
+        static std::vector<std::unique_ptr<T>> stack;
+        return stack;
     }
-
-    optkit::gpu::GpuVendor to_cpp_vendor(optkit_gpu_vendor_t v)
-    {
-        switch (v)
-        {
-        case OPTKIT_GPU_VENDOR_NVIDIA:
-            return optkit::gpu::GpuVendor::NVIDIA;
-        case OPTKIT_GPU_VENDOR_AMD:
-            return optkit::gpu::GpuVendor::AMD;
-        case OPTKIT_GPU_VENDOR_INTEL:
-            return optkit::gpu::GpuVendor::INTEL;
-        case OPTKIT_GPU_VENDOR_ARM_MALI:
-            return optkit::gpu::GpuVendor::ARM_MALI;
-        case OPTKIT_GPU_VENDOR_QUALCOMM_ADRENO:
-            return optkit::gpu::GpuVendor::QUALCOMM_ADRENO;
-        case OPTKIT_GPU_VENDOR_IMAGINATION_POWERVR:
-            return optkit::gpu::GpuVendor::IMAGINATION_POWERVR;
-        default:
-            return optkit::gpu::GpuVendor::UNKNOWN;
-        }
-    }
-
-    optkit::frequency::Unit to_cpp_unit(optkit_frequency_unit_t u)
-    {
-        switch (u)
-        {
-        case OPTKIT_FREQUENCY_UNIT_HZ:
-            return optkit::frequency::Unit::Hz;
-        case OPTKIT_FREQUENCY_UNIT_KHZ:
-            return optkit::frequency::Unit::KHz;
-        case OPTKIT_FREQUENCY_UNIT_MHZ:
-            return optkit::frequency::Unit::MHz;
-        case OPTKIT_FREQUENCY_UNIT_GHZ:
-            return optkit::frequency::Unit::GHz;
-        default:
-            return optkit::frequency::Unit::Hz;
-        }
-    }
-
-    // -----------------------------------------------------------------------------
-    // Engine and profiler managers
-    // -----------------------------------------------------------------------------
-
-    static std::unique_ptr<optkit::OPTKIT> g_optkit;
-
-    template <typename T, typename... Args>
-    std::unique_ptr<T> make_unique(Args &&...args)
-    {
-        return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
-    }
-
-    static void ensure_pmu_query_initialized()
-    {
-        static bool initialized = false;
-        if (!initialized)
-        {
-            optkit::pmu::cpu::Query::init();
-            initialized = true;
-        }
-    }
-
-    static void ensure_gpu_query_initialized(optkit::gpu::GpuVendor vendor)
-    {
-        if (!optkit::gpu::Query::is_init(vendor))
-            optkit::gpu::Query::init(vendor);
-    }
-
-    static optkit::ProfilerConfig make_profiler_config(const std::string &block_name,
-                                                       const char *measurement_type,
-                                                       bool is_reset_after_read = true,
-                                                       bool is_sampling = true)
-    {
-        return {block_name.c_str(),
-                measurement_type,
-                is_reset_after_read,
-                is_sampling,
-                optkit::Query::create_folder,
-                !optkit::Query::create_folder};
-    }
-
-    template <typename ProfilerT>
-    struct SafePerfEventProfiler
-    {
-        std::string name_storage;
-        std::unique_ptr<ProfilerT> profiler;
-
-        SafePerfEventProfiler(const optkit::pmu::cpu::perf::PerfProfilerConfig &config)
-        {
-            name_storage = config.block_name ? config.block_name : "unknown";
-            optkit::pmu::cpu::perf::PerfProfilerConfig safe_config = config;
-            safe_config.block_name = name_storage.c_str();
-            profiler = make_unique<ProfilerT>(safe_config);
-        }
-
-        SafePerfEventProfiler(const optkit::pmu::cpu::perf::PerfProfilerConfig &config,
-                              const optkit::metrics::MetricBuilder<uint64_t> &mb)
-        {
-            name_storage = config.block_name ? config.block_name : "unknown";
-            optkit::pmu::cpu::perf::PerfProfilerConfig safe_config = config;
-            safe_config.block_name = name_storage.c_str();
-            profiler = make_unique<ProfilerT>(safe_config, mb);
-        }
-    };
-
-    template <typename ProfilerT, typename builderT>
-    struct SafeProfiler
-    {
-        std::string name_storage;
-        std::unique_ptr<ProfilerT> profiler;
-
-        SafeProfiler(const optkit::ProfilerConfig &config,
-                     const optkit::metrics::MetricBuilder<builderT> &mb)
-        {
-            name_storage = config.block_name ? config.block_name : "unknown";
-
-            optkit::ProfilerConfig safe_config{name_storage.c_str(),
-                                               config.measurement_type,
-                                               config.is_reset_after_read,
-                                               config.is_sampling,
-                                               config.dump_results_to_file,
-                                               config.verbose};
-
-            profiler = make_unique<ProfilerT>(safe_config, mb);
-        }
-    };
-
-    using SafePerfProfiler = SafePerfEventProfiler<optkit::pmu::cpu::perf::BlockProfiler>;
-    using SafeCallstackProfiler = SafePerfEventProfiler<optkit::callstack::Profiler>;
-
-    using SafeRaplProfiler = SafeProfiler<optkit::energy::rapl::Profiler, double>;
-    using SafeNvidiaProfiler = SafeProfiler<optkit::energy::gpu::nvidia::Profiler, double>;
-    using SafeAmdProfiler = SafeProfiler<optkit::energy::gpu::amd::Profiler, double>;
-    using SafeDiskProfiler = SafeProfiler<optkit::disk::IoDiskProfiler, uint64_t>;
-    using SafeHwmonTempProfiler = SafeProfiler<optkit::temperature::hwmon::Profiler, double>;
-    using SafeGpuTempProfiler = SafeProfiler<optkit::temperature::gpu::Profiler, std::pair<double, double>>;
-
-    template <typename T>
-    class ProfilerManager
-    {
-    public:
-        static void push(std::unique_ptr<T> profiler)
-        {
-            get_stack().push_back(std::move(profiler));
-        }
-
-        static void pop()
-        {
-            auto &s = get_stack();
-            if (!s.empty())
-                s.pop_back();
-        }
-
-        static void clear()
-        {
-            get_stack().clear();
-        }
-
-        static size_t size()
-        {
-            return get_stack().size();
-        }
-
-    private:
-        static std::vector<std::unique_ptr<T>> &get_stack()
-        {
-            static std::vector<std::unique_ptr<T>> stack;
-            return stack;
-        }
-    };
-
-} // namespace
+};
 
 // -----------------------------------------------------------------------------
 // Common utilities
 // -----------------------------------------------------------------------------
 
-const char *optkit_last_error_message(void)
+optkit_status_t optkit_last_error_message(const char **err_message)
 {
-    return g_last_error.c_str();
+    if (!err_message) // null check
+        return OPTKIT_STATUS_INVALID_ARGUMENT;
+    *err_message = g_last_error.c_str();
+    return OPTKIT_STATUS_OK;
 }
 
-void optkit_clear_error(void)
+optkit_status_t optkit_clear_error(void)
 {
     clear_error();
-}
-
-void optkit_free(void *p)
-{
-    std::free(p);
+    return OPTKIT_STATUS_OK;
 }
 
 // -----------------------------------------------------------------------------
 // Engine lifecycle
 // -----------------------------------------------------------------------------
 
-int optkit_is_initialized(void)
+optkit_status_t optkit_is_initialized(int8_t *is_init)
 {
-    return g_optkit ? 1 : 0;
+    *is_init = g_optkit ? 1 : 0;
+    return OPTKIT_STATUS_OK;
 }
 
-optkit_status_t optkit_init(int create_folder, const char *execution_file)
+optkit_status_t optkit_init(int8_t create_folder, const char *execution_file)
 {
     clear_error();
     try
@@ -287,9 +283,9 @@ optkit_status_t optkit_init(int create_folder, const char *execution_file)
 
 optkit_status_t optkit_finalize(void)
 {
-    clear_error();
     try
     {
+        clear_error();
         g_optkit.reset();
 
         ProfilerManager<SafePerfProfiler>::clear();
@@ -317,19 +313,31 @@ optkit_status_t optkit_finalize(void)
 // Query: system / CPU
 // -----------------------------------------------------------------------------
 
-int16_t optkit_query_system_num_sockets(void)
+optkit_status_t optkit_query_system_num_sockets(int16_t *out_num_sockets)
 {
-    return optkit::Query::num_sockets;
+    if (!out_num_sockets)
+        return set_error_status(OPTKIT_STATUS_INVALID_ARGUMENT, "out_num_sockets is null");
+
+    *out_num_sockets = optkit::Query::num_sockets;
+    return OPTKIT_STATUS_OK;
 }
 
-int16_t optkit_query_system_num_logical_cores(void)
+optkit_status_t optkit_query_system_num_logical_cores(int16_t *out_num_logical_cores)
 {
-    return optkit::Query::num_logical_cores;
+    if (!out_num_logical_cores)
+        return set_error_status(OPTKIT_STATUS_INVALID_ARGUMENT, "out_num_logical_cores is null");
+
+    *out_num_logical_cores = optkit::Query::num_logical_cores;
+    return OPTKIT_STATUS_OK;
 }
 
-int optkit_query_system_is_root_priv_enabled(void)
+optkit_status_t optkit_query_system_is_root_priv_enabled(int8_t *out_enabled)
 {
-    return optkit::Query::is_root_priv_enabled ? 1 : 0;
+    if (!out_enabled)
+        return set_error_status(OPTKIT_STATUS_INVALID_ARGUMENT, "out_enabled is null");
+
+    *out_enabled = optkit::Query::is_root_priv_enabled ? 1 : 0;
+    return OPTKIT_STATUS_OK;
 }
 
 optkit_status_t optkit_query_system_paranoid(int32_t *out_paranoid)
@@ -349,7 +357,7 @@ optkit_status_t optkit_query_system_paranoid(int32_t *out_paranoid)
     }
 }
 
-optkit_status_t optkit_query_system_is_smt_enabled(int *out_enabled)
+optkit_status_t optkit_query_system_is_smt_enabled(int8_t *out_enabled)
 {
     clear_error();
     if (!out_enabled)
@@ -366,7 +374,7 @@ optkit_status_t optkit_query_system_is_smt_enabled(int *out_enabled)
     }
 }
 
-optkit_status_t optkit_query_system_is_turbo_enabled(int *out_enabled)
+optkit_status_t optkit_query_system_is_turbo_enabled(int8_t *out_enabled)
 {
     clear_error();
     if (!out_enabled)
@@ -431,7 +439,7 @@ optkit_status_t optkit_query_pmu_list_avail_events(int32_t pmu_id)
     }
 }
 
-optkit_status_t optkit_query_pmu_avail_pmu_ids(int32_t *out_ids, size_t capacity, size_t *out_count)
+optkit_status_t optkit_query_pmu_avail_pmu_ids(int32_t **out_ids, size_t *out_count)
 {
     clear_error();
     if (!out_count)
@@ -443,12 +451,12 @@ optkit_status_t optkit_query_pmu_avail_pmu_ids(int32_t *out_ids, size_t capacity
         const auto ids = optkit::pmu::cpu::Query::avail_pmu_ids();
 
         *out_count = ids.size();
-        if (!out_ids)
-            return OPTKIT_STATUS_OK;
+        *out_ids = (int32_t *)malloc(*out_count * sizeof(int32_t));
+        if (!*out_ids)
+            return set_error_status(OPTKIT_STATUS_ERROR, "Out of memory");
 
-        const size_t n = (capacity < ids.size()) ? capacity : ids.size();
-        for (size_t i = 0; i < n; ++i)
-            out_ids[i] = ids[i];
+        for (size_t i = 0; i < ids.size(); ++i)
+            (*out_ids)[i] = ids[i];
 
         return OPTKIT_STATUS_OK;
     }
@@ -525,59 +533,59 @@ optkit_status_t optkit_query_pmu_event_detail_str(int32_t pmu_id, uint32_t event
 // Query: RAPL
 // -----------------------------------------------------------------------------
 
-int32_t optkit_query_rapl_avail_read_methods(void)
+optkit_status_t optkit_query_rapl_avail_read_methods(int32_t *out_methods)
 {
     clear_error();
     try
     {
-        return optkit::energy::rapl::Query::avail_rapl_read_methods();
+        *out_methods = optkit::energy::rapl::Query::avail_rapl_read_methods();
+        return OPTKIT_STATUS_OK;
     }
     catch (const std::exception &e)
     {
-        set_error(e.what());
-        return 0;
+        return set_error_status(OPTKIT_STATUS_ERROR, e.what());
     }
 }
 
-int optkit_query_rapl_is_perf_avail(void)
+optkit_status_t optkit_query_rapl_is_perf_avail(int8_t *out_avail)
 {
     clear_error();
     try
     {
-        return optkit::energy::rapl::Query::is_rapl_perf_avail() ? 1 : 0;
+        *out_avail = optkit::energy::rapl::Query::is_rapl_perf_avail() ? 1 : 0;
+        return OPTKIT_STATUS_OK;
     }
     catch (const std::exception &e)
     {
-        set_error(e.what());
-        return 0;
+        return set_error_status(OPTKIT_STATUS_ERROR, e.what());
     }
 }
 
-int optkit_query_rapl_is_sysfs_avail(void)
+optkit_status_t optkit_query_rapl_is_sysfs_avail(int8_t *out_avail)
 {
     clear_error();
     try
     {
-        return optkit::energy::rapl::Query::is_rapl_sysfs_avail() ? 1 : 0;
+        *out_avail = optkit::energy::rapl::Query::is_rapl_sysfs_avail() ? 1 : 0;
+        return OPTKIT_STATUS_OK;
     }
     catch (const std::exception &e)
     {
-        set_error(e.what());
-        return 0;
+        return set_error_status(OPTKIT_STATUS_ERROR, e.what());
     }
 }
 
-int optkit_query_rapl_is_msr_avail(void)
+optkit_status_t optkit_query_rapl_is_msr_avail(int8_t *out_avail)
 {
     clear_error();
     try
     {
-        return optkit::energy::rapl::Query::is_rapl_msr_avail() ? 1 : 0;
+        *out_avail = optkit::energy::rapl::Query::is_rapl_msr_avail() ? 1 : 0;
+        return OPTKIT_STATUS_OK;
     }
     catch (const std::exception &e)
     {
-        set_error(e.what());
-        return 0;
+        return set_error_status(OPTKIT_STATUS_ERROR, e.what());
     }
 }
 
@@ -635,32 +643,32 @@ optkit_status_t optkit_query_gpu_shutdown(optkit_gpu_vendor_t vendor)
     }
 }
 
-int optkit_query_gpu_is_init(optkit_gpu_vendor_t vendor)
+optkit_status_t optkit_query_gpu_is_init(optkit_gpu_vendor_t vendor, int8_t *out_is_init)
 {
     clear_error();
     try
     {
-        return optkit::gpu::Query::is_init(to_cpp_vendor(vendor)) ? 1 : 0;
+        *out_is_init = optkit::gpu::Query::is_init(to_cpp_vendor(vendor)) ? 1 : 0;
+        return OPTKIT_STATUS_OK;
     }
     catch (const std::exception &e)
     {
-        set_error(e.what());
-        return 0;
+        return set_error_status(OPTKIT_STATUS_ERROR, e.what());
     }
 }
 
-int optkit_query_gpu_is_device_exists(optkit_gpu_vendor_t vendor)
+optkit_status_t optkit_query_gpu_is_device_exists(optkit_gpu_vendor_t vendor, int8_t *out_exists)
 {
     clear_error();
     try
     {
         ensure_gpu_query_initialized(to_cpp_vendor(vendor));
-        return optkit::gpu::Query::is_device_exists(to_cpp_vendor(vendor)) ? 1 : 0;
+        *out_exists = optkit::gpu::Query::is_device_exists(to_cpp_vendor(vendor)) ? 1 : 0;
+        return OPTKIT_STATUS_OK;
     }
     catch (const std::exception &e)
     {
-        set_error(e.what());
-        return 0;
+        return set_error_status(OPTKIT_STATUS_ERROR, e.what());
     }
 }
 
@@ -1081,6 +1089,15 @@ optkit_status_t optkit_perf_start(const char *block_name,
     if (!block_name)
         return set_error_status(OPTKIT_STATUS_INVALID_ARGUMENT, "block_name is null");
 
+    if (metrics_count > 0 && !metrics)
+        return set_error_status(OPTKIT_STATUS_INVALID_ARGUMENT, "metrics is null but metrics_count > 0");
+
+    if (events_count > 0 && !events)
+        return set_error_status(OPTKIT_STATUS_INVALID_ARGUMENT, "events is null but events_count > 0");
+
+    if (events_count == 0 && metrics_count == 0)
+        return set_error_status(OPTKIT_STATUS_INVALID_ARGUMENT, "no metrics or events to profile");
+
     try
     {
         optkit::pmu::cpu::perf::PerfProfilerConfig default_config(block_name, true /*is_sampling*/);
@@ -1127,49 +1144,17 @@ optkit_status_t optkit_energy_start(const char *block_name)
     if (!block_name)
         return set_error_status(OPTKIT_STATUS_INVALID_ARGUMENT, "block_name is null");
 
-    try
-    {
-        optkit::ProfilerConfig cpu_cfg = make_profiler_config(block_name, "cpu_energy");
-        auto cpu_prof = make_unique<SafeRaplProfiler>(cpu_cfg, optkit::metrics::energy::cpu_metrics::all_metrics());
-        ProfilerManager<SafeRaplProfiler>::push(std::move(cpu_prof));
-
-        const auto gpu_mb = optkit::metrics::energy::gpu_metrics::all_metrics();
-        try
-        {
-            optkit::ProfilerConfig nvidia_cfg = make_profiler_config(block_name, "nvidia_gpu_energy");
-            auto nvidia_prof = make_unique<SafeNvidiaProfiler>(nvidia_cfg, gpu_mb);
-            ProfilerManager<SafeNvidiaProfiler>::push(std::move(nvidia_prof));
-        }
-        catch (...)
-        {
-            // optional
-        }
-
-        try
-        {
-            optkit::ProfilerConfig amd_cfg = make_profiler_config(block_name, "amd_gpu_energy");
-            auto amd_prof = make_unique<SafeAmdProfiler>(amd_cfg, gpu_mb);
-            ProfilerManager<SafeAmdProfiler>::push(std::move(amd_prof));
-        }
-        catch (...)
-        {
-            // optional
-        }
-
-        return OPTKIT_STATUS_OK;
-    }
-    catch (const std::exception &e)
-    {
-        return set_error_status(OPTKIT_STATUS_ERROR, e.what());
-    }
+    optkit_status_t status = OPTKIT_STATUS_OK;
+    status = optkit_energy_cpu_start(block_name);
+    status = optkit_energy_gpu_start(block_name);
+    return status;
 }
 
 optkit_status_t optkit_energy_stop(void)
 {
     clear_error();
-    ProfilerManager<SafeRaplProfiler>::pop();
-    ProfilerManager<SafeNvidiaProfiler>::pop();
-    ProfilerManager<SafeAmdProfiler>::pop();
+    optkit_energy_cpu_stop();
+    optkit_energy_gpu_stop();
     return OPTKIT_STATUS_OK;
 }
 
@@ -1222,7 +1207,7 @@ optkit_status_t optkit_energy_gpu_start(const char *block_name)
         }
         catch (...)
         {
-            // optional
+            return set_error_status(OPTKIT_STATUS_ERROR, "NVIDIA GPU energy profiler could not be started");
         }
 
         try
@@ -1233,7 +1218,7 @@ optkit_status_t optkit_energy_gpu_start(const char *block_name)
         }
         catch (...)
         {
-            // optional
+            return set_error_status(OPTKIT_STATUS_ERROR, "AMD GPU energy profiler could not be started");
         }
 
         return OPTKIT_STATUS_OK;
@@ -1263,7 +1248,7 @@ optkit_status_t optkit_callstack_start(const char *block_name)
 
     try
     {
-        optkit::pmu::cpu::perf::PerfProfilerConfig cfg{block_name, true, false, ::getpid(), -1, "callstack"};
+        optkit::pmu::cpu::perf::PerfProfilerConfig cfg{block_name, false, false, ::getpid(), -1, "callstack"};
         auto prof = make_unique<SafeCallstackProfiler>(cfg);
         ProfilerManager<SafeCallstackProfiler>::push(std::move(prof));
         return OPTKIT_STATUS_OK;
@@ -1333,7 +1318,7 @@ optkit_status_t optkit_temperature_start(const char *block_name)
         }
         catch (...)
         {
-            // optional
+            return set_error_status(OPTKIT_STATUS_ERROR, "GPU temperature profiler could not be started");
         }
 
         return OPTKIT_STATUS_OK;
