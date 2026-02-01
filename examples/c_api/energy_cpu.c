@@ -49,7 +49,7 @@ static double workload_flops(int iterations, int size)
 
 int main(void)
 {
-    if (optkit_init(1, "energy_cpu") != OPTKIT_STATUS_OK)
+    if (optkit_init(1, "run_energy_cpu") != OPTKIT_STATUS_OK)
     {
         const char *err;
         optkit_last_error_message(&err);

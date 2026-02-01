@@ -20,7 +20,7 @@ static void query_nvidia_gpu(void)
     }
 
     /* Check if devices exist */
-    int is_exists = 0;
+    int8_t is_exists = 0;
     optkit_query_gpu_is_device_exists(vendor, &is_exists);
     if (!is_exists)
     {
@@ -42,7 +42,7 @@ static void query_nvidia_gpu(void)
             if (optkit_query_gpu_get_device_name(vendor, 0, &name) == OPTKIT_STATUS_OK)
             {
                 printf("Device 0 name: %s\n", name);
-                optkit_free(name);
+                free(name);
             }
 
             double power = 0.0;
@@ -61,14 +61,14 @@ static void query_nvidia_gpu(void)
             if (optkit_query_gpu_get_basic_info_str(vendor, 0, &basic_info) == OPTKIT_STATUS_OK)
             {
                 printf("Device 0 basic info:\n%s\n", basic_info);
-                optkit_free(basic_info);
+                free(basic_info);
             }
 
             char *memory_info = NULL;
             if (optkit_query_gpu_get_memory_info_str(vendor, 0, &memory_info) == OPTKIT_STATUS_OK)
             {
                 printf("Device 0 memory info:\n%s\n", memory_info);
-                optkit_free(memory_info);
+                free(memory_info);
             }
         }
     }
@@ -88,7 +88,7 @@ static void query_amd_gpu(void)
         return;
     }
 
-    int is_exists = 0;
+    int8_t is_exists = 0;
     optkit_query_gpu_is_device_exists(vendor, &is_exists);
     if (!is_exists)
     {
@@ -108,7 +108,7 @@ static void query_amd_gpu(void)
             if (optkit_query_gpu_get_device_name(vendor, 0, &name) == OPTKIT_STATUS_OK)
             {
                 printf("Device 0 name: %s\n", name);
-                optkit_free(name);
+                free(name);
             }
         }
     }
@@ -118,7 +118,7 @@ static void query_amd_gpu(void)
 
 int main(void)
 {
-    if (optkit_init(0, "query_gpu") != OPTKIT_STATUS_OK)
+    if (optkit_init(0, "run_query_gpu") != OPTKIT_STATUS_OK)
     {
         const char *err;
         optkit_last_error_message(&err);

@@ -25,7 +25,11 @@ static void workload_disk_io(const char *filename, int iterations)
         if (fp)
         {
             char buffer[4096];
-            fread(buffer, 1, sizeof(buffer), fp);
+            const size_t n = fread(buffer, 1, sizeof(buffer), fp);
+            if (n == 0)
+            {
+                /* Best-effort read; ignore empty reads/errors in this example. */
+            }
             fclose(fp);
         }
     }
@@ -35,7 +39,7 @@ static void workload_disk_io(const char *filename, int iterations)
 
 int main(void)
 {
-    if (optkit_init(1, "disk_example") != OPTKIT_STATUS_OK)
+    if (optkit_init(1, "run_disk_example") != OPTKIT_STATUS_OK)
     {
         const char *err;
         optkit_last_error_message(&err);

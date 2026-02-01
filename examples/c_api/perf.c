@@ -6,8 +6,6 @@
 
 #include "../../src/optkit_c.h"
 
-#include <stdlib.h>
-
 /* Optimized matmul workload: i-k-j order */
 static double workload_flops(int iterations, int size)
 {
@@ -73,7 +71,7 @@ int main(void)
 
     if (!is_init)
     {
-        if (optkit_init(1, "perf_example") != OPTKIT_STATUS_OK)
+        if (optkit_init(1, "run_perf_example") != OPTKIT_STATUS_OK)
         {
             const char *err;
             optkit_last_error_message(&err);
@@ -84,12 +82,11 @@ int main(void)
 
     /* Start performance profiling with metrics */
     // Note: use 'optkit-cli list cpu' to see available metrics and event names
-    const char *events[] = {"L1_HITS", "L1_MISSES"};
-    const char *metrics[] = {"carm", "ipc"}; /* No custom metrics in this example */
+    const char *metrics[] = {"topdown_l1", "topdown_l2_be", "topdown_l2_fe"};
     optkit_status_t status = optkit_perf_start(
         "perf_block",
-        metrics, 2,
-        events, 2);
+        metrics, 3,
+        NULL, 0);
 
     if (status != OPTKIT_STATUS_OK)
     {
@@ -101,7 +98,7 @@ int main(void)
     }
 
     /* Run workload */
-    double total = workload_flops(100, 256);
+    double total = workload_flops(10, 2048);
 
     /* Stop profiling */
     optkit_perf_stop();
