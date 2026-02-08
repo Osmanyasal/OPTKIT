@@ -34,6 +34,7 @@ premake5 gmake
 make -j$(nproc) config=release optkit_static  # for static 
 make -j$(nproc) config=release optkit_dynamic  # for dynamic
 make -j$(nproc) config=release optkit_py  # for python interface
+make -j$(nproc) config=release optkit_c  # for C interface
 
 ## To compile tools
 cd tools
