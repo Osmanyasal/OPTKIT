@@ -33,7 +33,7 @@ ifneq ($(ROCM_INCLUDE),)
 endif
 
 # Targets
-TARGET = optkit
+TARGET = optkit-cli
 SOURCES = optkit.cc utils.cc topology.cc list.cc stat.cc report.cc
 OBJECTS = $(SOURCES:.cc=.o)
 

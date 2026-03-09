@@ -13,10 +13,10 @@ workspace "OPTKIT"
 configurations { "Debug", "Release", "Test" }
 -- architecture "x86_64" -- this doesn't have to be. It can be risc-v, arm, etc.
 
-project(OPTKIT_APP)
-kind "ConsoleApp"
-base_project_setup()
-linkoptions { LIB_PFM_PATH .. "/lib/libpfm.a" }
+-- project(OPTKIT_APP)
+-- kind "ConsoleApp"
+-- base_project_setup()
+-- linkoptions { LIB_PFM_PATH .. "/lib/libpfm.a" }
 
 project(OPTKIT_LIB_DYNAMIC)
 kind "SharedLib"

@@ -1,0 +1,27 @@
+Runtime [s] = 49.073
+CORE_0_00 [J] = 265.007
+CORE_0_01 [J] = 267.187
+CORE_0_02 [J] = 273.717
+CORE_0_03 [J] = 269.826
+CORE_0_04 [J] = 271.336
+CORE_0_05 [J] = 271.099
+CORE_0_06 [J] = 270.700
+CORE_0_07 [J] = 269.737
+CORE_0_08 [J] = 217.841
+CORE_0_09 [J] = 215.156
+CORE_0_10 [J] = 222.173
+CORE_0_11 [J] = 220.431
+CORE_0_12 [J] = 220.634
+CORE_0_13 [J] = 216.566
+CORE_0_14 [J] = 220.640
+CORE_0_15 [J] = 216.660
+PCKG_0 [J] = 5541.123
+
+RAPL Energy consumption [J] = 5541.123
+RAPL Energy consumption [Wh] = 1.539
+
+Runtime [s] = 49.073
+
+NVML Energy consumption [J] = 0.000
+NVML Energy consumption [Wh] = 0.000
+

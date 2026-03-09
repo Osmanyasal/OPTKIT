@@ -11,7 +11,7 @@ UTILS_DIR = './src/utils'
 LIB_GOOGLETEST_PATH = "./lib/googletest"
 WHOAMI = io.popen("whoami"):read("*a"):gsub("\n", "")
 
-OPTKIT_APP = "optkit_app"
+-- OPTKIT_APP = "optkit_app"
 OPTKIT_LIB_DYNAMIC = "optkit_dynamic"
 OPTKIT_LIB_STATIC = "optkit_static"
 OPTKIT_TEST = "optkit_test"

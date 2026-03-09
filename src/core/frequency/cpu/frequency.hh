@@ -7,7 +7,6 @@
 #include "utils/utils.hh"
 #include "core/query.hh"
 #include "core/frequency/cpu/query.hh"
-#include "core/frequency/msrs.hh"
 #include "core/frequency/utils.hh"
 
 namespace optkit::frequency::cpu
