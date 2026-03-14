@@ -15,6 +15,7 @@ COMMANDS:
     topology [cpu|gpu]              Show system topology
     list <TYPE> [cpu|gpu]           List available components
     stat [OPTIONS] -- <PROGRAM>     Run single-shot profiling (like perf stat)
+    msrmod [OPTIONS]                Read/write MSRs via /dev/cpu/<cpu>/msr_safe
 
 TOPOLOGY:
     optkit topology                 Show complete system topology
@@ -46,6 +47,16 @@ BENCHMARKING (--bench):
     Options can be interleaved:
     optkit stat --bench freq-scaling -e cycles -m ipc -- <program> 
 
+MSRMOD:
+    Read/write a Model-Specific Register (MSR) using msr-safe (msr_safe device).
+
+        optkit msrmod -r -c <cpu> -a <msr_addr>
+        optkit msrmod -w -c <cpu> -a <msr_addr> -v <value>
+
+        Notes:
+            - Requires msr-safe (and its `msr_safe` devices) to be available.
+            - Requires sufficient permissions.
+
 EXAMPLES:
     # Topology queries
     optkit topology
@@ -76,6 +87,10 @@ EXAMPLES:
     optkit stat --bench freq-scaling -e cycles -m ipc -- ./program --input data.txt
     optkit stat -e cache-misses -m energy --bench core-scaling -- ./app
     optkit stat --affinity compact -e instructions -m ipc -- ./multithreaded
+
+    # MSR access (requires msr module + permissions)
+    optkit msrmod -r -c 0 -a 0x1b1
+    optkit msrmod -w -c 0 -a 0x1b1 -v 0x1234
 
 NOTE:
     - 'stat' without --bench or --affinity: Single execution, collects specified events/metrics

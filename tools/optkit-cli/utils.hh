@@ -22,6 +22,7 @@ COMMAND:
     topology [cpu|gpu]              Show system topology
     list [cpu|gpu] <TYPE>            List available components
     stat [OPTIONS] -- <PROGRAM>     Run single-shot profiling (like perf stat)
+    msrmod [OPTIONS]                Read/write MSRs via /dev/cpu/<cpu>/msr_safe
 
 TOPOLOGY:
     optkit topology                 Show complete system topology
@@ -57,6 +58,16 @@ VISUALISING REPORT (--report):
     Generate visual report from collected profiling data
 
     optkit report <report_data_folder(s)>
+
+MSRMOD:
+    Read/write a Model-Specific Register (MSR) using msr-safe (msr_safe device).
+
+        optkit msrmod -r -c <cpu> -a <msr_addr>
+        optkit msrmod -w -c <cpu> -a <msr_addr> -v <value>
+
+        Notes:
+            - Requires msr-safe (and its `msr_safe` devices) to be available.
+            - Requires sufficient permissions.
  
 NOTE:
     - 'stat' without --bench <...>: Single execution, collects specified events/metrics
@@ -71,9 +82,17 @@ enum class Command
     TOPOLOGY,
     LIST,
     STAT,
+    MSRMOD,
     HELP,
     REPORT,
     UNKNOWN
+};
+
+enum class MsrOp
+{
+    NONE,
+    READ,
+    WRITE
 };
 
 enum class Target
@@ -115,6 +134,12 @@ struct CommandArgs
     std::vector<std::string> program_args;          // Arguments for the program
     uint32_t socket_id = static_cast<uint32_t>(-1); // Socket ID (-1 means all sockets, 0+ means specific socket)
     uint32_t sampling_period_ms = 1000;             // Sampling period in milliseconds (1second) for stat command
+
+    // msrmod command options
+    MsrOp msr_op = MsrOp::NONE;
+    uint32_t msr_cpu = static_cast<uint32_t>(-1);
+    uint64_t msr_address = static_cast<uint64_t>(-1);
+    uint64_t msr_value = 0;
 };
 
 // Parse command line arguments
@@ -126,6 +151,7 @@ void execute_topology_command(const CommandArgs &args);
 void execute_list_command(const CommandArgs &args);
 void execute_stat_command(const CommandArgs &args);
 void execute_report_command(const CommandArgs &args);
+void execute_msrmod_command(const CommandArgs &args);
 
 // String conversion helpers
 inline std::string to_string(Command cmd)
@@ -138,6 +164,8 @@ inline std::string to_string(Command cmd)
         return "LIST";
     case Command::STAT:
         return "STAT";
+    case Command::MSRMOD:
+        return "MSRMOD";
     case Command::HELP:
         return "HELP";
     case Command::REPORT:
@@ -209,6 +237,15 @@ inline std::string to_string(const CommandArgs &args)
     oss << "  bench_type: " << to_string(args.bench_type) << "\n";
     oss << "  list_type: " << to_string(args.list_type) << "\n";
 
+    if (args.command == Command::MSRMOD)
+    {
+        oss << "  msr_op: " << (args.msr_op == MsrOp::READ ? "READ" : (args.msr_op == MsrOp::WRITE ? "WRITE" : "NONE")) << "\n";
+        oss << "  msr_cpu: " << args.msr_cpu << "\n";
+        oss << "  msr_address: 0x" << std::hex << args.msr_address << std::dec << "\n";
+        if (args.msr_op == MsrOp::WRITE)
+            oss << "  msr_value: 0x" << std::hex << args.msr_value << std::dec << "\n";
+    }
+
     oss << "  events: [";
     for (size_t i = 0; i < args.events.size(); ++i)
     {
@@ -277,6 +314,20 @@ inline bool parse_u32(const std::string &s, uint32_t &out)
     {
         unsigned long v = std::stoul(s);
         out = static_cast<uint32_t>(v);
+        return true;
+    }
+    catch (const std::exception &)
+    {
+        return false;
+    }
+}
+
+inline bool parse_u64_base0(const std::string &s, uint64_t &out)
+{
+    try
+    {
+        unsigned long long v = std::stoull(s, nullptr, 0); // base 0: accepts 0x.. hex
+        out = static_cast<uint64_t>(v);
         return true;
     }
     catch (const std::exception &)

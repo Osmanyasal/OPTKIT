@@ -11,6 +11,7 @@ Command parse_command(const std::string &cmd)
         {"topology", Command::TOPOLOGY},
         {"list", Command::LIST},
         {"stat", Command::STAT},
+        {"msrmod", Command::MSRMOD},
         {"report", Command::REPORT},
         {"help", Command::HELP},
         {"--help", Command::HELP},
@@ -231,6 +232,122 @@ CommandArgs parse_arguments(int argc, char **argv)
         }
         break;
 
+    case Command::MSRMOD:
+    {
+        bool have_value = false;
+        for (size_t i = 1; i < tokens.size(); ++i)
+        {
+            const std::string &token = tokens[i];
+            if (token == "-r" || token == "--read")
+            {
+                args.msr_op = MsrOp::READ;
+            }
+            else if (token == "-w" || token == "--write")
+            {
+                args.msr_op = MsrOp::WRITE;
+            }
+            else if (token == "-c" || token == "--cpu")
+            {
+                if (i + 1 >= tokens.size())
+                {
+                    args.parse_error = true;
+                    args.parse_error_message = "Missing value for -c/--cpu";
+                    args.command = Command::HELP;
+                    break;
+                }
+                uint32_t v = 0;
+                if (!parse_u32(tokens[++i], v))
+                {
+                    args.parse_error = true;
+                    args.parse_error_message = "Invalid value for -c/--cpu: '" + tokens[i] + "'";
+                    args.command = Command::HELP;
+                    break;
+                }
+                args.msr_cpu = v;
+            }
+            else if (token == "-a" || token == "--addr" || token == "--address")
+            {
+                if (i + 1 >= tokens.size())
+                {
+                    args.parse_error = true;
+                    args.parse_error_message = "Missing value for -a/--addr";
+                    args.command = Command::HELP;
+                    break;
+                }
+                uint64_t v = 0;
+                if (!parse_u64_base0(tokens[++i], v))
+                {
+                    args.parse_error = true;
+                    args.parse_error_message = "Invalid value for -a/--addr: '" + tokens[i] + "'";
+                    args.command = Command::HELP;
+                    break;
+                }
+                args.msr_address = v;
+            }
+            else if (token == "-v" || token == "--value")
+            {
+                if (i + 1 >= tokens.size())
+                {
+                    args.parse_error = true;
+                    args.parse_error_message = "Missing value for -v/--value";
+                    args.command = Command::HELP;
+                    break;
+                }
+                uint64_t v = 0;
+                if (!parse_u64_base0(tokens[++i], v))
+                {
+                    args.parse_error = true;
+                    args.parse_error_message = "Invalid value for -v/--value: '" + tokens[i] + "'";
+                    args.command = Command::HELP;
+                    break;
+                }
+                args.msr_value = v;
+                have_value = true;
+            }
+            else if (token == "-h" || token == "--help")
+            {
+                args.command = Command::HELP;
+                break;
+            }
+            else
+            {
+                args.parse_error = true;
+                args.parse_error_message = "Unknown msrmod option: '" + token + "'";
+                args.command = Command::HELP;
+                break;
+            }
+        }
+
+        if (!args.parse_error && args.command == Command::MSRMOD)
+        {
+            if (args.msr_op == MsrOp::NONE)
+            {
+                args.parse_error = true;
+                args.parse_error_message = "msrmod requires -r/--read or -w/--write";
+                args.command = Command::HELP;
+            }
+            else if (args.msr_cpu == static_cast<uint32_t>(-1))
+            {
+                args.parse_error = true;
+                args.parse_error_message = "msrmod requires -c/--cpu";
+                args.command = Command::HELP;
+            }
+            else if (args.msr_address == static_cast<uint64_t>(-1))
+            {
+                args.parse_error = true;
+                args.parse_error_message = "msrmod requires -a/--addr";
+                args.command = Command::HELP;
+            }
+            else if (args.msr_op == MsrOp::WRITE && !have_value)
+            {
+                args.parse_error = true;
+                args.parse_error_message = "msrmod write requires -v/--value";
+                args.command = Command::HELP;
+            }
+        }
+        break;
+    }
+
     default:
         break;
     }
@@ -274,6 +391,12 @@ void execute_command(const CommandArgs &args)
     case Command::REPORT:
     {
         execute_report_command(args);
+        break;
+    }
+
+    case Command::MSRMOD:
+    {
+        execute_msrmod_command(args);
         break;
     }
 
