@@ -38,7 +38,7 @@ namespace optkit::pmu::cpu::perf
                 }
                 else
                 {
-                    std::cout << "Registered for core " << core << " event " << raw_event.first << " with code 0x" << std::hex << raw_event.second << std::dec << " and fd " << fd << "\n";
+                    // std::cout << "Registered for core " << core << " event " << raw_event.first << " with code 0x" << std::hex << raw_event.second << std::dec << " and fd " << fd << "\n";
                     PMUEventManager::register_event(fd, 1);
                     fd_list.push_back(fd);
                 }

@@ -41,8 +41,8 @@ int main()
 {
     // Create the OPTKIT engine; this also sets up the execution folder.
     OPTKIT_INIT();
-    OPTKIT_CPU_EVENTS_DISTINCT_CORES("carm_cpp_block", optkit::metrics::performance::cpu_metrics::get_metric("carm"));
-    // OPTKIT_CPU_EVENS("carm_cpp_block", optkit::metrics::performance::cpu_metrics::get_metric("carm"));
+    // OPTKIT_CPU_EVENTS_DISTINCT_CORES("carm_cpp_block", optkit::metrics::performance::cpu_metrics::get_metric("carm"));
+    OPTKIT_CPU_EVENTS("carm_cpp_block", optkit::metrics::performance::cpu_metrics::get_metric("carm"));
     double total = flops_workload(5000, 192);
     std::cout << "Workload complete. Total=" << total << "\n";
 
