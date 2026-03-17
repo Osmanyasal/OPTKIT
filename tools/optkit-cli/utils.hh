@@ -44,6 +44,7 @@ PROFILING (stat):
     optkit stat -e <event> -m <metric> -- <program>                                   Profile event + metric
     optkit stat -e <event> -m <metric> -T <sampling_period_in_ms> -- <program>        Profile event + metric
     optkit stat -e <event> -m <metric> -T <sampling_period_in_ms> -S 0 -- <program>   Profile event + metric + socket 0
+    optkit stat -a -e <event> -m <metric> -- <program>                                 Profile system-wide across all CPUs
 
 BENCHMARKING (--bench):
     Multiple execution analysis - runs program multiple times with different configurations
@@ -126,7 +127,8 @@ struct CommandArgs
     BenchType bench_type = BenchType::DEFAULT;
     ListType list_type = ListType::ALL;
     bool parse_error = false;
-    bool dump_to_file;
+    bool dump_to_file = false;
+    bool system_wide = false;                     // System-wide monitoring (-a) for stat
     std::string parse_error_message;
     std::vector<std::string> events;                // PMU events to profile (-e)
     std::vector<std::string> metrics;               // Metrics to collect (-m)
@@ -236,6 +238,7 @@ inline std::string to_string(const CommandArgs &args)
     oss << "  target: " << to_string(args.target) << "\n";
     oss << "  bench_type: " << to_string(args.bench_type) << "\n";
     oss << "  list_type: " << to_string(args.list_type) << "\n";
+    oss << "  system_wide: " << (args.system_wide ? "true" : "false") << "\n";
 
     if (args.command == Command::MSRMOD)
     {

@@ -131,6 +131,10 @@ CommandArgs parse_arguments(int argc, char **argv)
         for (size_t i = 1; i < separator_pos; ++i)
         {
             const std::string &token = tokens[i];
+            if (token == "-a")
+            {
+                args.system_wide = true;
+            }
             if (token == "-T")
             {
                 // Next token should be the sampling period in milliseconds

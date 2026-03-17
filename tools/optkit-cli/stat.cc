@@ -136,7 +136,16 @@ void create_child_process(const CommandArgs &args)
             _metric.add(event_name, optkit::metrics::performance::cpu_mapper::get(event_name));
 
         optkit::pmu::cpu::perf::PerfProfilerConfig perf_config{"stat", true /*is_sampling*/};
-        perf_config.pid = CHILD_PID;
+        if (args.system_wide)
+        {
+            perf_config.pid = -1;
+            perf_config.cpu = OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS;
+        }
+        else
+        {
+            perf_config.pid = CHILD_PID;
+            perf_config.cpu = -1;
+        }
         optkit::pmu::cpu::perf::BlockProfiler stat_metric_profiler(perf_config, _metric);
         // open with sampling.
         optkit::callstack::Profiler callstack_profiler{{"stat", true, false, CHILD_PID, -1, "callstack"}};
