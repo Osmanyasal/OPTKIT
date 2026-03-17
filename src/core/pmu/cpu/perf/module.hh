@@ -11,6 +11,9 @@
 #define OPTKIT_CPU_EVENTS_DISTINCT_CORES(block_name, metric_builder) \
     optkit::pmu::cpu::perf::BlockProfiler EXPAND_AND_CONCAT(var, __LINE__) { {block_name, false, false, 0, OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS}, metric_builder }
 
+#define OPTKIT_CPU_EVENTS_DISTINCT_CORES_SYSTEM_WISE(block_name, metric_builder) \
+    optkit::pmu::cpu::perf::BlockProfiler EXPAND_AND_CONCAT(var, __LINE__) { {block_name, false, false, -1, OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS}, metric_builder }
+
 #define OPTKIT_CPU_EVENTS_REPEAT(block_name, metric_builder, count)                                       \
     optkit::pmu::cpu::perf::BlockProfiler EXPAND_AND_CONCAT(var, __LINE__){{block_name}, metric_builder}; \
     for (int32_t i = 0; i < count; i++, EXPAND_AND_CONCAT(var, __LINE__).read_and_store())
@@ -19,11 +22,18 @@
     optkit::pmu::cpu::perf::BlockProfiler EXPAND_AND_CONCAT(var, __LINE__){{block_name, false, false, 0, OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS}, metric_builder}; \
     for (int32_t i = 0; i < count; i++, EXPAND_AND_CONCAT(var, __LINE__).read_and_store())
 
+#define OPTKIT_CPU_EVENTS_DISTINCT_CORES_REPEAT_SYSTEM_WISE(block_name, metric_builder, count)                                                            \
+    optkit::pmu::cpu::perf::BlockProfiler EXPAND_AND_CONCAT(var, __LINE__){{block_name, false, false, -1, OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS}, metric_builder}; \
+    for (int32_t i = 0; i < count; i++, EXPAND_AND_CONCAT(var, __LINE__).read_and_store())
+
 #define OPTKIT_CPU_GROUP_EVENTS(block_name, metric_builder) \
     optkit::pmu::cpu::perf::BlockGroupProfiler EXPAND_AND_CONCAT(var, __LINE__) { {block_name, false, true}, metric_builder }
 
 #define OPTKIT_CPU_GROUP_EVENTS_DISTINCT_CORES(block_name, metric_builder) \
     optkit::pmu::cpu::perf::BlockGroupProfiler EXPAND_AND_CONCAT(var, __LINE__) { {block_name, false, true, 0, OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS}, metric_builder }
+
+#define OPTKIT_CPU_GROUP_EVENTS_DISTINCT_CORES_SYSTEM_WISE(block_name, metric_builder) \
+    optkit::pmu::cpu::perf::BlockGroupProfiler EXPAND_AND_CONCAT(var, __LINE__) { {block_name, false, true, -1, OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS}, metric_builder }
 
 #define OPTKIT_CPU_GROUP_EVENTS_REPEAT(block_name, metric_builder, count)                                                   \
     optkit::pmu::cpu::perf::BlockGroupProfiler EXPAND_AND_CONCAT(var, __LINE__){{block_name, false, true}, metric_builder}; \
@@ -33,12 +43,19 @@
     optkit::pmu::cpu::perf::BlockGroupProfiler EXPAND_AND_CONCAT(var, __LINE__){{block_name, false, true, 0, OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS}, metric_builder}; \
     for (int32_t i = 0; i < count; i++, EXPAND_AND_CONCAT(var, __LINE__).read_and_store())
 
+#define OPTKIT_CPU_GROUP_EVENTS_DISTINCT_CORES_REPEAT_SYSTEM_WISE(block_name, metric_builder, count)                                              \
+    optkit::pmu::cpu::perf::BlockGroupProfiler EXPAND_AND_CONCAT(var, __LINE__){{block_name, false, true, -1, OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS}, metric_builder}; \
+    for (int32_t i = 0; i < count; i++, EXPAND_AND_CONCAT(var, __LINE__).read_and_store())
+
 // sampling macros
 #define OPTKIT_CPU_EVENTS_SAMPLING(block_name, metric_builder) \
     optkit::pmu::cpu::perf::BlockProfiler EXPAND_AND_CONCAT(var, __LINE__) { {block_name, true}, metric_builder }
 
 #define OPTKIT_CPU_EVENTS_DISTINCT_CORES_SAMPLING(block_name, metric_builder) \
     optkit::pmu::cpu::perf::BlockProfiler EXPAND_AND_CONCAT(var, __LINE__) { {block_name, true, false, 0, OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS}, metric_builder }
+
+#define OPTKIT_CPU_EVENTS_DISTINCT_CORES_SYSTEM_WISE_SAMPLING(block_name, metric_builder) \
+    optkit::pmu::cpu::perf::BlockProfiler EXPAND_AND_CONCAT(var, __LINE__) { {block_name, true, false, -1, OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS}, metric_builder }
 
 #define OPTKIT_CPU_EVENTS_REPEAT_SAMPLING(block_name, metric_builder, count)                                    \
     optkit::pmu::cpu::perf::BlockProfiler EXPAND_AND_CONCAT(var, __LINE__){{block_name, true}, metric_builder}; \
@@ -48,11 +65,18 @@
     optkit::pmu::cpu::perf::BlockProfiler EXPAND_AND_CONCAT(var, __LINE__){{block_name, true, false, 0, OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS}, metric_builder}; \
     for (int32_t i = 0; i < count; i++, EXPAND_AND_CONCAT(var, __LINE__).read_and_store())
 
+#define OPTKIT_CPU_EVENTS_DISTINCT_CORES_REPEAT_SYSTEM_WISE_SAMPLING(block_name, metric_builder, count)                                                         \
+    optkit::pmu::cpu::perf::BlockProfiler EXPAND_AND_CONCAT(var, __LINE__){{block_name, true, false, -1, OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS}, metric_builder}; \
+    for (int32_t i = 0; i < count; i++, EXPAND_AND_CONCAT(var, __LINE__).read_and_store())
+
 #define OPTKIT_CPU_GROUP_EVENTS_SAMPLING(block_name, metric_builder) \
     optkit::pmu::cpu::perf::BlockGroupProfiler EXPAND_AND_CONCAT(var, __LINE__) { {block_name, true, true}, metric_builder }
 
 #define OPTKIT_CPU_GROUP_EVENTS_DISTINCT_CORES_SAMPLING(block_name, metric_builder) \
     optkit::pmu::cpu::perf::BlockGroupProfiler EXPAND_AND_CONCAT(var, __LINE__) { {block_name, true, true, 0, OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS}, metric_builder }
+
+#define OPTKIT_CPU_GROUP_EVENTS_DISTINCT_CORES_SYSTEM_WISE_SAMPLING(block_name, metric_builder) \
+    optkit::pmu::cpu::perf::BlockGroupProfiler EXPAND_AND_CONCAT(var, __LINE__) { {block_name, true, true, -1, OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS}, metric_builder }
 
 #define OPTKIT_CPU_GROUP_EVENTS_REPEAT_SAMPLING(block_name, metric_builder, count)                                         \
     optkit::pmu::cpu::perf::BlockGroupProfiler EXPAND_AND_CONCAT(var, __LINE__){{block_name, true, true}, metric_builder}; \
@@ -60,4 +84,8 @@
 
 #define OPTKIT_CPU_GROUP_EVENTS_DISTINCT_CORES_REPEAT_SAMPLING(block_name, metric_builder, count)                                     \
     optkit::pmu::cpu::perf::BlockGroupProfiler EXPAND_AND_CONCAT(var, __LINE__){{block_name, true, true, 0, OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS}, metric_builder}; \
+    for (int32_t i = 0; i < count; i++, EXPAND_AND_CONCAT(var, __LINE__).read_and_store())
+
+#define OPTKIT_CPU_GROUP_EVENTS_DISTINCT_CORES_REPEAT_SYSTEM_WISE_SAMPLING(block_name, metric_builder, count)                                      \
+    optkit::pmu::cpu::perf::BlockGroupProfiler EXPAND_AND_CONCAT(var, __LINE__){{block_name, true, true, -1, OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS}, metric_builder}; \
     for (int32_t i = 0; i < count; i++, EXPAND_AND_CONCAT(var, __LINE__).read_and_store())

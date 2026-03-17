@@ -18,15 +18,18 @@ int main(int argc, char **argv)
     auto mb = optkit::metrics::MetricBuilder<uint64_t>{};
     mb.add("inst_retired", {optkit::metrics::performance::cpu_mapper::get(optkit::metrics::performance::cpu_events::INST_RETIRED)});
 
-    {
-        OPTKIT_CPU_EVENTS("main_automatic", mb);
-        call_me();
-    }
+    // {
+    //     OPTKIT_CPU_EVENTS("main_automatic", mb);
+    //     call_me();
+    // }
 
-    {
-        OPTKIT_CPU_EVENTS_DISTINCT_CORES("main_automatic_distinct_cores", mb);
-        call_me();
-    }
+    // {
+    //     OPTKIT_CPU_EVENTS_DISTINCT_CORES("main_automatic_distinct_cores", mb);
+    //     call_me();
+    // }
+
+    OPTKIT_CPU_EVENTS_DISTINCT_CORES_SYSTEM_WISE("main_automatic_distinct_cores", mb);
+    sleep(15);
 
     return 0;
 }

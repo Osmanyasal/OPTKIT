@@ -150,6 +150,7 @@ namespace optkit::pmu::cpu::perf
         {
             ::read(fd, &count, sizeof(count));
             result.push_back(count);
+            // std::cout << "Read value " << count << " from fd " << fd << "\n";
             if (OPT_LIKELY(this->config.is_reset_after_read))
                 ioctl(fd, PERF_EVENT_IOC_RESET, 0);
         }
