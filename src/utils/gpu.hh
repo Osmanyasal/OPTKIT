@@ -9,7 +9,17 @@
 #include <dlfcn.h>
 #include <unordered_map>
 
-#if OPTKIT_ENV_LIB_NVML
+#if defined(__has_include)
+#define OPTKIT_HAS_NVML_HEADERS (OPTKIT_ENV_LIB_NVML && __has_include(<nvml.h>))
+#define OPTKIT_HAS_AMDSMI_HEADERS (OPTKIT_ENV_LIB_AMDSMI && __has_include(<amd_smi/amdsmi.h>))
+#define OPTKIT_HAS_ROCM_SMI_HEADERS (OPTKIT_ENV_LIB_ROCM_SMI && __has_include(<rocm_smi/rocm_smi.h>))
+#else
+#define OPTKIT_HAS_NVML_HEADERS 0
+#define OPTKIT_HAS_AMDSMI_HEADERS 0
+#define OPTKIT_HAS_ROCM_SMI_HEADERS 0
+#endif
+
+#if OPTKIT_HAS_NVML_HEADERS
 #include <nvml.h>
 #include "utils/nvml_failsafe.hh"
 
@@ -46,10 +56,10 @@ OPT_FORCE_INLINE nvml_fn_t query_nvml_fn(const char *function_name)
 #define NVML_CUDA_DRIVER_VERSION_MINOR(v) 0
 #endif
 
-#if OPTKIT_ENV_LIB_AMDSMI || OPTKIT_ENV_LIB_ROCM_SMI
+#if OPTKIT_HAS_AMDSMI_HEADERS || OPTKIT_HAS_ROCM_SMI_HEADERS
 #include "utils/amd_failsafe.hh"
 
-#if OPTKIT_ENV_LIB_AMDSMI
+#if OPTKIT_HAS_AMDSMI_HEADERS
 #include <amd_smi/amdsmi.h>
 
 using amdsmi_fn_t = amdsmi_status_t (*)(amdsmi_processor_handle, ...);
@@ -79,7 +89,7 @@ OPT_FORCE_INLINE std::string _amdsmi_status_to_string(amdsmi_status_t status)
             RESULT = AMDSMI_STATUS_NOT_SUPPORTED;            \
     } while (0)
 
-#elif OPTKIT_ENV_LIB_ROCM_SMI
+#elif OPTKIT_HAS_ROCM_SMI_HEADERS
 #include <rocm_smi/rocm_smi.h>
 
 using rsmi_fn_t = rsmi_status_t (*)(uint32_t, ...);

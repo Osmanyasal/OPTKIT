@@ -30,7 +30,7 @@ namespace optkit::gpu
      */
     class Query final
     {
-#if OPTKIT_ENV_LIB_AMDSMI
+#if OPTKIT_HAS_AMDSMI_HEADERS
     private:
         friend inline uint32_t _amdsmi_populate_device_count_and_fill_handlers();
 #endif
@@ -91,14 +91,14 @@ namespace optkit::gpu
     private:
         static std::unordered_map<GpuVendor, bool> initialized;
 
-#if OPTKIT_ENV_LIB_NVML
+#if OPTKIT_HAS_NVML_HEADERS
         static std::vector<nvmlDevice_t> gpu_handles_nvml;
 #endif
 
-#if OPTKIT_ENV_LIB_AMDSMI
+#if OPTKIT_HAS_AMDSMI_HEADERS
         static std::vector<amdsmi_socket_handle> socket_handles_amdsmi;
         static std::vector<amdsmi_processor_handle> gpu_handles_amdsmi;
-#elif OPTKIT_ENV_LIB_ROCM_SMI
+#elif OPTKIT_HAS_ROCM_SMI_HEADERS
         static std::vector<uint32_t> gpu_handles_rocm_smi; // ROCm SMI uses device indices
 #endif
 
@@ -107,7 +107,7 @@ namespace optkit::gpu
         ~Query() = delete;
     };
 
-#if OPTKIT_ENV_LIB_AMDSMI
+#if OPTKIT_HAS_AMDSMI_HEADERS
     inline uint32_t _amdsmi_populate_device_count_and_fill_handlers()
     {
         static bool is_amdsmi_initialized = false;

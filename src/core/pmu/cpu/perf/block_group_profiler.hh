@@ -66,7 +66,7 @@ namespace optkit::pmu::cpu::perf
 
         int32_t get_group_leader()
         {
-            return this->group_leader;
+            return this->group_leaders.empty() ? -1 : this->group_leaders[0];
         }
 
         virtual std::unordered_map<std::string, uint64_t> aggregate() override;
@@ -76,7 +76,7 @@ namespace optkit::pmu::cpu::perf
 #endif
 
         bool is_configured;
-        int32_t group_leader;
+        std::vector<int32_t> group_leaders;
 
         const PerfProfilerConfig profiler_config;
         const optkit::metrics::MetricBuilder<uint64_t> metric_builder;

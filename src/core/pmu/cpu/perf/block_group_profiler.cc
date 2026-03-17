@@ -14,7 +14,7 @@ namespace optkit::pmu::cpu::perf
     }
 
     BlockGroupProfiler::BlockGroupProfiler(const PerfProfilerConfig &profiler_config, const optkit::metrics::MetricBuilder<uint64_t> &mb)
-        : BaseProfiler{static_cast<const ProfilerConfig &>(profiler_config)}, group_leader{-1}, profiler_config{profiler_config}, metric_builder{mb}
+        : BaseProfiler{static_cast<const ProfilerConfig &>(profiler_config)}, profiler_config{profiler_config}, metric_builder{mb}
     {
         PMUEventManager::disable_all_events();
 
@@ -27,26 +27,34 @@ namespace optkit::pmu::cpu::perf
             return;
         }
 
-        for (const auto &raw_event : mb.metric_events)
-        {
-            struct perf_event_attr attr = this->profiler_config.perf_event_config; // copy default config
-            attr.config = raw_event.second;                                        // set an event
+        const int32_t core_begin = (this->profiler_config.cpu == -1) ? -1 : 0;
+        const int32_t core_end_exclusive = (this->profiler_config.cpu == -1) ? 0 : ((this->profiler_config.cpu > 0) ? this->profiler_config.cpu : 1);
 
-            int32_t fd = syscall(__NR_perf_event_open, &attr, this->profiler_config.pid, this->profiler_config.cpu, group_leader, 0); // <-- first becomes -1 and later we use the group_leader's fd.
-            if (fd < 0)
+        for (int32_t core = core_begin; core < core_end_exclusive; ++core)
+        {
+            int32_t group_leader = -1;
+            for (const auto &raw_event : mb.metric_events)
             {
-                OPTKIT_CORE_ERROR("perf_event_open error");
-                this->is_enabled = false;
-                return;
-            }
-            else
-            {
-                if (group_leader == -1)
+                struct perf_event_attr attr = this->profiler_config.perf_event_config; // copy default config
+                attr.config = raw_event.second;                                        // set an event
+
+                int32_t fd = syscall(__NR_perf_event_open, &attr, this->profiler_config.pid, core, group_leader, 0);
+                if (fd < 0)
                 {
-                    group_leader = fd;
-                    PMUEventManager::register_event(group_leader, mb.metric_events.size());
+                    OPTKIT_CORE_ERROR("perf_event_open error");
+                    this->is_enabled = false;
+                    return;
+                }
+                else
+                {
+                    if (group_leader == -1)
+                    {
+                        group_leader = fd;
+                        PMUEventManager::register_event(group_leader, mb.metric_events.size());
+                    }
                 }
             }
+            group_leaders.push_back(group_leader);
         }
 
         if (OPT_UNLIKELY(this->profiler_config.is_sampling))
@@ -79,7 +87,8 @@ namespace optkit::pmu::cpu::perf
 
         this->read_and_store(); // read the last one.
 
-        PMUEventManager::unregister_event(group_leader);
+        for (int32_t group_leader : group_leaders)
+            PMUEventManager::unregister_event(group_leader);
 
         this->metric_results = this->metric_builder.calculate(aggregate());
 
@@ -105,20 +114,23 @@ namespace optkit::pmu::cpu::perf
     void BlockGroupProfiler::disable()
     {
         this->is_enabled = false;
-        ioctl(group_leader, PERF_EVENT_IOC_DISABLE, PERF_IOC_FLAG_GROUP);
+        for (int32_t group_leader : group_leaders)
+            ioctl(group_leader, PERF_EVENT_IOC_DISABLE, PERF_IOC_FLAG_GROUP);
     }
 
     void BlockGroupProfiler::enable()
     {
         this->is_enabled = true;
-        ioctl(group_leader, PERF_EVENT_IOC_ENABLE, PERF_IOC_FLAG_GROUP);
+        for (int32_t group_leader : group_leaders)
+            ioctl(group_leader, PERF_EVENT_IOC_ENABLE, PERF_IOC_FLAG_GROUP);
     }
 
     void BlockGroupProfiler::reset()
     {
         if (OPT_UNLIKELY(!is_enabled))
             return;
-        ioctl(group_leader, PERF_EVENT_IOC_RESET, PERF_IOC_FLAG_GROUP);
+        for (int32_t group_leader : group_leaders)
+            ioctl(group_leader, PERF_EVENT_IOC_RESET, PERF_IOC_FLAG_GROUP);
     }
 
     std::vector<uint64_t> BlockGroupProfiler::read()
@@ -134,13 +146,16 @@ namespace optkit::pmu::cpu::perf
 
         char buf[4096];
         struct read_format *rf = (struct read_format *)buf;
-        ::read(group_leader, buf, sizeof(buf));
-        for (uint64_t i = 0; i < rf->nr; i++)
+        for (int32_t group_leader : group_leaders)
         {
-            result.push_back(rf->values[i].value);
+            ::read(group_leader, buf, sizeof(buf));
+            for (uint64_t i = 0; i < rf->nr; i++)
+            {
+                result.push_back(rf->values[i].value);
+            }
+            if (OPT_LIKELY(this->profiler_config.is_reset_after_read))
+                ioctl(group_leader, PERF_EVENT_IOC_RESET, PERF_IOC_FLAG_GROUP);
         }
-        if (OPT_LIKELY(this->profiler_config.is_reset_after_read))
-            ioctl(group_leader, PERF_EVENT_IOC_RESET, PERF_IOC_FLAG_GROUP);
 
         PMUEventManager::enable_all_events();
 
@@ -167,6 +182,17 @@ namespace optkit::pmu::cpu::perf
         std::unordered_map<std::string, uint64_t> aggregated_events;
         const std::vector<std::string> &event_names = this->metric_builder.event_names();
 
+        if (event_names.empty())
+        {
+            for (const auto &entry : read_buffer)
+                total_duration += entry.first;
+
+            this->event_results.clear();
+            this->total_duration_ms = total_duration;
+            aggregated_events["duration_microsec"] = this->total_duration_ms * 1000.0;
+            return aggregated_events;
+        }
+
         for (const auto &entry : read_buffer)
         {
             total_duration += entry.first;
@@ -175,7 +201,7 @@ namespace optkit::pmu::cpu::perf
 
             for (size_t j = 0; j < values.size(); ++j)
             {
-                aggregated_events[event_names[j]] += values[j];
+                aggregated_events[event_names[j % event_names.size()]] += values[j];
             }
         }
         std::vector<std::pair<std::string, uint64_t>> event_value(

@@ -22,7 +22,7 @@ namespace optkit::pmu::cpu
         int32_t num_cntrs = Query::default_pmu_info().num_cntrs;
         if (OPT_LIKELY(PMUEventManager::event_count_being_monitor > num_cntrs))
         {
-            OPTKIT_CORE_WARN("Total # of events exceed system resources!! {}/{}(max) Multiplexing will take place(BlockGroup is not created by the system when this occures).", PMUEventManager::event_count_being_monitor, num_cntrs);
+            OPTKIT_CORE_DEBUG("Total # of events exceed system resources!! {}/{}(max) Multiplexing will take place(BlockGroup is not created by the system when this occures).", PMUEventManager::event_count_being_monitor, num_cntrs);
         }
 
         // add event

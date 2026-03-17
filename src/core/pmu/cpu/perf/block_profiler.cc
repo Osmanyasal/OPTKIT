@@ -19,26 +19,32 @@ namespace optkit::pmu::cpu::perf
         PMUEventManager::disable_all_events();
 
         int32_t fd = -1;
-        for (const auto &raw_event : this->metric_builder.metric_events)
+        const int32_t core_begin = (this->profiler_config.cpu == -1) ? -1 : 0;
+        const int32_t core_end_exclusive = (this->profiler_config.cpu == -1) ? 0 : ((this->profiler_config.cpu > 0) ? this->profiler_config.cpu : 1);
+
+        for (int32_t core = core_begin; core < core_end_exclusive; ++core)
         {
-            struct perf_event_attr attr = this->profiler_config.perf_event_config;
-            attr.config = raw_event.second;
+            for (const auto &raw_event : this->metric_builder.metric_events)
+            {
+                struct perf_event_attr attr = this->profiler_config.perf_event_config;
+                attr.config = raw_event.second;
 
-            fd = syscall(__NR_perf_event_open, &attr, this->profiler_config.pid, this->profiler_config.cpu, -1, 0);
-            if (fd < 0)
-            {
-                OPTKIT_CORE_ERROR("perf_event_open error");
-                this->is_enabled = false;
-                return;
+                fd = syscall(__NR_perf_event_open, &attr, this->profiler_config.pid, core, -1, 0);
+                if (fd < 0)
+                {
+                    OPTKIT_CORE_ERROR("perf_event_open error");
+                    this->is_enabled = false;
+                    return;
+                }
+                else
+                {
+                    std::cout << "Registered for core " << core << " event " << raw_event.first << " with code 0x" << std::hex << raw_event.second << std::dec << " and fd " << fd << "\n";
+                    PMUEventManager::register_event(fd, 1);
+                    fd_list.push_back(fd);
+                }
+                ioctl(fd, PERF_EVENT_IOC_RESET, 0);
             }
-            else
-            {
-                PMUEventManager::register_event(fd, 1);
-                fd_list.push_back(fd);
-            }
-            ioctl(fd, PERF_EVENT_IOC_RESET, 0);
         }
-
         if (OPT_UNLIKELY(this->profiler_config.is_sampling))
             this->sampling_thread = std::thread([this]()
                                                 {
@@ -160,17 +166,26 @@ namespace optkit::pmu::cpu::perf
         std::unordered_map<std::string, uint64_t> aggregated_events;
         const std::vector<std::string> &event_names = this->metric_builder.event_names();
 
+        if (event_names.empty())
+        {
+            for (const auto &entry : read_buffer)
+                total_duration += entry.first;
+
+            this->event_results.clear();
+            this->total_duration_ms = total_duration;
+            aggregated_events["duration_microsec"] = this->total_duration_ms * 1000.0;
+            return aggregated_events;
+        }
+
         for (const auto &entry : read_buffer)
         {
             total_duration += entry.first;
 
             const std::vector<uint64_t> &values = entry.second;
 
-            // std::cout << "read buffer:";
             for (size_t j = 0; j < values.size(); ++j)
             {
-                // std::cout << event_names[j] << ":" << values[j] << "\n";
-                aggregated_events[event_names[j]] += values[j];
+                aggregated_events[event_names[j % event_names.size()]] += values[j];
             }
         }
         std::vector<std::pair<std::string, uint64_t>> event_value(
