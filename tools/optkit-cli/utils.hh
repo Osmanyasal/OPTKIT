@@ -50,6 +50,8 @@ BENCHMARKING (--bench):
     Multiple execution analysis - runs program multiple times with different configurations
     
     optkit stat --bench freq-scaling -- <program>            Frequency scaling analysis
+    optkit stat --bench freq-scaling --freq-limit 10 -- <program>   Frequency scaling (cap to at most 10 core freqs and 10 uncore freqs)
+    optkit stat --bench freq-scaling --freq-start 2 --freq-limit 5 -- <program>   Frequency scaling (skip top 2, run next 5 freqs)
     optkit stat --bench core-scaling -- <program>            Core scaling analysis 
 
     Options can be interleaved:
@@ -130,6 +132,8 @@ struct CommandArgs
     bool dump_to_file = false;
     bool system_wide = false;                      // System-wide monitoring (-a) for stat
     bool is_screenshot = false;                    // Whether to capture screenshot of events
+    uint32_t freq_limit = 0;                       // For --bench freq-scaling: cap available core/uncore frequency list sizes (0 = no limit)
+    uint32_t freq_start = 0;                       // For --bench freq-scaling: starting index from top (highest frequency) (0 = start at top)
     std::string parse_error_message;
     std::vector<std::string> events;                // PMU events to profile (-e)
     std::vector<std::string> metrics;               // Metrics to collect (-m)
@@ -240,6 +244,8 @@ inline std::string to_string(const CommandArgs &args)
     oss << "  list_type: " << to_string(args.list_type) << "\n";
     oss << "  system_wide: " << (args.system_wide ? "true" : "false") << "\n";
     oss << "  is_screenshot: " << (args.is_screenshot ? "true" : "false") << "\n";
+    oss << "  freq_limit: " << args.freq_limit << "\n";
+    oss << "  freq_start: " << args.freq_start << "\n";
 
     if (args.command == Command::MSRMOD)
     {

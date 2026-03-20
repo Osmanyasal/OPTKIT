@@ -209,6 +209,52 @@ CommandArgs parse_arguments(int argc, char **argv)
                     break;
                 }
             }
+            else if (token == "--freq-limit")
+            {
+                if (i + 1 < separator_pos)
+                {
+                    uint32_t v = 0;
+                    if (!parse_u32(tokens[i + 1], v))
+                    {
+                        args.parse_error = true;
+                        args.parse_error_message = "Invalid value for --freq-limit: '" + tokens[i + 1] + "'";
+                        args.command = Command::HELP;
+                        break;
+                    }
+                    args.freq_limit = v;
+                    ++i;
+                }
+                else
+                {
+                    args.parse_error = true;
+                    args.parse_error_message = "Missing value for --freq-limit";
+                    args.command = Command::HELP;
+                    break;
+                }
+            }
+            else if (token == "--freq-start")
+            {
+                if (i + 1 < separator_pos)
+                {
+                    uint32_t v = 0;
+                    if (!parse_u32(tokens[i + 1], v))
+                    {
+                        args.parse_error = true;
+                        args.parse_error_message = "Invalid value for --freq-start: '" + tokens[i + 1] + "'";
+                        args.command = Command::HELP;
+                        break;
+                    }
+                    args.freq_start = v;
+                    ++i;
+                }
+                else
+                {
+                    args.parse_error = true;
+                    args.parse_error_message = "Missing value for --freq-start";
+                    args.command = Command::HELP;
+                    break;
+                }
+            }
             else if (token == "-o" || token == "--output")
             {
                 args.dump_to_file = true;

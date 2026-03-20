@@ -72,6 +72,28 @@ static void inject_json_kv(const std::string &dir,
     }
 }
 
+template <typename T>
+static bool apply_freq_window_in_place(std::vector<T> &values, uint32_t start, uint32_t limit)
+{
+    if (values.empty())
+        return true;
+
+    if (start >= values.size())
+        return false;
+
+    const size_t s = static_cast<size_t>(start);
+    const size_t n = values.size();
+    const size_t max_take = n - s;
+    const size_t take = (limit == 0) ? max_take : std::min(max_take, static_cast<size_t>(limit));
+
+    std::vector<T> out;
+    out.reserve(take);
+    for (size_t i = 0; i < take; ++i)
+        out.push_back(values[s + i]);
+    values.swap(out);
+    return true;
+}
+
 bool IS_RUNNING = false;
 int32_t CHILD_PID = -1;
 
@@ -208,6 +230,22 @@ void execute_stat_command(const CommandArgs &args)
         {
             std::cerr << "Error: No available uncore frequencies found for scaling analysis\n";
             avail_uncore_freqs.push_back(0);
+        }
+
+        if (!apply_freq_window_in_place(avail_core_freqs, args.freq_start, args.freq_limit))
+        {
+            std::cerr << "Error: --freq-start " << args.freq_start << " is out of range for core frequencies (size=" << avail_core_freqs.size() << ")\n";
+            return;
+        }
+
+        const bool uncore_unavailable = (avail_uncore_freqs.size() == 1 && avail_uncore_freqs[0] == 0);
+        if (!uncore_unavailable)
+        {
+            if (!apply_freq_window_in_place(avail_uncore_freqs, args.freq_start, args.freq_limit))
+            {
+                std::cerr << "Error: --freq-start " << args.freq_start << " is out of range for uncore frequencies (size=" << avail_uncore_freqs.size() << ")\n";
+                return;
+            }
         }
 
         // traverse all combinations of core and uncore frequencies
