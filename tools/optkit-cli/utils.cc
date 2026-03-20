@@ -131,35 +131,16 @@ CommandArgs parse_arguments(int argc, char **argv)
         for (size_t i = 1; i < separator_pos; ++i)
         {
             const std::string &token = tokens[i];
-            if (token == "-a")
+
+            if(token == "-ss" || token == "--screenshot")
+            {
+                args.is_screenshot = true;
+            }
+            else if (token == "-a")
             {
                 args.system_wide = true;
             }
-            if (token == "-T")
-            {
-                // Next token should be the sampling period in milliseconds
-                if (i + 1 < separator_pos)
-                {
-                    uint32_t v = 0;
-                    if (!parse_u32(tokens[i + 1], v))
-                    {
-                        args.parse_error = true;
-                        args.parse_error_message = "Invalid value for -T: '" + tokens[i + 1] + "'";
-                        args.command = Command::HELP;
-                        break;
-                    }
-                    args.sampling_period_ms = v;
-                    ++i;
-                }
-                else
-                {
-                    args.parse_error = true;
-                    args.parse_error_message = "Missing value for -T";
-                    args.command = Command::HELP;
-                    break;
-                }
-            }
-            if (token == "-S")
+            else if (token == "-S")
             {
                 // Next token should be the socket ID
                 if (i + 1 < separator_pos)
@@ -183,7 +164,7 @@ CommandArgs parse_arguments(int argc, char **argv)
                     break;
                 }
             }
-            if (token == "-e" || token == "--event")
+            else if (token == "-e" || token == "--event")
             {
                 // Next token should be the event name
                 if (i + 1 < separator_pos && tokens[i + 1][0] != '-')

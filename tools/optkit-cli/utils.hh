@@ -38,13 +38,13 @@ LIST:
 PROFILING (stat):
     Single execution profiling - runs program once and collects metrics
     
-    optkit stat -- <program>                                                          Default profiling
-    optkit stat -e <event> -- <program>                                               Profile specific event
-    optkit stat -m <metric> -- <program>                                              Profile specific metric
-    optkit stat -e <event> -m <metric> -- <program>                                   Profile event + metric
-    optkit stat -e <event> -m <metric> -T <sampling_period_in_ms> -- <program>        Profile event + metric
-    optkit stat -e <event> -m <metric> -T <sampling_period_in_ms> -S 0 -- <program>   Profile event + metric + socket 0
-    optkit stat -a -e <event> -m <metric> -- <program>                                 Profile system-wide across all CPUs
+    optkit stat -- <program>                                      Default profiling
+    optkit stat -e <event> -- <program>                           Profile specific event
+    optkit stat -m <metric> -- <program>                          Profile specific metric
+    optkit stat -e <event> -m <metric> -- <program>               Profile event + metric
+    optkit stat -e <event> -m <metric> -S 0 -- <program>          Profile event + metric + socket 0
+    optkit stat -a -e <event> -m <metric> -- <program>            Profile system-wide across all CPUs
+    optkit stat -a -e <event> -m <metric> -ss -- <program>        Profile system-wide across all CPUs with screenshot tracing
 
 BENCHMARKING (--bench):
     Multiple execution analysis - runs program multiple times with different configurations
@@ -128,14 +128,14 @@ struct CommandArgs
     ListType list_type = ListType::ALL;
     bool parse_error = false;
     bool dump_to_file = false;
-    bool system_wide = false;                     // System-wide monitoring (-a) for stat
+    bool system_wide = false;                      // System-wide monitoring (-a) for stat
+    bool is_screenshot = false;                    // Whether to capture screenshot of events
     std::string parse_error_message;
     std::vector<std::string> events;                // PMU events to profile (-e)
     std::vector<std::string> metrics;               // Metrics to collect (-m)
     std::string program;                            // Program to execute
     std::vector<std::string> program_args;          // Arguments for the program
     uint32_t socket_id = static_cast<uint32_t>(-1); // Socket ID (-1 means all sockets, 0+ means specific socket)
-    uint32_t sampling_period_ms = 1000;             // Sampling period in milliseconds (1second) for stat command
 
     // msrmod command options
     MsrOp msr_op = MsrOp::NONE;
@@ -239,6 +239,7 @@ inline std::string to_string(const CommandArgs &args)
     oss << "  bench_type: " << to_string(args.bench_type) << "\n";
     oss << "  list_type: " << to_string(args.list_type) << "\n";
     oss << "  system_wide: " << (args.system_wide ? "true" : "false") << "\n";
+    oss << "  is_screenshot: " << (args.is_screenshot ? "true" : "false") << "\n";
 
     if (args.command == Command::MSRMOD)
     {

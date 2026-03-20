@@ -136,6 +136,8 @@ void create_child_process(const CommandArgs &args)
             _metric.add(event_name, optkit::metrics::performance::cpu_mapper::get(event_name));
 
         optkit::pmu::cpu::perf::PerfProfilerConfig perf_config{"stat", true /*is_sampling*/};
+        if(args.is_screenshot)
+            perf_config.is_screenshot = true;
         if (args.system_wide)
         {
             perf_config.pid = -1;
@@ -156,23 +158,11 @@ void create_child_process(const CommandArgs &args)
         {
             pid_t result = waitpid(CHILD_PID, &status, WNOHANG);
             if (OPT_LIKELY(result == 0)) // Child is still running
-            {
-                auto end_time = std::chrono::high_resolution_clock::now();
-                auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end_time - begin_time).count() / 1000.0f;
-                if (elapsed >= args.sampling_period_ms) // Sample here.
-                {
-                    stat_metric_profiler.read_and_store();
-                    begin_time = end_time;
-                }
-                // sleep 100ms to avoid busy waiting
                 usleep(100000); // 0.1 sec
-            }
             else if (OPT_UNLIKELY(result == -1)) // Error
                 std::cerr << "waitpid error: " << strerror(errno) << std::endl;
-            else
-            { // child is finished!
+            else // child is finished!
                 IS_RUNNING = false;
-            }
         }
         CHILD_PID = -1;
     }

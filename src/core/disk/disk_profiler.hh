@@ -7,6 +7,8 @@
 #include <utility>
 #include <cstdint>
 #include <unordered_map>
+#include <thread>
+#include <atomic>
 #include "utils/utils.hh"
 #include "utils/base_profiler.hh"
 #include "utils/metric_builder.hh"
@@ -42,5 +44,8 @@ namespace optkit::disk
         std::unordered_map<std::string, uint64_t> last_snapshot;
         std::vector<std::pair<std::string, double>> metric_results;
         optkit::metrics::MetricBuilder<uint64_t> metric_builder;
+
+        std::thread sampling_thread;
+        std::atomic<bool> is_sampling;
     };
 }

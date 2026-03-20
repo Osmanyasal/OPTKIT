@@ -18,12 +18,14 @@ namespace optkit
                        bool is_reset_after_read,
                        bool is_sampling,
                        bool dump_results_to_file,
-                       bool verbose) : block_name{block_name},
+                       bool verbose,
+                       bool is_screenshot = false) : block_name{block_name},
                                        measurement_type{measurement_type},
                                        is_reset_after_read{is_reset_after_read},
                                        is_sampling{is_sampling},
                                        dump_results_to_file{dump_results_to_file},
-                                       verbose{verbose}
+                                       verbose{verbose},
+                                       is_screenshot{is_screenshot}
         {
         }
         virtual ~ProfilerConfig() {}
@@ -34,6 +36,7 @@ namespace optkit
         bool is_sampling;
         bool dump_results_to_file;
         bool verbose;
+        bool is_screenshot;
     };
 
     /**

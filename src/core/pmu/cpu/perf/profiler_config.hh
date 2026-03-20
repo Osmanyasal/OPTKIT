@@ -29,6 +29,7 @@ namespace optkit::pmu::cpu::perf
          * @param is_reset_after_read Reset after read (base ProfilerConfig)
          * @param dump_results_to_file Dump results to file (base ProfilerConfig)
          * @param verbose Verbose output (base ProfilerConfig)
+         * @param is_screenshot Whether this profiling config is for a screenshot collection
          *
          * pid/cpu combinations:
          *  - pid == 0 and cpu == -1: Measures the calling process/thread on any CPU.
@@ -50,7 +51,8 @@ namespace optkit::pmu::cpu::perf
             const char *measurement_type = "cpu_pmu",
             bool is_reset_after_read = true,
             bool dump_results_to_file = optkit::Query::create_folder,
-            bool verbose = !optkit::Query::create_folder);
+            bool verbose = !optkit::Query::create_folder,
+            bool is_screenshot = false);
 
         PerfProfilerConfig(
             const char *block_name,
@@ -62,7 +64,8 @@ namespace optkit::pmu::cpu::perf
             const char *measurement_type = "cpu_pmu",
             bool is_reset_after_read = true,
             bool dump_results_to_file = optkit::Query::create_folder,
-            bool verbose = !optkit::Query::create_folder);
+            bool verbose = !optkit::Query::create_folder,
+            bool is_screenshot = false);
 
         virtual ~PerfProfilerConfig() {}
 
