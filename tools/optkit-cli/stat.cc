@@ -136,7 +136,7 @@ void create_child_process(const CommandArgs &args)
             _metric.add(event_name, optkit::metrics::performance::cpu_mapper::get(event_name));
 
         optkit::pmu::cpu::perf::PerfProfilerConfig perf_config{"stat", true /*is_sampling*/};
-        if(args.is_screenshot)
+        if (args.is_screenshot)
             perf_config.is_screenshot = true;
         if (args.system_wide)
         {
@@ -152,13 +152,17 @@ void create_child_process(const CommandArgs &args)
         // open with sampling.
         optkit::callstack::Profiler callstack_profiler{{"stat", true, false, CHILD_PID, -1, "callstack"}};
 
+        optkit::disk::IoDiskProfiler disk_profiler{
+            {"stat", "disk_io", true, args.is_screenshot, optkit::Query::create_folder, !optkit::Query::create_folder, args.is_screenshot},
+            optkit::metrics::disk::core_metrics::all_metrics()};
+
         OPTKIT_CPU_ENERGY_SAMPLING("stat");
         OPTKIT_GPU_ENERGY("stat");
         while (IS_RUNNING)
         {
             pid_t result = waitpid(CHILD_PID, &status, WNOHANG);
-            if (OPT_LIKELY(result == 0)) // Child is still running
-                usleep(100000); // 0.1 sec
+            if (OPT_LIKELY(result == 0))         // Child is still running
+                usleep(100000);                  // 0.1 sec
             else if (OPT_UNLIKELY(result == -1)) // Error
                 std::cerr << "waitpid error: " << strerror(errno) << std::endl;
             else // child is finished!

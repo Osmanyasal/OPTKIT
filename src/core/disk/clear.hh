@@ -1,6 +1,11 @@
 #pragma once
 
+#undef OPTKIT_DISK_EVENTS
+#undef OPTKIT_DISK_EVENTS_SAMPLING
 #undef OPTKIT_DISK_EVENTS_WITH_METRICS
+#undef OPTKIT_DISK_EVENTS_WITH_METRICS_SAMPLING
 
-#define OPTKIT_DISK_EVENTS_WITH_METRICS(block_name)
+#define OPTKIT_DISK_EVENTS(block_name)
+#define OPTKIT_DISK_EVENTS_SAMPLING(block_name)
 #define OPTKIT_DISK_EVENTS_WITH_METRICS(block_name, metric_builder)
+#define OPTKIT_DISK_EVENTS_WITH_METRICS_SAMPLING(block_name, metric_builder)
