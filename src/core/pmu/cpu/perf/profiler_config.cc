@@ -25,7 +25,7 @@ namespace optkit::pmu::cpu::perf
         this->perf_event_config.size = sizeof(struct perf_event_attr);
         this->perf_event_config.disabled = 1;
         this->perf_event_config.inherit = 1;
-        this->perf_event_config.exclude_kernel = 1;
+        // this->perf_event_config.exclude_kernel = 1;
         this->perf_event_config.exclude_hv = 1;
         set_grouped(this->is_grouped);
     }

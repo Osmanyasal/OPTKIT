@@ -71,7 +71,7 @@ namespace optkit::callstack
             pe.sample_freq = sample_freq;
             pe.freq = 1;
             pe.disabled = 1;
-            pe.exclude_kernel = 1;
+            // pe.exclude_kernel = 1;
             pe.inherit = 0; // The most important part, do not inherit to child threads let each thread have its own buffer !!
             pe.sample_type = PERF_SAMPLE_IP | PERF_SAMPLE_CALLCHAIN;
             pe.wakeup_events = 1;

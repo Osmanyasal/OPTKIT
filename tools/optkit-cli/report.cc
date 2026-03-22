@@ -625,33 +625,21 @@ static void generate_heatmap(const std::vector<RunData> &runs, const std::string
     std::string gp_name = "heatmap_" + base + ".gp";
     std::string png_name = "heatmap_" + base + ".png";
 
-    // Detect rectangular grid coverage (all combinations present)
-    bool dense = (grid.size() == static_cast<size_t>(cores_khz.size() * uncores_khz.size()));
+    // Use categorical axes to avoid collisions for very close numeric values
+    // (e.g., turbo 2.601 vs 2.600). Keep labels numerically ordered.
+    std::vector<long long> cores_list(cores_khz.begin(), cores_khz.end());
+    std::vector<long long> uncores_list(uncores_khz.begin(), uncores_khz.end());
+    std::map<long long, int> core_index;
+    std::map<long long, int> uncore_index;
+    for (size_t i = 0; i < cores_list.size(); ++i)
+        core_index[cores_list[i]] = static_cast<int>(i);
+    for (size_t i = 0; i < uncores_list.size(); ++i)
+        uncore_index[uncores_list[i]] = static_cast<int>(i);
 
-    // Compute minimal step (spacing) for cores & uncores to size boxes nicely.
-    auto min_step = [](const std::set<long long> &vals) -> double
-    {
-        if (vals.size() < 2)
-            return 0.1; // fallback arbitrary width if only one value
-        double prev = -1.0;
-        double ms = 1e12;
-        for (auto v : vals)
-        {
-            double cur = v / 1e6; // convert to GHz
-            if (prev >= 0)
-                ms = std::min(ms, cur - prev);
-            prev = cur;
-        }
-        if (ms <= 0)
-            ms = 0.1; // safety fallback
-        return ms;
-    };
-    double core_step_ghz = min_step(cores_khz);
-    double uncore_step_ghz = min_step(uncores_khz);
-
-    // Write data file: three columns core(GHz) uncore(GHz) value
+    // Write data file: three columns core_idx uncore_idx value
     double min_val = std::numeric_limits<double>::infinity();
-    double min_core_ghz = 0.0, min_uncore_ghz = 0.0;
+    int min_core_idx = 0;
+    int min_uncore_idx = 0;
     {
         std::ofstream dat(dat_name.c_str());
         if (!dat)
@@ -660,21 +648,21 @@ static void generate_heatmap(const std::vector<RunData> &runs, const std::string
             return;
         }
         dat << std::fixed << std::setprecision(6);
-        dat << "# core_GHz\tuncore_GHz\t" << base << "\n";
+        dat << "# core_idx\tuncore_idx\t" << base << "\n";
         for (const auto &kv : grid)
         {
             long long c = kv.first.first;
             long long u = kv.first.second;
             const Agg &a = kv.second;
             double avg = (a.count > 0) ? (a.sum / a.count) : 0.0;
-            double cg = (c / 1e6);
-            double ug = (u / 1e6);
-            dat << cg << "\t" << ug << "\t" << avg << "\n";
+            int cx = core_index[c];
+            int uy = uncore_index[u];
+            dat << cx << "\t" << uy << "\t" << avg << "\n";
             if (avg < min_val)
             {
                 min_val = avg;
-                min_core_ghz = cg;
-                min_uncore_ghz = ug;
+                min_core_idx = cx;
+                min_uncore_idx = uy;
             }
         }
     }
@@ -685,7 +673,7 @@ static void generate_heatmap(const std::vector<RunData> &runs, const std::string
         std::ofstream m(min_name.c_str());
         if (m)
         {
-            m << std::fixed << std::setprecision(6) << min_core_ghz << "\t" << min_uncore_ghz << "\t" << min_val << "\n";
+            m << min_core_idx << "\t" << min_uncore_idx << "\t" << std::fixed << std::setprecision(6) << min_val << "\n";
             m.close();
         }
     }
@@ -705,60 +693,50 @@ static void generate_heatmap(const std::vector<RunData> &runs, const std::string
     gp << "set cblabel '" << base << "' offset 2,0\n";
     gp << "set key off\n";
     gp << "set grid xtics\n";
+    gp << "set grid ytics\n";
     // gp << "set palette rgbformulae 22,13,-31\n"; // blue->red gradient
     gp << "set palette model RGB defined ( \\\n";
     gp << "    0.0  0.0 0.55 0.0, \\\n";
     gp << "    0.5  1.0 1.00 0.0, \\\n";
     gp << "    1.0  0.8 0.00 0.0 )\n";
 
-    // Generate explicit xtics with exact frequency values
-    std::ostringstream xtics;
-    xtics << "set xtics (";
-    bool first_x = true;
-    for (auto c : cores_khz)
+    // Generate categorical xtics/ytics with numeric labels
     {
-        if (!first_x)
-            xtics << ", ";
-        xtics << "'" << std::fixed << std::setprecision(3) << (c / 1e6) << "' " << (c / 1e6);
-        first_x = false;
+        std::ostringstream xtics;
+        xtics << "set xtics (";
+        for (size_t i = 0; i < cores_list.size(); ++i)
+        {
+            if (i)
+                xtics << ", ";
+            double ghz = cores_list[i] / 1e6;
+            xtics << "'" << std::fixed << std::setprecision(3) << ghz << "' " << static_cast<int>(i);
+        }
+        xtics << ") rotate by -45\n";
+        gp << xtics.str();
     }
-    xtics << ") rotate by -45\n";
-    gp << xtics.str();
+    {
+        std::ostringstream ytics;
+        ytics << "set ytics (";
+        for (size_t i = 0; i < uncores_list.size(); ++i)
+        {
+            if (i)
+                ytics << ", ";
+            double ghz = uncores_list[i] / 1e6;
+            ytics << "'" << std::fixed << std::setprecision(3) << ghz << "' " << static_cast<int>(i);
+        }
+        ytics << ")\n";
+        gp << ytics.str();
+    }
 
-    // Generate explicit ytics with exact frequency values
-    std::ostringstream ytics;
-    ytics << "set ytics (";
-    bool first_y = true;
-    for (auto u : uncores_khz)
-    {
-        if (!first_y)
-            ytics << ", ";
-        ytics << "'" << std::fixed << std::setprecision(3) << (u / 1e6) << "' " << (u / 1e6);
-        first_y = false;
-    }
-    ytics << ")\n";
-    gp << ytics.str();
+    // Fixed box size in index-space
+    double box_half_width = 0.45;
+    double box_half_height = 0.45;
 
-    // Compute box half-dimensions (for low/high coordinates)
-    // Use 95% of step or minimum visible size
-    double box_half_width = (core_step_ghz > 0 ? std::max((core_step_ghz * 0.95) / 2.0, 0.045) : 0.045);
-    double box_half_height = (uncores_khz.size() > 1
-                                  ? std::max((uncore_step_ghz > 0 ? (uncore_step_ghz * 0.95) / 2.0 : 0.09), 0.09)
-                                  : 0.09);
-
-    // Set ranges to show all data
-    if (uncores_khz.size() > 1)
-    {
-        double y_min = (*uncores_khz.begin()) / 1e6;
-        double y_max = (*uncores_khz.rbegin()) / 1e6;
-        gp << "set yrange [" << (y_min - box_half_height * 1.2) << ":" << (y_max + box_half_height * 1.2) << "]\n";
-    }
-    else
-    {
-        // Single uncore value - create narrow band
-        double y_center = (*uncores_khz.begin()) / 1e6;
-        gp << "set yrange [" << (y_center - box_half_height * 1.2) << ":" << (y_center + box_half_height * 1.2) << "]\n";
-    }
+    // Ensure full boxes are visible
+    if (!cores_list.empty())
+        gp << "set xrange [-0.5:" << (static_cast<int>(cores_list.size()) - 0.5) << "]\n";
+    if (!uncores_list.empty())
+        gp << "set yrange [-0.5:" << (static_cast<int>(uncores_list.size()) - 0.5) << "]\n";
 
     // Let gnuplot autoscale color range (robust across versions)
     gp << "unset cbrange\n";
