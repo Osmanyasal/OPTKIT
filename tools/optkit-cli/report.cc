@@ -8,6 +8,7 @@
 #include <set>
 #include <iomanip>
 #include <cctype>
+#include <cmath>
 #include <vector>
 #include <cstdlib>
 #include <limits.h>
@@ -22,12 +23,154 @@ struct RunData
     long long uncore_freq_khz;             // uncore frequency in kHz (from JSON)
     double energy_pkg;                     // Joules, from measurements name: "energy_pkg"
     double kilo_edp_pkg;                   // unitless (kilo edp pkg), from measurements name: "kilo_edp_pkg"
+    std::map<int, double> energy_pkg_by_socket;   // socket_number -> energy-pkg (J)
+    std::map<int, double> kilo_edp_pkg_by_socket; // socket_number -> kilo_edp_pkg
     double ai;                             // arithmetic intensity
     double gflops;                         // gigaflops
     std::map<std::string, double> topdown; // metric -> %
 
-    RunData() : duration_ms(0.0), cores_used(-1), core_freq_khz(0), uncore_freq_khz(0), energy_pkg(0.0), kilo_edp_pkg(0.0), ai(0.0), gflops(0.0) {}
+    RunData() : duration_ms(0.0), cores_used(-1), core_freq_khz(0), uncore_freq_khz(0),
+                energy_pkg(std::numeric_limits<double>::quiet_NaN()),
+                kilo_edp_pkg(std::numeric_limits<double>::quiet_NaN()),
+                ai(0.0), gflops(0.0) {}
 };
+
+static bool parse_socket_metric_key(const std::string &metric_key, std::string &base_key, int &socket)
+{
+    // Expected forms: <base>_socket<id>
+    // Example: kilo_edp_pkg_socket0
+    const std::string tag = "_socket";
+    size_t p = metric_key.rfind(tag);
+    if (p == std::string::npos)
+        return false;
+    base_key = metric_key.substr(0, p);
+    const std::string sid = metric_key.substr(p + tag.size());
+    if (sid.empty())
+        return false;
+    try
+    {
+        socket = std::stoi(sid);
+        return true;
+    }
+    catch (...)
+    {
+        return false;
+    }
+}
+
+static bool json_to_double(const nlohmann::json &v, double &out)
+{
+    try
+    {
+        if (v.is_number_float() || v.is_number_integer() || v.is_number_unsigned())
+        {
+            out = v.get<double>();
+            return true;
+        }
+        if (v.is_string())
+        {
+            const std::string s = v.get<std::string>();
+            if (s.empty())
+                return false;
+            out = std::stod(s);
+            return true;
+        }
+    }
+    catch (...)
+    {
+    }
+    return false;
+}
+
+static void parse_rapl_socket_metrics_from_json(const nlohmann::json &root, RunData &rd)
+{
+    // RAPL profiler writes an array with one element per socket.
+    // Each element is an object { "readings": [ { socket_number, duration, measurements[...] } ] }.
+    if (!root.is_array())
+        return;
+
+    bool duration_set = false;
+    for (const auto &elem : root)
+    {
+        if (!elem.is_object())
+            continue;
+        auto it_readings = elem.find("readings");
+        if (it_readings == elem.end() || !it_readings->is_array() || it_readings->empty())
+            continue;
+
+        const auto &r0 = (*it_readings)[0];
+        if (!r0.is_object())
+            continue;
+
+        int socket = -1;
+        try
+        {
+            if (r0.contains("socket_number"))
+                socket = r0["socket_number"].get<int>();
+        }
+        catch (...)
+        {
+            socket = -1;
+        }
+        if (socket < 0)
+            continue;
+
+        if (!duration_set)
+        {
+            try
+            {
+                if (r0.contains("duration") && r0["duration"].is_number())
+                {
+                    rd.duration_ms = r0["duration"].get<double>();
+                    duration_set = true;
+                }
+            }
+            catch (...)
+            {
+            }
+        }
+
+        auto it_meas = r0.find("measurements");
+        if (it_meas == r0.end() || !it_meas->is_array())
+            continue;
+
+        for (const auto &m : *it_meas)
+        {
+            if (!m.is_object())
+                continue;
+            if (!m.contains("name") || !m.contains("value"))
+                continue;
+            if (!m["name"].is_string())
+                continue;
+            const std::string name = m["name"].get<std::string>();
+            double val = 0.0;
+            if (!json_to_double(m["value"], val))
+                continue;
+
+            if (name == "energy-pkg")
+                rd.energy_pkg_by_socket[socket] = val;
+            else if (name == "kilo_edp_pkg")
+                rd.kilo_edp_pkg_by_socket[socket] = val;
+        }
+    }
+
+    // Joined (system) aggregation across sockets if we have any per-socket values.
+    // For energy/EDP, "joined" should represent the whole system: sum across sockets.
+    auto sum_of = [](const std::map<int, double> &m) -> double
+    {
+        if (m.empty())
+            return 0.0;
+        double sum = 0.0;
+        for (const auto &kv : m)
+            sum += kv.second;
+        return sum;
+    };
+
+    if (!rd.energy_pkg_by_socket.empty())
+        rd.energy_pkg = sum_of(rd.energy_pkg_by_socket);
+    if (!rd.kilo_edp_pkg_by_socket.empty())
+        rd.kilo_edp_pkg = sum_of(rd.kilo_edp_pkg_by_socket);
+}
 
 static const std::vector<std::string> topdownl1_keys = {
     "frontend_bound", "bad_speculation", "Retiring", "backend_bound", "smt_contention"};
@@ -330,6 +473,11 @@ static RunData parse_run(const std::string &json_path)
     if (content.empty())
         return rd;
 
+    // Prefer structured JSON parsing when possible (needed for multi-socket RAPL files).
+    nlohmann::json root = nlohmann::json::parse(content, nullptr, false);
+    if (!root.is_discarded())
+        parse_rapl_socket_metrics_from_json(root, rd);
+
     double d = 0.0;
     if (extract_scalar_by_key(content, "duration", d))
         rd.duration_ms = d;
@@ -346,10 +494,11 @@ static RunData parse_run(const std::string &json_path)
     if (extract_scalar_by_key(content, "uncore_frequency_khz", d))
         rd.uncore_freq_khz = static_cast<long long>(d);
 
-    // parse energy and EDP metrics if present
-    if (extract_metric_value(content, "energy-pkg", d))
+    // parse energy and EDP metrics if present.
+    // If RAPL multi-socket JSON was parsed above, rd.energy_pkg / rd.kilo_edp_pkg already holds joined average.
+    if (rd.energy_pkg_by_socket.empty() && extract_metric_value(content, "energy-pkg", d))
         rd.energy_pkg = d;
-    if (extract_metric_value(content, "kilo_edp_pkg", d))
+    if (rd.kilo_edp_pkg_by_socket.empty() && extract_metric_value(content, "kilo_edp_pkg", d))
         rd.kilo_edp_pkg = d;
 
     if (extract_scalar_by_key(content, "ai", d))
@@ -403,22 +552,60 @@ static void generate_heatmap(const std::vector<RunData> &runs, const std::string
     std::set<long long> cores_khz;
     std::set<long long> uncores_khz;
 
-    auto get_metric_value = [&](const RunData &rd) -> double
+    auto try_get_metric_value = [&](const RunData &rd, double &out) -> bool
     {
+        std::string base;
+        int socket = -1;
+        if (parse_socket_metric_key(metric_key, base, socket))
+        {
+            if (base == "kilo_edp_pkg")
+            {
+                auto it = rd.kilo_edp_pkg_by_socket.find(socket);
+                if (it == rd.kilo_edp_pkg_by_socket.end())
+                    return false;
+                out = it->second;
+                return true;
+            }
+            if (base == "energy-pkg")
+            {
+                auto it = rd.energy_pkg_by_socket.find(socket);
+                if (it == rd.energy_pkg_by_socket.end())
+                    return false;
+                out = it->second;
+                return true;
+            }
+            return false;
+        }
+
         if (metric_key == "energy-pkg")
-            return rd.energy_pkg;
+        {
+            if (!std::isfinite(rd.energy_pkg))
+                return false;
+            out = rd.energy_pkg;
+            return true;
+        }
         if (metric_key == "kilo_edp_pkg")
-            return rd.kilo_edp_pkg;
+        {
+            if (!std::isfinite(rd.kilo_edp_pkg))
+                return false;
+            out = rd.kilo_edp_pkg;
+            return true;
+        }
         if (metric_key == "duration_ms")
-            return rd.duration_ms;
-        return 0.0;
+        {
+            out = rd.duration_ms;
+            return true;
+        }
+        return false;
     };
 
     for (const auto &rd : runs)
     {
         if (rd.core_freq_khz <= 0 || rd.uncore_freq_khz < 0)
             continue; // require core; allow uncore=0 if present
-        double val = get_metric_value(rd);
+        double val = 0.0;
+        if (!try_get_metric_value(rd, val))
+            continue;
         auto key = std::make_pair(rd.core_freq_khz, rd.uncore_freq_khz);
         grid[key].sum += val;
         grid[key].count += 1;
@@ -518,7 +705,11 @@ static void generate_heatmap(const std::vector<RunData> &runs, const std::string
     gp << "set cblabel '" << base << "' offset 2,0\n";
     gp << "set key off\n";
     gp << "set grid xtics\n";
-    gp << "set palette rgbformulae 22,13,-31\n"; // blue->red gradient
+    // gp << "set palette rgbformulae 22,13,-31\n"; // blue->red gradient
+    gp << "set palette model RGB defined ( \\\n";
+    gp << "    0.0  0.0 0.55 0.0, \\\n";
+    gp << "    0.5  1.0 1.00 0.0, \\\n";
+    gp << "    1.0  0.8 0.00 0.0 )\n";
 
     // Generate explicit xtics with exact frequency values
     std::ostringstream xtics;
@@ -1007,5 +1198,21 @@ void execute_report_command(const CommandArgs &args)
     // Generate heatmaps for requested metrics
     generate_heatmap(runs, "duration_ms");
     generate_heatmap(runs, "energy-pkg");
-    generate_heatmap(runs, "kilo_edp_pkg");
+
+    // For K-EDP on multi-socket systems, output per-socket heatmaps + joined average.
+    std::set<int> sockets_with_kedp;
+    for (const auto &rd : runs)
+        for (const auto &kv : rd.kilo_edp_pkg_by_socket)
+            sockets_with_kedp.insert(kv.first);
+
+    if (sockets_with_kedp.size() <= 1)
+    {
+        generate_heatmap(runs, "kilo_edp_pkg");
+    }
+    else
+    {
+        for (int s : sockets_with_kedp)
+            generate_heatmap(runs, std::string("kilo_edp_pkg_socket") + std::to_string(s));
+        generate_heatmap(runs, "kilo_edp_pkg");
+    }
 }
