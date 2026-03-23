@@ -21,6 +21,7 @@ struct DaemonArgs
     bool help = false;
     bool parse_error = false;
     std::string parse_error_message;
+    bool print_data = false;
 };
 
 static std::vector<std::string> split_csv(const std::string &s)
@@ -58,6 +59,7 @@ static DaemonArgs parse_daemon_args(int argc, char **argv)
 
     for (int i = 1; i < argc; i++)
     {
+        std::string opt_value;
         const char *a = argv[i];
         if (std::strcmp(a, "--help") == 0 || std::strcmp(a, "-h") == 0)
         {
@@ -88,7 +90,6 @@ static DaemonArgs parse_daemon_args(int argc, char **argv)
             continue;
         }
 
-        std::string opt_value;
         if (parse_opt_with_value(a, "--metrics", opt_value))
         {
             auto items = split_csv(opt_value);
@@ -124,6 +125,11 @@ static DaemonArgs parse_daemon_args(int argc, char **argv)
             }
             auto items = split_csv(argv[++i]);
             args.events.insert(args.events.end(), items.begin(), items.end());
+            continue;
+        }
+        if (std::strcmp(a, "-o") == 0)
+        {
+            args.print_data = true;
             continue;
         }
 
@@ -255,10 +261,11 @@ int main(int argc, char **argv)
         perf_config.pid = -1;
         perf_config.cpu = OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS;
         optkit::pmu::cpu::perf::BlockProfiler stat_metric_profiler(perf_config, _metric);
-        optkit::disk::IoDiskProfiler disk_profiler{
-            {"stat", "disk_io", true, false, optkit::Query::create_folder, !optkit::Query::create_folder, false},
-            optkit::metrics::disk::core_metrics::all_metrics()};
 
+        auto disk_metric = optkit::metrics::disk::core_metrics::all_metrics();
+        optkit::disk::IoDiskProfiler disk_profiler{
+            {"stat", "disk_io", true, false, optkit::Query::create_folder, !optkit::Query::create_folder, false}, disk_metric};
+        auto disk_events = disk_metric.event_names();
         auto last = std::chrono::steady_clock::now();
         while (IS_RUNNING)
         {
@@ -269,13 +276,26 @@ int main(int argc, char **argv)
             last = now;
 
             const std::vector<uint64_t> values = stat_metric_profiler.read();
-            const auto counts = event_counts_from_values(_metric.event_names(), values, duration_ms);
-            const auto mapped = _metric.calculate(counts);
-            
-            for (const auto &kv : counts)
-                std::cout << kv.first << ": " << kv.second << ",";
-            for (const auto &kv : mapped)
-                std::cout << kv.first << ": " << kv.second << "\n";
+            const auto pmc_counts = event_counts_from_values(_metric.event_names(), values, duration_ms);
+            const auto pmc_mapped = _metric.calculate(pmc_counts);
+
+            auto disk_data = disk_profiler.read();
+            auto const disk_counts = event_counts_from_values(disk_events, disk_data, 1000.0);
+            const auto disk_mapped = disk_metric.calculate(disk_counts);
+
+            if (args.print_data)
+            {
+                for (const auto &kv : pmc_counts)
+                    std::cout << kv.first << ": " << kv.second << ",";
+                for (const auto &kv : pmc_mapped)
+                    std::cout << kv.first << ": " << kv.second << "\n";
+                for (const auto &kv : disk_counts)
+                    std::cout << kv.first << ": " << kv.second << "\n";
+                for (const auto &kv : disk_mapped)
+                    std::cout << kv.first << ": " << kv.second << "\n";
+
+                std::cout << "==============================\n";
+            }
             // std::unique_ptr<OnnxApi> onnx_api = create_onnx_api();
             // onnx_api->load_model(model_path);
             // InferenceSummary summary = onnx_api->infer();
