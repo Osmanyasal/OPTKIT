@@ -10,11 +10,21 @@ SPDLOG_INCLUDE = $(OPTKIT_ROOT)/lib/spdlog/include
 LIBPFM4_INCLUDE = $(OPTKIT_ROOT)/lib/libpfm4/include
 
 # Detect ONNX Runtime installation
-ONNX_INCLUDE := $(shell if [ -f /usr/include/onnxruntime_cxx_api.h ]; then echo /usr/include; elif [ -f /usr/local/include/onnxruntime_cxx_api.h ]; then echo /usr/local/include; elif [ -d /usr/include/onnxruntime ]; then echo /usr/include/onnxruntime; elif [ -d /usr/local/include/onnxruntime ]; then echo /usr/local/include/onnxruntime; elif [ -d /opt/onnxruntime/include ]; then echo /opt/onnxruntime/include; fi)
-ONNX_LIB_DIR := $(shell if [ -d /usr/lib/x86_64-linux-gnu ]; then echo /usr/lib/x86_64-linux-gnu; elif [ -d /usr/local/lib ]; then echo /usr/local/lib; elif [ -d /opt/onnxruntime/lib ]; then echo /opt/onnxruntime/lib; fi)
+#
+# Note: Most Linux installs have /usr/lib/x86_64-linux-gnu, but that doesn't mean
+# libonnxruntime is installed there. We must pick the directory that actually
+# contains libonnxruntime.
+ONNX_INCLUDE := $(shell \
+	for d in /usr/include /usr/local/include /usr/include/onnxruntime /usr/local/include/onnxruntime /opt/onnxruntime/include; do \
+		if [ -f "$$d/onnxruntime_cxx_api.h" ]; then echo $$d; break; fi; \
+	done)
+ONNX_LIB_DIR := $(shell \
+	for d in /usr/lib/x86_64-linux-gnu /usr/local/lib /usr/lib /opt/onnxruntime/lib; do \
+		if [ -f "$$d/libonnxruntime.so" ] || [ -f "$$d/libonnxruntime.so.1" ]; then echo $$d; break; fi; \
+	done)
 
 # Optional ONNX support (auto-detected by default)
-HAVE_ONNX := $(shell if [ -n "$(ONNX_INCLUDE)" ] && [ -n "$(ONNX_LIB_DIR)" ] && [ -f "$(ONNX_LIB_DIR)/libonnxruntime.so" ]; then echo 1; else echo 0; fi)
+HAVE_ONNX := $(shell if [ -n "$(ONNX_INCLUDE)" ] && [ -n "$(ONNX_LIB_DIR)" ] && ( [ -f "$(ONNX_LIB_DIR)/libonnxruntime.so" ] || [ -f "$(ONNX_LIB_DIR)/libonnxruntime.so.1" ] ); then echo 1; else echo 0; fi)
 WITH_ONNX ?= $(HAVE_ONNX)
 
 # Detect CUDA/NVML installation
@@ -33,8 +43,13 @@ ifeq ($(WITH_ONNX),1)
 	ifeq ($(HAVE_ONNX),0)
 		$(error ONNX Runtime not found (headers or libonnxruntime.so). Install it or build with WITH_ONNX=0)
 	endif
+	# ONNX Runtime C++ API (1.24+) requires C++17
+	CXXFLAGS += -std=c++17
+	CXXFLAGS += -DOPTKIT_DAEMON_WITH_ONNX=1
 	INCLUDES += -I$(ONNX_INCLUDE)
 	LDFLAGS += -L$(ONNX_LIB_DIR) -Wl,-rpath,$(ONNX_LIB_DIR) -lonnxruntime
+else
+	CXXFLAGS += -DOPTKIT_DAEMON_WITH_ONNX=0
 endif
 
 # Add CUDA include and library if found

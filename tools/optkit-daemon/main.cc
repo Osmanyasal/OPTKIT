@@ -7,6 +7,9 @@
 #include <cstdlib>
 #include <csignal>
 #include <cstdint>
+#include <fstream>
+
+#include "utils/json.hh"
 
 #include <thread>
 #include <chrono>
@@ -22,7 +25,89 @@ struct DaemonArgs
     bool parse_error = false;
     std::string parse_error_message;
     bool print_data = false;
+    bool timing = false;
 };
+
+#if OPTKIT_DAEMON_WITH_ONNX
+struct ModelMeta
+{
+    std::vector<std::string> feature_names;
+    std::vector<std::string> targets;
+};
+
+static std::string dirname_of(const std::string &path)
+{
+    const auto pos = path.find_last_of('/');
+    if (pos == std::string::npos)
+        return ".";
+    if (pos == 0)
+        return "/";
+    return path.substr(0, pos);
+}
+
+static bool load_model_meta(const std::string &model_path, ModelMeta &meta_out)
+{
+    const std::string meta_path = dirname_of(model_path) + "/meta.json";
+    std::ifstream f(meta_path.c_str());
+    if (!f)
+        return false;
+
+    nlohmann::json j;
+    try
+    {
+        f >> j;
+    }
+    catch (...)
+    {
+        return false;
+    }
+
+    try
+    {
+        if (j.contains("feature_names") && j["feature_names"].is_array())
+        {
+            meta_out.feature_names.clear();
+            for (const auto &v : j["feature_names"])
+            {
+                if (v.is_string())
+                    meta_out.feature_names.emplace_back(v.get<std::string>());
+            }
+        }
+
+        if (j.contains("targets") && j["targets"].is_array())
+        {
+            meta_out.targets.clear();
+            for (const auto &v : j["targets"])
+            {
+                if (v.is_string())
+                    meta_out.targets.emplace_back(v.get<std::string>());
+            }
+        }
+    }
+    catch (...)
+    {
+        return false;
+    }
+
+    return !meta_out.feature_names.empty();
+}
+
+static void add_prefixed_features(std::unordered_map<std::string, float> &dst,
+                                 const std::string &prefix,
+                                 const std::unordered_map<std::string, uint64_t> &counts,
+                                 const std::vector<std::pair<std::string, double>> &mapped,
+                                 double duration_ms)
+{
+    dst[prefix + "duration_ms"] = static_cast<float>(duration_ms);
+    dst[prefix + "duration_microsec"] = static_cast<float>(duration_ms * 1000.0);
+
+    for (const auto &kv : counts)
+        dst[prefix + kv.first] = static_cast<float>(kv.second);
+
+    for (const auto &kv : mapped)
+        dst[prefix + kv.first] = static_cast<float>(kv.second);
+}
+#endif
 
 static std::vector<std::string> split_csv(const std::string &s)
 {
@@ -133,6 +218,12 @@ static DaemonArgs parse_daemon_args(int argc, char **argv)
             continue;
         }
 
+        if (std::strcmp(a, "--timing") == 0 || std::strcmp(a, "-t") == 0)
+        {
+            args.timing = true;
+            continue;
+        }
+
         if (a[0] == '-')
         {
             args.parse_error = true;
@@ -159,6 +250,9 @@ static void print_usage(const char *argv0)
 {
     std::cerr << "Usage: " << argv0 << " [-m <metric>]... [-e <event>]... [<model.onnx>]\n";
     std::cerr << "       " << argv0 << " [--metrics M1,M2] [--events E1,E2] [<model.onnx>]\n";
+    std::cerr << "Options:\n";
+    std::cerr << "  -o                 Print raw and derived metrics each tick\n";
+    std::cerr << "  -t, --timing        Print infer() timing (ms) each tick\n";
     std::cerr << "  Or set OPTKIT_ONNX_MODEL=<model.onnx>\n";
     std::cerr << "Examples:\n";
     std::cerr << "  " << argv0 << " -m cycles -m instructions -e cycles model.onnx\n";
@@ -216,6 +310,7 @@ void setup_signal_handlers()
 
 int main(int argc, char **argv)
 {
+    setup_signal_handlers();
     OPTKIT_INIT(false);
 
     DaemonArgs args = parse_daemon_args(argc, argv);
@@ -246,7 +341,24 @@ int main(int argc, char **argv)
 
     try
     {
-        setup_signal_handlers();
+#if !OPTKIT_DAEMON_WITH_ONNX
+        std::cerr << "Error: optkit-daemon was built without ONNX Runtime support (build with WITH_ONNX=1).\n";
+        return EXIT_FAILURE;
+#else
+        std::unique_ptr<OnnxApi> onnx_api = create_onnx_api();
+        onnx_api->load_model(args.model_path);
+        ModelMeta meta;
+        const bool have_meta = load_model_meta(args.model_path, meta);
+        if (!have_meta)
+        {
+            std::cerr << "WARNING: could not read meta.json next to model; will run inference with zero-filled input (likely meaningless).\n";
+        }
+        bool warned_meta_mismatch = false;
+
+        const size_t model_input_elems = onnx_api->input_summary().elements;
+        const size_t input_elems = have_meta ? meta.feature_names.size() : model_input_elems;
+        if (input_elems == 0)
+            throw std::runtime_error("Model input has zero elements");
 
         // Initialize metrics
         optkit::metrics::MetricBuilder<uint64_t> _metric;
@@ -296,22 +408,62 @@ int main(int argc, char **argv)
 
                 std::cout << "==============================\n";
             }
-            // std::unique_ptr<OnnxApi> onnx_api = create_onnx_api();
-            // onnx_api->load_model(model_path);
-            // InferenceSummary summary = onnx_api->infer();
 
-            // std::cout << "Model loaded: " << model_path << "\n";
-            // std::cout << "Input: " << summary.input.name << " elements=" << summary.input.elements << "\n";
-            // std::cout << "Output: " << summary.output.name << " elements=" << summary.output.elements << " shape=[";
-            // for (size_t i = 0; i < summary.output.shape.size(); ++i)
-            // {
-            //     if (i)
-            //         std::cout << ",";
-            //     std::cout << summary.output.shape[i];
-            // }
-            // std::cout << "]\n";
-            // std::cout << "Inference completed successfully\n";
+            std::vector<float> input;
+            input.assign(input_elems, 0.0f);
+
+            if (have_meta && meta.feature_names.size() == input.size())
+            {
+                std::unordered_map<std::string, float> feat;
+                add_prefixed_features(feat, "cpu_pmu.", pmc_counts, pmc_mapped, duration_ms);
+                add_prefixed_features(feat, "disk_io.", disk_counts, disk_mapped, 1000.0);
+
+                for (size_t k = 0; k < meta.feature_names.size(); ++k)
+                {
+                    const auto it = feat.find(meta.feature_names[k]);
+                    if (it != feat.end())
+                        input[k] = it->second;
+                }
+            }
+            else if (have_meta && !warned_meta_mismatch)
+            {
+                warned_meta_mismatch = true;
+                std::cerr << "WARNING: meta.json feature_names size (" << meta.feature_names.size()
+                          << ") does not match inferred input elements (" << input.size() << ")\n";
+                if (model_input_elems != 0 && model_input_elems != input.size())
+                    std::cerr << "WARNING: ONNX reported input elements (" << model_input_elems << ") differ from inferred (" << input.size() << ")\n";
+            }
+
+            const auto infer_t0 = std::chrono::steady_clock::now();
+            InferenceSummary summary = onnx_api->infer(input);
+            const auto infer_t1 = std::chrono::steady_clock::now();
+            const double infer_ms = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(infer_t1 - infer_t0).count();
+
+            if (args.timing)
+                std::cerr << "infer_ms=" << infer_ms << "\n";
+
+            if (!summary.output_values.empty())
+            {
+                if (summary.output_values.size() == 1)
+                {
+                    std::cout << "pred_core_ghz=" << summary.output_values[0] << "\n";
+                }
+                else if (summary.output_values.size() >= 2)
+                {
+                    std::cout << "pred_core_ghz=" << summary.output_values[0]
+                              << " pred_uncore_ghz=" << summary.output_values[1] << "\n";
+                }
+                else
+                {
+                    std::cout << "pred=[empty]\n";
+                }
+            }
+            else
+            {
+                std::cout << "pred=[no_output]\n";
+            }
         }
+#endif
     }
     catch (const std::exception &e)
     {

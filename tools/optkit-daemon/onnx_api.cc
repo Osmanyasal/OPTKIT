@@ -31,7 +31,13 @@ public:
         output_name_ = output_name_holder.get();
 
         auto input_info = session_.GetInputTypeInfo(0).GetTensorTypeAndShapeInfo();
-        input_shape_ = input_info.GetShape();
+
+        // Some models (especially with dynamic shapes) can report an empty shape via
+        // GetShape(), yet still have a known rank. Prefer the explicit dimension APIs.
+        const size_t dim_count = input_info.GetDimensionsCount();
+        input_shape_.assign(dim_count, 1);
+        if (dim_count > 0)
+            input_info.GetDimensions(input_shape_.data(), dim_count);
 
         for (size_t i = 0; i < input_shape_.size(); ++i)
         {
@@ -54,6 +60,28 @@ public:
         model_loaded_ = true;
     }
 
+    TensorSummary input_summary() const override
+    {
+        if (!model_loaded_)
+            throw std::runtime_error("Model is not loaded. Call load_model first.");
+        TensorSummary s;
+        s.name = input_name_;
+        s.shape = input_shape_;
+        s.elements = input_elements_;
+        return s;
+    }
+
+    TensorSummary output_summary() const override
+    {
+        if (!model_loaded_)
+            throw std::runtime_error("Model is not loaded. Call load_model first.");
+        TensorSummary s;
+        s.name = output_name_;
+        s.shape = {};
+        s.elements = 0;
+        return s;
+    }
+
     InferenceSummary infer(const std::vector<float> &input_data) override
     {
         if (!model_loaded_)
@@ -63,7 +91,17 @@ public:
         if (effective_input.empty())
             effective_input.assign(input_elements_, 0.0f);
 
-        if (effective_input.size() != input_elements_)
+        // If the model input shape is unknown/empty (common with dynamic exports),
+        // infer a reasonable shape from the provided flat input.
+        std::vector<int64_t> runtime_shape = input_shape_;
+        size_t runtime_elements = input_elements_;
+        if (runtime_shape.empty() || runtime_elements == 0 || (runtime_elements == 1 && effective_input.size() != 1))
+        {
+            runtime_shape = {1, 1, static_cast<int64_t>(effective_input.size())};
+            runtime_elements = effective_input.size();
+        }
+
+        if (effective_input.size() != runtime_elements)
             throw std::runtime_error("Input data size does not match model input shape.");
 
         Ort::MemoryInfo memory_info = Ort::MemoryInfo::CreateCpu(OrtArenaAllocator, OrtMemTypeDefault);
@@ -71,8 +109,8 @@ public:
             memory_info,
             effective_input.data(),
             effective_input.size(),
-            input_shape_.data(),
-            input_shape_.size());
+            runtime_shape.data(),
+            runtime_shape.size());
 
         const char *input_names[] = {input_name_.c_str()};
         const char *output_names[] = {output_name_.c_str()};
@@ -86,14 +124,24 @@ public:
             1);
 
         auto output_info = output_tensors[0].GetTensorTypeAndShapeInfo();
+        const size_t output_elements = static_cast<size_t>(output_info.GetElementCount());
+
+        std::vector<float> out_values;
+        out_values.resize(output_elements);
+        if (output_elements > 0)
+        {
+            const float *out_ptr = output_tensors[0].GetTensorData<float>();
+            std::copy(out_ptr, out_ptr + output_elements, out_values.begin());
+        }
 
         InferenceSummary summary;
         summary.input.name = input_name_;
-        summary.input.shape = input_shape_;
-        summary.input.elements = input_elements_;
+        summary.input.shape = runtime_shape;
+        summary.input.elements = runtime_elements;
         summary.output.name = output_name_;
         summary.output.shape = output_info.GetShape();
-        summary.output.elements = output_info.GetElementCount();
+        summary.output.elements = output_elements;
+        summary.output_values = std::move(out_values);
         return summary;
     }
 
