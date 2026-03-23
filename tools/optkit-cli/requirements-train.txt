@@ -1,0 +1,6 @@
+# optkit-cli training dependencies (GRU + ONNX export)
+# Install with: python3 -m pip install -r requirements-train.txt
+
+torch
+onnx
+onnxruntime

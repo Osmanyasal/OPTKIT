@@ -23,6 +23,7 @@ COMMAND:
     list [cpu|gpu] <TYPE>            List available components
     stat [OPTIONS] -- <PROGRAM>     Run single-shot profiling (like perf stat)
     msrmod [OPTIONS]                Read/write MSRs via /dev/cpu/<cpu>/msr_safe
+    train <FOLDER>                  Train a frequency model from screenshot JSON datasets
 
 TOPOLOGY:
     optkit topology                 Show complete system topology
@@ -62,6 +63,11 @@ VISUALISING REPORT (--report):
 
     optkit report <report_data_folder(s)>
 
+TRAINING (train):
+    Train a model from screenshot JSON datasets produced by `optkit stat -ss`.
+
+    optkit train <folder> [--epochs N] [--window W] [--device cpu|cuda] ...
+
 MSRMOD:
     Read/write a Model-Specific Register (MSR) using msr-safe (msr_safe device).
 
@@ -86,6 +92,7 @@ enum class Command
     LIST,
     STAT,
     MSRMOD,
+    TRAIN,
     HELP,
     REPORT,
     UNKNOWN
@@ -146,6 +153,10 @@ struct CommandArgs
     uint32_t msr_cpu = static_cast<uint32_t>(-1);
     uint64_t msr_address = static_cast<uint64_t>(-1);
     uint64_t msr_value = 0;
+
+    // train command options
+    std::string train_folder;
+    std::vector<std::string> train_args;
 };
 
 // Parse command line arguments
@@ -158,6 +169,7 @@ void execute_list_command(const CommandArgs &args);
 void execute_stat_command(const CommandArgs &args);
 void execute_report_command(const CommandArgs &args);
 void execute_msrmod_command(const CommandArgs &args);
+void execute_train_command(const CommandArgs &args);
 
 // String conversion helpers
 inline std::string to_string(Command cmd)
@@ -172,6 +184,8 @@ inline std::string to_string(Command cmd)
         return "STAT";
     case Command::MSRMOD:
         return "MSRMOD";
+    case Command::TRAIN:
+        return "TRAIN";
     case Command::HELP:
         return "HELP";
     case Command::REPORT:
@@ -246,6 +260,19 @@ inline std::string to_string(const CommandArgs &args)
     oss << "  is_screenshot: " << (args.is_screenshot ? "true" : "false") << "\n";
     oss << "  freq_limit: " << args.freq_limit << "\n";
     oss << "  freq_start: " << args.freq_start << "\n";
+
+    if (args.command == Command::TRAIN)
+    {
+        oss << "  train_folder: " << (args.train_folder.empty() ? "<none>" : args.train_folder) << "\n";
+        oss << "  train_args: [";
+        for (size_t i = 0; i < args.train_args.size(); ++i)
+        {
+            oss << "\"" << args.train_args[i] << "\"";
+            if (i + 1 < args.train_args.size())
+                oss << ", ";
+        }
+        oss << "]\n";
+    }
 
     if (args.command == Command::MSRMOD)
     {

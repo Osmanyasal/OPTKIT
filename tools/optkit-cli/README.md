@@ -16,6 +16,70 @@ COMMANDS:
     list <TYPE> [cpu|gpu]           List available components
     stat [OPTIONS] -- <PROGRAM>     Run single-shot profiling (like perf stat)
     msrmod [OPTIONS]                Read/write MSRs via /dev/cpu/<cpu>/msr_safe
+    train <FOLDER> [--epoch <30 default>]                 Train a frequency model from screenshot JSON datasets
+
+TRAIN (train):
+    Trains a GRU network from existing `*_screenshot/` datasets and exports an ONNX model.
+
+    Dataset format:
+        <FOLDER>/target_range.txt
+            core_min:<GHz>
+            core_max:<GHz>
+            (optional) uncore_min:<GHz>
+            (optional) uncore_max:<GHz>
+
+        <FOLDER>/*_screenshot/
+            target.txt              # core:<GHz> (optional uncore:<GHz>)
+            stat__cpu_pmu.json
+            stat__disk_io.json
+
+        Notes:
+            - In each stat__*.json file, the first reading is the whole-execution aggregate and is skipped.
+            - Remaining readings are treated as time-series samples (typically ~1 second).
+
+    Generating datasets:
+        Use screenshot tracing when profiling:
+
+            optkit stat -ss -e <event> -m <metric> -o -- <program>
+
+    Outputs:
+        <FOLDER>/optkit_train/model.onnx
+            - INT8-quantized ONNX model (weights quantized; outputs still in GHz).
+            - Input: x with shape (1, seq_len, num_features)
+            - Output: y in GHz (core or [core, uncore] when available)
+            - Normalization and min/max scaling are baked into the ONNX graph.
+
+        <FOLDER>/optkit_train/model_fp32.onnx
+            - FP32 ONNX model (exported before quantization).
+
+        <FOLDER>/optkit_train/meta.json
+            - Feature names, target ranges, normalization parameters, and trainer hyperparameters.
+
+    Passing training options:
+        `optkit train` forwards extra flags after <FOLDER> to the Python trainer, e.g.:
+
+            optkit train /path/to/dataset_folder --epochs 50 --hidden-size 32 --window 10
+
+        Defaults:
+            - `--hidden-size` defaults to 32.
+
+    Notes (Python deps):
+        Some Linux distros block system-wide `pip install` (PEP 668).
+
+        `optkit train` will automatically:
+            1) create tools/optkit-cli/.venv-train (if missing)
+            2) install deps from requirements-train.txt (if missing)
+            3) run the trainer using that venv
+
+        Manual setup (optional):
+
+            cd tools/optkit-cli
+            python3 -m venv .venv-train
+            ./.venv-train/bin/pip install -r requirements-train.txt
+
+        You can override the Python interpreter used for training:
+
+            OPTKIT_TRAIN_PYTHON=/path/to/python optkit train /path/to/dataset_folder
 
 TOPOLOGY:
     optkit topology                 Show complete system topology
@@ -91,6 +155,9 @@ EXAMPLES:
     # MSR access (requires msr module + permissions)
     optkit msrmod -r -c 0 -a 0x1b1
     optkit msrmod -w -c 0 -a 0x1b1 -v 0x1234
+
+    # Train a frequency model from an existing dataset folder
+    optkit train /path/to/dataset_folder
 
 NOTE:
     - 'stat' without --bench or --affinity: Single execution, collects specified events/metrics

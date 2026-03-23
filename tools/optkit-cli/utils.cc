@@ -12,6 +12,7 @@ Command parse_command(const std::string &cmd)
         {"list", Command::LIST},
         {"stat", Command::STAT},
         {"msrmod", Command::MSRMOD},
+        {"train", Command::TRAIN},
         {"report", Command::REPORT},
         {"help", Command::HELP},
         {"--help", Command::HELP},
@@ -263,6 +264,20 @@ CommandArgs parse_arguments(int argc, char **argv)
         }
         break;
 
+    case Command::TRAIN:
+        // Format: optkit train <folder>
+        if (tokens.size() < 2)
+        {
+            args.parse_error = true;
+            args.parse_error_message = "train requires a folder argument: optkit train <folder>";
+            args.command = Command::HELP;
+            break;
+        }
+        args.train_folder = tokens[1];
+        for (size_t i = 2; i < tokens.size(); ++i)
+            args.train_args.push_back(tokens[i]);
+        break;
+
     case Command::MSRMOD:
     {
         bool have_value = false;
@@ -422,6 +437,12 @@ void execute_command(const CommandArgs &args)
     case Command::REPORT:
     {
         execute_report_command(args);
+        break;
+    }
+
+    case Command::TRAIN:
+    {
+        execute_train_command(args);
         break;
     }
 
