@@ -13,6 +13,10 @@ LIBPFM4_INCLUDE = $(OPTKIT_ROOT)/lib/libpfm4/include
 ONNX_INCLUDE := $(shell if [ -f /usr/include/onnxruntime_cxx_api.h ]; then echo /usr/include; elif [ -f /usr/local/include/onnxruntime_cxx_api.h ]; then echo /usr/local/include; elif [ -d /usr/include/onnxruntime ]; then echo /usr/include/onnxruntime; elif [ -d /usr/local/include/onnxruntime ]; then echo /usr/local/include/onnxruntime; elif [ -d /opt/onnxruntime/include ]; then echo /opt/onnxruntime/include; fi)
 ONNX_LIB_DIR := $(shell if [ -d /usr/lib/x86_64-linux-gnu ]; then echo /usr/lib/x86_64-linux-gnu; elif [ -d /usr/local/lib ]; then echo /usr/local/lib; elif [ -d /opt/onnxruntime/lib ]; then echo /opt/onnxruntime/lib; fi)
 
+# Optional ONNX support (auto-detected by default)
+HAVE_ONNX := $(shell if [ -n "$(ONNX_INCLUDE)" ] && [ -n "$(ONNX_LIB_DIR)" ] && [ -f "$(ONNX_LIB_DIR)/libonnxruntime.so" ]; then echo 1; else echo 0; fi)
+WITH_ONNX ?= $(HAVE_ONNX)
+
 # Detect CUDA/NVML installation
 CUDA_INCLUDE := $(shell if [ -d /usr/local/cuda/include ]; then echo /usr/local/cuda/include; elif [ -d /usr/local/cuda-12.9/include ]; then echo /usr/local/cuda-12.9/include; elif [ -d /usr/local/cuda/targets/x86_64-linux/include ]; then echo /usr/local/cuda/targets/x86_64-linux/include; fi)
 
@@ -24,12 +28,12 @@ INCLUDES = -I$(OPTKIT_INCLUDE) \
            -I$(SPDLOG_INCLUDE) \
            -I$(LIBPFM4_INCLUDE)
 
-# Add ONNX Runtime include and library
-ifneq ($(ONNX_INCLUDE),)
+# Add ONNX Runtime include and library (only when enabled)
+ifeq ($(WITH_ONNX),1)
+	ifeq ($(HAVE_ONNX),0)
+		$(error ONNX Runtime not found (headers or libonnxruntime.so). Install it or build with WITH_ONNX=0)
+	endif
 	INCLUDES += -I$(ONNX_INCLUDE)
-endif
-
-ifneq ($(ONNX_LIB_DIR),)
 	LDFLAGS += -L$(ONNX_LIB_DIR) -Wl,-rpath,$(ONNX_LIB_DIR) -lonnxruntime
 endif
 
@@ -47,11 +51,16 @@ endif
 
 # Targets
 TARGET = optkit-daemon
-SOURCES = main.cc onnx_api.cc
+
+ifeq ($(WITH_ONNX),1)
+	SOURCES = main.cc onnx_api.cc
+else
+	SOURCES = main.cc
+endif
 OBJECTS = $(SOURCES:.cc=.o)
 
 # Default target
-all: check-lib check-onnx $(TARGET)
+all: check-lib $(TARGET)
 
 # Link the executable
 $(TARGET): $(OBJECTS) $(OPTKIT_LIB)
@@ -82,14 +91,10 @@ check-lib:
 
 # Check if ONNX Runtime is available
 check-onnx:
-	@if [ -z "$(ONNX_INCLUDE)" ]; then \
-		echo "Error: ONNX Runtime headers not found"; \
-		echo "Expected one of: /usr/include, /usr/local/include, /usr/include/onnxruntime, /usr/local/include/onnxruntime, /opt/onnxruntime/include"; \
-		exit 1; \
-	fi
-	@if [ -z "$(ONNX_LIB_DIR)" ] || [ ! -f "$(ONNX_LIB_DIR)/libonnxruntime.so" ]; then \
-		echo "Error: ONNX Runtime shared library not found"; \
-		echo "Expected libonnxruntime.so in $(ONNX_LIB_DIR)"; \
+	@if [ "$(HAVE_ONNX)" != "1" ]; then \
+		echo "Error: ONNX Runtime not found"; \
+		echo "Expected headers under: /usr/include, /usr/local/include, /usr/include/onnxruntime, /usr/local/include/onnxruntime, /opt/onnxruntime/include"; \
+		echo "Expected libonnxruntime.so under: /usr/lib/x86_64-linux-gnu, /usr/local/lib, /opt/onnxruntime/lib"; \
 		exit 1; \
 	fi
 
@@ -104,6 +109,8 @@ env-info:
 	@echo "ROCM_INCLUDE: $(ROCM_INCLUDE)"
 	@echo "ONNX_INCLUDE: $(ONNX_INCLUDE)"
 	@echo "ONNX_LIB_DIR: $(ONNX_LIB_DIR)"
+	@echo "HAVE_ONNX: $(HAVE_ONNX)"
+	@echo "WITH_ONNX: $(WITH_ONNX)"
 	@echo "INCLUDES: $(INCLUDES)"
 
 # Check GPU support
