@@ -13,6 +13,7 @@
 #include <cstdlib>
 #include <limits.h>
 #include <unistd.h>
+#include <sys/stat.h>
 
 struct RunData
 {
@@ -206,6 +207,281 @@ static std::string join_path(const std::string &a, const std::string &b)
     if (a[a.size() - 1] == '/')
         return a + b;
     return a + "/" + b;
+}
+
+static std::string dirname_of(const std::string &p)
+{
+    size_t s = p.find_last_of('/');
+    if (s == std::string::npos)
+        return std::string(".");
+    if (s == 0)
+        return std::string("/");
+    return p.substr(0, s);
+}
+
+static bool is_directory(const std::string &path)
+{
+    struct stat st;
+    if (::stat(path.c_str(), &st) != 0)
+        return false;
+    return S_ISDIR(st.st_mode);
+}
+
+static bool is_regular_file(const std::string &path)
+{
+    struct stat st;
+    if (::stat(path.c_str(), &st) != 0)
+        return false;
+    return S_ISREG(st.st_mode);
+}
+
+static bool ends_with(const std::string &s, const std::string &suffix)
+{
+    if (suffix.size() > s.size())
+        return false;
+    return s.compare(s.size() - suffix.size(), suffix.size(), suffix) == 0;
+}
+
+static double duration_to_seconds(double duration, const std::string &unit)
+{
+    if (unit == "ms")
+        return duration / 1000.0;
+    if (unit == "s")
+        return duration;
+    if (unit == "us")
+        return duration / 1e6;
+    if (unit == "ns")
+        return duration / 1e9;
+    // Unknown: assume ms
+    return duration / 1000.0;
+}
+
+static bool get_readings_array(const nlohmann::json &root, const nlohmann::json *&out)
+{
+    out = nullptr;
+
+    if (root.is_object())
+    {
+        auto it = root.find("readings");
+        if (it != root.end() && it->is_array())
+        {
+            out = &(*it);
+            return true;
+        }
+        return false;
+    }
+
+    if (root.is_array())
+    {
+        // Common OPTKIT screenshot wrapper: [ { "readings": [ ... ] } ]
+        if (!root.empty() && root[0].is_object())
+        {
+            auto it = root[0].find("readings");
+            if (it != root[0].end() && it->is_array())
+            {
+                out = &(*it);
+                return true;
+            }
+        }
+
+        // Fallback: maybe the array itself is the readings array
+        if (!root.empty() && root[0].is_object() && root[0].find("measurements") != root[0].end())
+        {
+            out = &root;
+            return true;
+        }
+    }
+
+    return false;
+}
+
+static bool generate_cpu_pmu_timeseries_chart(const std::string &json_path)
+{
+    std::string content;
+    try
+    {
+        content = optkit::utils::read_file(json_path);
+    }
+    catch (...)
+    {
+        content.clear();
+    }
+    if (content.empty())
+        return false;
+
+    nlohmann::json root = nlohmann::json::parse(content, nullptr, false);
+    if (root.is_discarded())
+        return false;
+
+    const nlohmann::json *readings = nullptr;
+    if (!get_readings_array(root, readings) || readings == nullptr || !readings->is_array())
+        return false;
+    if (readings->size() < 2)
+        return false; // needs at least aggregate + 1 sample
+
+    // Skip first reading (whole-execution aggregate)
+    const size_t start_idx = 1;
+    const size_t N = readings->size() - start_idx;
+
+    // Collect metric names (type == "metric")
+    std::vector<std::string> metric_names;
+    std::set<std::string> seen;
+    for (size_t i = start_idx; i < readings->size(); ++i)
+    {
+        const auto &r = (*readings)[i];
+        if (!r.is_object())
+            continue;
+        auto it_meas = r.find("measurements");
+        if (it_meas == r.end() || !it_meas->is_array())
+            continue;
+        for (const auto &m : *it_meas)
+        {
+            if (!m.is_object())
+                continue;
+            if (!m.contains("type") || !m["type"].is_string())
+                continue;
+            if (m["type"].get<std::string>() != "metric")
+                continue;
+            if (!m.contains("name") || !m["name"].is_string())
+                continue;
+            const std::string name = m["name"].get<std::string>();
+            if (seen.insert(name).second)
+                metric_names.push_back(name);
+        }
+    }
+
+    if (metric_names.empty())
+        return false;
+
+    // Pre-allocate: metric -> vector of NaNs
+    std::map<std::string, std::vector<double>> series;
+    for (const auto &name : metric_names)
+        series[name] = std::vector<double>(N, std::numeric_limits<double>::quiet_NaN());
+
+    // Build time axis (cumulative seconds) and series values.
+    std::vector<double> t_s;
+    t_s.reserve(N);
+    double t = 0.0;
+    for (size_t i = start_idx; i < readings->size(); ++i)
+    {
+        const auto &r = (*readings)[i];
+        double dur = 0.0;
+        std::string unit = "ms";
+        try
+        {
+            if (r.contains("duration"))
+                json_to_double(r["duration"], dur);
+            if (r.contains("duration_unit") && r["duration_unit"].is_string())
+                unit = r["duration_unit"].get<std::string>();
+        }
+        catch (...)
+        {
+        }
+        t += duration_to_seconds(dur, unit);
+        t_s.push_back(t);
+
+        auto it_meas = r.find("measurements");
+        if (it_meas == r.end() || !it_meas->is_array())
+            continue;
+
+        const size_t row = i - start_idx;
+        for (const auto &m : *it_meas)
+        {
+            if (!m.is_object())
+                continue;
+            if (!m.contains("type") || !m["type"].is_string())
+                continue;
+            if (m["type"].get<std::string>() != "metric")
+                continue;
+            if (!m.contains("name") || !m["name"].is_string())
+                continue;
+            const std::string name = m["name"].get<std::string>();
+
+            auto it = series.find(name);
+            if (it == series.end())
+                continue;
+
+            double v = 0.0;
+            if (!m.contains("value") || !json_to_double(m["value"], v))
+                continue;
+            it->second[row] = v;
+        }
+    }
+
+    // Write .dat and .gp next to the JSON
+    const std::string out_dir = dirname_of(json_path);
+    const std::string base = filename_stem(basename_no_dir(json_path));
+    const std::string dat_name = join_path(out_dir, base + "__metrics_timeseries.dat");
+    const std::string gp_name = join_path(out_dir, base + "__metrics_timeseries.gp");
+    const std::string png_name = join_path(out_dir, base + "__metrics_timeseries.png");
+
+    std::ofstream dat(dat_name.c_str());
+    if (!dat)
+    {
+        std::cerr << "Error: Cannot write " << dat_name << "\n";
+        return false;
+    }
+
+    dat << "# time_s";
+    for (const auto &name : metric_names)
+        dat << "\t" << name;
+    dat << "\n";
+
+    for (size_t i = 0; i < N; ++i)
+    {
+        dat << std::fixed << std::setprecision(6) << t_s[i];
+        for (const auto &name : metric_names)
+        {
+            double v = series[name][i];
+            if (std::isfinite(v))
+                dat << "\t" << std::setprecision(6) << v;
+            else
+                dat << "\tNaN";
+        }
+        dat << "\n";
+    }
+    dat.close();
+
+    const int n = static_cast<int>(metric_names.size());
+    const int h = std::max(420, 220 * n);
+
+    std::ofstream gp(gp_name.c_str());
+    if (!gp)
+    {
+        std::cerr << "Error: Cannot write " << gp_name << "\n";
+        return false;
+    }
+
+    gp << "set terminal pngcairo size 1400," << h << " noenhanced font 'Arial,10'\n";
+    gp << "set output '" << png_name << "'\n";
+    gp << "set multiplot layout " << n << ",1 title '" << base << " metrics (time-series)'\n";
+    gp << "set grid\n";
+    gp << "set tmargin 2\n";
+    gp << "set bmargin 2\n";
+    gp << "set lmargin 10\n";
+    gp << "set rmargin 3\n";
+
+    for (int i = 0; i < n; ++i)
+    {
+        const std::string &name = metric_names[static_cast<size_t>(i)];
+        const int col = 2 + i; // time_s is column 1
+        gp << "set ylabel '" << name << "'\n";
+        if (i == n - 1)
+            gp << "set xlabel 'time (s)'\n";
+        else
+            gp << "unset xlabel\n";
+        gp << "plot '" << dat_name << "' using 1:" << col << " with lines lw 2 notitle\n";
+    }
+
+    gp << "unset multiplot\n";
+    gp.close();
+
+    std::string cmd = std::string("gnuplot ") + gp_name;
+    if (!run_system_checked(cmd, "gnuplot cpu_pmu time-series"))
+        return false;
+
+    std::cout << "Generated CPU PMU time-series chart: " << png_name << "\n";
+    return true;
 }
 
 static std::string executable_dir()
@@ -1155,8 +1431,54 @@ void execute_report_command(const CommandArgs &args)
         return;
     }
 
-    // Parse runs
-    std::vector<RunData> runs = parse_runs_from_paths(file_path);
+    // Expand inputs: allow directories (including *_screenshot folders).
+    std::vector<std::string> expanded;
+    for (size_t i = 0; i < file_path.size(); ++i)
+    {
+        const std::string &p = file_path[i];
+        if (p.empty())
+            continue;
+
+        if (is_regular_file(p))
+        {
+            expanded.push_back(p);
+            continue;
+        }
+
+        if (is_directory(p))
+        {
+            std::vector<std::string> files = optkit::utils::get_all_files(p);
+            for (const auto &rel : files)
+            {
+                const std::string full = join_path(p, rel);
+                if (ends_with(full, ".json"))
+                    expanded.push_back(full);
+            }
+        }
+    }
+
+    // Screenshot time-series charts (currently: cpu pmu metrics)
+    for (size_t i = 0; i < expanded.size(); ++i)
+    {
+        const std::string &p = expanded[i];
+        if (p.find("stat__cpu_pmu.json") != std::string::npos)
+        {
+            // Skip-first is baked into generator (first record is aggregate).
+            generate_cpu_pmu_timeseries_chart(p);
+        }
+    }
+
+    // Parse runs (excluding cpu_pmu screenshot JSON, which is time-series and not a scalar run)
+    std::vector<std::string> scalar_jsons;
+    scalar_jsons.reserve(expanded.size());
+    for (const auto &p : expanded)
+    {
+        if (p.find("stat__cpu_pmu.json") != std::string::npos)
+            continue;
+        scalar_jsons.push_back(p);
+    }
+
+    std::vector<RunData> runs = parse_runs_from_paths(scalar_jsons);
     if (runs.empty())
     {
         std::cerr << "Error: No JSON files found under given path(s) or parsing failed.\n";

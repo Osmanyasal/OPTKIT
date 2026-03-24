@@ -78,6 +78,7 @@ TRAINING (train):
         --opset N            (default: 17)
         --device cpu|cuda    (default: cpu)
 
+
 MSRMOD:
     Read/write a Model-Specific Register (MSR) using msr-safe (msr_safe device).
 
@@ -292,6 +293,7 @@ inline std::string to_string(const CommandArgs &args)
         if (args.msr_op == MsrOp::WRITE)
             oss << "  msr_value: 0x" << std::hex << args.msr_value << std::dec << "\n";
     }
+
 
     oss << "  events: [";
     for (size_t i = 0; i < args.events.size(); ++i)

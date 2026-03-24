@@ -278,6 +278,21 @@ CommandArgs parse_arguments(int argc, char **argv)
             args.train_args.push_back(tokens[i]);
         break;
 
+    case Command::REPORT:
+        // Format: optkit report <folder_or_file> [more_folders_or_files...]
+        // Historically this command is treated as a "folder" input; store the first path in args.program.
+        if (tokens.size() < 2)
+        {
+            args.parse_error = true;
+            args.parse_error_message = "report requires at least one path: optkit report <report_data_folder(s)>";
+            args.command = Command::HELP;
+            break;
+        }
+        args.program = tokens[1];
+        for (size_t i = 2; i < tokens.size(); ++i)
+            args.program_args.push_back(tokens[i]);
+        break;
+
     case Command::MSRMOD:
     {
         bool have_value = false;
