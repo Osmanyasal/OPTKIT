@@ -174,9 +174,9 @@ void create_child_process(const CommandArgs &args)
         // open with sampling.
         optkit::callstack::Profiler callstack_profiler{{"stat", true, false, CHILD_PID, -1, "callstack"}};
 
-        optkit::disk::IoDiskProfiler disk_profiler{
-            {"stat", "disk_io", true, args.is_screenshot, optkit::Query::create_folder, !optkit::Query::create_folder, args.is_screenshot},
-            optkit::metrics::disk::core_metrics::all_metrics()};
+        // optkit::disk::IoDiskProfiler disk_profiler{
+        //     {"stat", "disk_io", true, args.is_screenshot, optkit::Query::create_folder, !optkit::Query::create_folder, args.is_screenshot},
+        //     optkit::metrics::disk::core_metrics::all_metrics()};
 
         OPTKIT_CPU_ENERGY_SAMPLING("stat");
         OPTKIT_GPU_ENERGY("stat");
@@ -428,7 +428,13 @@ void execute_stat_command(const CommandArgs &args)
 
     case BenchType::DEFAULT:
     {
-        OPTKIT_INIT({args.dump_to_file});
+        // IMPORTANT: OPTKIT_INIT declares a local variable. If constructed inside an if/else block,
+        // it will be destroyed at the end of that block, and profiling code below may run after
+        // OPTKIT teardown (can cause a crash).
+        std::string execution_folder;
+        if (args.is_screenshot)
+            execution_folder = args.program + "__" + optkit::utils::EXECUTION_FOLDER_NAME + "__screenshot";
+        optkit::OPTKIT optkit{optkit::OPTKIT_CONFIG(args.dump_to_file, execution_folder)};
         std::cout << "\n[Will execute program once and collect metrics]\n";
         create_child_process(args);
         break;

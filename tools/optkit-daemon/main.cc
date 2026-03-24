@@ -27,7 +27,7 @@ struct DaemonArgs
     bool parse_error = false;
     std::string parse_error_message;
     bool print_data = false;
-    bool timing = false;
+    bool verbose = false;
     bool check_features = false;
 };
 
@@ -105,10 +105,10 @@ static bool load_model_meta(const std::string &model_path, ModelMeta &meta_out)
 }
 
 static void add_prefixed_features(std::unordered_map<std::string, float> &dst,
-                                 const std::string &prefix,
-                                 const std::unordered_map<std::string, uint64_t> &counts,
-                                 const std::vector<std::pair<std::string, double>> &mapped,
-                                 double duration_ms)
+                                  const std::string &prefix,
+                                  const std::unordered_map<std::string, uint64_t> &counts,
+                                  const std::vector<std::pair<std::string, double>> &mapped,
+                                  double duration_ms)
 {
     auto strip_unit_suffix = [](const std::string &name) -> std::string
     {
@@ -246,9 +246,9 @@ static DaemonArgs parse_daemon_args(int argc, char **argv)
             continue;
         }
 
-        if (std::strcmp(a, "--timing") == 0 || std::strcmp(a, "-t") == 0)
+        if (std::strcmp(a, "--verbose") == 0 || std::strcmp(a, "-v") == 0)
         {
-            args.timing = true;
+            args.verbose = true;
             continue;
         }
 
@@ -286,7 +286,7 @@ static void print_usage(const char *argv0)
     std::cerr << "       " << argv0 << " [--metrics M1,M2] [--events E1,E2] [<model.onnx>]\n";
     std::cerr << "Options:\n";
     std::cerr << "  -o                 Print raw and derived metrics each tick\n";
-    std::cerr << "  -t, --timing        Print infer() timing (ms) each tick\n";
+    std::cerr << "  -v, --verbose       Print infer() timing (ms) each tick\n";
     std::cerr << "  --check-features    Print meta.json feature coverage + input stats\n";
     std::cerr << "  Or set OPTKIT_ONNX_MODEL=<model.onnx>\n";
     std::cerr << "Examples:\n";
@@ -405,6 +405,14 @@ int main(int argc, char **argv)
         const size_t window = (have_meta && meta.window > 0) ? meta.window : 1;
         std::deque<std::vector<float>> history;
 
+        // Only apply frequency changes if the predicted value differs from the last applied
+        // value by at least 1 GHz. Frequencies are in kHz here.
+        // We intentionally track a single last-applied value because we apply the same
+        // target frequency to all sockets.
+        constexpr int64_t FREQ_CHANGE_THRESHOLD_KHZ = 500000; // 0.5 GHz
+        int64_t last_applied_core_khz = -1;
+        int64_t last_applied_uncore_khz = -1;
+
         // Initialize metrics
         optkit::metrics::MetricBuilder<uint64_t> _metric;
         for (auto &&i : args.metrics)
@@ -419,10 +427,6 @@ int main(int argc, char **argv)
         perf_config.cpu = OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS;
         optkit::pmu::cpu::perf::BlockProfiler stat_metric_profiler(perf_config, _metric);
 
-        auto disk_metric = optkit::metrics::disk::core_metrics::all_metrics();
-        optkit::disk::IoDiskProfiler disk_profiler{
-            {"stat", "disk_io", true, false, optkit::Query::create_folder, !optkit::Query::create_folder, false}, disk_metric};
-        auto disk_events = disk_metric.event_names();
         auto last = std::chrono::steady_clock::now();
         while (IS_RUNNING)
         {
@@ -436,21 +440,12 @@ int main(int argc, char **argv)
             const auto pmc_counts = event_counts_from_values(_metric.event_names(), values, duration_ms);
             const auto pmc_mapped = _metric.calculate(pmc_counts);
 
-            auto disk_data = disk_profiler.read();
-            auto const disk_counts = event_counts_from_values(disk_events, disk_data, 1000.0);
-            const auto disk_mapped = disk_metric.calculate(disk_counts);
-
             if (args.print_data)
             {
                 for (const auto &kv : pmc_counts)
                     std::cout << kv.first << ": " << kv.second << ",";
                 for (const auto &kv : pmc_mapped)
                     std::cout << kv.first << ": " << kv.second << "\n";
-                for (const auto &kv : disk_counts)
-                    std::cout << kv.first << ": " << kv.second << "\n";
-                for (const auto &kv : disk_mapped)
-                    std::cout << kv.first << ": " << kv.second << "\n";
-
                 std::cout << "==============================\n";
             }
 
@@ -461,7 +456,6 @@ int main(int argc, char **argv)
             {
                 std::unordered_map<std::string, float> feat;
                 add_prefixed_features(feat, "cpu_pmu.", pmc_counts, pmc_mapped, duration_ms);
-                add_prefixed_features(feat, "disk_io.", disk_counts, disk_mapped, 1000.0);
 
                 for (size_t k = 0; k < meta.feature_names.size(); ++k)
                 {
@@ -500,7 +494,6 @@ int main(int argc, char **argv)
                 // to report coverage.
                 std::unordered_map<std::string, float> feat;
                 add_prefixed_features(feat, "cpu_pmu.", pmc_counts, pmc_mapped, duration_ms);
-                add_prefixed_features(feat, "disk_io.", disk_counts, disk_mapped, 1000.0);
 
                 size_t found = 0;
                 std::vector<std::string> missing;
@@ -524,8 +517,10 @@ int main(int argc, char **argv)
                     }
                     else
                     {
-                        if (v < vmin) vmin = v;
-                        if (v > vmax) vmax = v;
+                        if (v < vmin)
+                            vmin = v;
+                        if (v > vmax)
+                            vmax = v;
                     }
                 }
 
@@ -548,25 +543,67 @@ int main(int argc, char **argv)
             const auto infer_t1 = std::chrono::steady_clock::now();
             const double infer_ms = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(infer_t1 - infer_t0).count();
 
-            if (args.timing)
+            if (args.verbose)
                 std::cerr << "infer_ms=" << infer_ms << "\n";
 
             if (!summary.output_values.empty())
             {
                 if (summary.output_values.size() == 1)
                 {
-                    std::cout << "pred_core_ghz=" << summary.output_values[0] << "\n";
-                    for (int socket = 0; socket < OPTKIT_ENV_CPU_NUM_SOCKETS; socket++)
-                        optkit::frequency::cpu::Frequency::set_core_frequency(static_cast<int64_t>(summary.output_values[0] * 1000000.0), socket);
+                    if (args.verbose)
+                        std::cout << "pred_core_ghz=" << summary.output_values[0] << "\n";
+                    const double pred_core_ghz = summary.output_values[0];
+                    if (std::isfinite(pred_core_ghz) && pred_core_ghz > 0.0)
+                    {
+                        const int64_t target_core_khz = static_cast<int64_t>(std::llround(pred_core_ghz * 1000000.0));
+                        const int64_t diff = (last_applied_core_khz < 0) ? FREQ_CHANGE_THRESHOLD_KHZ : std::llabs(target_core_khz - last_applied_core_khz);
+                        if (diff >= FREQ_CHANGE_THRESHOLD_KHZ)
+                        {
+                            for (int socket = 0; socket < OPTKIT_ENV_CPU_NUM_SOCKETS; socket++)
+                            {
+                                optkit::frequency::cpu::Frequency::set_core_frequency(target_core_khz, socket);
+                            }
+                            last_applied_core_khz = target_core_khz;
+                        }
+                    }
                 }
                 else if (summary.output_values.size() >= 2)
                 {
-                    std::cout << "pred_core_ghz=" << summary.output_values[0]
-                              << " pred_uncore_ghz=" << summary.output_values[1] << "\n";
-                    for (int socket = 0; socket < OPTKIT_ENV_CPU_NUM_SOCKETS; socket++)
+                    if (args.verbose)
+                        std::cout << "pred_core_ghz=" << summary.output_values[0]
+                                  << " pred_uncore_ghz=" << summary.output_values[1] << "\n";
+                    const double pred_core_ghz = summary.output_values[0];
+                    const double pred_uncore_ghz = summary.output_values[1];
+                    const bool core_ok = (std::isfinite(pred_core_ghz) && pred_core_ghz > 0.0);
+                    const bool uncore_ok = (std::isfinite(pred_uncore_ghz) && pred_uncore_ghz > 0.0);
+
+                    const int64_t target_core_khz = core_ok ? static_cast<int64_t>(std::llround(pred_core_ghz * 1000000.0)) : -1;
+                    const int64_t target_uncore_khz = uncore_ok ? static_cast<int64_t>(std::llround(pred_uncore_ghz * 1000000.0)) : -1;
+
+                    if (core_ok)
                     {
-                        optkit::frequency::cpu::Frequency::set_core_frequency(static_cast<int64_t>(summary.output_values[0] * 1000000.0), socket);
-                        optkit::frequency::cpu::Frequency::set_uncore_frequency(static_cast<int64_t>(summary.output_values[1] * 1000000.0), socket);
+                        const int64_t diff = (last_applied_core_khz < 0) ? FREQ_CHANGE_THRESHOLD_KHZ : std::llabs(target_core_khz - last_applied_core_khz);
+                        if (diff >= FREQ_CHANGE_THRESHOLD_KHZ)
+                        {
+                            for (int socket = 0; socket < OPTKIT_ENV_CPU_NUM_SOCKETS; socket++)
+                            {
+                                optkit::frequency::cpu::Frequency::set_core_frequency(target_core_khz, socket);
+                            }
+                            last_applied_core_khz = target_core_khz;
+                        }
+                    }
+
+                    if (uncore_ok)
+                    {
+                        const int64_t diff = (last_applied_uncore_khz < 0) ? FREQ_CHANGE_THRESHOLD_KHZ : std::llabs(target_uncore_khz - last_applied_uncore_khz);
+                        if (diff >= FREQ_CHANGE_THRESHOLD_KHZ)
+                        {
+                            for (int socket = 0; socket < OPTKIT_ENV_CPU_NUM_SOCKETS; socket++)
+                            {
+                                optkit::frequency::cpu::Frequency::set_uncore_frequency(target_uncore_khz, socket);
+                            }
+                            last_applied_uncore_khz = target_uncore_khz;
+                        }
                     }
                 }
                 else

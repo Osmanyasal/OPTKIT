@@ -6,7 +6,6 @@ Dataset layout:
 - <folder>/*_screenshot/ subfolders, each with:
     - target.txt (core:<GHz>, optional uncore:<GHz>)
     - stat__cpu_pmu.json
-    - stat__disk_io.json
 
 Each JSON contains a "readings" array. The first entry is the overall aggregate
 for the whole execution and is skipped; the remaining entries are treated as a
@@ -206,10 +205,15 @@ def discover_runs(dataset_folder: str) -> List[str]:
 
 def align_and_merge_timeseries(
     cpu_samples: List[Dict[str, float]],
-    disk_samples: List[Dict[str, float]],
+    disk_samples: Optional[List[Dict[str, float]]] = None,
 ) -> List[Dict[str, float]]:
     # Skip the first reading: overall sum
     cpu = cpu_samples[1:] if len(cpu_samples) > 1 else []
+
+    # PMU-only mode: if disk samples are not provided, keep CPU series as-is.
+    if not disk_samples:
+        return cpu
+
     disk = disk_samples[1:] if len(disk_samples) > 1 else []
 
     n = min(len(cpu), len(disk))
@@ -343,10 +347,9 @@ def main(argv: List[str]) -> int:
     for run_dir in runs:
         target_path = os.path.join(run_dir, "target.txt")
         cpu_path = os.path.join(run_dir, "stat__cpu_pmu.json")
-        disk_path = os.path.join(run_dir, "stat__disk_io.json")
         if not os.path.isfile(target_path):
             continue
-        if not os.path.isfile(cpu_path) or not os.path.isfile(disk_path):
+        if not os.path.isfile(cpu_path):
             continue
 
         tgt = parse_target_txt(target_path)
@@ -354,8 +357,7 @@ def main(argv: List[str]) -> int:
             continue
 
         cpu_samples = load_stat_json(cpu_path, prefix="cpu_pmu.")
-        disk_samples = load_stat_json(disk_path, prefix="disk_io.")
-        merged = align_and_merge_timeseries(cpu_samples, disk_samples)
+        merged = align_and_merge_timeseries(cpu_samples)
         if len(merged) < 2:
             continue
 
@@ -363,7 +365,7 @@ def main(argv: List[str]) -> int:
         run_targets.append(tgt)
 
     if not seqs:
-        print("ERROR: no usable runs found (need target.txt + both JSONs with >=2 samples)", file=sys.stderr)
+        print("ERROR: no usable runs found (need target.txt + stat__cpu_pmu.json with >=2 samples)", file=sys.stderr)
         return 2
 
     feature_names = build_feature_space(seqs)
