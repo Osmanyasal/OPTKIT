@@ -8,11 +8,13 @@
 #include <csignal>
 #include <cstdint>
 #include <fstream>
+#include <cmath>
 
 #include "utils/json.hh"
 
 #include <thread>
 #include <chrono>
+#include <deque>
 #include "onnx_api.hh"
 #include "optkit.hh"
 
@@ -26,6 +28,7 @@ struct DaemonArgs
     std::string parse_error_message;
     bool print_data = false;
     bool timing = false;
+    bool check_features = false;
 };
 
 #if OPTKIT_DAEMON_WITH_ONNX
@@ -33,6 +36,7 @@ struct ModelMeta
 {
     std::vector<std::string> feature_names;
     std::vector<std::string> targets;
+    size_t window = 0;
 };
 
 static std::string dirname_of(const std::string &path)
@@ -64,6 +68,14 @@ static bool load_model_meta(const std::string &model_path, ModelMeta &meta_out)
 
     try
     {
+        if (j.contains("window"))
+        {
+            // meta.json window is an integer.
+            const auto w = j["window"];
+            if (w.is_number_integer())
+                meta_out.window = static_cast<size_t>(w.get<int>());
+        }
+
         if (j.contains("feature_names") && j["feature_names"].is_array())
         {
             meta_out.feature_names.clear();
@@ -98,6 +110,14 @@ static void add_prefixed_features(std::unordered_map<std::string, float> &dst,
                                  const std::vector<std::pair<std::string, double>> &mapped,
                                  double duration_ms)
 {
+    auto strip_unit_suffix = [](const std::string &name) -> std::string
+    {
+        const auto pos = name.find("__");
+        if (pos == std::string::npos)
+            return name;
+        return name.substr(0, pos);
+    };
+
     dst[prefix + "duration_ms"] = static_cast<float>(duration_ms);
     dst[prefix + "duration_microsec"] = static_cast<float>(duration_ms * 1000.0);
 
@@ -105,7 +125,15 @@ static void add_prefixed_features(std::unordered_map<std::string, float> &dst,
         dst[prefix + kv.first] = static_cast<float>(kv.second);
 
     for (const auto &kv : mapped)
+    {
+        if (!std::isfinite(kv.second))
+            continue;
         dst[prefix + kv.first] = static_cast<float>(kv.second);
+
+        const std::string base = strip_unit_suffix(kv.first);
+        if (base != kv.first)
+            dst[prefix + base] = static_cast<float>(kv.second);
+    }
 }
 #endif
 
@@ -224,6 +252,12 @@ static DaemonArgs parse_daemon_args(int argc, char **argv)
             continue;
         }
 
+        if (std::strcmp(a, "--check-features") == 0)
+        {
+            args.check_features = true;
+            continue;
+        }
+
         if (a[0] == '-')
         {
             args.parse_error = true;
@@ -253,6 +287,7 @@ static void print_usage(const char *argv0)
     std::cerr << "Options:\n";
     std::cerr << "  -o                 Print raw and derived metrics each tick\n";
     std::cerr << "  -t, --timing        Print infer() timing (ms) each tick\n";
+    std::cerr << "  --check-features    Print meta.json feature coverage + input stats\n";
     std::cerr << "  Or set OPTKIT_ONNX_MODEL=<model.onnx>\n";
     std::cerr << "Examples:\n";
     std::cerr << "  " << argv0 << " -m cycles -m instructions -e cycles model.onnx\n";
@@ -301,6 +336,13 @@ void signal_handler(int signal)
         std::cout << "Received SIGTERM, shutting down...\n";
         IS_RUNNING = false;
     }
+    // reset frequency
+    for (int socket = 0; socket < OPTKIT_ENV_CPU_NUM_SOCKETS; socket++)
+    {
+        optkit::frequency::cpu::Frequency::reset_core_frequency(socket);
+        optkit::frequency::cpu::Frequency::reset_uncore_frequency(socket);
+    }
+    exit(EXIT_SUCCESS);
 }
 void setup_signal_handlers()
 {
@@ -360,6 +402,9 @@ int main(int argc, char **argv)
         if (input_elems == 0)
             throw std::runtime_error("Model input has zero elements");
 
+        const size_t window = (have_meta && meta.window > 0) ? meta.window : 1;
+        std::deque<std::vector<float>> history;
+
         // Initialize metrics
         optkit::metrics::MetricBuilder<uint64_t> _metric;
         for (auto &&i : args.metrics)
@@ -409,10 +454,10 @@ int main(int argc, char **argv)
                 std::cout << "==============================\n";
             }
 
-            std::vector<float> input;
-            input.assign(input_elems, 0.0f);
+            std::vector<float> frame;
+            frame.assign(input_elems, 0.0f);
 
-            if (have_meta && meta.feature_names.size() == input.size())
+            if (have_meta && meta.feature_names.size() == frame.size())
             {
                 std::unordered_map<std::string, float> feat;
                 add_prefixed_features(feat, "cpu_pmu.", pmc_counts, pmc_mapped, duration_ms);
@@ -422,20 +467,84 @@ int main(int argc, char **argv)
                 {
                     const auto it = feat.find(meta.feature_names[k]);
                     if (it != feat.end())
-                        input[k] = it->second;
+                        frame[k] = it->second;
                 }
             }
             else if (have_meta && !warned_meta_mismatch)
             {
                 warned_meta_mismatch = true;
                 std::cerr << "WARNING: meta.json feature_names size (" << meta.feature_names.size()
-                          << ") does not match inferred input elements (" << input.size() << ")\n";
-                if (model_input_elems != 0 && model_input_elems != input.size())
-                    std::cerr << "WARNING: ONNX reported input elements (" << model_input_elems << ") differ from inferred (" << input.size() << ")\n";
+                          << ") does not match inferred input elements (" << frame.size() << ")\n";
+                if (model_input_elems != 0 && model_input_elems != frame.size())
+                    std::cerr << "WARNING: ONNX reported input elements (" << model_input_elems << ") differ from inferred (" << frame.size() << ")\n";
+            }
+
+            history.push_back(std::move(frame));
+            while (history.size() > window)
+                history.pop_front();
+
+            // Flatten to (1, window, features). Left-pad with zeros until history is full.
+            std::vector<float> input_seq;
+            input_seq.assign(window * input_elems, 0.0f);
+            const size_t have = history.size();
+            const size_t offset = window - have;
+            for (size_t i = 0; i < have; ++i)
+            {
+                const auto &v = history[i];
+                std::copy(v.begin(), v.end(), input_seq.begin() + (offset + i) * input_elems);
+            }
+
+            if (args.check_features && have_meta)
+            {
+                // Rebuild the current feature map (same as we used to fill the frame)
+                // to report coverage.
+                std::unordered_map<std::string, float> feat;
+                add_prefixed_features(feat, "cpu_pmu.", pmc_counts, pmc_mapped, duration_ms);
+                add_prefixed_features(feat, "disk_io.", disk_counts, disk_mapped, 1000.0);
+
+                size_t found = 0;
+                std::vector<std::string> missing;
+                missing.reserve(meta.feature_names.size());
+                for (const auto &name : meta.feature_names)
+                {
+                    if (feat.find(name) != feat.end())
+                        ++found;
+                    else
+                        missing.emplace_back(name);
+                }
+
+                float vmin = 0.0f, vmax = 0.0f;
+                bool have_any = false;
+                for (float v : input_seq)
+                {
+                    if (!have_any)
+                    {
+                        vmin = vmax = v;
+                        have_any = true;
+                    }
+                    else
+                    {
+                        if (v < vmin) vmin = v;
+                        if (v > vmax) vmax = v;
+                    }
+                }
+
+                std::cerr << "features_found=" << found << "/" << meta.feature_names.size()
+                          << " window=" << window << " input_min=" << vmin << " input_max=" << vmax << "\n";
+                if (!missing.empty())
+                {
+                    std::cerr << "missing_features(" << missing.size() << "):";
+                    const size_t show = std::min<size_t>(missing.size(), 10);
+                    for (size_t i = 0; i < show; ++i)
+                        std::cerr << " " << missing[i];
+                    if (missing.size() > show)
+                        std::cerr << " ...";
+                    std::cerr << "\n";
+                }
             }
 
             const auto infer_t0 = std::chrono::steady_clock::now();
-            InferenceSummary summary = onnx_api->infer(input);
+            InferenceSummary summary = onnx_api->infer(input_seq, {1, static_cast<int64_t>(window), static_cast<int64_t>(input_elems)});
             const auto infer_t1 = std::chrono::steady_clock::now();
             const double infer_ms = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(infer_t1 - infer_t0).count();
 
@@ -447,11 +556,18 @@ int main(int argc, char **argv)
                 if (summary.output_values.size() == 1)
                 {
                     std::cout << "pred_core_ghz=" << summary.output_values[0] << "\n";
+                    for (int socket = 0; socket < OPTKIT_ENV_CPU_NUM_SOCKETS; socket++)
+                        optkit::frequency::cpu::Frequency::set_core_frequency(static_cast<int64_t>(summary.output_values[0] * 1000000.0), socket);
                 }
                 else if (summary.output_values.size() >= 2)
                 {
                     std::cout << "pred_core_ghz=" << summary.output_values[0]
                               << " pred_uncore_ghz=" << summary.output_values[1] << "\n";
+                    for (int socket = 0; socket < OPTKIT_ENV_CPU_NUM_SOCKETS; socket++)
+                    {
+                        optkit::frequency::cpu::Frequency::set_core_frequency(static_cast<int64_t>(summary.output_values[0] * 1000000.0), socket);
+                        optkit::frequency::cpu::Frequency::set_uncore_frequency(static_cast<int64_t>(summary.output_values[1] * 1000000.0), socket);
+                    }
                 }
                 else
                 {

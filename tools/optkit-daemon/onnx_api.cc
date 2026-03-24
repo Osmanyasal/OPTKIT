@@ -82,7 +82,8 @@ public:
         return s;
     }
 
-    InferenceSummary infer(const std::vector<float> &input_data) override
+    InferenceSummary infer(const std::vector<float> &input_data,
+                           const std::vector<int64_t> &input_shape_override) override
     {
         if (!model_loaded_)
             throw std::runtime_error("Model is not loaded. Call load_model first.");
@@ -91,14 +92,30 @@ public:
         if (effective_input.empty())
             effective_input.assign(input_elements_, 0.0f);
 
-        // If the model input shape is unknown/empty (common with dynamic exports),
-        // infer a reasonable shape from the provided flat input.
-        std::vector<int64_t> runtime_shape = input_shape_;
-        size_t runtime_elements = input_elements_;
-        if (runtime_shape.empty() || runtime_elements == 0 || (runtime_elements == 1 && effective_input.size() != 1))
+        std::vector<int64_t> runtime_shape;
+        size_t runtime_elements = 0;
+
+        if (!input_shape_override.empty())
         {
-            runtime_shape = {1, 1, static_cast<int64_t>(effective_input.size())};
-            runtime_elements = effective_input.size();
+            runtime_shape = input_shape_override;
+        }
+        else
+        {
+            // If the model input shape is unknown/empty (common with dynamic exports),
+            // infer a reasonable shape from the provided flat input.
+            runtime_shape = input_shape_;
+            if (runtime_shape.empty())
+                runtime_shape = {1, 1, static_cast<int64_t>(effective_input.size())};
+        }
+
+        // Compute runtime element count.
+        runtime_elements = 1;
+        for (size_t i = 0; i < runtime_shape.size(); ++i)
+        {
+            const int64_t d = runtime_shape[i];
+            if (d <= 0)
+                throw std::runtime_error("Invalid (non-positive) input shape dimension");
+            runtime_elements *= static_cast<size_t>(d);
         }
 
         if (effective_input.size() != runtime_elements)

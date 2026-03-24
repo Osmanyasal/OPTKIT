@@ -16,7 +16,7 @@ COMMANDS:
     list <TYPE> [cpu|gpu]           List available components
     stat [OPTIONS] -- <PROGRAM>     Run single-shot profiling (like perf stat)
     msrmod [OPTIONS]                Read/write MSRs via /dev/cpu/<cpu>/msr_safe
-    train <FOLDER> [--epoch <30 default>]                 Train a frequency model from screenshot JSON datasets
+    train <FOLDER> [TRAIN_OPTS...]                        Train a frequency model from screenshot JSON datasets
 
 TRAIN (train):
     Trains a GRU network from existing `*_screenshot/` datasets and exports an ONNX model.
@@ -59,6 +59,16 @@ TRAIN (train):
         `optkit train` forwards extra flags after <FOLDER> to the Python trainer, e.g.:
 
             optkit train /path/to/dataset_folder --epochs 50 --hidden-size 32 --window 10
+
+        Supported training options (forwarded to the trainer):
+            --epochs N           (default: 30)
+            --batch-size N       (default: 256)
+            --lr LR              (default: 1e-3)
+            --hidden-size N      (default: 32)
+            --num-layers N       (default: 1)
+            --window W           (default: 0 = auto)
+            --opset N            (default: 17)
+            --device cpu|cuda    (default: cpu)
 
         Defaults:
             - `--hidden-size` defaults to 32.

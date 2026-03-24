@@ -66,7 +66,17 @@ VISUALISING REPORT (--report):
 TRAINING (train):
     Train a model from screenshot JSON datasets produced by `optkit stat -ss`.
 
-    optkit train <folder> [--epochs N] [--window W] [--device cpu|cuda] ...
+    optkit train <folder> [TRAIN_OPTS...]
+
+    TRAIN_OPTS (forwarded to the Python trainer):
+        --epochs N           (default: 30)
+        --batch-size N       (default: 256)
+        --lr LR              (default: 1e-3)
+        --hidden-size N      (default: 32)
+        --num-layers N       (default: 1)
+        --window W           (default: 0 = auto)
+        --opset N            (default: 17)
+        --device cpu|cuda    (default: cpu)
 
 MSRMOD:
     Read/write a Model-Specific Register (MSR) using msr-safe (msr_safe device).
