@@ -35,9 +35,11 @@
 src/utils/environment_config.hh
 test/utils/environment_config.hh
 
-# Binaries (except examples)
+# Binaries
 bin/
-!examples/**/bin/
+
+# Ignore generated benchmark binaries / run outputs under examples
+examples/**/bin/
 
 # event file
 src/core/pmu/cpu/perf/events
