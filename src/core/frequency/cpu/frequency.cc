@@ -39,13 +39,11 @@ namespace optkit::frequency::cpu
             // Static variables for caching frequency limits - queried once per method call
             static int64_t min_freq = Query::get_cpuinfo_min_freq(package_info.at(socket)[0]);
             static int64_t max_freq = Query::get_cpuinfo_max_freq(package_info.at(socket)[0]);
-
-            // Validate frequency range
-            if (frequency < min_freq || frequency > max_freq)
-            {
-                OPTKIT_CORE_WARN("Frequency {} is outside valid range [{} - {}] KHz for socket {}", frequency, min_freq, max_freq, socket);
-                return false;
-            }
+ 
+            if (frequency < min_freq)
+                frequency = min_freq;
+            else if (frequency > max_freq)
+                frequency = max_freq;
 
             // Set optkit frequency for all cores
             TRAVERSE_CORES(socket)
@@ -71,14 +69,11 @@ namespace optkit::frequency::cpu
                 // Get frequency limits directly for this CPU
                 static int64_t min_freq = Query::get_cpuinfo_min_freq(cpu);
                 static int64_t max_freq = Query::get_cpuinfo_max_freq(cpu);
-
-                // Validate frequency range
-                if (frequency < min_freq || frequency > max_freq)
-                {
-
-                    OPTKIT_CORE_WARN("Frequency {} is outside valid range [{} - {}] KHz for CPU {}", frequency, min_freq, max_freq, cpu);
-                    return false;
-                }
+    
+                if (frequency < min_freq)
+                    frequency = min_freq;
+                else if (frequency > max_freq)
+                    frequency = max_freq;
 
                 TRAVERSE_CORES(socket)
                 {
@@ -116,11 +111,10 @@ namespace optkit::frequency::cpu
             static int64_t min_freq = Query::get_cpuinfo_min_freq(cpu_start);
             static int64_t max_freq = Query::get_cpuinfo_max_freq(cpu_start);
 
-            if (frequency < min_freq || frequency > max_freq)
-            {
-                OPTKIT_CORE_WARN("Frequency {} is outside valid range [{} - {}] KHz for CPU {}", frequency, min_freq, max_freq, cpu_start);
-                return false;
-            }
+            if (frequency < min_freq)
+                frequency = min_freq;
+            else if (frequency > max_freq)
+                frequency = max_freq;
 
             TRAVERSE_CORES(socket)
             {
