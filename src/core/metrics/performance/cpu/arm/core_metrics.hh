@@ -70,6 +70,7 @@ namespace optkit::metrics::performance
                 "dtlb_mpki",
                 "tlb_mpki",
                 "ipc",
+                "gflops"
                 // removed: ilp (not implemented)
                 // removed: mlp (not implemented)
                 // removed: load_miss_latency (not implemented)
@@ -146,6 +147,8 @@ namespace optkit::metrics::performance
                 return tlb_mpki();
             if (metric_name == "ipc")
                 return ipc();
+            if (metric_name == "gflops")
+                return gflops();
             if (metric_name == "ilp")
                 return ilp();
             if (metric_name == "mlp")
@@ -675,6 +678,31 @@ namespace optkit::metrics::performance
         {
             static const MetricBuilder<uint64_t> empty{};
             return empty;
+        }
+
+        
+
+        static const MetricBuilder<uint64_t> &gflops()
+        {
+
+            static const MetricBuilder<uint64_t> metric = []
+            {
+                std::string retired_sse_avx_flops_any_name = to_string(CoreEvents::RETIRED_VECTOR);
+                return MetricBuilder<uint64_t>{}
+                    .add(retired_sse_avx_flops_any_name, arm::EventMapper::get(CoreEvents::RETIRED_VECTOR))
+                    .build("gflops",
+                           [retired_sse_avx_flops_any_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                           {
+                               double duration_sec = get_event_count(counts, "duration_microsec") / 1.0e6;
+                               uint64_t retired_sse_avx_flops_any = get_event_count(counts, retired_sse_avx_flops_any_name);
+
+                               // Avoid div by zero
+                               if (retired_sse_avx_flops_any == 0)
+                                   return std::numeric_limits<double>::quiet_NaN();
+                               return static_cast<double>(retired_sse_avx_flops_any) / duration_sec / 1.0e9; // GFLOPS calculation
+                           });
+            }();
+            return metric;
         }
 
         static const MetricBuilder<uint64_t> &ip_avx_any_flop()
