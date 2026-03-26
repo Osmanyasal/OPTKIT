@@ -3,6 +3,7 @@
 #include <numeric>
 #include <stdexcept>
 #include <utility>
+#include <iostream>
 
 #include <onnxruntime_cxx_api.h>
 
@@ -23,7 +24,7 @@ public:
 
         if (session_.GetInputCount() == 0 || session_.GetOutputCount() == 0)
             throw std::runtime_error("Invalid model: expected at least one input and one output");
-
+        std::cout << "Model loaded successfully: " << model_path << std::endl;
         Ort::AllocatorWithDefaultOptions allocator;
         auto input_name_holder = session_.GetInputNameAllocated(0, allocator);
         auto output_name_holder = session_.GetOutputNameAllocated(0, allocator);
@@ -31,32 +32,15 @@ public:
         output_name_ = output_name_holder.get();
 
         auto input_info = session_.GetInputTypeInfo(0).GetTensorTypeAndShapeInfo();
-
-        // Some models (especially with dynamic shapes) can report an empty shape via
-        // GetShape(), yet still have a known rank. Prefer the explicit dimension APIs.
-        const size_t dim_count = input_info.GetDimensionsCount();
-        input_shape_.assign(dim_count, 1);
-        if (dim_count > 0)
-            input_info.GetDimensions(input_shape_.data(), dim_count);
-
-        for (size_t i = 0; i < input_shape_.size(); ++i)
-        {
-            if (input_shape_[i] <= 0)
-                input_shape_[i] = 1;
-        }
-
-        input_elements_ = 1;
-        if (!input_shape_.empty())
-        {
-            input_elements_ = static_cast<size_t>(std::accumulate(
-                input_shape_.begin(),
-                input_shape_.end(),
-                int64_t{1},
-                [](int64_t acc, int64_t d)
-                {
-                    return acc * d;
-                }));
-        }
+        std::cout << "Model input name: " << input_name_ << std::endl;
+        // NOTE: In some HPC/module environments we observed a hard crash inside
+        // ONNX Runtime when calling TensorTypeAndShapeInfo::GetShape().
+        // OPTKIT provides an explicit input shape override for inference, so we
+        // can safely treat the model input as dynamic and avoid querying shape
+        // metadata here.
+        (void)input_info;
+        input_shape_.clear();
+        input_elements_ = 0;
         model_loaded_ = true;
     }
 

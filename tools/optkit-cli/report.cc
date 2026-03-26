@@ -784,18 +784,64 @@ static RunData parse_run(const std::string &json_path)
 
     rd.label = filename_stem(basename_no_dir(json_path));
 
-    for (size_t i = 0; i < topdownl1_keys.size(); ++i)
+    // Prefer structured parsing for Topdown metrics so cpu_pmu JSON works even when
+    // whitespace/layout differs from the simple string-search assumptions.
+    if (!root.is_discarded())
     {
-        double v = 0.0;
-        if (extract_metric_value(content, topdownl1_keys[i], v))
-            rd.topdown[topdownl1_keys[i]] = v;
+        const nlohmann::json *readings = nullptr;
+        if (get_readings_array(root, readings) && readings != nullptr && readings->is_array() && !readings->empty())
+        {
+            const auto &r0 = (*readings)[0];
+            if (r0.is_object())
+            {
+                auto it_meas = r0.find("measurements");
+                if (it_meas != r0.end() && it_meas->is_array())
+                {
+                    for (const auto &m : *it_meas)
+                    {
+                        if (!m.is_object())
+                            continue;
+                        if (!m.contains("type") || !m["type"].is_string())
+                            continue;
+                        if (m["type"].get<std::string>() != "metric")
+                            continue;
+                        if (!m.contains("name") || !m["name"].is_string())
+                            continue;
+                        if (!m.contains("value"))
+                            continue;
+
+                        const std::string name = m["name"].get<std::string>();
+                        double v = 0.0;
+                        if (!json_to_double(m["value"], v))
+                            continue;
+
+                        for (size_t i = 0; i < topdownl1_keys.size(); ++i)
+                            if (name == topdownl1_keys[i])
+                                rd.topdown[name] = v;
+                        for (size_t i = 0; i < topdownl2_keys.size(); ++i)
+                            if (name == topdownl2_keys[i])
+                                rd.topdown[name] = v;
+                    }
+                }
+            }
+        }
     }
 
-    for (size_t i = 0; i < topdownl2_keys.size(); ++i)
+    if (rd.topdown.empty())
     {
-        double v = 0.0;
-        if (extract_metric_value(content, topdownl2_keys[i], v))
-            rd.topdown[topdownl2_keys[i]] = v;
+        for (size_t i = 0; i < topdownl1_keys.size(); ++i)
+        {
+            double v = 0.0;
+            if (extract_metric_value(content, topdownl1_keys[i], v))
+                rd.topdown[topdownl1_keys[i]] = v;
+        }
+
+        for (size_t i = 0; i < topdownl2_keys.size(); ++i)
+        {
+            double v = 0.0;
+            if (extract_metric_value(content, topdownl2_keys[i], v))
+                rd.topdown[topdownl2_keys[i]] = v;
+        }
     }
     return rd;
 }
@@ -1034,30 +1080,47 @@ static void generate_heatmap(const std::vector<RunData> &runs, const std::string
 
 static std::vector<RunData> parse_runs_from_paths(const std::vector<std::string> &paths)
 {
-    std::vector<std::string> json_files;
-    json_files.reserve(paths.size());
+    std::map<std::string, std::vector<std::string>> by_dir;
     for (size_t i = 0; i < paths.size(); ++i)
     {
         const std::string &p = paths[i];
-        if (!p.empty() && p.size() > 5 && p.substr(p.size() - 5) == ".json")
+        if (p.empty() || p.size() <= 5 || p.substr(p.size() - 5) != ".json")
+            continue;
+
+        if (p.find("callstack") != std::string::npos)
         {
-            // Check if this is a callstack JSON (filename contains "callstack")
-            if (p.find("callstack") != std::string::npos)
-            {
-                handle_callstack_json(p);
-                continue; // Don't parse as RunData
-            }
-            json_files.push_back(p);
+            handle_callstack_json(p);
+            continue;
         }
+
+        by_dir[dirname_of(p)].push_back(p);
     }
 
     std::vector<RunData> runs;
-    runs.reserve(json_files.size());
-    for (size_t i = 0; i < json_files.size(); ++i)
+    runs.reserve(by_dir.size());
+    for (std::map<std::string, std::vector<std::string>>::const_iterator it = by_dir.begin(); it != by_dir.end(); ++it)
     {
-        RunData rd = parse_run(json_files[i]);
+        const std::string &dir = it->first;
+        const std::vector<std::string> &files = it->second;
+
+        std::string chosen;
+        for (size_t i = 0; i < files.size(); ++i)
+        {
+            if (basename_no_dir(files[i]) == "stat__cpu_pmu.json")
+            {
+                chosen = files[i];
+                break;
+            }
+        }
+        if (chosen.empty() && !files.empty())
+            chosen = files[0];
+        if (chosen.empty())
+            continue;
+
+        RunData rd = parse_run(chosen);
         if (rd.duration_ms <= 0 && rd.cores_used <= 0 && rd.topdown.empty())
             continue;
+        rd.label = basename_no_dir(dir);
         runs.push_back(rd);
     }
     return runs;
@@ -1155,14 +1218,15 @@ static void generate_topdownl1_chart(const std::vector<RunData> &runs)
     dat.close();
 
     std::ofstream gp("topdown_blocksl1.gp");
-    gp << "set terminal pngcairo size 1100,600 noenhanced\n";
+    gp << "set terminal pngcairo size 1100,600 noenhanced font 'Arial,16'\n";
     gp << "set output 'topdown_blocksl1.png'\n";
-    gp << "set title 'Topdown metrics per execution'\n";
+    gp << "set title 'Topdown metrics per execution' font 'Arial,16'\n";
     gp << "set style data histograms\n";
     gp << "set style histogram rowstacked\n";
     gp << "set style fill solid border -1\n";
     gp << "set boxwidth 0.8\n";
-    gp << "set key outside right\n";
+    gp << "set key outside below center horizontal\n";
+    gp << "set bmargin 6\n";
     gp << "set xlabel 'Core Count'\n";
     gp << "set ylabel '%'\n";
     gp << "set yrange [0:100]\n";
@@ -1172,11 +1236,11 @@ static void generate_topdownl1_chart(const std::vector<RunData> &runs)
           "'' using 4 title 'Retiring', "
           "'' using 5 title 'backend_bound', "
           "'' using 6 title 'smt_contention', "
-          "'' using 0:($2/2):($2 > 3 ? sprintf('%.1f%%',$2) : '') with labels tc rgb 'black' font ',9' notitle, "
-          "'' using 0:($2+$3/2):($3 > 3 ? sprintf('%.1f%%',$3) : '') with labels tc rgb 'black' font ',9' notitle, "
-          "'' using 0:($2+$3+$4/2):($4 > 3 ? sprintf('%.1f%%',$4) : '') with labels tc rgb 'black' font ',9' notitle, "
-          "'' using 0:($2+$3+$4+$5/2):($5 > 3 ? sprintf('%.1f%%',$5) : '') with labels tc rgb 'black' font ',9' notitle, "
-          "'' using 0:($2+$3+$4+$5+$6/2):($6 > 3 ? sprintf('%.1f%%',$6) : '') with labels tc rgb 'black' font ',9' notitle\n";
+          "'' using 0:($2/2):($2 > 3 ? sprintf('%.1f%%',$2) : '') with labels tc rgb 'black' font ',16' notitle, "
+          "'' using 0:($2+$3/2):($3 > 3 ? sprintf('%.1f%%',$3) : '') with labels tc rgb 'black' font ',16' notitle, "
+          "'' using 0:($2+$3+$4/2):($4 > 3 ? sprintf('%.1f%%',$4) : '') with labels tc rgb 'black' font ',16' notitle, "
+          "'' using 0:($2+$3+$4+$5/2):($5 > 3 ? sprintf('%.1f%%',$5) : '') with labels tc rgb 'black' font ',16' notitle, "
+          "'' using 0:($2+$3+$4+$5+$6/2):($6 > 3 ? sprintf('%.1f%%',$6) : '') with labels tc rgb 'black' font ',16' notitle\n";
     gp.close();
 
     run_system_checked("gnuplot topdown_blocksl1.gp", "gnuplot topdown_blocksl1.gp");
@@ -1221,14 +1285,15 @@ static void generate_topdownl2_chart(const std::vector<RunData> &runs)
     dat.close();
 
     std::ofstream gp("topdownl2_blocks.gp");
-    gp << "set terminal pngcairo size 1100,600 noenhanced\n";
+    gp << "set terminal pngcairo size 1100,600 noenhanced font 'Arial,13'\n";
     gp << "set output 'topdownl2_blocks.png'\n";
-    gp << "set title 'Topdown metrics per execution'\n";
+    gp << "set title 'Topdown metrics per execution' font 'Arial,16'\n";
     gp << "set style data histograms\n";
     gp << "set style histogram rowstacked\n";
     gp << "set style fill solid border -1\n";
     gp << "set boxwidth 0.8\n";
-    gp << "set key outside right\n";
+    gp << "set key outside below center horizontal\n";
+    gp << "set bmargin 6\n";
     gp << "set xlabel 'Core Count'\n";
     gp << "set ylabel '%'\n";
     gp << "set yrange [0:100]\n";
@@ -1241,14 +1306,14 @@ static void generate_topdownl2_chart(const std::vector<RunData> &runs)
           "'' using 7 title 'retiring_fastpath', "
           "'' using 8 title 'bad_speculation_pipeline_restarts', "
           "'' using 9 title 'bad_speculation_mispredicts', "
-          "'' using 0:($2/2):($2 > 3 ? sprintf('%.1f%%',$2) : '') with labels tc rgb 'black' font ',9' notitle, "
-          "'' using 0:($2+$3/2):($3 > 3 ? sprintf('%.1f%%',$3) : '') with labels tc rgb 'black' font ',9' notitle, "
-          "'' using 0:($2+$3+$4/2):($4 > 3 ? sprintf('%.1f%%',$4) : '') with labels tc rgb 'black' font ',9' notitle, "
-          "'' using 0:($2+$3+$4+$5/2):($5 > 3 ? sprintf('%.1f%%',$5) : '') with labels tc rgb 'black' font ',9' notitle, "
-          "'' using 0:($2+$3+$4+$5+$6/2):($6 > 3 ? sprintf('%.1f%%',$6) : '') with labels tc rgb 'black' font ',9' notitle, "
-          "'' using 0:($2+$3+$4+$5+$6+$7/2):($7 > 3 ? sprintf('%.1f%%',$7) : '') with labels tc rgb 'black' font ',9' notitle, "
-          "'' using 0:($2+$3+$4+$5+$6+$7+$8/2):($8 > 3 ? sprintf('%.1f%%',$8) : '') with labels tc rgb 'black' font ',9' notitle, "
-          "'' using 0:($2+$3+$4+$5+$6+$7+$8+$9/2):($9 > 3 ? sprintf('%.1f%%',$9) : '') with labels tc rgb 'black' font ',9' notitle\n";
+          "'' using 0:($2/2):($2 > 3 ? sprintf('%.1f%%',$2) : '') with labels tc rgb 'black' font ',12' notitle, "
+          "'' using 0:($2+$3/2):($3 > 3 ? sprintf('%.1f%%',$3) : '') with labels tc rgb 'black' font ',12' notitle, "
+          "'' using 0:($2+$3+$4/2):($4 > 3 ? sprintf('%.1f%%',$4) : '') with labels tc rgb 'black' font ',12' notitle, "
+          "'' using 0:($2+$3+$4+$5/2):($5 > 3 ? sprintf('%.1f%%',$5) : '') with labels tc rgb 'black' font ',12' notitle, "
+          "'' using 0:($2+$3+$4+$5+$6/2):($6 > 3 ? sprintf('%.1f%%',$6) : '') with labels tc rgb 'black' font ',12' notitle, "
+          "'' using 0:($2+$3+$4+$5+$6+$7/2):($7 > 3 ? sprintf('%.1f%%',$7) : '') with labels tc rgb 'black' font ',12' notitle, "
+          "'' using 0:($2+$3+$4+$5+$6+$7+$8/2):($8 > 3 ? sprintf('%.1f%%',$8) : '') with labels tc rgb 'black' font ',12' notitle, "
+          "'' using 0:($2+$3+$4+$5+$6+$7+$8+$9/2):($9 > 3 ? sprintf('%.1f%%',$9) : '') with labels tc rgb 'black' font ',12' notitle\n";
     gp.close();
 
     run_system_checked("gnuplot topdownl2_blocks.gp", "gnuplot topdownl2_blocks.gp");
@@ -1277,7 +1342,7 @@ static void generate_carm_roofline_for_isa(const std::vector<RunData> &runs,
     }
 
     gp << "# Cache-Aware Roofline Model (CARM) - " << isa_name << "\n";
-    gp << "set terminal pngcairo size 1000,640 enhanced font 'Arial,12'\n";
+    gp << "set terminal pngcairo size 1000,640 enhanced font 'Arial,14'\n";
     gp << "set output '" << output_name << "'\n\n";
 
     gp << "set title \"CARM - " << isa_name << " ISA\"\n";
@@ -1323,7 +1388,7 @@ static void generate_carm_roofline_for_isa(const std::vector<RunData> &runs,
     gp << "    roof_bw(l3_bw, x)  w l lw 2 lc rgb \"#9900CC\" title sprintf(\"L3 (%.0f GB/s)\", l3_bw), \\\n";
     gp << "    roof_bw(mem_bw, x) w l lw 2 lc rgb \"#FF9900\" title sprintf(\"DRAM (%.0f GB/s)\", mem_bw), \\\n";
     gp << "    'roofline.dat' using 1:2 w p pt 7 ps 2 lw 2 lc rgb \"#FF0000\" title \"Measured\", \\\n";
-    gp << "    'roofline.dat' using 1:2:(sprintf('Cores=%d, AI=%.3f, GFlops=%.2f', column(3), column(4), column(5))) with labels offset 0,-1.0 tc rgb \"#000000\" font ',9' notitle\n\n";
+    gp << "    'roofline.dat' using 1:2:(sprintf('Cores=%d, AI=%.3f, GFlops=%.2f', column(3), column(4), column(5))) with labels offset 0,-1.5 tc rgb \"#000000\" font ',12' notitle\n\n";
 
     gp << "# Knee markers and labels\n";
     gp << "set arrow from ai_knee_l1, graph 0 to ai_knee_l1, compute_peak nohead dt 3 lc rgb \"#00BB00\"\n";
@@ -1346,7 +1411,7 @@ static void generate_carm_roofline_for_isa(const std::vector<RunData> &runs,
     run_system_checked(cmd, "CARM roofline generation");
 
     std::cout << "  " << isa_name << ": " << output_name << " (Peak: " << compute_peak
-              << " GFlops/s, DRAM: " << mem_bw << " GB/s)\n";
+              << " GFlop/s, DRAM: " << mem_bw << " GB/s)\n";
 }
 
 static void generate_carm_roofline_chart(const std::vector<RunData> &runs)
@@ -1468,17 +1533,9 @@ void execute_report_command(const CommandArgs &args)
         }
     }
 
-    // Parse runs (excluding cpu_pmu screenshot JSON, which is time-series and not a scalar run)
-    std::vector<std::string> scalar_jsons;
-    scalar_jsons.reserve(expanded.size());
-    for (const auto &p : expanded)
-    {
-        if (p.find("stat__cpu_pmu.json") != std::string::npos)
-            continue;
-        scalar_jsons.push_back(p);
-    }
-
-    std::vector<RunData> runs = parse_runs_from_paths(scalar_jsons);
+    // Parse runs including stat__cpu_pmu.json. The first reading contains aggregate
+    // Topdown metrics and cores_used, which are needed for the topdown charts.
+    std::vector<RunData> runs = parse_runs_from_paths(expanded);
     if (runs.empty())
     {
         std::cerr << "Error: No JSON files found under given path(s) or parsing failed.\n";
