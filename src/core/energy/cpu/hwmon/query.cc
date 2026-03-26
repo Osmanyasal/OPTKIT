@@ -103,18 +103,13 @@ namespace optkit::energy::hwmon
 
                     // Parse label to get base label and socket ID
                     // Format: "CPU Power Socket 0", "Grace Power Socket 1", etc.
-                    std::regex label_regex("^([a-zA-Z ]+)([0-9]+)$");
+                    std::regex label_regex("^(.+)\\s+([0-9]+)$");
                     std::smatch label_match;
 
                     if (!std::regex_match(label, label_match, label_regex))
                         continue;
 
                     std::string base_label = label_match[1].str();
-                    // Trim trailing space
-                    while (!base_label.empty() && base_label.back() == ' ')
-                        base_label.pop_back();
-                    base_label += " Socket";
-
                     int socket_id = std::stoi(label_match[2].str());
 
                     // Find matching domain
