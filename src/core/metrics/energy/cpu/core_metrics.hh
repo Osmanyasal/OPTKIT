@@ -58,11 +58,21 @@ namespace optkit::metrics::energy
             static const optkit::metrics::MetricBuilder<double> mb = []
             {
                 return MetricBuilder<double>{}
+#if OPTKIT_ENV_CPU_ARM
+                    // HWMON domains (ARM/Grace)
+                    .add("power-grace", {0x0})
+                    .add("power-cpu", {0x0})
+                    .add("power-sysio", {0x0})
+                    .add("power-module", {0x0})
+                    .add("power-gpu", {0x0});
+#else
+                    // RAPL domains (x86)
                     .add(to_string(cpu::CoreEvents::PP0), {0x0})
                     .add(to_string(cpu::CoreEvents::PP1), {0x0})
                     .add(to_string(cpu::CoreEvents::PACKAGE), {0x0})
                     .add(to_string(cpu::CoreEvents::PSYS), {0x0})
                     .add(to_string(cpu::CoreEvents::DRAM), {0x0});
+#endif
             }();
             return mb;
         }
@@ -71,6 +81,32 @@ namespace optkit::metrics::energy
             static const optkit::metrics::MetricBuilder<double> mb = []
             {
                 return MetricBuilder<double>{}
+#if OPTKIT_ENV_CPU_ARM
+                    // HWMON domains (ARM/Grace)
+                    .add("power-grace", {0x0})
+                    .add("power-cpu", {0x0})
+                    .add("power-sysio", {0x0})
+                    .build("kilo_edp_edp", [](const std::unordered_map<std::string, double> &results)
+                           {
+                               double duration_sec = get_event_count(results, "duration_microsec") / 1.0e6;
+                               double pkg = get_event_count(results, "power-grace");
+                               double dram = get_event_count(results, "power-cpu") + get_event_count(results, "power-sysio");
+                               return (duration_sec * (pkg + dram)) / 1000; // K-EDP calculation
+                           })
+                    .build("kilo_edp_pkg", [](const std::unordered_map<std::string, double> &results)
+                           {
+                               double duration_sec = get_event_count(results, "duration_microsec") / 1.0e6;
+                               double pkg = get_event_count(results, "power-grace");
+                               return (duration_sec * pkg) / 1000; // K-EDP calculation
+                           })
+                    .build("kilo_edp_dram", [](const std::unordered_map<std::string, double> &results)
+                           {
+                               double duration_sec = get_event_count(results, "duration_microsec") / 1.0e6;
+                               double dram = get_event_count(results, "power-cpu") + get_event_count(results, "power-sysio");
+                               return (duration_sec * dram) / 1000; // K-EDP calculation
+                           });
+#else
+                    // RAPL domains (x86)
                     .add(to_string(cpu::CoreEvents::PACKAGE), {0x0})
                     .add(to_string(cpu::CoreEvents::DRAM), {0x0})
                     .build("kilo_edp_edp", [](const std::unordered_map<std::string, double> &results)
@@ -92,6 +128,7 @@ namespace optkit::metrics::energy
                                double dram = get_event_count(results, to_string(cpu::CoreEvents::DRAM));
                                return (duration_sec * dram) / 1000; // K-EDP calculation
                            });
+#endif
             }();
             return mb;
         }
@@ -101,6 +138,19 @@ namespace optkit::metrics::energy
             static const optkit::metrics::MetricBuilder<double> mb = []
             {
                 return MetricBuilder<double>{}
+#if OPTKIT_ENV_CPU_ARM
+                    // HWMON domains (ARM/Grace)
+                    .add("power-grace", {0x0})
+                    .add("power-cpu", {0x0})
+                    .add("power-sysio", {0x0})
+                    .build("watt_hour", [](const std::unordered_map<std::string, double> &results)
+                           {
+                               double pkg = get_event_count(results, "power-grace");
+                               double dram = get_event_count(results, "power-cpu") + get_event_count(results, "power-sysio");
+                               return (pkg + dram) / 3600; // Watt-hour calculation = Joules / 3600
+                           });
+#else
+                    // RAPL domains (x86)
                     .add(to_string(cpu::CoreEvents::PACKAGE), {0x0})
                     .add(to_string(cpu::CoreEvents::DRAM), {0x0})
                     .build("watt_hour", [](const std::unordered_map<std::string, double> &results)
@@ -109,6 +159,7 @@ namespace optkit::metrics::energy
                                double dram = get_event_count(results, to_string(cpu::CoreEvents::DRAM));
                                return (pkg + dram) / 3600; // Watt-hour calculation = Joules / 3600
                            });
+#endif
             }();
             return mb;
         }
