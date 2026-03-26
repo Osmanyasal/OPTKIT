@@ -31,12 +31,17 @@ namespace optkit
 
         if (result.size() == 0)
         {
+            std::map<int32_t, int32_t> physical_to_logical_package_id;
             int32_t core_id = 0;
             while (true)
             {
                 try
                 {
-                    int32_t package_id = std::stoi(optkit::utils::read_file("/sys/devices/system/cpu/cpu" + std::to_string(core_id) + "/topology/physical_package_id"));
+                    int32_t physical_package_id = std::stoi(optkit::utils::read_file("/sys/devices/system/cpu/cpu" + std::to_string(core_id) + "/topology/physical_package_id"));
+                    std::pair<std::map<int32_t, int32_t>::iterator, bool> insert_result =
+                        physical_to_logical_package_id.emplace(physical_package_id, static_cast<int32_t>(physical_to_logical_package_id.size()));
+                    int32_t package_id = insert_result.first->second;
+
                     if (result.find(package_id) == result.end())
                     {
                         result[package_id] = {};
