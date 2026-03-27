@@ -148,7 +148,11 @@ static void parse_rapl_socket_metrics_from_json(const nlohmann::json &root, RunD
             if (!json_to_double(m["value"], val))
                 continue;
 
+#ifdef OPTKIT_ENV_CPU_ARM
+            if (name == "power-grace")
+#else
             if (name == "energy-pkg")
+#endif
                 rd.energy_pkg_by_socket[socket] = val;
             else if (name == "kilo_edp_pkg")
                 rd.kilo_edp_pkg_by_socket[socket] = val;
@@ -888,7 +892,7 @@ static void generate_heatmap(const std::vector<RunData> &runs, const std::string
                 out = it->second;
                 return true;
             }
-            if (base == "energy-pkg")
+            if (base == "energy-pkg" || base == "power-grace")
             {
                 auto it = rd.energy_pkg_by_socket.find(socket);
                 if (it == rd.energy_pkg_by_socket.end())
@@ -899,7 +903,7 @@ static void generate_heatmap(const std::vector<RunData> &runs, const std::string
             return false;
         }
 
-        if (metric_key == "energy-pkg")
+        if (metric_key == "energy-pkg" || metric_key == "power-grace")
         {
             if (!std::isfinite(rd.energy_pkg))
                 return false;
@@ -1554,7 +1558,31 @@ void execute_report_command(const CommandArgs &args)
 
     // Generate heatmaps for requested metrics
     generate_heatmap(runs, "duration_ms");
-    generate_heatmap(runs, "energy-pkg");
+
+    // On ARM the package energy metric is "power-grace"; on x86 it is "energy-pkg".
+    // For multi-socket systems, emit per-socket heatmaps and one combined heatmap.
+#ifdef OPTKIT_ENV_CPU_ARM
+    const std::string energy_key = "power-grace";
+#else
+    const std::string energy_key = "energy-pkg";
+#endif
+    {
+        std::set<int> sockets_with_energy;
+        for (const auto &rd : runs)
+            for (const auto &kv : rd.energy_pkg_by_socket)
+                sockets_with_energy.insert(kv.first);
+
+        if (sockets_with_energy.size() <= 1)
+        {
+            generate_heatmap(runs, energy_key);
+        }
+        else
+        {
+            for (int s : sockets_with_energy)
+                generate_heatmap(runs, energy_key + "_socket" + std::to_string(s));
+            generate_heatmap(runs, energy_key);
+        }
+    }
 
     // For K-EDP on multi-socket systems, output per-socket heatmaps + joined average.
     std::set<int> sockets_with_kedp;
