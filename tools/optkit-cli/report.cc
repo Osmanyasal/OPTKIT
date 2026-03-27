@@ -161,11 +161,7 @@ static void parse_rapl_socket_metrics_from_json(const nlohmann::json &root, RunD
             if (!json_to_double(m["value"], val))
                 continue;
 
-#ifdef OPTKIT_ENV_CPU_ARM
-            if (name == "power-grace")
-#else
-            if (name == "energy-pkg")
-#endif
+            if (name == "energy-pkg" || name == "power-grace")
                 rd.energy_pkg_by_socket[socket] = val;
             else if (name == "kilo_edp_pkg")
                 rd.kilo_edp_pkg_by_socket[socket] = val;
@@ -789,8 +785,12 @@ static RunData parse_run(const std::string &json_path)
 
     // parse energy and EDP metrics if present.
     // If RAPL multi-socket JSON was parsed above, rd.energy_pkg / rd.kilo_edp_pkg already holds joined average.
-    if (rd.energy_pkg_by_socket.empty() && extract_metric_value(content, "energy-pkg", d))
-        rd.energy_pkg = d;
+    if (rd.energy_pkg_by_socket.empty())
+    {
+        if (extract_metric_value(content, "energy-pkg", d) ||
+            extract_metric_value(content, "power-grace", d))
+            rd.energy_pkg = d;
+    }
     if (rd.kilo_edp_pkg_by_socket.empty() && extract_metric_value(content, "kilo_edp_pkg", d))
         rd.kilo_edp_pkg = d;
 
@@ -1138,9 +1138,11 @@ static std::vector<RunData> parse_runs_from_paths(const std::vector<std::string>
         if (rd.duration_ms <= 0 && rd.cores_used <= 0 && rd.topdown.empty())
             continue;
 
-        // If the primary file did not supply energy/frequency data (e.g. cpu_pmu was
-        // chosen but energy lives in a separate stat__cpu_energy.json), merge it now.
-        if (rd.energy_pkg_by_socket.empty() && rd.core_freq_khz <= 0)
+        // If energy/frequency data lives in separate stat__cpu_energy.json, merge
+        // any missing values into the chosen run (often stat__cpu_pmu.json).
+        if (rd.energy_pkg_by_socket.empty() || rd.kilo_edp_pkg_by_socket.empty() ||
+            !std::isfinite(rd.energy_pkg) || !std::isfinite(rd.kilo_edp_pkg) ||
+            rd.core_freq_khz <= 0)
         {
             const std::string energy_path = join_path(dir, "stat__cpu_energy.json");
             if (is_regular_file(energy_path))
@@ -1598,13 +1600,10 @@ void execute_report_command(const CommandArgs &args)
     // Generate heatmaps for requested metrics
     generate_heatmap(runs, "duration_ms");
 
-    // On ARM the package energy metric is "power-grace"; on x86 it is "energy-pkg".
+    // Energy parser accepts both "energy-pkg" and "power-grace" and stores them
+    // in the same internal field; use one canonical key for chart naming.
     // For multi-socket systems, emit per-socket heatmaps and one combined heatmap.
-#ifdef OPTKIT_ENV_CPU_ARM
-    const std::string energy_key = "power-grace";
-#else
     const std::string energy_key = "energy-pkg";
-#endif
     {
         std::set<int> sockets_with_energy;
         for (const auto &rd : runs)
