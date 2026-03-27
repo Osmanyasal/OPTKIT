@@ -15,6 +15,19 @@
 #include <unistd.h>
 #include <sys/stat.h>
 
+// Returns "pngcairo" when gnuplot has cairo support, otherwise "png".
+// Result is cached after the first call.
+static const std::string &gnuplot_png_terminal()
+{
+    static std::string term;
+    if (!term.empty())
+        return term;
+    // Probe by feeding a minimal script; gnuplot exits non-zero if terminal is unknown.
+    int rc = system("echo 'set terminal pngcairo' | gnuplot > /dev/null 2>&1");
+    term = (rc == 0) ? "pngcairo" : "png";
+    return term;
+}
+
 struct RunData
 {
     std::string label;                     // e.g., filename stem
@@ -456,7 +469,7 @@ static bool generate_cpu_pmu_timeseries_chart(const std::string &json_path)
         return false;
     }
 
-    gp << "set terminal pngcairo size 1400," << h << " noenhanced font 'Arial,10'\n";
+    gp << "set terminal " << gnuplot_png_terminal() << " size 1400," << h << " noenhanced font 'Arial,10'\n";
     gp << "set output '" << png_name << "'\n";
     gp << "set multiplot layout " << n << ",1 title '" << base << " metrics (time-series)'\n";
     gp << "set grid\n";
@@ -1011,7 +1024,7 @@ static void generate_heatmap(const std::vector<RunData> &runs, const std::string
         std::cerr << "Error: Cannot write " << gp_name << "\n";
         return;
     }
-    gp << "set terminal pngcairo size 1400,420 noenhanced font 'Arial,11'\n";
+    gp << "set terminal " << gnuplot_png_terminal() << " size 1400,420 noenhanced font 'Arial,11'\n";
     gp << "set output '" << png_name << "'\n";
     gp << "set title '" << metric_key << " vs Core/Uncore Frequency'\n";
     gp << "set xlabel 'Core Frequency (GHz)'\n";
@@ -1124,6 +1137,32 @@ static std::vector<RunData> parse_runs_from_paths(const std::vector<std::string>
         RunData rd = parse_run(chosen);
         if (rd.duration_ms <= 0 && rd.cores_used <= 0 && rd.topdown.empty())
             continue;
+
+        // If the primary file did not supply energy/frequency data (e.g. cpu_pmu was
+        // chosen but energy lives in a separate stat__cpu_energy.json), merge it now.
+        if (rd.energy_pkg_by_socket.empty() && rd.core_freq_khz <= 0)
+        {
+            const std::string energy_path = join_path(dir, "stat__cpu_energy.json");
+            if (is_regular_file(energy_path))
+            {
+                RunData energy_rd = parse_run(energy_path);
+                if (!energy_rd.energy_pkg_by_socket.empty())
+                    rd.energy_pkg_by_socket = energy_rd.energy_pkg_by_socket;
+                if (!energy_rd.kilo_edp_pkg_by_socket.empty())
+                    rd.kilo_edp_pkg_by_socket = energy_rd.kilo_edp_pkg_by_socket;
+                if (!std::isfinite(rd.energy_pkg) && std::isfinite(energy_rd.energy_pkg))
+                    rd.energy_pkg = energy_rd.energy_pkg;
+                if (!std::isfinite(rd.kilo_edp_pkg) && std::isfinite(energy_rd.kilo_edp_pkg))
+                    rd.kilo_edp_pkg = energy_rd.kilo_edp_pkg;
+                if (rd.core_freq_khz <= 0 && energy_rd.core_freq_khz > 0)
+                    rd.core_freq_khz = energy_rd.core_freq_khz;
+                if (rd.uncore_freq_khz <= 0)
+                    rd.uncore_freq_khz = energy_rd.uncore_freq_khz;
+                if (rd.duration_ms <= 0 && energy_rd.duration_ms > 0)
+                    rd.duration_ms = energy_rd.duration_ms;
+            }
+        }
+
         rd.label = basename_no_dir(dir);
         runs.push_back(rd);
     }
@@ -1169,7 +1208,7 @@ static void generate_exec_time_chart(const std::vector<RunData> &runs)
     xtics << ")\n";
 
     std::ofstream gp("exec_time_per_core.gp");
-    gp << "set terminal pngcairo size 900,500 noenhanced\n";
+    gp << "set terminal " << gnuplot_png_terminal() << " size 900,500 noenhanced\n";
     gp << "set output 'exec_time_per_core.png'\n";
     gp << "set title 'Execution time per core'\n";
     gp << "set xlabel 'Cores used'\n";
@@ -1222,7 +1261,7 @@ static void generate_topdownl1_chart(const std::vector<RunData> &runs)
     dat.close();
 
     std::ofstream gp("topdown_blocksl1.gp");
-    gp << "set terminal pngcairo size 1100,600 noenhanced font 'Arial,16'\n";
+    gp << "set terminal " << gnuplot_png_terminal() << " size 1100,600 noenhanced font 'Arial,16'\n";
     gp << "set output 'topdown_blocksl1.png'\n";
     gp << "set title 'Topdown metrics per execution' font 'Arial,16'\n";
     gp << "set style data histograms\n";
@@ -1289,7 +1328,7 @@ static void generate_topdownl2_chart(const std::vector<RunData> &runs)
     dat.close();
 
     std::ofstream gp("topdownl2_blocks.gp");
-    gp << "set terminal pngcairo size 1100,600 noenhanced font 'Arial,13'\n";
+    gp << "set terminal " << gnuplot_png_terminal() << " size 1100,600 noenhanced font 'Arial,13'\n";
     gp << "set output 'topdownl2_blocks.png'\n";
     gp << "set title 'Topdown metrics per execution' font 'Arial,16'\n";
     gp << "set style data histograms\n";
@@ -1346,7 +1385,7 @@ static void generate_carm_roofline_for_isa(const std::vector<RunData> &runs,
     }
 
     gp << "# Cache-Aware Roofline Model (CARM) - " << isa_name << "\n";
-    gp << "set terminal pngcairo size 1000,640 enhanced font 'Arial,14'\n";
+    gp << "set terminal " << gnuplot_png_terminal() << " size 1000,640 enhanced font 'Arial,14'\n";
     gp << "set output '" << output_name << "'\n\n";
 
     gp << "set title \"CARM - " << isa_name << " ISA\"\n";
