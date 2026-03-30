@@ -12,11 +12,10 @@ The library provides comprehensive monitoring capabilities for CPUs, GPUs, and I
 | Feature            | Intel | AMD Zen | ARM Neoverse | NVIDIA GPU | AMD GPU |
 |--------------------|:-----:|:-------:|:------------:|:----------:|:-------:|
 | PMU Events         | ✅    | ✅      | ✅ (N1+, V1+)  | ❌         | ❌      |
-| Energy (RAPL)      | ✅    | ✅ (Zen2+) | N/A         | N/A         | N/A      |
-| GPU Power          | N/A   | N/A     | N/A          | ✅         | ✅      |
+| Energy      | ✅   | ✅ | ✅         | ✅         | ✅      |
 | Temperature        | ✅    | ✅      | ✅           | ✅         | ✅      |
 | Frequency Tuning   | ✅    | ✅      | ✅           | ✅         | ✅      |
-| Callstack Analysis | ✅    | ✅      | ?           | N/A         | N/A      |
+| Callstack Analysis | ✅    | ✅      | ❌           | N/A         | N/A      |
 
 
 
