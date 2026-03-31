@@ -5,6 +5,7 @@
 #include "core/metrics/performance/cpu/core_metrics.hh"
 #include "core/metrics/performance/cpu/arm/event_mapper.hh"
 #include "core/metrics/performance/cpu/arm/native_events.hh"
+#include "core/frequency/cpu/query.hh"
 #include <vector>
 
 #if OPTKIT_ENV_CPU_MICROARCH_NEOVERSE_V1
@@ -39,7 +40,7 @@
  */
 
 // Warn: to use template initialisation for a certain type, they must be in the same namespace. so do NOT change it.
-namespace optkit::metrics::performance
+namespace optkit::metrics::performance::cpu
 {
     /**
      * @class ARMMetricsImpl

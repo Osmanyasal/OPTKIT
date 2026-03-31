@@ -6,6 +6,7 @@
 #include "core/metrics/performance/cpu/core_metrics.hh"
 #include "core/metrics/performance/cpu/intel/event_mapper.hh"
 #include "core/metrics/performance/cpu/intel/native_events.hh"
+#include "core/frequency/cpu/query.hh"
 #include <vector>
 // Intel (decode width)
 #if OPTKIT_ENV_CPU_MICROARCH_P6 || OPTKIT_ENV_CPU_MICROARCH_WSM ||  \
@@ -38,7 +39,7 @@
  */
 
 // Warn: to use template initialisation for a certain type, they must be in the same namespace. so do NOT change it.
-namespace optkit::metrics::performance
+namespace optkit::metrics::performance::cpu
 {
     /**
      * @class IntelMetricsImpl
@@ -1283,7 +1284,7 @@ namespace optkit::metrics::performance
                 std::string no_ops_from_frontend_name = to_string(intel::NativeEvents::IDQ_UOPS_NOT_DELIVERED_CORE);
                 return MetricBuilder<uint64_t>{}
                     .add(dispatch_slots_name, intel::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
-                    .add(no_ops_from_frontend_name, intel::EventMapper::get(performance::intel::NativeEvents::IDQ_UOPS_NOT_DELIVERED_CORE))
+                    .add(no_ops_from_frontend_name, intel::EventMapper::get(performance::cpu::intel::NativeEvents::IDQ_UOPS_NOT_DELIVERED_CORE))
                     .build("frontend_bound__%",
                            [dispatch_slots_name, no_ops_from_frontend_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
@@ -1311,9 +1312,9 @@ namespace optkit::metrics::performance
 
                 return MetricBuilder<uint64_t>{}
                     .add(dispatch_slots_name, intel::EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES))
-                    .add(uops_issued_name, intel::EventMapper::get(intel::NativeEvents::UOPS_ISSUED))
-                    .add(uops_retired_slots_name, intel::EventMapper::get(performance::intel::NativeEvents::UOPS_RETIRED_SLOTS))
-                    .add(recovery_cycles_name, intel::EventMapper::get(intel::NativeEvents::INT_MISC_RECOVERY_CYCLES))
+                    .add(uops_issued_name, intel::EventMapper::get(performance::cpu::intel::NativeEvents::UOPS_ISSUED))
+                    .add(uops_retired_slots_name, intel::EventMapper::get(performance::cpu::intel::NativeEvents::UOPS_RETIRED_SLOTS))
+                    .add(recovery_cycles_name, intel::EventMapper::get(performance::cpu::intel::NativeEvents::INT_MISC_RECOVERY_CYCLES))
                     .build("bad_speculation__%",
                            [dispatch_slots_name, uops_issued_name, uops_retired_slots_name, recovery_cycles_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {

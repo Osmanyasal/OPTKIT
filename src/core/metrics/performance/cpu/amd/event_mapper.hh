@@ -12,7 +12,7 @@
  *      https://www.amd.com/content/dam/amd/en/documents/epyc-technical-docs/programmer-references/58550-0.01.pdf (Performance Monitor Counters for AMD Family 1Ah Model 00h- 0Fh Processors)
  *
  */
-namespace optkit::metrics::performance::amd
+namespace optkit::metrics::performance::cpu::amd
 {
     /**
      * @brief Considered only zen1 to zen4. others are not guaranteed.
@@ -21,7 +21,7 @@ namespace optkit::metrics::performance::amd
     class EventMapper final
     {
     public:
-        static std::vector<uint64_t> get(performance::CoreEvents event)
+        static std::vector<uint64_t> get(performance::cpu::CoreEvents event)
         {
             auto it = core_event_map.find(event);
             if (it != core_event_map.end())
@@ -31,14 +31,14 @@ namespace optkit::metrics::performance::amd
             OPTKIT_CORE_WARN("EventMapper: No event found for core event: {}", to_string(event));
             return {};
         }
-        static std::vector<uint64_t> get(performance::amd::NativeEvents event)
+        static std::vector<uint64_t> get(performance::cpu::amd::NativeEvents event)
         {
             auto it = native_event_map.find(event);
             if (it != native_event_map.end())
             {
                 return it->second;
             }
-            OPTKIT_CORE_WARN("EventMapper: No event found for core event: {}", to_string(event));
+            OPTKIT_CORE_WARN("EventMapper: No event found for native event: {}", to_string(event));
             return {};
         }
         static std::vector<uint64_t> get(std::string event);
@@ -46,8 +46,8 @@ namespace optkit::metrics::performance::amd
     private:
         EventMapper() {}
         ~EventMapper() {}
-        static const std::unordered_map<performance::CoreEvents, std::vector<uint64_t>> core_event_map;          // coreEvent - even nums to monitor.
-        static const std::unordered_map<performance::amd::NativeEvents, std::vector<uint64_t>> native_event_map; // coreEvent - even nums to monitor.
+        static const std::unordered_map<performance::cpu::CoreEvents, std::vector<uint64_t>> core_event_map;          // coreEvent - even nums to monitor.
+        static const std::unordered_map<performance::cpu::amd::NativeEvents, std::vector<uint64_t>> native_event_map; // nativeEvent - even nums to monitor.
     };
 
 };

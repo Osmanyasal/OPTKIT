@@ -1,49 +1,49 @@
-#include "core/metrics/performance/cpu/arm/event_mapper.hh"
-#if OPTKIT_ENV_CPU_ARM
-namespace optkit::metrics::performance::cpu::arm
+#include "core/metrics/performance/cpu/riscv/event_mapper.hh"
+#if OPTKIT_ENV_CPU_RISCV
+namespace optkit::metrics::performance::cpu::riscv
 {
 
     const std::unordered_map<performance::cpu::CoreEvents, std::vector<uint64_t>> EventMapper::core_event_map = {
 
         // Pipeline and Stalls
-        {performance::cpu::CoreEvents::DISPATCH_SLOTS, {0x11}},       // CPU_CYCLES
-        {performance::cpu::CoreEvents::UNHALTED_CORE_CYCLES, {0x11}}, // CPU_CYCLES
+        {performance::cpu::CoreEvents::DISPATCH_SLOTS, {0x0}},       // CPU_CYCLES
+        {performance::cpu::CoreEvents::UNHALTED_CORE_CYCLES, {0x0}}, // CPU_CYCLES
         // {performance::cpu::CoreEvents::UNHALTED_REFERENCE_CYCLES, {}}, // not exists
-        {performance::cpu::CoreEvents::RESOURCE_STALLS, {0xffae}}, // STALL_BACKEND -- No operation has been sent for execution due to the backend (including Lack of execution units, Memory dependencies, Cache misses Register dependencies, Store buffer full Load/store queue full)
+        {performance::cpu::CoreEvents::RESOURCE_STALLS, {0x0}}, // STALL_BACKEND -- No operation has been sent for execution due to the backend (including Lack of execution units, Memory dependencies, Cache misses Register dependencies, Store buffer full Load/store queue full)
         // {performance::cpu::CoreEvents::RECOVERY_CYCLES, {}},
 
         // Instruction Events
-        {performance::cpu::CoreEvents::INST_RETIRED, {0x08}}, // INST_RETIRED
+        {performance::cpu::CoreEvents::INST_RETIRED, {0x0}}, // INST_RETIRED
         // {performance::cpu::CoreEvents::UOPS_ISSUED, {}},
         // {performance::cpu::CoreEvents::UOPS_EXECUTED, {}},
         // {performance::cpu::CoreEvents::UOPS_RETIRED, {}},
         // {performance::cpu::CoreEvents::IDQ_UOPS_NOT_DELIVERED, {}},
 
         // Branch Prediction
-        {performance::cpu::CoreEvents::BRANCH_INST_RETIRED, {0x21}},
-        {performance::cpu::CoreEvents::BRANCH_MISP_RETIRED, {0x22}},
+        {performance::cpu::CoreEvents::BRANCH_INST_RETIRED, {0x0}},
+        {performance::cpu::CoreEvents::BRANCH_MISP_RETIRED, {0x0}},
         // {performance::cpu::CoreEvents::MACHINE_CLEARS, 0x0},
 
         // Cache Events
-        {performance::cpu::CoreEvents::L1_MISSES, {0x03}}, // L1D_CACHE_REFILL
+        {performance::cpu::CoreEvents::L1_MISSES, {0x0}}, // L1D_CACHE_REFILL
         // {performance::cpu::CoreEvents::L1_HITS, {}},// do L1D_CACHE_ACCESSES - L1_MISSES
 
-        {performance::cpu::CoreEvents::L2_MISSES, {0x17}}, // L2D_CACHE_REFILL
+        {performance::cpu::CoreEvents::L2_MISSES, {0x0}}, // L2D_CACHE_REFILL
         // {performance::cpu::CoreEvents::L2_HITS, {}},// do L2_CACHE_ACCESSES - L2_MISSES
 
-        {performance::cpu::CoreEvents::L3_MISSES, {0x37}}, // LL_CACHE_MISS_RD
+        {performance::cpu::CoreEvents::L3_MISSES, {0x0}}, // LL_CACHE_MISS_RD
         // {performance::cpu::CoreEvents::L3_HITS, {}},  // do L3_CACHE_ACCESSES - L3_MISSES
 
         // Memory Events
-        {performance::cpu::CoreEvents::MEM_INST_RETIRED, {0x13}},  // MEM_ACCESS
-        {performance::cpu::CoreEvents::MEM_LOAD_RETIRED, {0x66}},  // MEM_ACCESS_RD
-        {performance::cpu::CoreEvents::MEM_STORE_RETIRED, {0X67}}, // MEM_ACCESS_WR
+        {performance::cpu::CoreEvents::MEM_INST_RETIRED, {0x0}},  // MEM_ACCESS
+        {performance::cpu::CoreEvents::MEM_LOAD_RETIRED, {0x0}},  // MEM_ACCESS_RD
+        {performance::cpu::CoreEvents::MEM_STORE_RETIRED, {0x0}}, // MEM_ACCESS_WR
 
-        {performance::cpu::CoreEvents::ITLB_MISSES, {0x02, 0x35}},          // L1I_TLB_REFILL + ITLB_WALK
-        {performance::cpu::CoreEvents::ITLB_MISSES_GOES_PAGE_WALK, {0x35}}, // ITLB_WALK -- Accesses to the instruction TLB that caused a page walk. Counts any instruction which causes L2D_TLB_REFILL to count
+        {performance::cpu::CoreEvents::ITLB_MISSES, {0x0, 0x0}},          // L1I_TLB_REFILL + ITLB_WALK
+        {performance::cpu::CoreEvents::ITLB_MISSES_GOES_PAGE_WALK, {0x0}}, // ITLB_WALK -- Accesses to the instruction TLB that caused a page walk. Counts any instruction which causes L2D_TLB_REFILL to count
 
-        {performance::cpu::CoreEvents::DTLB_MISSES, {0x05, 0x34}},          // L1D_TLB_REFILL + DTLB_WALK
-        {performance::cpu::CoreEvents::DTLB_MISSES_GOES_PAGE_WALK, {0x34}}, // DTLB_WALK -- Accesses to the data TLB that caused a page walk. Counts any data access which causes L2D_TLB_REFILL to count
+        {performance::cpu::CoreEvents::DTLB_MISSES, {0x0, 0x0}},          // L1D_TLB_REFILL + DTLB_WALK
+        {performance::cpu::CoreEvents::DTLB_MISSES_GOES_PAGE_WALK, {0x0}}, // DTLB_WALK -- Accesses to the data TLB that caused a page walk. Counts any data access which causes L2D_TLB_REFILL to count
 
     //     {performance::cpu::CoreEvents::SW_LOAD_PREFETCH_ACCESS, {}},
 
@@ -51,35 +51,35 @@ namespace optkit::metrics::performance::cpu::arm
     // {performance::cpu::CoreEvents::FP_ARITH_INST_RETIRED, 0x0},   // arm doesn't distinquish
 
 #if !OPTKIT_ENV_CPU_ARM_N1
-        {performance::cpu::CoreEvents::RETIRED_FLOPS_ANY, {0x80c0, 0x80c1}}, // FP_SCALE_OPS_SPEC + FP_FIXED_OPS_SPEC
-        {performance::cpu::CoreEvents::RETIRED_VECTOR, {0x80c0}},            // FP_SCALE_OPS_SPEC
+        {performance::cpu::CoreEvents::RETIRED_FLOPS_ANY, {0x0, 0x0}}, // FP_SCALE_OPS_SPEC + FP_FIXED_OPS_SPEC
+        {performance::cpu::CoreEvents::RETIRED_VECTOR, {0x0}},            // FP_SCALE_OPS_SPEC
 #endif
     };
 
-    const std::unordered_map<performance::cpu::arm::NativeEvents, std::vector<uint64_t>> EventMapper::native_event_map = {
+    const std::unordered_map<metrics::performance::cpu::riscv::NativeEvents, std::vector<uint64_t>> EventMapper::native_event_map = {
 
-        {performance::cpu::arm::NativeEvents::RETIRED_OPS, {0x00c1}},
+        {performance::cpu::riscv::NativeEvents::RETIRED_OPS, {0x0}},
 
         // fe-bound
-        {performance::cpu::arm::NativeEvents::STALL_FRONTEND, {0x23}},
-        {performance::cpu::arm::NativeEvents::STALL_BACKEND, {0x24}},
+        {performance::cpu::riscv::NativeEvents::STALL_FRONTEND, {0x0}},
+        {performance::cpu::riscv::NativeEvents::STALL_BACKEND, {0x0}},
 
 #if !OPTKIT_ENV_CPU_ARM_N1
-        {performance::cpu::arm::NativeEvents::STALL_SLOT, {0x3f}},
-        {performance::cpu::arm::NativeEvents::STALL_SLOT_FRONTEND, {0x3e}},
-        {performance::cpu::arm::NativeEvents::STALL_SLOT_BACKEND, {0x3d}},
-        {performance::cpu::arm::NativeEvents::OP_RETIRED, {0x3a}},
-        {performance::cpu::arm::NativeEvents::OP_SPEC, {0x3b}},
+        {performance::cpu::riscv::NativeEvents::STALL_SLOT, {0x0}},
+        {performance::cpu::riscv::NativeEvents::STALL_SLOT_FRONTEND, {0x0}},
+        {performance::cpu::riscv::NativeEvents::STALL_SLOT_BACKEND, {0x0}},
+        {performance::cpu::riscv::NativeEvents::OP_RETIRED, {0x0}},
+        {performance::cpu::riscv::NativeEvents::OP_SPEC, {0x0}},
 
 #endif
 
 #if OPTKIT_ENV_CPU_ARM_N3 || OPTKIT_ENV_CPU_ARM_V3
-        {performance::cpu::arm::NativeEvents::STALL_FRONTEND_FLUSH, {0x8162}},
+        {performance::cpu::riscv::NativeEvents::STALL_FRONTEND_FLUSH, {0x0}},
 #endif
 
-        {performance::cpu::arm::NativeEvents::L1D_CACHE_ACCESSES, {0x04}}, // L1D_CACHE
-        {performance::cpu::arm::NativeEvents::L2_CACHE_ACCESSES, {0x16}},  // L2D_CACHE
-        {performance::cpu::arm::NativeEvents::L3_CACHE_ACCESSES, {0x36}},  // LL_CACHE_RD
+        {performance::cpu::riscv::NativeEvents::L1D_CACHE_ACCESSES, {0x0}}, // L1D_CACHE
+        {performance::cpu::riscv::NativeEvents::L2_CACHE_ACCESSES, {0x0}},  // L2D_CACHE
+        {performance::cpu::riscv::NativeEvents::L3_CACHE_ACCESSES, {0x0}},  // LL_CACHE_RD
     };
     std::vector<uint64_t> EventMapper::get(std::string event)
     {
@@ -156,4 +156,4 @@ namespace optkit::metrics::performance::cpu::arm
         return {};
     }
 }
-#endif // OPTKIT_ENV_CPU_ARM
+#endif // OPTKIT_ENV_CPU_RISCV

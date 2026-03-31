@@ -1,6 +1,6 @@
 #include "core/metrics/performance/cpu/core_events.hh"
 
-namespace optkit::metrics::performance
+namespace optkit::metrics::performance::cpu
 {
 
     const std::vector<std::string> &get_core_events()

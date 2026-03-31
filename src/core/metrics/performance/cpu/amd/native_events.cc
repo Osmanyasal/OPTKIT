@@ -1,6 +1,6 @@
 #include "core/metrics/performance/cpu/amd/native_events.hh"
 #if OPTKIT_ENV_CPU_AMD
-namespace optkit::metrics::performance::amd
+namespace optkit::metrics::performance::cpu::amd
 {
 
     std::string to_string(NativeEvents event)

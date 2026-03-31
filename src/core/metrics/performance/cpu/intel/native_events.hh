@@ -3,7 +3,7 @@
 #if OPTKIT_ENV_CPU_INTEL
 #include <string>
 #include <vector>
-namespace optkit::metrics::performance::intel
+namespace optkit::metrics::performance::cpu::intel
 {
     /**
      * @brief These are the core events to be monitored for metrics. It is expected to exists in every CPUs

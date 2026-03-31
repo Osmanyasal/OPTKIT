@@ -3,7 +3,7 @@
 #if OPTKIT_ENV_CPU_ARM
 #include <string>
 #include <vector>
-namespace optkit::metrics::performance::arm
+namespace optkit::metrics::performance::cpu::arm
 {
         /**
          * @brief These are the core events to be monitored for metrics. It is expected to exists in every CPUs
@@ -12,6 +12,7 @@ namespace optkit::metrics::performance::arm
         enum class NativeEvents
         {
                 BEGIN = 0,
+                RETIRED_OPS,
                 L1D_CACHE_ACCESSES,
                 L2_CACHE_ACCESSES,
                 L3_CACHE_ACCESSES,
@@ -23,12 +24,12 @@ namespace optkit::metrics::performance::arm
                 OP_RETIRED,
                 OP_SPEC,
                 STALL_FRONTEND_FLUSH,
-
                 END,
         };
         static const std::vector<std::string> &get_native_events()
         {
                 static std::vector<std::string> native_events{
+                    "RETIRED_OPS",
                     "L1D_CACHE_ACCESSES",
                     "L2_CACHE_ACCESSES",
                     "L3_CACHE_ACCESSES",

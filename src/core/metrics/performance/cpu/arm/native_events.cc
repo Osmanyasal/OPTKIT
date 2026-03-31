@@ -1,12 +1,14 @@
 #include "core/metrics/performance/cpu/arm/native_events.hh"
 #if OPTKIT_ENV_CPU_ARM
-namespace optkit::metrics::performance::arm
+namespace optkit::metrics::performance::cpu::arm
 {
 
     std::string to_string(NativeEvents event)
     {
         switch (event)
         {
+        case NativeEvents::RETIRED_OPS:
+            return "RETIRED_OPS";
         case NativeEvents::STALL_FRONTEND:
             return "STALL_FRONTEND";
         case NativeEvents::STALL_BACKEND:

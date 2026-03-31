@@ -47,7 +47,7 @@ void execute_list_command(const CommandArgs &args)
         for (const auto &pmu_id : pmu_ids)
         {
             // auto events = optkit::pmu::cpu::Query::get_avail_events(pmu_id);
-            auto core_events = optkit::metrics::performance::get_core_events();
+            auto core_events = optkit::metrics::performance::cpu::get_core_events();
             auto native_events = optkit::metrics::performance::cpu_get_native_events();
             for (const auto &event : core_events)
                 std::cout << "\t" << event << "\n";
@@ -67,7 +67,7 @@ void execute_list_command(const CommandArgs &args)
         for (const auto &pmu_id : pmu_ids)
         {
             // auto events = optkit::pmu::cpu::Query::get_avail_events(pmu_id);
-            auto core_events = optkit::metrics::performance::get_core_events();
+            auto core_events = optkit::metrics::performance::cpu::get_core_events();
             auto native_events = optkit::metrics::performance::cpu_get_native_events();
             for (const auto &event : core_events)
                 std::cout << "\t" << event << "\n";
