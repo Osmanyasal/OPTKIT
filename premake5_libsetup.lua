@@ -1,10 +1,17 @@
 ---@diagnostic disable: undefined-global, lowercase-global
 ---@diagnostic disable: undefined-field
 ---@
-local vectorisation_flag = "-msse" -- default for x86/x64
-if arch and (arch == "aarch64" or arch == "arm64" or arch == "armv7l" or arch == "armv8l" or
-        arch == "riscv64" or arch == "riscv32") then
-    vectorisation_flag = "-fdse"
+
+local handle = io.popen("uname -m")
+local arch = handle and handle:read("*l") or "x86_64"
+if handle then handle:close() end
+local vectorisation_flag = "-msse" -- Default for x86/x64
+
+if arch == "aarch64" or arch == "arm64" or arch == "armv7l" or arch == "armv8l" then
+    -- ARM doesn't use SSE; we use native or specific NEON flags
+    vectorisation_flag = "-march=native" 
+elseif arch == "riscv64" or arch == "riscv32" then
+    vectorisation_flag = "-march=native"
 end
 
 function base_project_setup()
