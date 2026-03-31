@@ -21,7 +21,7 @@ namespace optkit::metrics::performance::cpu::arm
     class EventMapper final
     {
     public:
-        static std::vector<uint64_t> get(performance::CoreEvents event)
+        static std::vector<uint64_t> get(performance::cpu::CoreEvents event)
         {
             auto it = core_event_map.find(event);
             if (it != core_event_map.end())
@@ -31,7 +31,7 @@ namespace optkit::metrics::performance::cpu::arm
             OPTKIT_CORE_WARN("EventMapper: No event found for core event: {}", to_string(event));
             return {};
         }
-        static std::vector<uint64_t> get(performance::arm::NativeEvents event)
+        static std::vector<uint64_t> get(performance::cpu::arm::NativeEvents event)
         {
             auto it = native_event_map.find(event);
             if (it != native_event_map.end())
@@ -46,8 +46,8 @@ namespace optkit::metrics::performance::cpu::arm
     private:
         EventMapper() {}
         ~EventMapper() {}
-        static const std::unordered_map<performance::CoreEvents, std::vector<uint64_t>> core_event_map;          // coreEvent - even nums to monitor.
-        static const std::unordered_map<performance::arm::NativeEvents, std::vector<uint64_t>> native_event_map; // nativeEvent - even nums to monitor.
+        static const std::unordered_map<performance::cpu::CoreEvents, std::vector<uint64_t>> core_event_map;          // coreEvent - even nums to monitor.
+        static const std::unordered_map<performance::cpu::arm::NativeEvents, std::vector<uint64_t>> native_event_map; // nativeEvent - even nums to monitor.
     };
 };
 #endif // OPTKIT_ENV_CPU_ARM
