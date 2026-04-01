@@ -11,5 +11,6 @@
             true,                                                            \
             false,                                                           \
             optkit::Query::create_folder,                                    \
-            !optkit::Query::create_folder)                                   \
+            !optkit::Query::create_folder),                                  \
+            optkit::metrics::performance::gpu_metrics::all_metrics()         \
     }

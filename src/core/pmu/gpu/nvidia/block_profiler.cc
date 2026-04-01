@@ -1,8 +1,11 @@
 #include "core/pmu/gpu/nvidia/block_profiler.hh"
 
 #if OPTKIT_ENV_LIB_NVML
+#include <cmath>
+#include <iomanip>
 #include <memory>
 #include <cupti_version.h>
+#include "core/gpu_query.hh"
 
 namespace optkit::pmu::gpu::nvidia
 {
@@ -78,7 +81,8 @@ namespace optkit::pmu::gpu::nvidia
         free(buffer);
     }
 
-    BlockProfiler::BlockProfiler(const ProfilerConfig &profiler_config, const optkit::metrics::MetricBuilder<std::string> &mb)
+    BlockProfiler::BlockProfiler(const ProfilerConfig &profiler_config, const optkit::metrics::MetricBuilder<uint64_t> &mb,
+                                  uint32_t gpm_sample_period_us)
         : BaseProfiler{static_cast<const ProfilerConfig &>(profiler_config)}, profiler_config{profiler_config}, metric_builder{mb}
     {
         start = std::chrono::high_resolution_clock::now();
@@ -88,6 +92,31 @@ namespace optkit::pmu::gpu::nvidia
         CUPTI_API_CALL(cuptiActivityEnable(CUPTI_ACTIVITY_KIND_OVERHEAD));
         CUPTI_API_CALL(cuptiActivityEnable(CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL));
         CUPTI_API_CALL(cuptiActivityEnable(CUPTI_ACTIVITY_KIND_MEMCPY));
+
+        // Build GPM metric ID list from the MetricBuilder events
+        std::vector<nvmlGpmMetricId_t> gpm_ids;
+        std::vector<std::string> gpm_names;
+        for (const auto &event : mb.metric_events)
+        {
+            nvmlGpmMetricId_t gpm_id = core_event_to_gpm_metric_id(event.second);
+            if (gpm_id != static_cast<nvmlGpmMetricId_t>(0))
+            {
+                gpm_ids.push_back(gpm_id);
+                gpm_names.push_back(event.first);
+            }
+        }
+
+        gpm_metric_names_ = gpm_names;
+
+        if (!gpm_ids.empty())
+        {
+            nvmlDevice_t device = optkit::gpu::Query::get_nvml_device(0);
+            if (device != nullptr)
+            {
+                gpm_sampler_.reset(new GpmSampler(device, gpm_ids, gpm_names, gpm_sample_period_us));
+                gpm_sampler_->start();
+            }
+        }
     }
 
     struct MemcpyEvent
@@ -128,13 +157,31 @@ namespace optkit::pmu::gpu::nvidia
 
     BlockProfiler ::~BlockProfiler()
     {
+        auto append_detail_event = [this](const std::string &name, const std::string &value)
+        {
+            this->detail_event_results.push_back({name, value});
+        };
+        auto append_detail_double = [&append_detail_event](const std::string &name, double value)
+        {
+            std::ostringstream ss;
+            ss << std::fixed << value;
+            append_detail_event(name, ss.str());
+        };
+
+        // Stop GPM sampling
+        if (gpm_sampler_)
+        {
+            gpm_sampler_->stop();
+        }
+
         CUPTI_API_CALL(cuptiActivityFlushAll(1));
         CUPTI_API_CALL(cuptiActivityDisable(CUPTI_ACTIVITY_KIND_MEMCPY));
         CUPTI_API_CALL(cuptiActivityDisable(CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL));
         CUPTI_API_CALL(cuptiActivityDisable(CUPTI_ACTIVITY_KIND_OVERHEAD));
+        this->detail_event_results.clear();
         this->read_and_store();
         this->metric_results = this->metric_builder.calculate(aggregate());
-        this->event_results.push_back({"kernel_total_duration_ms", g_activity_kernel != nullptr ? std::to_string((g_activity_kernel->end - g_activity_kernel->start) * 1e-6) : "0"});
+        append_detail_double("kernel_total_duration_ms", g_activity_kernel != nullptr ? (g_activity_kernel->end - g_activity_kernel->start) * 1e-6 : 0.0);
         double memcpy_total_duration_ms = 0.0;
         double htod_duration_ms = 0.0;
         double dtoh_duration_ms = 0.0;
@@ -152,7 +199,7 @@ namespace optkit::pmu::gpu::nvidia
                 event.src_memory_kind = getMemKindString((CUpti_ActivityMemoryKind)memcpy_rec_ptr->srcKind);
                 event.dst_memory_kind = getMemKindString((CUpti_ActivityMemoryKind)memcpy_rec_ptr->dstKind);
                 event.copy_kind = static_cast<uint64_t>(memcpy_rec_ptr->copyKind);
-                this->event_results.push_back({"memcpy", event.to_string()});
+                append_detail_event("memcpy", event.to_string());
 
                 switch (memcpy_rec_ptr->copyKind)
                 {
@@ -174,11 +221,11 @@ namespace optkit::pmu::gpu::nvidia
             }
             memcpy_rec_ptr.reset();
         }
-        this->event_results.insert(this->event_results.begin() + 2, {"memcpy_total_duration_ms", std::to_string(memcpy_total_duration_ms)});
-        this->event_results.insert(this->event_results.begin() + 3, {"memcpy_htod_duration_ms", std::to_string(htod_duration_ms)});
-        this->event_results.insert(this->event_results.begin() + 4, {"memcpy_dtoh_duration_ms", std::to_string(dtoh_duration_ms)});
-        this->event_results.insert(this->event_results.begin() + 5, {"memcpy_dtod_duration_ms", std::to_string(dtod_duration_ms)});
-        this->event_results.insert(this->event_results.begin() + 6, {"memcpy_htoh_duration_ms", std::to_string(htoh_duration_ms)});
+        append_detail_double("memcpy_total_duration_ms", memcpy_total_duration_ms);
+        append_detail_double("memcpy_htod_duration_ms", htod_duration_ms);
+        append_detail_double("memcpy_dtoh_duration_ms", dtoh_duration_ms);
+        append_detail_double("memcpy_dtod_duration_ms", dtod_duration_ms);
+        append_detail_double("memcpy_htoh_duration_ms", htoh_duration_ms);
 
         std::unordered_map<std::string, OverheadEvent> overhead_map;
         double total_overhead_duration_ms = 0.0;
@@ -202,12 +249,34 @@ namespace optkit::pmu::gpu::nvidia
         }
         for (const auto &entry : overhead_map)
         {
-            this->event_results.insert(this->event_results.begin(), {"overhead_" + entry.first, entry.second.to_string()});
+            this->detail_event_results.insert(this->detail_event_results.begin(), {"overhead_" + entry.first, entry.second.to_string()});
         }
-        this->event_results.insert(this->event_results.begin(), {"cupti_total_overhead_ms", std::to_string(total_overhead_duration_ms)});
+        this->detail_event_results.insert(this->detail_event_results.begin(), {"cupti_total_overhead_ms", [&]() {
+                                                  std::ostringstream ss;
+                                                  ss << std::fixed << total_overhead_duration_ms;
+                                                  return ss.str();
+                                              }()});
         g_activity_kernel.reset();
         g_activity_memcpy.clear();
         g_activity_overhead.clear();
+
+        // Process GPM sampling results
+        if (gpm_sampler_ && gpm_sampler_->is_enabled())
+        {
+            size_t num_samples = gpm_sampler_->sample_count();
+            append_detail_event("gpm_sample_count", std::to_string(num_samples));
+
+            if (num_samples > 0)
+            {
+                auto averages = gpm_sampler_->average_results();
+                for (const auto &name : gpm_metric_names_)
+                {
+                    auto it = averages.find(name);
+                    if (it != averages.end())
+                        append_detail_double("gpm_avg_" + name, it->second);
+                }
+            }
+        }
 
         if (OPT_LIKELY(this->config.dump_results_to_file))
             this->save();
@@ -221,6 +290,9 @@ namespace optkit::pmu::gpu::nvidia
             if (OPT_UNLIKELY(this->metric_builder.print_events))
                 for (auto &&event : this->event_results)
                     std::cout << std::fixed << "\t" << event.first << ": " << event.second << std::endl;
+
+            for (auto &&event : this->detail_event_results)
+                std::cout << "\t" << event.first << ": " << event.second << std::endl;
 
             for (auto &&metric : this->metric_results)
                 std::cout << std::fixed << "\t" << metric.first << ": " << metric.second << std::endl;
@@ -243,50 +315,87 @@ namespace optkit::pmu::gpu::nvidia
         if (OPT_UNLIKELY(!is_enabled))
             return {};
 
+        auto split_name_and_unit = [](const std::string &full_name) -> std::pair<std::string, std::string>
+        {
+            size_t pos = full_name.rfind("__");
+            if (pos != std::string::npos && pos + 2 < full_name.size())
+                return std::make_pair(full_name.substr(0, pos), full_name.substr(pos + 2));
+
+            return std::make_pair(full_name, "None");
+        };
+
+        nlohmann::json payload = utils::to_json<uint64_t>(this->total_duration_ms, this->config.measurement_type, this->event_results, this->metric_results);
+        nlohmann::json *measurements = nullptr;
+        if (payload.contains("readings") && payload["readings"].is_array() && !payload["readings"].empty())
+            measurements = &payload["readings"][0]["measurements"];
+
+        for (const auto &entry_pair : this->detail_event_results)
+        {
+            std::pair<std::string, std::string> parsed = split_name_and_unit(entry_pair.first);
+
+            nlohmann::json entry;
+            entry["type"] = "event";
+            entry["name"] = parsed.first;
+            entry["value"] = entry_pair.second;
+            entry["value_unit"] = parsed.second;
+            entry["dtype"] = "string";
+
+            if (measurements != nullptr)
+                measurements->push_back(entry);
+        }
+
         std::stringstream ss;
-        ss << "[\n";
-        // based on the insertion order.
-        ss << utils::to_json<std::string>(this->total_duration_ms, this->config.measurement_type, this->event_results, this->metric_results);
-        ss << "]\n";
+        ss << "[\n" << payload << "]\n";
         return ss.str();
     }
 
-    std::vector<std::string> BlockProfiler::read()
+    std::vector<uint64_t> BlockProfiler::read()
     {
         if (OPT_UNLIKELY(!is_enabled))
             return {};
 
-        std::vector<std::string> result;
+        std::vector<uint64_t> result;
+
+        const std::vector<std::string> &event_names = this->metric_builder.event_names();
+        if (event_names.empty() || !gpm_sampler_ || !gpm_sampler_->is_enabled())
+            return result;
+
+        const auto averages = gpm_sampler_->average_results();
+        result.reserve(event_names.size());
+        for (const auto &event_name : event_names)
+        {
+            auto it = averages.find(event_name);
+            double value = (it != averages.end()) ? it->second : 0.0;
+            result.push_back(static_cast<uint64_t>(std::llround(value)));
+        }
+
         return result;
     }
-    std::unordered_map<std::string, std::string> BlockProfiler::aggregate()
+    std::unordered_map<std::string, uint64_t> BlockProfiler::aggregate()
     {
         if (OPT_UNLIKELY(!is_enabled))
             return {};
         double total_duration = 0.0;
-        std::unordered_map<std::string, std::string> aggregated_events;
+        std::unordered_map<std::string, uint64_t> aggregated_events;
         const std::vector<std::string> &event_names = this->metric_builder.event_names();
 
         for (const auto &entry : read_buffer)
         {
             total_duration += entry.first;
 
-            const std::vector<std::string> &values = entry.second;
-
-            // std::cout << "read buffer:";
+            const std::vector<uint64_t> &values = entry.second;
             for (size_t j = 0; j < values.size(); ++j)
             {
-                // std::cout << event_names[j] << ":" << values[j] << "\n";
-                aggregated_events[event_names[j]] += values[j];
+                aggregated_events[event_names[j % event_names.size()]] += values[j];
             }
         }
-        std::vector<std::pair<std::string, std::string>> event_value(
+        std::vector<std::pair<std::string, uint64_t>> event_value(
             aggregated_events.begin(), aggregated_events.end());
 
         this->event_results = std::move(event_value);
         this->total_duration_ms = total_duration;
 
-        aggregated_events["duration_microsec"] = this->total_duration_ms * 1000.0; // convert to microseconds
+        aggregated_events["duration_microsec"] = static_cast<uint64_t>(std::llround(this->total_duration_ms * 1000.0)); // convert to microseconds
         return aggregated_events;
     }
 

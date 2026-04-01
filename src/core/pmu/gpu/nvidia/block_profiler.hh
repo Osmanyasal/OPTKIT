@@ -5,23 +5,27 @@
 
 #include <iostream>
 #include <vector>
+#include <memory>
 #include "core/pmu/cpu/perf/profiler_config.hh"
 
 #include "utils/utils.hh"
 #include "utils/base_profiler.hh"
 #include "utils/metric_builder.hh"
 #include "utils/cupti_utils.hh"
+#include "core/pmu/gpu/nvidia/gpm_sampler.hh"
 
 namespace optkit::pmu::gpu::nvidia
 {
     /**
      * @brief The BlockProfiler class utilizes the RAII technique to initiate and conclude profiling for specific metrics.
      *        Profiling commences upon instantiation and persists until the current scope is exited.
+     *        Supports both CUPTI Activity API profiling and NVML GPM metric sampling via a background thread.
      */
-    class BlockProfiler : public BaseProfiler<std::vector<std::string>, std::string>
+    class BlockProfiler : public BaseProfiler<std::vector<uint64_t>, uint64_t>
     {
     public:
-        BlockProfiler(const ProfilerConfig &profiler_config, const optkit::metrics::MetricBuilder<std::string> &mb = {});
+        BlockProfiler(const ProfilerConfig &profiler_config, const optkit::metrics::MetricBuilder<uint64_t> &mb = {},
+                       uint32_t gpm_sample_period_us = 1000000);    // 1 sec
         virtual ~BlockProfiler();
         /**
          * @brief Disables this block profiler and associated events
@@ -52,16 +56,21 @@ namespace optkit::pmu::gpu::nvidia
          *
          * @return std::vector<uint64_t> contains each raw_events' pmu data.
          */
-        virtual std::vector<std::string> read() override;
+        virtual std::vector<uint64_t> read() override;
 
-        virtual std::unordered_map<std::string, std::string> aggregate() override;
+        virtual std::unordered_map<std::string, uint64_t> aggregate() override;
 
 #if !OPTKIT_TESTING // if not testing (in prod) then make those private, in testin make those public
     private:
 #endif
         const ProfilerConfig profiler_config;
-        const optkit::metrics::MetricBuilder<std::string> metric_builder;
+        const optkit::metrics::MetricBuilder<uint64_t> metric_builder;
         std::vector<std::pair<std::string, double>> metric_results;
+        std::vector<std::pair<std::string, std::string>> detail_event_results;
+
+        // GPM sampling (self-contained in GpmSampler)
+        std::unique_ptr<GpmSampler> gpm_sampler_;
+        std::vector<std::string> gpm_metric_names_;
     };
 
 } // namespace optkit::pmu::gpu::nvidia

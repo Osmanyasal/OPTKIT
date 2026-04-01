@@ -88,6 +88,15 @@ namespace optkit::gpu
         static bool get_device_name(GpuVendor vendor, uint32_t device_index, std::string &device_name);
         static bool get_device_temperature_thresholds(GpuVendor vendor, uint32_t device_index, double &max_gpu_temp_celsius, double &max_mem_temp_celsius, double &min_gpu_temp_celsius, double &min_mem_temp_celsius);
 
+#if OPTKIT_HAS_NVML_HEADERS
+        /**
+         * @brief Returns the NVML device handle for the given index.
+         *        Assumes NVML has been initialised via Query::init(GpuVendor::NVIDIA).
+         * @return nvmlDevice_t handle, or nullptr if index is out of range.
+         */
+        static nvmlDevice_t get_nvml_device(uint32_t device_index = 0);
+#endif
+
     private:
         static std::unordered_map<GpuVendor, bool> initialized;
 

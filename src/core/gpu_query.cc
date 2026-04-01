@@ -3219,4 +3219,13 @@ namespace optkit::gpu
         }
         return is_ok;
     }
+
+#if OPTKIT_ENV_LIB_NVML
+    nvmlDevice_t Query::get_nvml_device(uint32_t device_index)
+    {
+        if (device_index < gpu_handles_nvml.size())
+            return gpu_handles_nvml[device_index];
+        return nullptr;
+    }
+#endif
 }
