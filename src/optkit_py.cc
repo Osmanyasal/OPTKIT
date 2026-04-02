@@ -8,7 +8,9 @@
 #include "optkit.hh"
 #include "core/pmu/cpu/perf/block_profiler.hh"
 #include "core/pmu/cpu/perf/profiler_config.hh"
+#include "core/energy/cpu/pdu/profiler.hh"
 #include "core/energy/cpu/rapl/profiler.hh"
+#include "core/energy/cpu/hwmon/profiler.hh"
 #include "core/energy/gpu/nvidia/profiler.hh"
 #include "core/energy/gpu/amd/profiler.hh"
 #include "core/temperature/hwmon/profiler.hh"
@@ -136,12 +138,23 @@ struct SafeProfiler
 using SafePerfProfiler = SafePerfEventProfiler<optkit::pmu::cpu::perf::BlockProfiler>;
 using SafeCallstackProfiler = SafePerfEventProfiler<optkit::callstack::Profiler>;
 
+using SafePduProfiler = SafeProfiler<optkit::energy::pdu::Profiler, double>;
 using SafeRaplProfiler = SafeProfiler<optkit::energy::rapl::Profiler, double>;
+using SafeCpuHwmonProfiler = SafeProfiler<optkit::energy::hwmon::Profiler, double>;
 using SafeNvidiaProfiler = SafeProfiler<optkit::energy::gpu::nvidia::Profiler, double>;
 using SafeAmdProfiler = SafeProfiler<optkit::energy::gpu::amd::Profiler, double>;
 using SafeDiskProfiler = SafeProfiler<optkit::disk::IoDiskProfiler, uint64_t>;
 using SafeHwmonTempProfiler = SafeProfiler<optkit::temperature::hwmon::Profiler, double>;
 using SafeGpuTempProfiler = SafeProfiler<optkit::temperature::gpu::Profiler, std::pair<double, double>>;
+
+static bool should_use_pdu_cpu_energy()
+{
+#if OPTKIT_ENV_LIB_NET_SNMP
+    return optkit::energy::pdu::Query::is_pdu_snmp_avail();
+#else
+    return false;
+#endif
+}
 
 /**
  * @brief Manages a stack of RAII profilers for a specific type T.
@@ -196,7 +209,9 @@ private:
 
 template class ProfilerManager<SafePerfProfiler>;
 template class ProfilerManager<SafeCallstackProfiler>;
+template class ProfilerManager<SafePduProfiler>;
 template class ProfilerManager<SafeRaplProfiler>;
+template class ProfilerManager<SafeCpuHwmonProfiler>;
 template class ProfilerManager<SafeNvidiaProfiler>;
 template class ProfilerManager<SafeAmdProfiler>;
 template class ProfilerManager<SafeDiskProfiler>;
@@ -241,6 +256,14 @@ PYBIND11_MODULE(optkit_py, m)
             if(ProfilerManager<SafeRaplProfiler>::size() > 0) {
                 py::print("Warning: There are still active RAPL profilers. They will be stopped.");
                 ProfilerManager<SafeRaplProfiler>::clear();
+            }
+            if(ProfilerManager<SafePduProfiler>::size() > 0) {
+                py::print("Warning: There are still active PDU profilers. They will be stopped.");
+                ProfilerManager<SafePduProfiler>::clear();
+            }
+            if(ProfilerManager<SafeCpuHwmonProfiler>::size() > 0) {
+                py::print("Warning: There are still active HWMON CPU energy profilers. They will be stopped.");
+                ProfilerManager<SafeCpuHwmonProfiler>::clear();
             }
             if(ProfilerManager<SafeNvidiaProfiler>::size() > 0) {
                 py::print("Warning: There are still active NVIDIA GPU profilers. They will be stopped.");
@@ -782,8 +805,24 @@ PYBIND11_MODULE(optkit_py, m)
         require_initialized();
 
         optkit::ProfilerConfig profiler_config = make_profiler_config(block_name, "cpu_energy");
-        auto safe_profiler = make_unique<SafeRaplProfiler>(profiler_config, optkit::metrics::energy::cpu_metrics::all_metrics());
-        ProfilerManager<SafeRaplProfiler>::push(std::move(safe_profiler));
+        if (should_use_pdu_cpu_energy())
+        {
+            auto safe_profiler = make_unique<SafePduProfiler>(profiler_config, optkit::energy::pdu::default_metrics());
+            ProfilerManager<SafePduProfiler>::push(std::move(safe_profiler));
+        }
+#if OPTKIT_ENV_CPU_ARM
+        else
+        {
+            auto safe_profiler = make_unique<SafeCpuHwmonProfiler>(profiler_config, optkit::metrics::energy::cpu_metrics::all_metrics());
+            ProfilerManager<SafeCpuHwmonProfiler>::push(std::move(safe_profiler));
+        }
+#else
+        else
+        {
+            auto safe_profiler = make_unique<SafeRaplProfiler>(profiler_config, optkit::metrics::energy::cpu_metrics::all_metrics());
+            ProfilerManager<SafeRaplProfiler>::push(std::move(safe_profiler));
+        }
+#endif
         
         const auto gpu_mb = optkit::metrics::energy::gpu_metrics::all_metrics();
         try
@@ -809,18 +848,35 @@ PYBIND11_MODULE(optkit_py, m)
         } }, "Start CPU & GPU energy profiling", py::arg("block_name"));
 
     energy.def("stop", []()
-               { ProfilerManager<SafeRaplProfiler>::pop(); ProfilerManager<SafeNvidiaProfiler>::pop(); ProfilerManager<SafeAmdProfiler>::pop(); }, "Stop CPU & GPU energy profiling");
+               { ProfilerManager<SafePduProfiler>::pop(); ProfilerManager<SafeRaplProfiler>::pop(); ProfilerManager<SafeCpuHwmonProfiler>::pop(); ProfilerManager<SafeNvidiaProfiler>::pop(); ProfilerManager<SafeAmdProfiler>::pop(); }, "Stop CPU & GPU energy profiling");
 
     cpu.def("start", [](std::string block_name)
             {
         require_initialized();
 
         optkit::ProfilerConfig profiler_config = make_profiler_config(block_name, "cpu_energy");
-        auto safe_profiler = make_unique<SafeRaplProfiler>(profiler_config, optkit::metrics::energy::cpu_metrics::all_metrics());
-        ProfilerManager<SafeRaplProfiler>::push(std::move(safe_profiler)); }, "Start CPU energy profiling (RAPL based)", py::arg("block_name"));
+        if (should_use_pdu_cpu_energy())
+        {
+            auto safe_profiler = make_unique<SafePduProfiler>(profiler_config, optkit::energy::pdu::default_metrics());
+            ProfilerManager<SafePduProfiler>::push(std::move(safe_profiler));
+        }
+#if OPTKIT_ENV_CPU_ARM
+        else
+        {
+            auto safe_profiler = make_unique<SafeCpuHwmonProfiler>(profiler_config, optkit::metrics::energy::cpu_metrics::all_metrics());
+            ProfilerManager<SafeCpuHwmonProfiler>::push(std::move(safe_profiler));
+        }
+#else
+        else
+        {
+            auto safe_profiler = make_unique<SafeRaplProfiler>(profiler_config, optkit::metrics::energy::cpu_metrics::all_metrics());
+            ProfilerManager<SafeRaplProfiler>::push(std::move(safe_profiler));
+        }
+#endif
+        }, "Start CPU energy profiling (PDU, HWMON, or RAPL backend)", py::arg("block_name"));
 
     cpu.def("stop", []()
-            { ProfilerManager<SafeRaplProfiler>::pop(); }, "Stop CPU energy profiling (RAPL based)");
+            { ProfilerManager<SafePduProfiler>::pop(); ProfilerManager<SafeRaplProfiler>::pop(); ProfilerManager<SafeCpuHwmonProfiler>::pop(); }, "Stop CPU energy profiling");
 
     gpu.def("start", [](std::string block_name)
             {

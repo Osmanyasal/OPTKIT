@@ -9,6 +9,8 @@
 #include <unistd.h>
 
 #include "optkit.hh"
+#include "core/energy/cpu/pdu/profiler.hh"
+#include "core/energy/cpu/hwmon/profiler.hh"
 
 thread_local std::string g_last_error;
 void set_error(const std::string &msg)
@@ -189,12 +191,23 @@ struct SafeProfiler
 using SafePerfProfiler = SafePerfEventProfiler<optkit::pmu::cpu::perf::BlockProfiler>;
 using SafeCallstackProfiler = SafePerfEventProfiler<optkit::callstack::Profiler>;
 
+using SafePduProfiler = SafeProfiler<optkit::energy::pdu::Profiler, double>;
 using SafeRaplProfiler = SafeProfiler<optkit::energy::rapl::Profiler, double>;
+using SafeCpuHwmonProfiler = SafeProfiler<optkit::energy::hwmon::Profiler, double>;
 using SafeNvidiaProfiler = SafeProfiler<optkit::energy::gpu::nvidia::Profiler, double>;
 using SafeAmdProfiler = SafeProfiler<optkit::energy::gpu::amd::Profiler, double>;
 using SafeDiskProfiler = SafeProfiler<optkit::disk::IoDiskProfiler, uint64_t>;
 using SafeHwmonTempProfiler = SafeProfiler<optkit::temperature::hwmon::Profiler, double>;
 using SafeGpuTempProfiler = SafeProfiler<optkit::temperature::gpu::Profiler, std::pair<double, double>>;
+
+static bool should_use_pdu_cpu_energy()
+{
+#if OPTKIT_ENV_LIB_NET_SNMP
+    return optkit::energy::pdu::Query::is_pdu_snmp_avail();
+#else
+    return false;
+#endif
+}
 
 template <typename T>
 class ProfilerManager
@@ -290,7 +303,9 @@ optkit_status_t optkit_finalize(void)
 
         ProfilerManager<SafePerfProfiler>::clear();
         ProfilerManager<SafeCallstackProfiler>::clear();
+        ProfilerManager<SafePduProfiler>::clear();
         ProfilerManager<SafeRaplProfiler>::clear();
+        ProfilerManager<SafeCpuHwmonProfiler>::clear();
         ProfilerManager<SafeNvidiaProfiler>::clear();
         ProfilerManager<SafeAmdProfiler>::clear();
         ProfilerManager<SafeDiskProfiler>::clear();
@@ -1170,8 +1185,21 @@ optkit_status_t optkit_energy_cpu_start(const char *block_name)
     try
     {
         optkit::ProfilerConfig cfg = make_profiler_config(block_name, "cpu_energy");
+
+        if (should_use_pdu_cpu_energy())
+        {
+            auto prof = make_unique<SafePduProfiler>(cfg, optkit::energy::pdu::default_metrics());
+            ProfilerManager<SafePduProfiler>::push(std::move(prof));
+            return OPTKIT_STATUS_OK;
+        }
+
+#if OPTKIT_ENV_CPU_ARM
+        auto prof = make_unique<SafeCpuHwmonProfiler>(cfg, optkit::metrics::energy::cpu_metrics::all_metrics());
+        ProfilerManager<SafeCpuHwmonProfiler>::push(std::move(prof));
+#else
         auto prof = make_unique<SafeRaplProfiler>(cfg, optkit::metrics::energy::cpu_metrics::all_metrics());
         ProfilerManager<SafeRaplProfiler>::push(std::move(prof));
+#endif
         return OPTKIT_STATUS_OK;
     }
     catch (const std::exception &e)
@@ -1183,7 +1211,9 @@ optkit_status_t optkit_energy_cpu_start(const char *block_name)
 optkit_status_t optkit_energy_cpu_stop(void)
 {
     clear_error();
+    ProfilerManager<SafePduProfiler>::pop();
     ProfilerManager<SafeRaplProfiler>::pop();
+    ProfilerManager<SafeCpuHwmonProfiler>::pop();
     return OPTKIT_STATUS_OK;
 }
 
