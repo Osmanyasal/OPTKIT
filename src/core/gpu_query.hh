@@ -30,7 +30,7 @@ namespace optkit::gpu
      */
     class Query final
     {
-#if OPTKIT_HAS_AMDSMI_HEADERS
+#if OPTKIT_ENV_LIB_AMDSMI
     private:
         friend inline uint32_t _amdsmi_populate_device_count_and_fill_handlers();
 #endif
@@ -88,7 +88,7 @@ namespace optkit::gpu
         static bool get_device_name(GpuVendor vendor, uint32_t device_index, std::string &device_name);
         static bool get_device_temperature_thresholds(GpuVendor vendor, uint32_t device_index, double &max_gpu_temp_celsius, double &max_mem_temp_celsius, double &min_gpu_temp_celsius, double &min_mem_temp_celsius);
 
-#if OPTKIT_HAS_NVML_HEADERS
+#if OPTKIT_ENV_LIB_NVML
         /**
          * @brief Returns the NVML device handle for the given index.
          *        Assumes NVML has been initialised via Query::init(GpuVendor::NVIDIA).
@@ -100,14 +100,14 @@ namespace optkit::gpu
     private:
         static std::unordered_map<GpuVendor, bool> initialized;
 
-#if OPTKIT_HAS_NVML_HEADERS
+#if OPTKIT_ENV_LIB_NVML
         static std::vector<nvmlDevice_t> gpu_handles_nvml;
 #endif
 
-#if OPTKIT_HAS_AMDSMI_HEADERS
+#if OPTKIT_ENV_LIB_AMDSMI
         static std::vector<amdsmi_socket_handle> socket_handles_amdsmi;
         static std::vector<amdsmi_processor_handle> gpu_handles_amdsmi;
-#elif OPTKIT_HAS_ROCM_SMI_HEADERS
+#elif OPTKIT_ENV_LIB_ROCM_SMI
         static std::vector<uint32_t> gpu_handles_rocm_smi; // ROCm SMI uses device indices
 #endif
 
@@ -116,7 +116,7 @@ namespace optkit::gpu
         ~Query() = delete;
     };
 
-#if OPTKIT_HAS_AMDSMI_HEADERS
+#if OPTKIT_ENV_LIB_AMDSMI
     inline uint32_t _amdsmi_populate_device_count_and_fill_handlers()
     {
         static bool is_amdsmi_initialized = false;
