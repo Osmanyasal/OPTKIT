@@ -16,13 +16,6 @@
 namespace optkit::pmu::gpu::nvidia
 {
     /**
-     * @brief Maps a CoreEvents enum value (as uint64_t) to the corresponding NVML GPM metric ID.
-     *        Required because the enum values don't directly match nvmlGpmMetricId_t values
-     *        (there is a gap at NVML value 8 for IMMA_TENSOR_UTIL=9).
-     */
-    nvmlGpmMetricId_t core_event_to_gpm_metric_id(uint64_t core_event_code);
-
-    /**
      * @brief Self-contained GPM sampling class.
      *
      *        Manages a background thread that periodically takes two nvmlGpmSample snapshots

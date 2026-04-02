@@ -6,30 +6,6 @@
 
 namespace optkit::pmu::gpu::nvidia
 {
-    // ── CoreEvents → NVML GPM metric ID mapping ─────────────────────────
-    nvmlGpmMetricId_t core_event_to_gpm_metric_id(uint64_t core_event_code)
-    {
-        using CE = optkit::metrics::performance::gpu::CoreEvents;
-        switch (static_cast<CE>(core_event_code))
-        {
-        case CE::GRAPHICS_UTIL:    return NVML_GPM_METRIC_GRAPHICS_UTIL;
-        case CE::SM_UTIL:          return NVML_GPM_METRIC_SM_UTIL;
-        case CE::SM_OCCUPANCY:     return NVML_GPM_METRIC_SM_OCCUPANCY;
-        case CE::INTEGER_UTIL:     return NVML_GPM_METRIC_INTEGER_UTIL;
-        case CE::ANY_TENSOR_UTIL:  return NVML_GPM_METRIC_ANY_TENSOR_UTIL;
-        case CE::DFMA_TENSOR_UTIL: return NVML_GPM_METRIC_DFMA_TENSOR_UTIL;
-        case CE::HMMA_TENSOR_UTIL: return NVML_GPM_METRIC_HMMA_TENSOR_UTIL;
-        case CE::IMMA_TENSOR_UTIL: return NVML_GPM_METRIC_IMMA_TENSOR_UTIL;
-        case CE::DRAM_BW_UTIL:     return NVML_GPM_METRIC_DRAM_BW_UTIL;
-        case CE::FP64_UTIL:        return NVML_GPM_METRIC_FP64_UTIL;
-        case CE::FP32_UTIL:        return NVML_GPM_METRIC_FP32_UTIL;
-        case CE::FP16_UTIL:        return NVML_GPM_METRIC_FP16_UTIL;
-        default:
-            OPTKIT_CORE_WARN("Unknown CoreEvent code for GPM mapping: {}", core_event_code);
-            return static_cast<nvmlGpmMetricId_t>(0);
-        }
-    }
-
     // ── GpmSampler ──────────────────────────────────────────────────────
     GpmSampler::GpmSampler(nvmlDevice_t device,
                            const std::vector<nvmlGpmMetricId_t> &metric_ids,

@@ -6,6 +6,7 @@
 #include <memory>
 #include <cupti_version.h>
 #include "core/gpu_query.hh"
+#include "core/metrics/performance/gpu/nvidia/event_mapper.hh"
 
 namespace optkit::pmu::gpu::nvidia
 {
@@ -98,10 +99,15 @@ namespace optkit::pmu::gpu::nvidia
         std::vector<std::string> gpm_names;
         for (const auto &event : mb.metric_events)
         {
-            nvmlGpmMetricId_t gpm_id = core_event_to_gpm_metric_id(event.second);
-            if (gpm_id != static_cast<nvmlGpmMetricId_t>(0))
+            const auto metric_ids = optkit::metrics::performance::gpu::nvidia::EventMapper::get(event.first);
+            if (metric_ids.empty())
             {
-                gpm_ids.push_back(gpm_id);
+                continue;
+            }
+
+            for (uint64_t metric_id : metric_ids)
+            {
+                gpm_ids.push_back(static_cast<nvmlGpmMetricId_t>(metric_id));
                 gpm_names.push_back(event.first);
             }
         }
