@@ -28,6 +28,11 @@ namespace optkit::metrics::performance
         static const std::vector<std::string> events = cpu::intel::get_native_events();
         return events;
     }
+    inline const std::vector<std::string> &cpu_get_supported_core_events()
+    {
+        static const std::vector<std::string> events = cpu::intel::EventMapper::get_supported_core_events();
+        return events;
+    }
 }
 #elif OPTKIT_ENV_CPU_AMD
 #include "core/metrics/performance/cpu/amd/core_metrics.hh"
@@ -46,6 +51,11 @@ namespace optkit::metrics::performance
     inline const std::vector<std::string> &cpu_get_native_events()
     {
         static const std::vector<std::string> events = cpu::amd::get_native_events();
+        return events;
+    }
+    inline const std::vector<std::string> &cpu_get_supported_core_events()
+    {
+        static const std::vector<std::string> events = cpu::amd::EventMapper::get_supported_core_events();
         return events;
     }
 }
@@ -68,8 +78,22 @@ namespace optkit::metrics::performance
         static const std::vector<std::string> events = cpu::arm::get_native_events();
         return events;
     }
+    inline const std::vector<std::string> &cpu_get_supported_core_events()
+    {
+        static const std::vector<std::string> events = cpu::arm::EventMapper::get_supported_core_events();
+        return events;
+    }
 }
 #elif OPTKIT_ENV_CPU_RISCV
+#include "core/metrics/performance/cpu/riscv/event_mapper.hh"
+namespace optkit::metrics::performance
+{
+    inline const std::vector<std::string> &cpu_get_supported_core_events()
+    {
+        static const std::vector<std::string> events = cpu::riscv::EventMapper::get_supported_core_events();
+        return events;
+    }
+}
 #elif OPTKIT_ENV_CPU_MIPS
 #elif OPTKIT_ENV_CPU_POWERPC
 #else

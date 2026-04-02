@@ -36,6 +36,16 @@ void execute_list_command(const CommandArgs &args)
     if (args.target == Target::CPU || args.target == Target::ALL)
         pmu_ids = optkit::pmu::cpu::Query::avail_pmu_ids();
 
+    const auto print_cpu_events = []()
+    {
+        const auto &core_events = optkit::metrics::performance::cpu_get_supported_core_events();
+        const auto &native_events = optkit::metrics::performance::cpu_get_native_events();
+        for (const auto &event : core_events)
+            std::cout << "\t" << event << "\n";
+        for (const auto &event : native_events)
+            std::cout << "\t" << event << "\n";
+    };
+
     switch (args.list_type)
     {
     case ListType::ALL:
@@ -44,16 +54,7 @@ void execute_list_command(const CommandArgs &args)
             std::cout << optkit::pmu::cpu::Query::pmu_info(id) << "\n";
 
         std::cout << "Available PMU events\n";
-        for (const auto &pmu_id : pmu_ids)
-        {
-            // auto events = optkit::pmu::cpu::Query::get_avail_events(pmu_id);
-            auto core_events = optkit::metrics::performance::cpu::get_core_events();
-            auto native_events = optkit::metrics::performance::cpu_get_native_events();
-            for (const auto &event : core_events)
-                std::cout << "\t" << event << "\n";
-            for (const auto &event : native_events)
-                std::cout << "\t" << event << "\n";
-        }
+        print_cpu_events();
         std::cout << "Available metrics\n";
         for (const auto &metric : metrics_by_category)
         {
@@ -64,16 +65,7 @@ void execute_list_command(const CommandArgs &args)
         break;
     case ListType::EVENTS:
         std::cout << "Available PMU events\n";
-        for (const auto &pmu_id : pmu_ids)
-        {
-            // auto events = optkit::pmu::cpu::Query::get_avail_events(pmu_id);
-            auto core_events = optkit::metrics::performance::cpu::get_core_events();
-            auto native_events = optkit::metrics::performance::cpu_get_native_events();
-            for (const auto &event : core_events)
-                std::cout << "\t" << event << "\n";
-            for (const auto &event : native_events)
-                std::cout << "\t" << event << "\n";
-        }
+        print_cpu_events();
         break;
 
     case ListType::METRICS:

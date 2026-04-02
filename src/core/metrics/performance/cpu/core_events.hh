@@ -15,7 +15,7 @@ namespace optkit::metrics::performance::cpu
         // Pipeline and Stalls
         DISPATCH_SLOTS, // multiply by 4,6 or 8 based on the cpu
         UNHALTED_CORE_CYCLES,
-        // UNHALTED_REFERENCE_CYCLES,
+        UNHALTED_REFERENCE_CYCLES,
         RESOURCE_STALLS,
         // RECOVERY_CYCLES,
 

@@ -33,8 +33,27 @@ namespace optkit::metrics::performance::cpu::intel
             {
                 return it->second;
             }
-            OPTKIT_CORE_WARN("EventMapper: No event found for core event: {}", to_string(event));
+            OPTKIT_CORE_WARN("EventMapper: No event found for native event: {}", to_string(event));
             return {};
+        }
+        static const std::vector<std::string> &get_supported_core_events()
+        {
+            static const std::vector<std::string> supported_core_events = [] {
+                std::vector<std::string> supported_events;
+                supported_events.reserve(core_event_map.size());
+                for (int event_index = static_cast<int>(performance::cpu::CoreEvents::BEGIN) + 1;
+                     event_index < static_cast<int>(performance::cpu::CoreEvents::END);
+                     ++event_index)
+                {
+                    const auto event = static_cast<performance::cpu::CoreEvents>(event_index);
+                    if (core_event_map.find(event) != core_event_map.end())
+                    {
+                        supported_events.push_back(to_string(event));
+                    }
+                }
+                return supported_events;
+            }();
+            return supported_core_events;
         }
         static std::vector<uint64_t> get(std::string event);
 
@@ -42,7 +61,7 @@ namespace optkit::metrics::performance::cpu::intel
         EventMapper() {}
         ~EventMapper() {}
         static const std::unordered_map<performance::cpu::CoreEvents, std::vector<uint64_t>> core_event_map;            // coreEvent - even nums to monitor.
-        static const std::unordered_map<performance::cpu::intel::NativeEvents, std::vector<uint64_t>> native_event_map; // coreEvent - even nums to monitor.
+        static const std::unordered_map<performance::cpu::intel::NativeEvents, std::vector<uint64_t>> native_event_map; // nativeEvent - even nums to monitor.
     };
 };
 #endif // OPTKIT_ENV_CPU_INTEL
