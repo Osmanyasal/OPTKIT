@@ -59,10 +59,46 @@ check_header() {
     fi
 }
 
+check_header_alias() {
+    local header="$1"
+    local macro_name="$2"
+    local extra_include="${3:-}"
+
+    printf "%-${ALIGN_WIDTH}s" "Checking header <$header>:"
+
+    if [ -n "$extra_include" ]; then
+        local include_dir=$(echo "$extra_include" | sed 's/-I//')
+        local full_path="${include_dir}/${header}"
+
+        if [ -f "$full_path" ]; then
+            echo " ✅"
+            echo "#define OPTKIT_ENV_LIB_${macro_name} 1" >> "$SRC_CONFIG_FILE"
+            return 0
+        else
+            echo " ❌"
+            echo "#define OPTKIT_ENV_LIB_${macro_name} 0" >> "$SRC_CONFIG_FILE"
+            return 1
+        fi
+    else
+        echo "#include <$header>" | "$CXX_COMPILER" -E -x c++ - $INCLUDE_DIRS > /dev/null 2>&1
+
+        if [ $? -eq 0 ]; then
+            echo " ✅"
+            echo "#define OPTKIT_ENV_LIB_${macro_name} 1" >> "$SRC_CONFIG_FILE"
+            return 0
+        else
+            echo " ❌"
+            echo "#define OPTKIT_ENV_LIB_${macro_name} 0" >> "$SRC_CONFIG_FILE"
+            return 1
+        fi
+    fi
+}
+
 write_headers() {
     echo -e "\n// Headers" >> "$SRC_CONFIG_FILE"
     check_header "linux/perf_event.h"
     check_header "msr_safe.h"
+    check_header_alias "net-snmp/net-snmp-includes.h" "NET_SNMP"
     
     # Check NVML (CUDA)
     check_header "nvml.h" "-I/usr/local/cuda/include"

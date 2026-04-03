@@ -77,6 +77,10 @@ function base_project_setup()
         links { "cupti" }
     end
 
+    if dynamic_lib_exists("netsnmp") then
+        links { "netsnmp" }
+    end
+
 
     -- Get architecture using uname -m
     local handle = io.popen("uname -m")
@@ -219,6 +223,10 @@ function test_project_setup()
         end
         libdirs { "/usr/local/cuda/lib64" }
         links { "cupti" }
+    end
+
+    if dynamic_lib_exists("netsnmp") then
+        links { "netsnmp" }
     end
 
     -- filter "configurations:Release"
