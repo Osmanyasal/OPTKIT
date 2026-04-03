@@ -4,6 +4,10 @@
 #include "core/pmu/cpu/perf/block_profiler.hh"
 #include "core/pmu/cpu/perf/profiler_config.hh"
 
+#if OPTKIT_ENV_CPU_RISCV
+#include "core/pmu/cpu/perf/riscv/module.hh"
+#endif
+
 // non-sampling macros
 #define OPTKIT_CPU_EVENTS(block_name, metric_builder) \
     optkit::pmu::cpu::perf::BlockProfiler EXPAND_AND_CONCAT(var, __LINE__) { {block_name}, metric_builder }
