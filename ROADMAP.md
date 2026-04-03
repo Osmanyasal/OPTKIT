@@ -16,15 +16,15 @@
 - [x] Documentation improvements
 
 ## v0.7 (Q1 2026)
-- [ ] CUPTI integration for NVIDIA kernel profiling
-- [ ] Nvidia metrics
+- [x] GPM integration for NVIDIA kernel profiling
+- [x] Nvidia metrics
 - [ ] Refactoring
 - [ ] Documentation improvements
 
 ## v0.8 (Q2 2026)
 - [ ] AMD GPU PMU events 
-- [ ] Python bindings
-- [ ] C wrapper
+- [x] Python bindings
+- [x] C wrapper
 
 ## v0.9 (Q3 2026)
 - [ ] Java bindings
@@ -33,5 +33,5 @@
 ## v1.0 (Q4 2026)
 - [ ] API stability guarantee
 - [ ] Comprehensive documentation
-- [ ] Mimic (Digital Twin) system
+- [ ] GUI Entegration
  
