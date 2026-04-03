@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "../../src/optkit.hh"
+#include "../../src/core/metrics/performance/module.hh"
 #include "../../src/core/pmu/cpu/perf/block_profiler.hh"
 #include "../../src/core/pmu/cpu/perf/riscv/module.hh"
 
@@ -33,12 +34,12 @@ int main()
 
 #if OPTKIT_ENV_CPU_RISCV && OPTKIT_ENV_LIB_PERF_EVENT
     auto instructions_metrics = optkit::metrics::MetricBuilder<uint64_t>{};
-    instructions_metrics.add("instructions", {PERF_COUNT_HW_INSTRUCTIONS});
+    instructions_metrics.add(optkit::metrics::performance::cpu_metrics::get_metric("instructions"));
 
     auto llc_miss_metrics = optkit::metrics::MetricBuilder<uint64_t>{};
     llc_miss_metrics
-        .add("LLC-load-misses", {0x10002})
-        .add("LLC-store-misses", {0x10102});
+        .add(optkit::metrics::performance::cpu_metrics::get_metric("LLC-load-misses"))
+        .add(optkit::metrics::performance::cpu_metrics::get_metric("LLC-store-misses"));
 
     auto instructions_config = optkit::pmu::cpu::perf::riscv::instructions_profiler_config(
         "riscv_instructions_example",
@@ -57,6 +58,8 @@ int main()
         "cpu_pmu.llc_misses");
 
     {
+        // The shared metric interface provides the event mappings, while the RISC-V
+        // perf configs still select the correct perf_event type for each profiler.
         optkit::pmu::cpu::perf::BlockProfiler instructions_profiler(instructions_config, instructions_metrics);
         optkit::pmu::cpu::perf::BlockProfiler llc_miss_profiler(llc_miss_config, llc_miss_metrics);
         llc_heavy_workload();

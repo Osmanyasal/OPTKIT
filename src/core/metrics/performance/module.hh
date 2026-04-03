@@ -85,12 +85,27 @@ namespace optkit::metrics::performance
     }
 }
 #elif OPTKIT_ENV_CPU_RISCV
+#include "core/metrics/performance/cpu/riscv/core_metrics.hh"
 #include "core/metrics/performance/cpu/riscv/event_mapper.hh"
 namespace optkit::metrics::performance
 {
+    using cpu_metrics = cpu::CoreMetrics<cpu::RISCVMetricsImpl>;
+    using cpu_mapper = cpu::riscv::EventMapper;
+    using cpu_events = cpu::CoreEvents;
+    using cpu_native_events = cpu::riscv::NativeEvents;
+#if OPTKIT_ENV_LIB_NVML
+    using gpu_metrics = gpu::CoreMetrics<gpu::NvidiaMetricsImpl>;
+#else
+    using gpu_metrics = gpu::CoreMetrics<void>;
+#endif
     inline const std::vector<std::string> &cpu_get_supported_core_events()
     {
         static const std::vector<std::string> events = cpu::riscv::EventMapper::get_supported_core_events();
+        return events;
+    }
+    inline const std::vector<std::string> &cpu_get_native_events()
+    {
+        static const std::vector<std::string> events = cpu::riscv::get_native_events();
         return events;
     }
 }
