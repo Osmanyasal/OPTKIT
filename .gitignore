@@ -50,3 +50,5 @@ lib
 # tools builds
 tools/beacon_rapl/optkit_beacon_rapl
 tools/probe/optkit_probe
+
+examples

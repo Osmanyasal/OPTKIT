@@ -46,6 +46,12 @@ function define_custom_actions()
             print("[REMOVE]: " .. OPTKIT_TEST .. ".make")
             os.remove(OPTKIT_TEST .. ".make")
 
+            print("[REMOVE]: " .. OPTKIT_PY .. ".make")
+            os.remove(OPTKIT_PY .. ".make")
+
+            print("[REMOVE]: " .. OPTKIT_C .. ".make")
+            os.remove(OPTKIT_C .. ".make")
+
             print("🧹 Cleaned build directories!")
         end
     }
