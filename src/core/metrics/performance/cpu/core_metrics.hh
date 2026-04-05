@@ -42,7 +42,7 @@ namespace optkit::metrics::performance::cpu
     class CoreMetrics
     {
     public:
-        static MetricBuilder<uint64_t>get_metric(const std::string &metric_name) { return {} }; // returns the MetricBuilder for the given metric name, or an empty MetricBuilder if the metric is not supported.
+        static MetricBuilder<uint64_t> get_metric(const std::string &metric_name) { return {}; } // returns the MetricBuilder for the given metric name, or an empty MetricBuilder if the metric is not supported.
         static const std::vector<std::string> &get_all_metrics()    // all supported metric names that can be passed to get_metric()
         {
             static const std::vector<std::string> empty{};
