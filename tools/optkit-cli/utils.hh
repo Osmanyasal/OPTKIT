@@ -112,8 +112,8 @@ enum class Command
 enum class MsrOp
 {
     NONE,
-    READ,
-    WRITE
+    READ_OP,
+    WRITE_OP
 };
 
 enum class Target
@@ -287,10 +287,10 @@ inline std::string to_string(const CommandArgs &args)
 
     if (args.command == Command::MSRMOD)
     {
-        oss << "  msr_op: " << (args.msr_op == MsrOp::READ ? "READ" : (args.msr_op == MsrOp::WRITE ? "WRITE" : "NONE")) << "\n";
+        oss << "  msr_op: " << (args.msr_op == MsrOp::READ_OP ? "READ" : (args.msr_op == MsrOp::WRITE_OP ? "WRITE" : "NONE")) << "\n";
         oss << "  msr_cpu: " << args.msr_cpu << "\n";
         oss << "  msr_address: 0x" << std::hex << args.msr_address << std::dec << "\n";
-        if (args.msr_op == MsrOp::WRITE)
+        if (args.msr_op == MsrOp::WRITE_OP)
             oss << "  msr_value: 0x" << std::hex << args.msr_value << std::dec << "\n";
     }
 

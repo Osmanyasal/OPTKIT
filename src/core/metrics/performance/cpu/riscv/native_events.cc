@@ -7,8 +7,6 @@ namespace optkit::metrics::performance::cpu::riscv
     {
         switch (event)
         {
-        case NativeEvents::INSTRUCTIONS:
-            return "instructions";
         case NativeEvents::LLC_LOAD_MISSES:
             return "LLC-load-misses";
         case NativeEvents::LLC_STORE_MISSES:

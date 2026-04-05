@@ -301,11 +301,11 @@ CommandArgs parse_arguments(int argc, char **argv)
             const std::string &token = tokens[i];
             if (token == "-r" || token == "--read")
             {
-                args.msr_op = MsrOp::READ;
+                args.msr_op = MsrOp::READ_OP;
             }
             else if (token == "-w" || token == "--write")
             {
-                args.msr_op = MsrOp::WRITE;
+                args.msr_op = MsrOp::WRITE_OP;
             }
             else if (token == "-c" || token == "--cpu")
             {
@@ -399,7 +399,7 @@ CommandArgs parse_arguments(int argc, char **argv)
                 args.parse_error_message = "msrmod requires -a/--addr";
                 args.command = Command::HELP;
             }
-            else if (args.msr_op == MsrOp::WRITE && !have_value)
+            else if (args.msr_op == MsrOp::WRITE_OP && !have_value)
             {
                 args.parse_error = true;
                 args.parse_error_message = "msrmod write requires -v/--value";

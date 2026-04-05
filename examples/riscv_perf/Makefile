@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -std=c++17 -O2 -Wall -Wextra
+CXXFLAGS = -std=c++11 -O2 -Wall -Wextra
 
 # Detect CUDA installation
 CUDA_PATH := $(shell \

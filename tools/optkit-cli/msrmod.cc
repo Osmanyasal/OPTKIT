@@ -12,7 +12,7 @@ void execute_msrmod_command(const CommandArgs &args)
 		return;
 	}
 
-	if (args.msr_op == MsrOp::READ)
+	if (args.msr_op == MsrOp::READ_OP)
 	{
 		uint64_t value = 0;
 		if (!optkit::utils::read_msr(static_cast<int32_t>(args.msr_cpu), static_cast<off_t>(args.msr_address), &value, false))

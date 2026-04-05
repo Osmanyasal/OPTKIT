@@ -98,7 +98,7 @@ write_headers() {
     echo -e "\n// Headers" >> "$SRC_CONFIG_FILE"
     check_header "linux/perf_event.h"
     check_header "msr_safe.h"
-    check_header_alias "net-snmp/net-snmp-includes.h" "NET_SNMP"
+    check_header_alias "net-snmp/net-snmp-includes.h" "NET_SNMP" "-I/usr/include"
     
     # Check NVML (CUDA)
     check_header "nvml.h" "-I/usr/local/cuda/include"

@@ -42,6 +42,13 @@ namespace optkit::metrics::performance::cpu
     class CoreMetrics
     {
     public:
+        static MetricBuilder<uint64_t>get_metric(const std::string &metric_name) { return {} }; // returns the MetricBuilder for the given metric name, or an empty MetricBuilder if the metric is not supported.
+        static const std::vector<std::string> &get_all_metrics()    // all supported metric names that can be passed to get_metric()
+        {
+            static const std::vector<std::string> empty{};
+            return empty;
+        }
+
         // CPU Utilization
         static MetricBuilder<uint64_t> cpu_max_capacity_based_utilization() { return {}; } ///< 100 * (UNHALTED_CLK_CYCLES / (OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS * max_freq_khz * 1000  * duration_sec)))
 

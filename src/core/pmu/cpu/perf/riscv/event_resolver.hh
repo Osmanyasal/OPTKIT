@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <cstring>
 #include <linux/perf_event.h>
+#include <string>
 
 namespace optkit::pmu::cpu::perf::riscv
 {
@@ -49,10 +50,7 @@ namespace optkit::pmu::cpu::perf::riscv
 
     inline perf_event_attr make_instructions_attr()
     {
-        perf_event_attr attr = make_event_attr(instructions);
-        attr.exclude_kernel = 1;
-        attr.exclude_hv = 1;
-        return attr;
+        return make_event_attr(instructions);
     }
 
     inline perf_event_attr make_llc_load_misses_attr()
@@ -63,6 +61,49 @@ namespace optkit::pmu::cpu::perf::riscv
     inline perf_event_attr make_llc_store_misses_attr()
     {
         return make_event_attr(llc_store_misses);
+    }
+
+    inline bool try_resolve_event_attr(const std::string &event_name, uint64_t event_config, perf_event_attr &attr)
+    {
+        if (event_name == instructions.name || event_config == instructions.config)
+        {
+            attr = make_instructions_attr();
+            return true;
+        }
+
+        if (event_name == llc_load_misses.name || event_config == llc_load_misses.config)
+        {
+            attr = make_llc_load_misses_attr();
+            return true;
+        }
+
+        if (event_name == llc_store_misses.name || event_config == llc_store_misses.config)
+        {
+            attr = make_llc_store_misses_attr();
+            return true;
+        }
+
+        return false;
+    }
+
+    inline void apply_event_attr(perf_event_attr &attr, const std::string &event_name, uint64_t event_config)
+    {
+        perf_event_attr resolved_attr;
+        if (!try_resolve_event_attr(event_name, event_config, resolved_attr))
+            return;
+
+        attr.type = resolved_attr.type;
+        attr.size = resolved_attr.size;
+        attr.config = resolved_attr.config;
+        attr.disabled = resolved_attr.disabled;
+        attr.inherit = resolved_attr.inherit;
+        attr.enable_on_exec = resolved_attr.enable_on_exec;
+        attr.exclude_user = resolved_attr.exclude_user;
+        attr.exclude_kernel = resolved_attr.exclude_kernel;
+        attr.exclude_hv = resolved_attr.exclude_hv;
+        attr.exclude_idle = resolved_attr.exclude_idle;
+        attr.exclude_host = resolved_attr.exclude_host;
+        attr.exclude_guest = resolved_attr.exclude_guest;
     }
 } // namespace optkit::pmu::cpu::perf::riscv
 

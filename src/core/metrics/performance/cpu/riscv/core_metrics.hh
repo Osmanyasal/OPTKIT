@@ -23,9 +23,6 @@ namespace optkit::metrics::performance::cpu
         static const std::vector<std::string> &get_all_metrics()
         {
             static const std::vector<std::string> names = {
-                "instructions",
-                "LLC-load-misses",
-                "LLC-store-misses",
                 "l3_mpki",
             };
             return names;
@@ -33,7 +30,7 @@ namespace optkit::metrics::performance::cpu
 
         static const MetricBuilder<uint64_t> &get_metric(const std::string &metric_name)
         {
-            if (metric_name == "instructions")
+            if (metric_name == "INST_RETIRED")
                 return instructions();
             if (metric_name == "LLC-load-misses")
                 return llc_load_misses();
@@ -51,9 +48,9 @@ namespace optkit::metrics::performance::cpu
         static const MetricBuilder<uint64_t> &instructions()
         {
             static const MetricBuilder<uint64_t> metric = [] {
-                const std::string event_name = riscv::to_string(riscv::NativeEvents::INSTRUCTIONS);
+                const std::string event_name = to_string(CoreEvents::INST_RETIRED);
                 return MetricBuilder<uint64_t>{}
-                    .add(event_name, riscv::EventMapper::get(riscv::NativeEvents::INSTRUCTIONS))
+                    .add(event_name, riscv::EventMapper::get(CoreEvents::INST_RETIRED))
                     .build(event_name,
                            [event_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
@@ -91,31 +88,7 @@ namespace optkit::metrics::performance::cpu
                            });
             }();
             return metric;
-        }
-
-        static const MetricBuilder<uint64_t> &l3_mpki()
-        {
-            static const MetricBuilder<uint64_t> metric = [] {
-                const std::string l3_misses_name = to_string(CoreEvents::L3_MISSES);
-                const std::string inst_retired_name = to_string(CoreEvents::INST_RETIRED);
-
-                return MetricBuilder<uint64_t>{}
-                    .add(l3_misses_name, riscv::EventMapper::get(CoreEvents::L3_MISSES))
-                    .add(inst_retired_name, riscv::EventMapper::get(CoreEvents::INST_RETIRED))
-                    .build("l3_mpki",
-                           [l3_misses_name, inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
-                           {
-                               const uint64_t l3_misses = get_event_count(counts, l3_misses_name);
-                               const uint64_t inst_retired = get_event_count(counts, inst_retired_name);
-
-                               if (inst_retired == 0)
-                                   return std::numeric_limits<double>::quiet_NaN();
-
-                               return 1000.0 * static_cast<double>(l3_misses) / static_cast<double>(inst_retired);
-                           });
-            }();
-            return metric;
-        }
+        } 
 
         static const MetricBuilder<uint64_t> &all_metrics()
         {
@@ -124,7 +97,6 @@ namespace optkit::metrics::performance::cpu
                 mb.add(instructions());
                 mb.add(llc_load_misses());
                 mb.add(llc_store_misses());
-                mb.add(l3_mpki());
                 return mb;
             }();
             return metric;

@@ -3,6 +3,10 @@
 
 #include <unordered_set>
 
+#if OPTKIT_ENV_CPU_RISCV
+#include "core/pmu/cpu/perf/riscv/event_resolver.hh"
+#endif
+
 #if OPTKIT_ENV_LIB_PERF_EVENT
 namespace optkit::pmu::cpu::perf
 {
@@ -114,6 +118,10 @@ namespace optkit::pmu::cpu::perf
             {
                 struct perf_event_attr attr = this->profiler_config.perf_event_config; // copy default config
                 attr.config = raw_event.second;                                        // set an event
+
+#if OPTKIT_ENV_CPU_RISCV
+                riscv::apply_event_attr(attr, raw_event.first, raw_event.second);
+#endif
 
                 int32_t fd = syscall(__NR_perf_event_open, &attr, this->profiler_config.pid, core, group_leader, 0);
                 if (fd < 0)
