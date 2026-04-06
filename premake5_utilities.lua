@@ -8,6 +8,8 @@ LIB_SPD_PATH = './lib/spdlog'
 LIB_PFM_PATH = './lib/libpfm4'
 CPU_PMU_EVENTS_DIR = './src/core/pmu/cpu/events'
 UTILS_DIR = './src/utils'
+CARM_UTILS_DIR = './src/utils/carm'
+CARM_RESULTS_CSV = './src/utils/carm/carm_results/roofline/unnamed_roofline.csv'
 LIB_GOOGLETEST_PATH = "./lib/googletest"
 WHOAMI = io.popen("whoami"):read("*a"):gsub("\n", "")
 
@@ -25,6 +27,7 @@ local allowed_actions = {
     remove = true,
     generate_doc = true,
     remove_doc = true,
+    carm = true,
     gmake = true,
     gmakelegacy = true,
     codelite = true,
@@ -37,6 +40,7 @@ function print_help()
     print("  remove        - Remove installed libraries from the system.")
     print("  generate_doc  - Generate documentation.")
     print("  remove_doc    - Delete documentation.")
+    print("  carm          - Run native CARM roofline benchmarking.")
     print("  gmake         - Generate GNU Makefiles (only supported build system).")
     print("  --help        - Show this help message.\n")
 end
@@ -48,6 +52,7 @@ function print_help()
     print("  remove        - Remove installed libraries from the system.")
     print("  generate_doc  - Generate documentation.")
     print("  remove_doc    - Delete documentation.")
+    print("  carm          - Run native CARM roofline benchmarking.")
     print("  gmake         - Generate GNU Makefiles (only supported build system).")
     print("  --help        - Show this help message.\n")
 end

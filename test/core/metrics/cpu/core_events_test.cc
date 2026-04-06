@@ -1,7 +1,10 @@
+#include <sstream>
+
 #include "gtest/gtest.h"
 #include "core/metrics/performance/cpu/core_events.hh"
 
-using namespace optkit::metrics::performance;
+using optkit::metrics::performance::cpu::CoreEvents;
+using optkit::metrics::performance::cpu::to_string;
 
 TEST(CoreEventsTest, ToStringReturnsValidNameForAllKnownEvents)
 {

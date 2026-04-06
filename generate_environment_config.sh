@@ -644,7 +644,7 @@ write_carm_info()
 {
     echo -e "\n// CARM Roofline Bandwidth Information" >> "$SRC_CONFIG_FILE"
     
-    local carm_csv="./lib/carm-roofline/carm_results/roofline/unnamed_roofline.csv"
+    local carm_csv="./src/utils/carm/carm_results/roofline/unnamed_roofline.csv"
     
     if [ ! -f "$carm_csv" ]; then
         echo "// CARM roofline data not available" >> "$SRC_CONFIG_FILE"

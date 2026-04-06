@@ -26,7 +26,9 @@ git clone https://github.com/Osmanyasal/OPTKIT.git
 cd ./OPTKIT
 git submodule update --force --recursive --init --remote
 cd lib/premake5; make -f Bootstrap.mak linux; cd ./bin/release; alias premake5=$(pwd)/premake5; cd ..; cd ..; cd ..;cd ..; ## (optional: if premake5 is not installed)
-cd lib/carm-roofline; python3 run.py; cd ../../ #(optional to build carm roofline)
+premake5 carm #(optional to build carm roofline; defaults to OPTKIT_CARM_NUM_RUNS=256)
+# OPTKIT_CARM_NUM_RUNS=1024 premake5 carm   # best accuracy, slower run
+# OPTKIT_CARM_ARGS="--isa avx512" premake5 carm   # optional extra run.py args
 premake5 gmake
 
 ## To create libraries:

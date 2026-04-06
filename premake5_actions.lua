@@ -6,6 +6,7 @@ function define_custom_actions()
         clean = "clean",               -- clean the optkit build.
         install = "install",           -- build & install libs
         remove = "remove",             -- remove installed libs from the system
+        carm = "carm",                 -- run native roofline benchmarks
         generate_doc = "generate_doc", -- generate documentaiton
         remove_doc = "remove_doc",     -- delete documentaiton
         gmake = "gmake",               -- only gmake is enabled as build tool.
@@ -133,6 +134,57 @@ function define_custom_actions()
             os.execute("sudo rm -f /usr/local/bin/optkit*")     -- removes optkit binaries
             os.execute("sudo rm -f /usr/local/lib/liboptkit.a") -- removes optkit library
             print("[Removed 🧹]: OPTKIT from the system")
+        end
+    }
+
+    newaction {
+        trigger = custom_actions.carm,
+        description = "Run native CARM roofline benchmarking and refresh environment config",
+        execute = function()
+            if not os.isdir(CARM_UTILS_DIR) then
+                print("❌ Native CARM utilities directory not found: " .. CARM_UTILS_DIR)
+                os.exit(1)
+            end
+
+            local carm_num_runs = os.getenv("OPTKIT_CARM_NUM_RUNS")
+            if not carm_num_runs or carm_num_runs == "" then
+                carm_num_runs = "256"
+            end
+
+            local carm_extra_args = os.getenv("OPTKIT_CARM_ARGS") or ""
+
+            print("[CARM] Running roofline benchmarks from " .. CARM_UTILS_DIR)
+            print("[CARM] Using num_runs=" .. carm_num_runs)
+            if carm_extra_args ~= "" then
+                print("[CARM] Extra args: " .. carm_extra_args)
+            end
+
+            local benchmark_cmd =
+                "cd " .. CARM_UTILS_DIR ..
+                " && mkdir -p ./carm_results/roofline" ..
+                " && python3 ./run.py -nr " .. carm_num_runs
+            if carm_extra_args ~= "" then
+                benchmark_cmd = benchmark_cmd .. " " .. carm_extra_args
+            end
+
+            local benchmark_ok = os.execute(benchmark_cmd)
+            if benchmark_ok ~= true and benchmark_ok ~= 0 then
+                print("❌ CARM roofline benchmarking failed.")
+                os.exit(1)
+            end
+
+            if not os.isfile(CARM_RESULTS_CSV) then
+                print("❌ Expected CARM results were not generated: " .. CARM_RESULTS_CSV)
+                os.exit(1)
+            end
+
+            print("[CARM] Generated roofline CSV: " .. CARM_RESULTS_CSV)
+            print("[CARM] Refreshing environment configuration")
+            local config_ok = os.execute("./generate_environment_config.sh")
+            if config_ok ~= true and config_ok ~= 0 then
+                print("❌ Failed to refresh environment configuration after CARM run.")
+                os.exit(1)
+            end
         end
     }
 

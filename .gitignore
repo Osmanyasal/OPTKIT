@@ -34,6 +34,15 @@
 # Environment_config is generated per node.
 src/utils/environment_config.hh
 test/utils/environment_config.hh
+src/utils/carm/Bench/Bench
+src/utils/carm/bin/
+src/utils/carm/carm_results/
+src/utils/carm/config/auto_config/autoconfig
+src/utils/carm/config/auto_config/SVE_Vector
+src/utils/carm/config/auto_config/RISCV07_Vector
+src/utils/carm/config/auto_config/RISCV10_Vector
+src/utils/carm/config/auto_config/config.txt
+src/utils/carm/__pycache__/
 
 # Binaries
 bin/
