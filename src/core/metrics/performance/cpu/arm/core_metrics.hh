@@ -71,7 +71,8 @@ namespace optkit::metrics::performance::cpu
                 "dtlb_mpki",
                 "tlb_mpki",
                 "ipc",
-                "gflops"
+                "gflops",
+                "ai",
                 // removed: ilp (not implemented)
                 // removed: mlp (not implemented)
                 // removed: load_miss_latency (not implemented)
@@ -108,6 +109,7 @@ namespace optkit::metrics::performance::cpu
                 "topdown_l2_be",
                 "topdown_l2_retiring",
                 "topdown_l2_bad_spec",
+                "carm",
                 // "all_topdown",
                 // "all_mpki",
                 // "all_cache_hit_ratio",
@@ -150,6 +152,8 @@ namespace optkit::metrics::performance::cpu
                 return ipc();
             if (metric_name == "gflops")
                 return gflops();
+            if (metric_name == "ai")
+                return ai();
             if (metric_name == "ilp")
                 return ilp();
             if (metric_name == "mlp")
@@ -233,6 +237,8 @@ namespace optkit::metrics::performance::cpu
                 return topdown_l2_retiring();
             if (metric_name == "topdown_l2_bad_spec")
                 return topdown_l2_bad_spec();
+            if (metric_name == "carm")
+                return carm();
             if (metric_name == "all_topdown")
                 return all_topdown();
             if (metric_name == "all_mpki")
@@ -698,9 +704,33 @@ namespace optkit::metrics::performance::cpu
                                uint64_t retired_flops_any = get_event_count(counts, retired_flops_any_name);
 
                                // Avoid div by zero
-                               if (retired_flops_any == 0)
+                               if (duration_sec == 0)
                                    return std::numeric_limits<double>::quiet_NaN();
                                return static_cast<double>(retired_flops_any) / duration_sec / 1.0e9; // GFLOPS calculation
+                           });
+            }();
+            return metric;
+        }
+
+        static const MetricBuilder<uint64_t> &ai()
+        {
+            static const MetricBuilder<uint64_t> metric = []
+            {
+                std::string retired_flops_any_name = to_string(CoreEvents::RETIRED_FLOPS_ANY);
+                std::string mem_inst_retired_name = to_string(CoreEvents::MEM_INST_RETIRED);
+                return MetricBuilder<uint64_t>{}
+                    .add(retired_flops_any_name, arm::EventMapper::get(CoreEvents::RETIRED_FLOPS_ANY))
+                    .add(mem_inst_retired_name, arm::EventMapper::get(CoreEvents::MEM_INST_RETIRED))
+                    .build("ai",
+                           [retired_flops_any_name, mem_inst_retired_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                           {
+                               uint64_t retired_flops_any = get_event_count(counts, retired_flops_any_name);
+                               uint64_t mem_inst_retired = get_event_count(counts, mem_inst_retired_name);
+                               double mem_bytes = mem_inst_retired * 8.0;
+
+                               if (mem_bytes == 0)
+                                   return std::numeric_limits<double>::quiet_NaN();
+                               return static_cast<double>(retired_flops_any) / mem_bytes;
                            });
             }();
             return metric;
@@ -1098,6 +1128,18 @@ namespace optkit::metrics::performance::cpu
         }
 
         // Aggregated Metrics
+
+        static const MetricBuilder<uint64_t> &carm()
+        {
+            static const MetricBuilder<uint64_t> mb = []
+            {
+                MetricBuilder<uint64_t> mb{};
+                mb.add(ai());
+                mb.add(gflops());
+                return mb;
+            }();
+            return mb;
+        }
 
         static const MetricBuilder<uint64_t> &topdown_l1()
         {
