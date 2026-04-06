@@ -688,19 +688,19 @@ namespace optkit::metrics::performance::cpu
 
             static const MetricBuilder<uint64_t> metric = []
             {
-                std::string retired_sse_avx_flops_any_name = to_string(CoreEvents::RETIRED_VECTOR);
+                std::string retired_flops_any_name = to_string(CoreEvents::RETIRED_FLOPS_ANY);
                 return MetricBuilder<uint64_t>{}
-                    .add(retired_sse_avx_flops_any_name, arm::EventMapper::get(CoreEvents::RETIRED_VECTOR))
+                    .add(retired_flops_any_name, arm::EventMapper::get(CoreEvents::RETIRED_FLOPS_ANY))
                     .build("gflops",
-                           [retired_sse_avx_flops_any_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                           [retired_flops_any_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
                            {
                                double duration_sec = get_event_count(counts, "duration_microsec") / 1.0e6;
-                               uint64_t retired_sse_avx_flops_any = get_event_count(counts, retired_sse_avx_flops_any_name);
+                               uint64_t retired_flops_any = get_event_count(counts, retired_flops_any_name);
 
                                // Avoid div by zero
-                               if (retired_sse_avx_flops_any == 0)
+                               if (retired_flops_any == 0)
                                    return std::numeric_limits<double>::quiet_NaN();
-                               return static_cast<double>(retired_sse_avx_flops_any) / duration_sec / 1.0e9; // GFLOPS calculation
+                               return static_cast<double>(retired_flops_any) / duration_sec / 1.0e9; // GFLOPS calculation
                            });
             }();
             return metric;
