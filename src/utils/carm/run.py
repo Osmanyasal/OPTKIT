@@ -4,6 +4,7 @@ import subprocess
 import csv
 import datetime
 import platform
+import re
 import sys
 
 import utils as ut
@@ -22,6 +23,50 @@ test_sizes = [2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 512, 600, 768,
 x86_ISAs = ["avx512", "avx2", "sse", "scalar"]
 other_ISAs = ["sve", "neon", "armscalar", "rvv1.0", "rvv0.7", "riscvscalar"]
 vector_agnostic_ISA = ["sve", "rvv0.7", "rvv1.0"]
+
+def parse_cache_size_kib(size_text):
+    if not size_text:
+        return 0
+
+    match = re.fullmatch(r"\s*(\d+)\s*([KMG])(?:i?B)?\s*", size_text)
+    if match is None:
+        return 0
+
+    value = int(match.group(1))
+    unit = match.group(2)
+    scale = {"K": 1, "M": 1024, "G": 1024 * 1024}
+    return value * scale[unit]
+
+def detect_linux_cache_sizes(cache_root="/sys/devices/system/cpu/cpu0/cache"):
+    cache_sizes = {1: 0, 2: 0, 3: 0}
+
+    if not os.path.isdir(cache_root):
+        return cache_sizes[1], cache_sizes[2], cache_sizes[3]
+
+    for entry in os.listdir(cache_root):
+        if not entry.startswith("index"):
+            continue
+
+        index_path = os.path.join(cache_root, entry)
+        try:
+            with open(os.path.join(index_path, "level"), "r", encoding="utf-8") as level_file:
+                level = int(level_file.read().strip())
+            with open(os.path.join(index_path, "type"), "r", encoding="utf-8") as type_file:
+                cache_type = type_file.read().strip().lower()
+            with open(os.path.join(index_path, "size"), "r", encoding="utf-8") as size_file:
+                size_kib = parse_cache_size_kib(size_file.read().strip())
+        except (OSError, ValueError):
+            continue
+
+        if level not in cache_sizes or size_kib <= 0:
+            continue
+
+        if level == 1 and cache_type not in ["data", "unified"]:
+            continue
+
+        cache_sizes[level] = max(cache_sizes[level], size_kib)
+
+    return cache_sizes[1], cache_sizes[2], cache_sizes[3]
 
 def check_hardware(isa_set, freq, set_freq, verbose, precision, l1_size, l2_size, l3_size, VLEN, LMUL):
     CPU_Type = platform.machine()
@@ -118,6 +163,15 @@ def check_hardware(isa_set, freq, set_freq, verbose, precision, l1_size, l2_size
 
     elif CPU_Type == "aarch64":
         auto_args = autoconf(freq*1000000, set_freq)
+        auto_l1_size, auto_l2_size, auto_l3_size = detect_linux_cache_sizes()
+
+        if l1_size == 0:
+            l1_size = auto_l1_size
+        if l2_size == 0:
+            l2_size = auto_l2_size
+        if l3_size == 0:
+            l3_size = auto_l3_size
+
         #if we have an ARM CPU
         supported_isas = []
         for item in isa_set:
@@ -133,6 +187,9 @@ def check_hardware(isa_set, freq, set_freq, verbose, precision, l1_size, l2_size
         if (verbose > 2):
             print("-----------------CPU INFORMATION-----------------")
             print("CPU ISA: ARM")
+            print("L1 cache size:", l1_size, "KB" if l1_size > 0 else "KB (not detected)")
+            print("L2 cache size:", l2_size, "KB" if l2_size > 0 else "KB (not detected)")
+            print("L3 cache size:", l3_size, "KB" if l3_size > 0 else "KB (not detected)")
         isa_set = supported_isas
         if len(isa_set) == 0:
             isa_set.append("auto")
