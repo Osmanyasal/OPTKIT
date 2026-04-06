@@ -11,20 +11,33 @@
 #include <cmath>
 #include <vector>
 #include <cstdlib>
+#include <cstdio>
 #include <limits.h>
 #include <unistd.h>
 #include <sys/stat.h>
 
-// Returns "pngcairo" when gnuplot has cairo support, otherwise "png".
-// Result is cached after the first call.
+// Returns the best available PNG terminal supported by the local gnuplot.
+// Some builds print a warning but still exit successfully, so probe via the terminal list.
 static const std::string &gnuplot_png_terminal()
 {
     static std::string term;
     if (!term.empty())
         return term;
-    // Probe by feeding a minimal script; gnuplot exits non-zero if terminal is unknown.
-    int rc = system("echo 'set terminal pngcairo' | gnuplot > /dev/null 2>&1");
-    term = (rc == 0) ? "pngcairo" : "png";
+
+    FILE *pipe = popen("gnuplot -e \"set terminal\" 2>&1", "r");
+    if (!pipe)
+    {
+        term = "png";
+        return term;
+    }
+
+    std::string terminals;
+    char buffer[256];
+    while (fgets(buffer, sizeof(buffer), pipe) != NULL)
+        terminals += buffer;
+    pclose(pipe);
+
+    term = (terminals.find("pngcairo") != std::string::npos) ? "pngcairo" : "png";
     return term;
 }
 
@@ -1461,7 +1474,7 @@ static void generate_carm_roofline_for_isa(const std::vector<RunData> &runs,
 
 static void generate_carm_roofline_chart(const std::vector<RunData> &runs)
 {
-#ifdef OPTKIT_ENV_CARM_AVX512_L1_BW || OPTKIT_ENV_CARM_AVX2_L1_BW || OPTKIT_ENV_CARM_SSE_L1_BW || OPTKIT_ENV_CARM_SCALAR_L1_BW
+#if defined(OPTKIT_ENV_CARM_AVX512_L1_BW) || defined(OPTKIT_ENV_CARM_AVX2_L1_BW) || defined(OPTKIT_ENV_CARM_SSE_L1_BW) || defined(OPTKIT_ENV_CARM_SCALAR_L1_BW) || defined(OPTKIT_ENV_CARM_SVE_VL2_L1_BW) || defined(OPTKIT_ENV_CARM_NEON_L1_BW) || defined(OPTKIT_ENV_CARM_ARMSCALAR_L1_BW)
 
     // Check if we have any AI/GFlops data
     std::vector<RunData> valid_runs;
@@ -1521,6 +1534,27 @@ static void generate_carm_roofline_chart(const std::vector<RunData> &runs)
                                    OPTKIT_ENV_CARM_SCALAR_L1_BW, OPTKIT_ENV_CARM_SCALAR_L2_BW,
                                    OPTKIT_ENV_CARM_SCALAR_L3_BW, OPTKIT_ENV_CARM_SCALAR_DRAM_BW,
                                    OPTKIT_ENV_CARM_SCALAR_FP_FMA_GFLOPS);
+#endif
+
+#ifdef OPTKIT_ENV_CARM_SVE_VL2_L1_BW
+    generate_carm_roofline_for_isa(valid_runs, "SVE_VL2",
+                                   OPTKIT_ENV_CARM_SVE_VL2_L1_BW, OPTKIT_ENV_CARM_SVE_VL2_L2_BW,
+                                   OPTKIT_ENV_CARM_SVE_VL2_L3_BW, OPTKIT_ENV_CARM_SVE_VL2_DRAM_BW,
+                                   OPTKIT_ENV_CARM_SVE_VL2_FP_FMA_GFLOPS);
+#endif
+
+#ifdef OPTKIT_ENV_CARM_NEON_L1_BW
+    generate_carm_roofline_for_isa(valid_runs, "NEON",
+                                   OPTKIT_ENV_CARM_NEON_L1_BW, OPTKIT_ENV_CARM_NEON_L2_BW,
+                                   OPTKIT_ENV_CARM_NEON_L3_BW, OPTKIT_ENV_CARM_NEON_DRAM_BW,
+                                   OPTKIT_ENV_CARM_NEON_FP_FMA_GFLOPS);
+#endif
+
+#ifdef OPTKIT_ENV_CARM_ARMSCALAR_L1_BW
+    generate_carm_roofline_for_isa(valid_runs, "ARMSCALAR",
+                                   OPTKIT_ENV_CARM_ARMSCALAR_L1_BW, OPTKIT_ENV_CARM_ARMSCALAR_L2_BW,
+                                   OPTKIT_ENV_CARM_ARMSCALAR_L3_BW, OPTKIT_ENV_CARM_ARMSCALAR_DRAM_BW,
+                                   OPTKIT_ENV_CARM_ARMSCALAR_FP_FMA_GFLOPS);
 #endif
 #endif
 }
