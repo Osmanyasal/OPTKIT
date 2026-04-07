@@ -15,11 +15,21 @@ CUDA_INCLUDE := $(shell if [ -d /usr/local/cuda/include ]; then echo /usr/local/
 # Detect ROCm/AMD SMI installation
 ROCM_INCLUDE := $(shell if [ -d /opt/rocm/include ]; then echo /opt/rocm/include; elif [ -d /opt/rocm-5.7.1/include ]; then echo /opt/rocm-5.7.1/include; fi)
 
+# Detect Net-SNMP installation needed by liboptkit_static.a when PDU support is enabled
+NETSNMP_LIB := $(shell \
+	if command -v pkg-config >/dev/null 2>&1 && pkg-config --exists netsnmp; then \
+		pkg-config --libs netsnmp; \
+	elif ldconfig -p 2>/dev/null | grep -q 'libnetsnmp\.so'; then \
+		echo -lnetsnmp; \
+	elif [ -f /usr/lib/x86_64-linux-gnu/libnetsnmp.so ] || [ -f /usr/lib64/libnetsnmp.so ] || [ -f /usr/local/lib/libnetsnmp.so ]; then \
+		echo -lnetsnmp; \
+	fi)
+
 # Include directories
 INCLUDES = -I$(OPTKIT_INCLUDE) \
            -I$(SPDLOG_INCLUDE) \
            -I$(LIBPFM4_INCLUDE)
-
+		   
 # Add CUDA include and library if found
 ifneq ($(CUDA_INCLUDE),)
     INCLUDES += -I$(CUDA_INCLUDE)
@@ -32,9 +42,14 @@ ifneq ($(ROCM_INCLUDE),)
     LDFLAGS += -L/opt/rocm/lib -lamd_smi
 endif
 
+# Add Net-SNMP when OPTKIT was built with PDU support
+ifneq ($(NETSNMP_LIB),)
+	LDFLAGS += $(NETSNMP_LIB)
+endif
+
 # Targets
-TARGET = optkit-cli
-SOURCES = optkit.cc utils.cc topology.cc list.cc stat.cc report.cc msrmod.cc train.cc
+TARGET = optkit-setenv
+SOURCES = main.cc sysconfig.cc cpu.cc memory.cc gpu.cc cgroup.cc
 OBJECTS = $(SOURCES:.cc=.o)
 
 # Default target
@@ -76,31 +91,8 @@ env-info:
 	@echo "OPTKIT_LIB: $(OPTKIT_LIB)"
 	@echo "CUDA_INCLUDE: $(CUDA_INCLUDE)"
 	@echo "ROCM_INCLUDE: $(ROCM_INCLUDE)"
+	@echo "NETSNMP_LIB: $(NETSNMP_LIB)"
 	@echo "INCLUDES: $(INCLUDES)"
-
-# Check GPU support
-gpu-info:
-	@echo "=== GPU Support Check ==="
-	@if [ -n "$(CUDA_INCLUDE)" ]; then \
-		echo "NVIDIA CUDA/NVML: Found at $(CUDA_INCLUDE)"; \
-		if command -v nvidia-smi >/dev/null 2>&1; then \
-			echo "nvidia-smi available"; \
-		else \
-			echo "nvidia-smi not available"; \
-		fi; \
-	else \
-		echo "NVIDIA CUDA/NVML: Not found"; \
-	fi
-	@if [ -n "$(ROCM_INCLUDE)" ]; then \
-		echo "AMD ROCm: Found at $(ROCM_INCLUDE)"; \
-		if command -v rocm-smi >/dev/null 2>&1; then \
-			echo "rocm-smi available"; \
-		else \
-			echo "rocm-smi not available"; \
-		fi; \
-	else \
-		echo "AMD ROCm: Not found"; \
-	fi
 
 # Install the binary (optional)
 install: $(TARGET)
