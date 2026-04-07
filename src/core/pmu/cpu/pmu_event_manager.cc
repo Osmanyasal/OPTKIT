@@ -18,8 +18,12 @@ namespace optkit::pmu::cpu
         // increment event count
         PMUEventManager::event_count_being_monitor += num_events;
 
-        // before adding fd, check if total event coun exceeds the systems' resources. then print a warning!
+// before adding fd, check if total event coun exceeds the systems' resources. then print a warning!
+#if !OPTKIT_ENV_CPU_RISCV
         int32_t num_cntrs = Query::default_pmu_info().num_cntrs;
+#else
+        int32_t num_cntrs = 10;
+#endif
         if (OPT_LIKELY(PMUEventManager::event_count_being_monitor > num_cntrs))
         {
             OPTKIT_CORE_DEBUG("Total # of events exceed system resources!! {}/{}(max) Multiplexing will take place(BlockGroup is not created by the system when this occures).", PMUEventManager::event_count_being_monitor, num_cntrs);
