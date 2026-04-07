@@ -24,6 +24,16 @@ namespace optkit::pmu::cpu::perf::riscv
         return cache_id | (op_id << 8U) | (result_id << 16U);
     }
 
+    inline constexpr EventDefinition llc_load{
+        "LLC-load",
+        PERF_TYPE_HW_CACHE,
+        make_hw_cache_config(PERF_COUNT_HW_CACHE_LL, PERF_COUNT_HW_CACHE_OP_READ, PERF_COUNT_HW_CACHE_RESULT_ACCESS)};
+
+    inline constexpr EventDefinition llc_store{
+        "LLC-store",
+        PERF_TYPE_HW_CACHE,
+        make_hw_cache_config(PERF_COUNT_HW_CACHE_LL, PERF_COUNT_HW_CACHE_OP_WRITE, PERF_COUNT_HW_CACHE_RESULT_ACCESS)};
+
     inline constexpr EventDefinition llc_load_misses{
         "LLC-load-misses",
         PERF_TYPE_HW_CACHE,
@@ -53,6 +63,16 @@ namespace optkit::pmu::cpu::perf::riscv
         return make_event_attr(instructions);
     }
 
+    inline perf_event_attr make_llc_load_attr()
+    {
+        return make_event_attr(llc_load);
+    }
+
+    inline perf_event_attr make_llc_store_attr()
+    {
+        return make_event_attr(llc_store);
+    }
+
     inline perf_event_attr make_llc_load_misses_attr()
     {
         return make_event_attr(llc_load_misses);
@@ -68,6 +88,18 @@ namespace optkit::pmu::cpu::perf::riscv
         if (event_name == instructions.name || event_config == instructions.config)
         {
             attr = make_instructions_attr();
+            return true;
+        }
+
+        if (event_name == llc_load.name || event_config == llc_load.config)
+        {
+            attr = make_llc_load_attr();
+            return true;
+        }
+
+        if (event_name == llc_store.name || event_config == llc_store.config)
+        {
+            attr = make_llc_store_attr();
             return true;
         }
 

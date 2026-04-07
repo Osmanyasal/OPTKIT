@@ -11,6 +11,8 @@ namespace optkit::metrics::performance::cpu::riscv
     enum class NativeEvents
     {
         BEGIN = 0,
+        LLC_LOAD,
+        LLC_STORE,
         LLC_LOAD_MISSES,
         LLC_STORE_MISSES,
         END,
@@ -19,6 +21,8 @@ namespace optkit::metrics::performance::cpu::riscv
     static const std::vector<std::string> &get_native_events()
     {
         static const std::vector<std::string> native_events{
+            "LLC-load",
+            "LLC-store",
             "LLC-load-misses",
             "LLC-store-misses",
         };

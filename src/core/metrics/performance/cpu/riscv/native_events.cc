@@ -7,6 +7,10 @@ namespace optkit::metrics::performance::cpu::riscv
     {
         switch (event)
         {
+        case NativeEvents::LLC_LOAD:
+            return "LLC-load";
+        case NativeEvents::LLC_STORE:
+            return "LLC-store";
         case NativeEvents::LLC_LOAD_MISSES:
             return "LLC-load-misses";
         case NativeEvents::LLC_STORE_MISSES:

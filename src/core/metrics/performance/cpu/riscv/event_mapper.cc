@@ -12,6 +12,20 @@ namespace optkit::metrics::performance::cpu::riscv
     };
 
     const std::unordered_map<performance::cpu::riscv::NativeEvents, std::vector<uint64_t>> EventMapper::native_event_map = {
+        {performance::cpu::riscv::NativeEvents::LLC_LOAD,
+         {
+             optkit::pmu::cpu::perf::riscv::make_hw_cache_config(
+                 PERF_COUNT_HW_CACHE_LL,
+                 PERF_COUNT_HW_CACHE_OP_READ,
+                 PERF_COUNT_HW_CACHE_RESULT_ACCESS),
+         }},
+        {performance::cpu::riscv::NativeEvents::LLC_STORE,
+         {
+             optkit::pmu::cpu::perf::riscv::make_hw_cache_config(
+                 PERF_COUNT_HW_CACHE_LL,
+                 PERF_COUNT_HW_CACHE_OP_WRITE,
+                 PERF_COUNT_HW_CACHE_RESULT_ACCESS),
+         }},
         {performance::cpu::riscv::NativeEvents::LLC_LOAD_MISSES,
          {
              optkit::pmu::cpu::perf::riscv::make_hw_cache_config(
@@ -32,6 +46,10 @@ namespace optkit::metrics::performance::cpu::riscv
     {
         if (event == "INST_RETIRED")
             return EventMapper::get(CoreEvents::INST_RETIRED);
+        else if (event == "LLC-load")
+            return {optkit::pmu::cpu::perf::riscv::llc_load.config};
+        else if (event == "LLC-store")
+            return {optkit::pmu::cpu::perf::riscv::llc_store.config};
         else if (event == "LLC-load-misses")
             return {optkit::pmu::cpu::perf::riscv::llc_load_misses.config};
         else if (event == "LLC-store-misses")
