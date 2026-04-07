@@ -18,12 +18,8 @@ namespace optkit::pmu::cpu
         // increment event count
         PMUEventManager::event_count_being_monitor += num_events;
 
-// before adding fd, check if total event coun exceeds the systems' resources. then print a warning!
-#if !OPTKIT_ENV_CPU_RISCV
+        // before adding fd, check if total event coun exceeds the systems' resources. then print a warning!
         int32_t num_cntrs = Query::default_pmu_info().num_cntrs;
-#else
-        int32_t num_cntrs = 10;
-#endif
         if (OPT_LIKELY(PMUEventManager::event_count_being_monitor > num_cntrs))
         {
             OPTKIT_CORE_DEBUG("Total # of events exceed system resources!! {}/{}(max) Multiplexing will take place(BlockGroup is not created by the system when this occures).", PMUEventManager::event_count_being_monitor, num_cntrs);
@@ -94,6 +90,14 @@ namespace optkit::pmu::cpu
 
     int32_t PMUEventManager::pmu_num_cntrs()
     {
-        return Query::default_pmu_info().num_cntrs;
+        int32_t result = Query::default_pmu_info().num_cntrs;
+#if OPTKIT_ENV_CPU_RISCV
+        if (result == 0)
+        {
+            OPTKIT_CORE_WARN("RISC-V PMU counter number is not supported by libpfm4, using a default value of 10. Please set OPTKIT_ENV_CPU_RISCV to 0 if you are not running on RISC-V platform.");
+            result = 10;
+        }
+#endif
+        return result;
     }
 };
