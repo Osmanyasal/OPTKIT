@@ -48,8 +48,8 @@ ifneq ($(NETSNMP_LIB),)
 endif
 
 # Targets
-TARGET = optkit-setenv
-SOURCES = main.cc sysconfig.cc cpu.cc memory.cc gpu.cc cgroup.cc
+TARGET = optkit-cli
+SOURCES = optkit.cc utils.cc topology.cc list.cc stat.cc report.cc msrmod.cc train.cc
 OBJECTS = $(SOURCES:.cc=.o)
 
 # Default target
@@ -93,6 +93,29 @@ env-info:
 	@echo "ROCM_INCLUDE: $(ROCM_INCLUDE)"
 	@echo "NETSNMP_LIB: $(NETSNMP_LIB)"
 	@echo "INCLUDES: $(INCLUDES)"
+
+gpu-info:
+	@echo "=== GPU Support Check ==="
+	@if [ -n "$(CUDA_INCLUDE)" ]; then \
+		echo "NVIDIA CUDA/NVML: Found at $(CUDA_INCLUDE)"; \
+		if command -v nvidia-smi >/dev/null 2>&1; then \
+			echo "nvidia-smi available"; \
+		else \
+			echo "nvidia-smi not available"; \
+		fi; \
+	else \
+		echo "NVIDIA CUDA/NVML: Not found"; \
+	fi
+	@if [ -n "$(ROCM_INCLUDE)" ]; then \
+		echo "AMD ROCm: Found at $(ROCM_INCLUDE)"; \
+		if command -v rocm-smi >/dev/null 2>&1; then \
+			echo "rocm-smi available"; \
+		else \
+			echo "rocm-smi not available"; \
+		fi; \
+	else \
+		echo "AMD ROCm: Not found"; \
+	fi
 
 # Install the binary (optional)
 install: $(TARGET)
