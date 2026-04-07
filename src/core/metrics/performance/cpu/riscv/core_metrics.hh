@@ -23,7 +23,9 @@ namespace optkit::metrics::performance::cpu
         static const std::vector<std::string> &get_all_metrics()
         {
             static const std::vector<std::string> names = {
-                "l3_mpki",
+                "INST_RETIRED",
+                "LLC-load-misses",
+                "LLC-store-misses",
             };
             return names;
         }
@@ -36,8 +38,6 @@ namespace optkit::metrics::performance::cpu
                 return llc_load_misses();
             if (metric_name == "LLC-store-misses")
                 return llc_store_misses();
-            if (metric_name == "l3_mpki")
-                return l3_mpki();
             if (metric_name == "all_metrics")
                 return all_metrics();
 

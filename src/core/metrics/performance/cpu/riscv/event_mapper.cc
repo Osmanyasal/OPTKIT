@@ -2,7 +2,7 @@
 
 #if OPTKIT_ENV_CPU_RISCV
 
-#include "core/pmu/cpu/perf/riscv/events.hh"
+#include "core/pmu/cpu/perf/riscv/event_resolver.hh"
 
 namespace optkit::metrics::performance::cpu::riscv
 {
