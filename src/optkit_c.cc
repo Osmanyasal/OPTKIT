@@ -9,7 +9,7 @@
 #include <unistd.h>
 
 #include "optkit.hh"
-#include "core/energy/cpu/pdu/profiler.hh"
+#include "core/energy/pdu/profiler.hh"
 #include "core/energy/cpu/hwmon/profiler.hh"
 
 thread_local std::string g_last_error;

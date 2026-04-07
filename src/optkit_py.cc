@@ -8,7 +8,7 @@
 #include "optkit.hh"
 #include "core/pmu/cpu/perf/block_profiler.hh"
 #include "core/pmu/cpu/perf/profiler_config.hh"
-#include "core/energy/cpu/pdu/profiler.hh"
+#include "core/energy/pdu/profiler.hh"
 #include "core/energy/cpu/rapl/profiler.hh"
 #include "core/energy/cpu/hwmon/profiler.hh"
 #include "core/energy/gpu/nvidia/profiler.hh"

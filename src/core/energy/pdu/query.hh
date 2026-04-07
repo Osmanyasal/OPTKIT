@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "core/energy/cpu/pdu/pdu.hh"
+#include "core/energy/pdu/pdu.hh"
 
 namespace optkit::energy::pdu
 {

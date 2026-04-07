@@ -1,4 +1,4 @@
-#include "core/energy/cpu/pdu/query.hh"
+#include "core/energy/pdu/query.hh"
 
 #include <cstdlib>
 #include <unistd.h>

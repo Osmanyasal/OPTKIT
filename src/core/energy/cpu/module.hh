@@ -2,7 +2,7 @@
 
 #include "utils/utils.hh"
 #include "utils/deployment/deployment_config.hh"
-#include "core/energy/cpu/pdu/profiler.hh"
+#include "core/energy/pdu/profiler.hh"
 #include "core/energy/cpu/rapl/profiler.hh"
 #include "core/energy/cpu/hwmon/profiler.hh"
 #include "core/metrics/energy/module.hh"
@@ -158,11 +158,11 @@
 #else
 #include "core/energy/cpu/rapl/clear.hh"
 #include "core/energy/cpu/hwmon/clear.hh"
-#include "core/energy/cpu/pdu/clear.hh"
+#include "core/energy/pdu/clear.hh"
 #endif
 
 #else
 #include "core/energy/cpu/rapl/clear.hh"
 #include "core/energy/cpu/hwmon/clear.hh"
-#include "core/energy/cpu/pdu/clear.hh"
+#include "core/energy/pdu/clear.hh"
 #endif

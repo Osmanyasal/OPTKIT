@@ -2,7 +2,7 @@
 
 #include "utils/utils.hh"
 #include "utils/deployment/deployment_config.hh"
-#include "core/energy/cpu/pdu/profiler.hh"
+#include "core/energy/pdu/profiler.hh"
 #include "core/query.hh"
 
 #if OPTKIT_CONF_PDU_MACROS_ENABLED == 1 && OPTKIT_ENV_LIB_NET_SNMP

@@ -9,7 +9,7 @@
 #include "utils/base_profiler.hh"
 #include "utils/metric_builder.hh"
 #include "utils/utils.hh"
-#include "core/energy/cpu/pdu/query.hh"
+#include "core/energy/pdu/query.hh"
 
 #if OPTKIT_ENV_LIB_NET_SNMP
 #include <net-snmp/net-snmp-config.h>

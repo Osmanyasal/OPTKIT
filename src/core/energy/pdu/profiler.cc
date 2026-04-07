@@ -1,4 +1,4 @@
-#include "core/energy/cpu/pdu/profiler.hh"
+#include "core/energy/pdu/profiler.hh"
 
 #include <cstdlib>
 #include <cstring>
@@ -89,14 +89,14 @@ namespace optkit::energy::pdu
 
         if (OPT_UNLIKELY(this->config.is_sampling))
         {
-            this->sampling_thread = std::thread([this]() {
+            this->sampling_thread = std::thread([this]()
+                                                {
                 this->is_sampling = true;
                 while (this->is_sampling)
                 {
                     sampling_function(*this);
                     std::this_thread::sleep_for(std::chrono::seconds(1));
-                }
-            });
+                } });
         }
     }
 
@@ -127,6 +127,24 @@ namespace optkit::energy::pdu
 
         if (OPT_LIKELY(this->config.dump_results_to_file))
             this->save();
+            
+        if (OPT_LIKELY(this->config.verbose))
+        {
+            std::cout << std::fixed << "\033[1;33m"
+                      << "Block: " << this->config.block_name << "\033[0m"
+                      << " [" << this->total_duration_ms << "ms] Measured\n";
+
+            if (OPT_UNLIKELY(this->metric_builder.print_events))
+                for (auto &&event : this->event_results)
+                    std::cout << event.second << std::endl;
+
+            for (auto &&metric : this->metric_results)
+            {
+                std::cout << "\tPackage " << metric.first << " Metrics: \n";
+                for (const auto &pair : metric.second)
+                    std::cout << std::fixed << "\t\t" << pair.first << ":" << pair.second << "\n";
+            }
+        }
     }
 
     void Profiler::disable()
@@ -224,12 +242,12 @@ namespace optkit::energy::pdu
 
     const optkit::metrics::MetricBuilder<double> &default_metrics()
     {
-        static const optkit::metrics::MetricBuilder<double> mb = []() {
+        static const optkit::metrics::MetricBuilder<double> mb = []()
+        {
             return optkit::metrics::MetricBuilder<double>{}
                 .add(to_string(PduDomain::NODE_ENERGY), std::vector<uint64_t>(1, 0x0))
-                .build("watt_hour", [](const std::unordered_map<std::string, double> &results) {
-                    return optkit::metrics::get_event_count(results, to_string(PduDomain::NODE_ENERGY)) / 3600.0;
-                });
+                .build("watt_hour", [](const std::unordered_map<std::string, double> &results)
+                       { return optkit::metrics::get_event_count(results, to_string(PduDomain::NODE_ENERGY)) / 3600.0; });
         }();
 
         return mb;
