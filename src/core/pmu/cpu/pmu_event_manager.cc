@@ -94,7 +94,7 @@ namespace optkit::pmu::cpu
 #if OPTKIT_ENV_CPU_RISCV
         if (result == 0)
         {
-            OPTKIT_CORE_WARN("RISC-V PMU counter number is not supported by libpfm4, using a default value of 10. Please set OPTKIT_ENV_CPU_RISCV to 0 if you are not running on RISC-V platform.");
+            OPTKIT_CORE_DEBUG("RISC-V PMU counter number is not supported by libpfm4, using a default value of 10. Please set OPTKIT_ENV_CPU_RISCV to 0 if you are not running on RISC-V platform.");
             result = 10;
         }
 #endif
