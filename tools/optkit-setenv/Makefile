@@ -15,6 +15,16 @@ CUDA_INCLUDE := $(shell if [ -d /usr/local/cuda/include ]; then echo /usr/local/
 # Detect ROCm/AMD SMI installation
 ROCM_INCLUDE := $(shell if [ -d /opt/rocm/include ]; then echo /opt/rocm/include; elif [ -d /opt/rocm-5.7.1/include ]; then echo /opt/rocm-5.7.1/include; fi)
 
+# Detect Net-SNMP installation needed by liboptkit_static.a when PDU support is enabled
+NETSNMP_LIB := $(shell \
+	if command -v pkg-config >/dev/null 2>&1 && pkg-config --exists netsnmp; then \
+		pkg-config --libs netsnmp; \
+	elif ldconfig -p 2>/dev/null | grep -q 'libnetsnmp\.so'; then \
+		echo -lnetsnmp; \
+	elif [ -f /usr/lib/x86_64-linux-gnu/libnetsnmp.so ] || [ -f /usr/lib64/libnetsnmp.so ] || [ -f /usr/local/lib/libnetsnmp.so ]; then \
+		echo -lnetsnmp; \
+	fi)
+
 # Include directories
 INCLUDES = -I$(OPTKIT_INCLUDE) \
            -I$(SPDLOG_INCLUDE) \
@@ -30,6 +40,11 @@ endif
 ifneq ($(ROCM_INCLUDE),)
     INCLUDES += -I$(ROCM_INCLUDE)
     LDFLAGS += -L/opt/rocm/lib -lamd_smi
+endif
+
+# Add Net-SNMP when OPTKIT was built with PDU support
+ifneq ($(NETSNMP_LIB),)
+	LDFLAGS += $(NETSNMP_LIB)
 endif
 
 # Targets
@@ -76,6 +91,7 @@ env-info:
 	@echo "OPTKIT_LIB: $(OPTKIT_LIB)"
 	@echo "CUDA_INCLUDE: $(CUDA_INCLUDE)"
 	@echo "ROCM_INCLUDE: $(ROCM_INCLUDE)"
+	@echo "NETSNMP_LIB: $(NETSNMP_LIB)"
 	@echo "INCLUDES: $(INCLUDES)"
 
 # Install the binary (optional)
