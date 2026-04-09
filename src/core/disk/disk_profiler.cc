@@ -117,17 +117,6 @@ namespace optkit::disk
 
             this->event_results.clear();
             this->metric_results.clear();
-
-            if (!this->read_buffer.empty())
-            {
-                const auto &last = this->read_buffer.back();
-                const std::vector<std::string> &event_names = this->metric_builder.event_names();
-                const std::unordered_map<std::string, uint64_t> last_counts = event_counts_from_sample(event_names, last.second, last.first);
-
-                const auto unique_event_names = unique_event_names_from(event_names);
-                this->event_results = event_values_from_counts(unique_event_names, last_counts);
-                this->metric_results = this->metric_builder.calculate(last_counts);
-            }
         }
         else
         {
