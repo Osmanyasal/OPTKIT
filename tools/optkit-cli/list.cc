@@ -20,6 +20,7 @@ void execute_list_command(const CommandArgs &args)
         metrics_by_category["cpu_performance"] = optkit::metrics::performance::cpu_metrics::get_all_metrics();
         metrics_by_category["cpu_energy"] = optkit::metrics::energy::cpu_metrics::get_all_metrics();
         metrics_by_category["gpu_energy"] = optkit::metrics::energy::gpu_metrics::get_all_metrics();
+        metrics_by_category["gpu_performance"] = optkit::metrics::performance::gpu_metrics::get_all_metrics();
         metrics_by_category["disk"] = optkit::metrics::disk::core_metrics::get_all_metrics();
     }
     else if (args.target == Target::CPU)
@@ -30,6 +31,7 @@ void execute_list_command(const CommandArgs &args)
     else if (args.target == Target::GPU)
     {
         metrics_by_category["gpu_energy"] = optkit::metrics::energy::gpu_metrics::get_all_metrics();
+        metrics_by_category["gpu_performance"] = optkit::metrics::performance::gpu_metrics::get_all_metrics();
     }
 
     std::vector<int32_t> pmu_ids;

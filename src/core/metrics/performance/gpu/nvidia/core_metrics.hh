@@ -59,7 +59,7 @@ namespace optkit::metrics::performance::gpu
 
         // Fetch a metric by its method name (e.g., "l2_mpki").
         // Returns a const reference to a static MetricBuilder.
-        static const MetricBuilder<uint64_t> &get_metric(const std::string &metric_name)
+        static const MetricBuilder<double> &get_metric(const std::string &metric_name)
         {
             // Common metrics
             if (metric_name == "graphics_util")
@@ -88,217 +88,217 @@ namespace optkit::metrics::performance::gpu
                 return fp16_util();
 
             OPTKIT_CORE_WARN("Requested unknown NVIDIA metric: {}", metric_name);
-            static const MetricBuilder<uint64_t> empty{};
+            static const MetricBuilder<double> empty{};
             return empty;
         }
 
-        static const MetricBuilder<uint64_t>& graphics_util()
+        static const MetricBuilder<double>& graphics_util()
         {
-            static const MetricBuilder<uint64_t> metric = []
+            static const MetricBuilder<double> metric = []
             {
                 std::string graphics_util_name = to_string(CoreEvents::GRAPHICS_UTIL);
-                return MetricBuilder<uint64_t>{}
+                return MetricBuilder<double>{}
                     .add(graphics_util_name, nvidia::EventMapper::get(CoreEvents::GRAPHICS_UTIL))
                     .build("graphics_util__%",
-                           [graphics_util_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                           [graphics_util_name](const std::unordered_map<std::string, double> &counts) -> double
                            {
-                               uint64_t graphics_util = get_event_count(counts, graphics_util_name);
+                               double graphics_util = get_event_count(counts, graphics_util_name);
                                return graphics_util;
                            });
             }();
             return metric;
         }
 
-        static const MetricBuilder<uint64_t>& sm_util()
+        static const MetricBuilder<double>& sm_util()
         {
-            static const MetricBuilder<uint64_t> metric = []
+            static const MetricBuilder<double> metric = []
             {
                 std::string sm_util_name = to_string(CoreEvents::SM_UTIL);
-                return MetricBuilder<uint64_t>{}
+                return MetricBuilder<double>{}
                     .add(sm_util_name, nvidia::EventMapper::get(CoreEvents::SM_UTIL))
                     .build("sm_util__%",
-                           [sm_util_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                           [sm_util_name](const std::unordered_map<std::string, double> &counts) -> double
                            {
-                               uint64_t sm_util = get_event_count(counts, sm_util_name);
+                               double sm_util = get_event_count(counts, sm_util_name);
                                return sm_util;
                            });
             }();
             return metric;
         }
 
-        static const MetricBuilder<uint64_t>& sm_occupancy()
+        static const MetricBuilder<double>& sm_occupancy()
         {
-            static const MetricBuilder<uint64_t> metric = []
+            static const MetricBuilder<double> metric = []
             {
                 std::string sm_occupancy_name = to_string(CoreEvents::SM_OCCUPANCY);
-                return MetricBuilder<uint64_t>{}
+                return MetricBuilder<double>{}
                     .add(sm_occupancy_name, nvidia::EventMapper::get(CoreEvents::SM_OCCUPANCY))
                     .build("sm_occupancy__%",
-                           [sm_occupancy_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                           [sm_occupancy_name](const std::unordered_map<std::string, double> &counts) -> double
                            {
-                               uint64_t sm_occupancy = get_event_count(counts, sm_occupancy_name);
+                               double sm_occupancy = get_event_count(counts, sm_occupancy_name);
                                return sm_occupancy;
                            });
             }();
             return metric;
         }
 
-        static const MetricBuilder<uint64_t>& integer_util()
+        static const MetricBuilder<double>& integer_util()
         {
-            static const MetricBuilder<uint64_t> metric = []
+            static const MetricBuilder<double> metric = []
             {
                 std::string integer_util_name = to_string(CoreEvents::INTEGER_UTIL);
-                return MetricBuilder<uint64_t>{}
+                return MetricBuilder<double>{}
                     .add(integer_util_name, nvidia::EventMapper::get(CoreEvents::INTEGER_UTIL))
                     .build("integer_util__%",
-                           [integer_util_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                           [integer_util_name](const std::unordered_map<std::string, double> &counts) -> double
                            {
-                               uint64_t integer_util = get_event_count(counts, integer_util_name);
+                               double integer_util = get_event_count(counts, integer_util_name);
                                return integer_util;
                            });
             }();
             return metric;
         }
 
-        static const MetricBuilder<uint64_t>& tensor_util()
+        static const MetricBuilder<double>& tensor_util()
         {
-            static const MetricBuilder<uint64_t> metric = []
+            static const MetricBuilder<double> metric = []
             {
                 std::string tensor_util_name = to_string(CoreEvents::ANY_TENSOR_UTIL);
-                return MetricBuilder<uint64_t>{}
+                return MetricBuilder<double>{}
                     .add(tensor_util_name, nvidia::EventMapper::get(CoreEvents::ANY_TENSOR_UTIL))
                     .build("tensor_util__%",
-                           [tensor_util_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                           [tensor_util_name](const std::unordered_map<std::string, double> &counts) -> double
                            {
-                               uint64_t tensor_util = get_event_count(counts, tensor_util_name);
+                               double tensor_util = get_event_count(counts, tensor_util_name);
                                return tensor_util;
                            });
             }();
             return metric;
         }
 
-        static const MetricBuilder<uint64_t>& dfma_util()
+        static const MetricBuilder<double>& dfma_util()
         {
-            static const MetricBuilder<uint64_t> metric = []
+            static const MetricBuilder<double> metric = []
             {
                 std::string dfma_util_name = to_string(CoreEvents::DFMA_TENSOR_UTIL);
-                return MetricBuilder<uint64_t>{}
+                return MetricBuilder<double>{}
                     .add(dfma_util_name, nvidia::EventMapper::get(CoreEvents::DFMA_TENSOR_UTIL))
                     .build("dfma_util__%",
-                           [dfma_util_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                           [dfma_util_name](const std::unordered_map<std::string, double> &counts) -> double
                            {
-                               uint64_t dfma_util = get_event_count(counts, dfma_util_name);
+                               double dfma_util = get_event_count(counts, dfma_util_name);
                                return dfma_util;
                            });
             }();
             return metric;
         } // Double Fused Multiply-Add
 
-        static const MetricBuilder<uint64_t>& hmma_util()
+        static const MetricBuilder<double>& hmma_util()
         {
-            static const MetricBuilder<uint64_t> metric = []
+            static const MetricBuilder<double> metric = []
             {
                 std::string hmma_util_name = to_string(CoreEvents::HMMA_TENSOR_UTIL);
-                return MetricBuilder<uint64_t>{}
+                return MetricBuilder<double>{}
                     .add(hmma_util_name, nvidia::EventMapper::get(CoreEvents::HMMA_TENSOR_UTIL))
                     .build("hmma_util__%",
-                           [hmma_util_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                           [hmma_util_name](const std::unordered_map<std::string, double> &counts) -> double
                            {
-                               uint64_t hmma_util = get_event_count(counts, hmma_util_name);
+                               double hmma_util = get_event_count(counts, hmma_util_name);
                                return hmma_util;
                            });
             }();
             return metric;
         } // Half-precision Matrix Multiply-Accumulate
 
-        static const MetricBuilder<uint64_t>& imma_util()
+        static const MetricBuilder<double>& imma_util()
         {
-            static const MetricBuilder<uint64_t> metric = []
+            static const MetricBuilder<double> metric = []
             {
                 std::string imma_util_name = to_string(CoreEvents::IMMA_TENSOR_UTIL);
-                return MetricBuilder<uint64_t>{}
+                return MetricBuilder<double>{}
                     .add(imma_util_name, nvidia::EventMapper::get(CoreEvents::IMMA_TENSOR_UTIL))
                     .build("imma_util__%",
-                           [imma_util_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                           [imma_util_name](const std::unordered_map<std::string, double> &counts) -> double
                            {
-                               uint64_t imma_util = get_event_count(counts, imma_util_name);
+                               double imma_util = get_event_count(counts, imma_util_name);
                                return imma_util;
                            });
             }();
             return metric;
         } // Integer Matrix Multiply-Accumulate
 
-        static const MetricBuilder<uint64_t>& dram_bw_util()
+        static const MetricBuilder<double>& dram_bw_util()
         {
-            static const MetricBuilder<uint64_t> metric = []
+            static const MetricBuilder<double> metric = []
             {
                 std::string dram_bw_util_name = to_string(CoreEvents::DRAM_BW_UTIL);
-                return MetricBuilder<uint64_t>{}
+                return MetricBuilder<double>{}
                     .add(dram_bw_util_name, nvidia::EventMapper::get(CoreEvents::DRAM_BW_UTIL))
                     .build("dram_bw_util__%",
-                           [dram_bw_util_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                           [dram_bw_util_name](const std::unordered_map<std::string, double> &counts) -> double
                            {
-                               uint64_t dram_bw_util = get_event_count(counts, dram_bw_util_name);
+                               double dram_bw_util = get_event_count(counts, dram_bw_util_name);
                                return dram_bw_util;
                            });
             }();
             return metric;
         } // DRAM Bandwidth Utilization
-        static const MetricBuilder<uint64_t>& fp64_util()
+        static const MetricBuilder<double>& fp64_util()
         {
-            static const MetricBuilder<uint64_t> metric = []
+            static const MetricBuilder<double> metric = []
             {
                 std::string fp64_util_name = to_string(CoreEvents::FP64_UTIL);
-                return MetricBuilder<uint64_t>{}
+                return MetricBuilder<double>{}
                     .add(fp64_util_name, nvidia::EventMapper::get(CoreEvents::FP64_UTIL))
                     .build("fp64_util__%",
-                           [fp64_util_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                           [fp64_util_name](const std::unordered_map<std::string, double> &counts) -> double
                            {
-                               uint64_t fp64_util = get_event_count(counts, fp64_util_name);
+                               double fp64_util = get_event_count(counts, fp64_util_name);
                                return fp64_util;
                            });
             }();
             return metric;
         } // Double-precision Floating Point Utilization
 
-        static const MetricBuilder<uint64_t>& fp32_util()
+        static const MetricBuilder<double>& fp32_util()
         {
-            static const MetricBuilder<uint64_t> metric = []
+            static const MetricBuilder<double> metric = []
             {
                 std::string fp32_util_name = to_string(CoreEvents::FP32_UTIL);
-                return MetricBuilder<uint64_t>{}
+                return MetricBuilder<double>{}
                     .add(fp32_util_name, nvidia::EventMapper::get(CoreEvents::FP32_UTIL))
                     .build("fp32_util__%",
-                           [fp32_util_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                           [fp32_util_name](const std::unordered_map<std::string, double> &counts) -> double
                            {
-                               uint64_t fp32_util = get_event_count(counts, fp32_util_name);
+                               double fp32_util = get_event_count(counts, fp32_util_name);
                                return fp32_util;
                            });
             }();
             return metric;
         } // Single-precision Floating Point Utilization
         
-        static const MetricBuilder<uint64_t>& fp16_util()
+        static const MetricBuilder<double>& fp16_util()
         {
-            static const MetricBuilder<uint64_t> metric = []
+            static const MetricBuilder<double> metric = []
             {
                 std::string fp16_util_name = to_string(CoreEvents::FP16_UTIL);
-                return MetricBuilder<uint64_t>{}
+                return MetricBuilder<double>{}
                     .add(fp16_util_name, nvidia::EventMapper::get(CoreEvents::FP16_UTIL))
                     .build("fp16_util__%",
-                           [fp16_util_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                           [fp16_util_name](const std::unordered_map<std::string, double> &counts) -> double
                            {
-                               uint64_t fp16_util = get_event_count(counts, fp16_util_name);
+                               double fp16_util = get_event_count(counts, fp16_util_name);
                                return fp16_util;
                            });
             }();
             return metric;
         } // Half-precision Floating Point Utilization
-        static const MetricBuilder<uint64_t>& all_metrics()
+        static const MetricBuilder<double>& all_metrics()
         {
-            static const MetricBuilder<uint64_t> mb = []
+            static const MetricBuilder<double> mb = []
             {
-                MetricBuilder<uint64_t> mb{};
+                MetricBuilder<double> mb{};
                 mb.add(graphics_util());
                 mb.add(sm_util());
                 mb.add(sm_occupancy());

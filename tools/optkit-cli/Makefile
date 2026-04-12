@@ -9,8 +9,10 @@ OPTKIT_INCLUDE = $(OPTKIT_ROOT)/src
 SPDLOG_INCLUDE = $(OPTKIT_ROOT)/lib/spdlog/include
 LIBPFM4_INCLUDE = $(OPTKIT_ROOT)/lib/libpfm4/include
 
-# Detect CUDA/NVML installation
+# Detect CUDA/NVML/CUPTI installation
 CUDA_INCLUDE := $(shell if [ -d /usr/local/cuda/include ]; then echo /usr/local/cuda/include; elif [ -d /usr/local/cuda-12.9/include ]; then echo /usr/local/cuda-12.9/include; elif [ -d /usr/local/cuda/targets/x86_64-linux/include ]; then echo /usr/local/cuda/targets/x86_64-linux/include; fi)
+CUDA_LIB_DIR := $(shell if [ -d /usr/local/cuda/lib64 ]; then echo /usr/local/cuda/lib64; elif [ -d /usr/local/cuda-12.9/lib64 ]; then echo /usr/local/cuda-12.9/lib64; elif [ -d /usr/lib/x86_64-linux-gnu ]; then echo /usr/lib/x86_64-linux-gnu; fi)
+CUPTI_LIB_DIR := $(shell if [ -d /usr/local/cuda/extras/CUPTI/lib64 ]; then echo /usr/local/cuda/extras/CUPTI/lib64; elif [ -d /usr/local/cuda-12.9/extras/CUPTI/lib64 ]; then echo /usr/local/cuda-12.9/extras/CUPTI/lib64; elif [ -d /usr/local/cuda/lib64 ]; then echo /usr/local/cuda/lib64; elif [ -d /usr/local/cuda-12.9/lib64 ]; then echo /usr/local/cuda-12.9/lib64; elif [ -d /usr/lib/x86_64-linux-gnu ]; then echo /usr/lib/x86_64-linux-gnu; fi)
 
 # Detect ROCm/AMD SMI installation
 ROCM_INCLUDE := $(shell if [ -d /opt/rocm/include ]; then echo /opt/rocm/include; elif [ -d /opt/rocm-5.7.1/include ]; then echo /opt/rocm-5.7.1/include; fi)
@@ -30,10 +32,19 @@ INCLUDES = -I$(OPTKIT_INCLUDE) \
            -I$(SPDLOG_INCLUDE) \
            -I$(LIBPFM4_INCLUDE)
 		   
-# Add CUDA include and library if found
+# Add CUDA include and libraries if found
 ifneq ($(CUDA_INCLUDE),)
     INCLUDES += -I$(CUDA_INCLUDE)
+endif
+
+ifneq ($(CUDA_LIB_DIR),)
+	LDFLAGS += -L$(CUDA_LIB_DIR)
     LDFLAGS += -lnvidia-ml
+endif
+
+ifneq ($(CUPTI_LIB_DIR),)
+	LDFLAGS += -L$(CUPTI_LIB_DIR)
+	LDFLAGS += -lcupti
 endif
 
 # Add ROCm include and library if found
@@ -90,6 +101,8 @@ env-info:
 	@echo "LDFLAGS: $(LDFLAGS)"
 	@echo "OPTKIT_LIB: $(OPTKIT_LIB)"
 	@echo "CUDA_INCLUDE: $(CUDA_INCLUDE)"
+	@echo "CUDA_LIB_DIR: $(CUDA_LIB_DIR)"
+	@echo "CUPTI_LIB_DIR: $(CUPTI_LIB_DIR)"
 	@echo "ROCM_INCLUDE: $(ROCM_INCLUDE)"
 	@echo "NETSNMP_LIB: $(NETSNMP_LIB)"
 	@echo "INCLUDES: $(INCLUDES)"

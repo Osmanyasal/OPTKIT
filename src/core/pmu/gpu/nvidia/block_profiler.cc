@@ -82,7 +82,7 @@ namespace optkit::pmu::gpu::nvidia
         free(buffer);
     }
 
-    BlockProfiler::BlockProfiler(const ProfilerConfig &profiler_config, const optkit::metrics::MetricBuilder<uint64_t> &mb,
+    BlockProfiler::BlockProfiler(const ProfilerConfig &profiler_config, const optkit::metrics::MetricBuilder<double> &mb,
                                   uint32_t gpm_sample_period_us)
         : BaseProfiler{static_cast<const ProfilerConfig &>(profiler_config)}, profiler_config{profiler_config}, metric_builder{mb}
     {
@@ -312,7 +312,7 @@ namespace optkit::pmu::gpu::nvidia
             return std::make_pair(full_name, "None");
         };
 
-        nlohmann::json payload = utils::to_json<uint64_t>(this->total_duration_ms, this->config.measurement_type, this->event_results, this->metric_results);
+        nlohmann::json payload = utils::to_json<double>(this->total_duration_ms, this->config.measurement_type, this->event_results, this->metric_results);
         nlohmann::json *measurements = nullptr;
         if (payload.contains("readings") && payload["readings"].is_array() && !payload["readings"].empty())
             measurements = &payload["readings"][0]["measurements"];
@@ -337,12 +337,12 @@ namespace optkit::pmu::gpu::nvidia
         return ss.str();
     }
 
-    std::vector<uint64_t> BlockProfiler::read()
+    std::vector<double> BlockProfiler::read()
     {
         if (OPT_UNLIKELY(!is_enabled))
             return {};
 
-        std::vector<uint64_t> result;
+        std::vector<double> result;
 
         const std::vector<std::string> &event_names = this->metric_builder.event_names();
         if (event_names.empty() || !gpm_sampler_ || !gpm_sampler_->is_enabled())
@@ -354,36 +354,36 @@ namespace optkit::pmu::gpu::nvidia
         {
             auto it = averages.find(event_name);
             double value = (it != averages.end()) ? it->second : 0.0;
-            result.push_back(static_cast<uint64_t>(std::llround(value)));
+            result.push_back(value);
         }
 
         return result;
     }
-    std::unordered_map<std::string, uint64_t> BlockProfiler::aggregate()
+    std::unordered_map<std::string, double> BlockProfiler::aggregate()
     {
         if (OPT_UNLIKELY(!is_enabled))
             return {};
         double total_duration = 0.0;
-        std::unordered_map<std::string, uint64_t> aggregated_events;
+        std::unordered_map<std::string, double> aggregated_events;
         const std::vector<std::string> &event_names = this->metric_builder.event_names();
 
         for (const auto &entry : read_buffer)
         {
             total_duration += entry.first;
 
-            const std::vector<uint64_t> &values = entry.second;
+            const std::vector<double> &values = entry.second;
             for (size_t j = 0; j < values.size(); ++j)
             {
                 aggregated_events[event_names[j % event_names.size()]] += values[j];
             }
         }
-        std::vector<std::pair<std::string, uint64_t>> event_value(
+        std::vector<std::pair<std::string, double>> event_value(
             aggregated_events.begin(), aggregated_events.end());
 
         this->event_results = std::move(event_value);
         this->total_duration_ms = total_duration;
 
-        aggregated_events["duration_microsec"] = static_cast<uint64_t>(std::llround(this->total_duration_ms * 1000.0)); // convert to microseconds
+        aggregated_events["duration_microsec"] = this->total_duration_ms * 1000.0;
         return aggregated_events;
     }
 

@@ -21,10 +21,10 @@ namespace optkit::pmu::gpu::nvidia
      *        Profiling commences upon instantiation and persists until the current scope is exited.
      *        Supports both CUPTI Activity API profiling and NVML GPM metric sampling via a background thread.
      */
-    class BlockProfiler : public BaseProfiler<std::vector<uint64_t>, uint64_t>
+    class BlockProfiler : public BaseProfiler<std::vector<double>, double>
     {
     public:
-        BlockProfiler(const ProfilerConfig &profiler_config, const optkit::metrics::MetricBuilder<uint64_t> &mb = {},
+        BlockProfiler(const ProfilerConfig &profiler_config, const optkit::metrics::MetricBuilder<double> &mb = {},
                        uint32_t gpm_sample_period_us = 1000000);    // 1 sec
         virtual ~BlockProfiler();
         /**
@@ -54,17 +54,17 @@ namespace optkit::pmu::gpu::nvidia
         /**
          * @brief Reads the values of all raw_events.
          *
-         * @return std::vector<uint64_t> contains each raw_events' pmu data.
+         * @return std::vector<double> contains each raw_events' pmu data.
          */
-        virtual std::vector<uint64_t> read() override;
+        virtual std::vector<double> read() override;
 
-        virtual std::unordered_map<std::string, uint64_t> aggregate() override;
+        virtual std::unordered_map<std::string, double> aggregate() override;
 
 #if !OPTKIT_TESTING // if not testing (in prod) then make those private, in testin make those public
     private:
 #endif
         const ProfilerConfig profiler_config;
-        const optkit::metrics::MetricBuilder<uint64_t> metric_builder;
+        const optkit::metrics::MetricBuilder<double> metric_builder;
         std::vector<std::pair<std::string, double>> metric_results;
         std::vector<std::pair<std::string, std::string>> detail_event_results;
 
