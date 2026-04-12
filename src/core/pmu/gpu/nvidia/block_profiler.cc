@@ -163,22 +163,21 @@ namespace optkit::pmu::gpu::nvidia
 
     BlockProfiler ::~BlockProfiler()
     {
+        // Stop GPM sampling
+        if (gpm_sampler_)
+            gpm_sampler_->stop();
+
         auto append_detail_event = [this](const std::string &name, const std::string &value)
         {
             this->detail_event_results.push_back({name, value});
         };
+        
         auto append_detail_double = [&append_detail_event](const std::string &name, double value)
         {
             std::ostringstream ss;
             ss << std::fixed << value;
             append_detail_event(name, ss.str());
         };
-
-        // Stop GPM sampling
-        if (gpm_sampler_)
-        {
-            gpm_sampler_->stop();
-        }
 
         CUPTI_API_CALL(cuptiActivityFlushAll(1));
         CUPTI_API_CALL(cuptiActivityDisable(CUPTI_ACTIVITY_KIND_MEMCPY));
@@ -245,11 +244,11 @@ namespace optkit::pmu::gpu::nvidia
 
                 event.overhead_kind = getOverheadKindString(overhead_ptr->overheadKind);
                 event.object_kind = getObjectKindString(overhead_ptr->objectKind);
-                auto it = overhead_map.find(event.overhead_kind + "_" + event.object_kind);
+                auto it = overhead_map.find(event.overhead_kind);
                 if (it != overhead_map.end())
                     it->second.duration_ms += event.duration_ms;
                 else
-                    overhead_map[event.overhead_kind + "_" + event.object_kind] = event;
+                    overhead_map[event.overhead_kind] = event;
             }
             overhead_ptr.reset();
         }
@@ -266,24 +265,6 @@ namespace optkit::pmu::gpu::nvidia
         g_activity_memcpy.clear();
         g_activity_overhead.clear();
 
-        // Process GPM sampling results
-        if (gpm_sampler_ && gpm_sampler_->is_enabled())
-        {
-            size_t num_samples = gpm_sampler_->sample_count();
-            append_detail_event("gpm_sample_count", std::to_string(num_samples));
-
-            if (num_samples > 0)
-            {
-                auto averages = gpm_sampler_->average_results();
-                for (const auto &name : gpm_metric_names_)
-                {
-                    auto it = averages.find(name);
-                    if (it != averages.end())
-                        append_detail_double("gpm_avg_" + name, it->second);
-                }
-            }
-        }
-
         if (OPT_LIKELY(this->config.dump_results_to_file))
             this->save();
 
@@ -296,12 +277,13 @@ namespace optkit::pmu::gpu::nvidia
             if (OPT_UNLIKELY(this->metric_builder.print_events))
                 for (auto &&event : this->event_results)
                     std::cout << std::fixed << "\t" << event.first << ": " << event.second << std::endl;
+                    
+            for (auto &&metric : this->metric_results)
+                std::cout << std::fixed << "\t" << metric.first << ": " << metric.second << std::endl;
 
             for (auto &&event : this->detail_event_results)
                 std::cout << "\t" << event.first << ": " << event.second << std::endl;
 
-            for (auto &&metric : this->metric_results)
-                std::cout << std::fixed << "\t" << metric.first << ": " << metric.second << std::endl;
         }
     }
 

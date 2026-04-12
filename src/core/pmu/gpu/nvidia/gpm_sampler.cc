@@ -123,7 +123,7 @@ namespace optkit::pmu::gpu::nvidia
                 break;
             }
 
-            usleep(sample_period_us_);
+            usleep(sample_period_us_);  // Sleep for the specified sampling period
 
             if (!running_.load())
                 break;

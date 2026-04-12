@@ -32,7 +32,7 @@ namespace optkit::pmu::gpu::nvidia
          * @param metric_ids   NVML GPM metric IDs to sample.
          * @param metric_names Human-readable names matching each metric_id (same order).
          * @param sample_period_us  Microseconds between two successive nvmlGpmSampleGet calls, 1 sec by default.
-         */ 
+         */
         GpmSampler(nvmlDevice_t device,
                    const std::vector<nvmlGpmMetricId_t> &metric_ids,
                    const std::vector<std::string> &metric_names,
@@ -62,8 +62,11 @@ namespace optkit::pmu::gpu::nvidia
          */
         std::unordered_map<std::string, double> average_results() const;
 
-        /** Raw collected samples (only call after stop()). */
-        const std::vector<std::unordered_map<std::string, double>> &raw_samples() const { return samples_; }
+        std::vector<std::unordered_map<std::string, double>> all_samples() const
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            return samples_;
+        }
 
     private:
         void sample_loop_();
