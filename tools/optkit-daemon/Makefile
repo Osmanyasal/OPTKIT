@@ -14,14 +14,27 @@ LIBPFM4_INCLUDE = $(OPTKIT_ROOT)/lib/libpfm4/include
 # Note: Most Linux installs have /usr/lib/x86_64-linux-gnu, but that doesn't mean
 # libonnxruntime is installed there. We must pick the directory that actually
 # contains libonnxruntime.
+ONNXRUNTIME_ROOT ?= $(shell if [ -d "$$HOME/onnxruntime_cpp" ]; then echo "$$HOME/onnxruntime_cpp"; fi)
 ONNX_INCLUDE := $(shell \
-	for d in /usr/include /usr/local/include /usr/include/onnxruntime /usr/local/include/onnxruntime /opt/onnxruntime/include; do \
-		if [ -f "$$d/onnxruntime_cxx_api.h" ]; then echo $$d; break; fi; \
-	done)
+        for d in \
+                "$(ONNXRUNTIME_ROOT)/include" \
+                "/usr/include" \
+                "/usr/local/include" \
+                "/usr/include/onnxruntime" \
+                "/usr/local/include/onnxruntime" \
+                "/opt/onnxruntime/include"; do \
+                if [ -f "$$d/onnxruntime_cxx_api.h" ]; then echo $$d; break; fi; \
+        done)
 ONNX_LIB_DIR := $(shell \
-	for d in /usr/lib/x86_64-linux-gnu /usr/local/lib /usr/lib /opt/onnxruntime/lib; do \
-		if [ -f "$$d/libonnxruntime.so" ] || [ -f "$$d/libonnxruntime.so.1" ]; then echo $$d; break; fi; \
-	done)
+        for d in \
+                "$(ONNXRUNTIME_ROOT)/lib" \
+                "/usr/lib/x86_64-linux-gnu" \
+                "/usr/local/lib" \
+                "/usr/lib" \
+                "/opt/onnxruntime/lib"; do \
+                if [ -f "$$d/libonnxruntime.so" ] || [ -f "$$d/libonnxruntime.so.1" ]; then echo $$d; break; fi; \
+        done)
+
 
 # Optional ONNX support (auto-detected by default)
 HAVE_ONNX := $(shell if [ -n "$(ONNX_INCLUDE)" ] && [ -n "$(ONNX_LIB_DIR)" ] && ( [ -f "$(ONNX_LIB_DIR)/libonnxruntime.so" ] || [ -f "$(ONNX_LIB_DIR)/libonnxruntime.so.1" ] ); then echo 1; else echo 0; fi)
