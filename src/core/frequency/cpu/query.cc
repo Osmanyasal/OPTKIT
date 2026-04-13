@@ -1,5 +1,4 @@
 #include "core/frequency/cpu/query.hh"
-#include <algorithm> // std::count
 
 namespace optkit::frequency::cpu
 {
@@ -38,13 +37,10 @@ namespace optkit::frequency::cpu
             {
                 // Fallback synthesis of available frequencies when sysfs list is missing.
                 // Units: all kernel cpufreq interfaces expose kHz.
-                constexpr int64_t TURBO_OFFSET_KHZ = 1000; // 1 MHz tail sometimes present on turbo advertised max
+                const int64_t scaling_max_freq = get_scaling_max_limit(core);
 
-                std::string max_freq_str = std::to_string(max_freq);
-
-                if (std::count(max_freq_str.begin(), max_freq_str.end(), '1') > 1 &&
-                    max_freq - TURBO_OFFSET_KHZ >= min_freq)
-                    max_freq -= TURBO_OFFSET_KHZ;
+                if (scaling_max_freq > 0 && scaling_max_freq < max_freq)
+                    max_freq = scaling_max_freq;
 
                 // Reserve approximate number of steps to avoid reallocations.
                 if (max_freq > min_freq)
