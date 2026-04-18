@@ -150,12 +150,12 @@ void create_child_process(const CommandArgs &args)
         auto begin_time = std::chrono::high_resolution_clock::now();
 
         // Initialize metrics
-        optkit::metrics::MetricBuilder<uint64_t> _metric;
+        optkit::metrics::MetricBuilder<uint64_t> _cpu_metric;
         for (auto &&i : args.metrics)
-            _metric.add(optkit::metrics::performance::cpu_metrics::get_metric(i));
+            _cpu_metric.add(optkit::metrics::performance::cpu_metrics::get_metric(i));
 
         for (auto &&event_name : args.events)
-            _metric.add(event_name, optkit::metrics::performance::cpu_mapper::get(event_name));
+            _cpu_metric.add(event_name, optkit::metrics::performance::cpu_mapper::get(event_name));
 
         optkit::pmu::cpu::perf::PerfProfilerConfig perf_config{"stat", true /*is_sampling*/};
         if (args.is_screenshot)
@@ -170,17 +170,18 @@ void create_child_process(const CommandArgs &args)
             perf_config.pid = CHILD_PID;
             perf_config.cpu = -1;
         }
-        optkit::pmu::cpu::perf::BlockProfiler stat_metric_profiler(perf_config, _metric);
+        optkit::pmu::cpu::perf::BlockProfiler stat_metric_profiler(perf_config, _cpu_metric);
         // open with sampling.
         optkit::callstack::Profiler callstack_profiler{{"stat", true, false, CHILD_PID, -1, "callstack"}};
 
         // optkit::disk::IoDiskProfiler disk_profiler{
         //     {"stat", "disk_io", true, args.is_screenshot, optkit::Query::create_folder, !optkit::Query::create_folder, args.is_screenshot},
         //     optkit::metrics::disk::core_metrics::all_metrics()};
-
+        
+        OPTKIT_DISK_EVENTS("disk_events");
+        OPTKIT_GPU_EVENTS_SAMPLING("gpu_events");
+        OPTKIT_GPU_ENERGY_SAMPLING("gpu_energy");
         OPTKIT_CPU_ENERGY_SAMPLING("cpu_energy");
-        OPTKIT_GPU_ENERGY("gpu_energy");
-        OPTKIT_GPU_EVENTS("gpu_events",optkit::metrics::performance::gpu_metrics::all_metrics());
         while (IS_RUNNING)
         {
             pid_t result = waitpid(CHILD_PID, &status, WNOHANG);

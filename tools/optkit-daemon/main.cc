@@ -406,10 +406,10 @@ int main(int argc, char **argv)
         std::deque<std::vector<float>> history;
 
         // Only apply frequency changes if the predicted value differs from the last applied
-        // value by at least 1 GHz. Frequencies are in kHz here.
+        // value by at least 0.18 GHz. Frequencies are in kHz here.
         // We intentionally track a single last-applied value because we apply the same
         // target frequency to all sockets.
-        constexpr int64_t FREQ_CHANGE_THRESHOLD_KHZ = 500000; // 0.5 GHz
+        constexpr int64_t FREQ_CHANGE_THRESHOLD_KHZ = 180000; // 0.18 GHz
         int64_t last_applied_core_khz = -1;
         int64_t last_applied_uncore_khz = -1;
 

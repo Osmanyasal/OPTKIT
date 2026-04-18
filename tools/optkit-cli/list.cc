@@ -51,12 +51,15 @@ void execute_list_command(const CommandArgs &args)
     switch (args.list_type)
     {
     case ListType::ALL:
-        std::cout << "Available PMU info\n";
-        for (auto &&id : pmu_ids)
-            std::cout << optkit::pmu::cpu::Query::pmu_info(id) << "\n";
+        if (args.target == Target::CPU || args.target == Target::ALL)
+        {
+            std::cout << "Available PMU info\n";
+            for (auto &&id : pmu_ids)
+                std::cout << optkit::pmu::cpu::Query::pmu_info(id) << "\n";
 
-        std::cout << "Available PMU events\n";
-        print_cpu_events();
+            std::cout << "Available PMU events\n";
+            print_cpu_events();
+        }
         std::cout << "Available metrics\n";
         for (const auto &metric : metrics_by_category)
         {
