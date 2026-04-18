@@ -4,7 +4,9 @@ LDFLAGS = -lpthread -ldl
 
 # Paths
 OPTKIT_ROOT = ../..
-OPTKIT_LIB = $(OPTKIT_ROOT)/bin/Release/liboptkit_static.a
+OPTKIT_LIB_DIR = $(OPTKIT_ROOT)/bin/Release
+OPTKIT_LIB = $(OPTKIT_LIB_DIR)/liboptkit_dynamic.so
+OPTKIT_RPATH = -Wl,-rpath,'$$ORIGIN/../../bin/Release'
 OPTKIT_INCLUDE = $(OPTKIT_ROOT)/src
 SPDLOG_INCLUDE = $(OPTKIT_ROOT)/lib/spdlog/include
 LIBPFM4_INCLUDE = $(OPTKIT_ROOT)/lib/libpfm4/include
@@ -68,7 +70,7 @@ all: check-lib $(TARGET)
 
 # Link the executable
 $(TARGET): $(OBJECTS) $(OPTKIT_LIB)
-	$(CXX) $(CXXFLAGS) -o $@ $(OBJECTS) $(OPTKIT_LIB) $(LDFLAGS)
+	$(CXX) $(CXXFLAGS) -o $@ $(OBJECTS) $(OPTKIT_LIB) $(LDFLAGS) $(OPTKIT_RPATH)
 
 # Compile source files
 %.o: %.cc
@@ -88,7 +90,7 @@ rebuild: clean all
 # Check if OPTKIT library exists
 check-lib:
 	@if [ ! -f $(OPTKIT_LIB) ]; then \
-		echo "Error: OPTKIT library not found at $(OPTKIT_LIB)"; \
+		echo "Error: OPTKIT dynamic library not found at $(OPTKIT_LIB)"; \
 		echo "Please build OPTKIT first by running 'make' in the root directory"; \
 		exit 1; \
 	fi
@@ -100,6 +102,7 @@ env-info:
 	@echo "CXXFLAGS: $(CXXFLAGS)"
 	@echo "LDFLAGS: $(LDFLAGS)"
 	@echo "OPTKIT_LIB: $(OPTKIT_LIB)"
+	@echo "OPTKIT_RPATH: $(OPTKIT_RPATH)"
 	@echo "CUDA_INCLUDE: $(CUDA_INCLUDE)"
 	@echo "CUDA_LIB_DIR: $(CUDA_LIB_DIR)"
 	@echo "CUPTI_LIB_DIR: $(CUPTI_LIB_DIR)"
