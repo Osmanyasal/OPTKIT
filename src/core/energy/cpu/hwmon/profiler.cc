@@ -16,6 +16,7 @@ namespace optkit::energy::hwmon
         if (avail_domains.empty())
         {
             OPTKIT_CORE_ERROR("HWMON: No power sensors found!");
+            this->is_enabled = false;
             return;
         }
 
@@ -42,6 +43,7 @@ namespace optkit::energy::hwmon
         if (sensors.empty())
         {
             OPTKIT_CORE_ERROR("HWMON: Failed to open any power sensors!");
+            this->is_enabled = false;
             return;
         }
 
@@ -50,8 +52,8 @@ namespace optkit::energy::hwmon
         // Start sampling thread if requested
         if (OPT_UNLIKELY(this->config.is_sampling))
         {
+            this->is_sampling = true;
             this->sampling_thread = std::thread([this]() {
-                this->is_sampling = true;
                 while (this->is_sampling)
                 {
                     sampling_function(*this);
@@ -63,6 +65,9 @@ namespace optkit::energy::hwmon
 
     Profiler::~Profiler()
     {
+        if (!this->is_enabled)
+            return;
+
         // Stop sampling thread if running
         if (this->config.is_sampling && this->sampling_thread.joinable())
         {

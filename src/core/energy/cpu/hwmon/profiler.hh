@@ -85,7 +85,7 @@ namespace optkit::energy::hwmon
         std::unordered_map<uint32_t, std::vector<std::pair<std::string, double>>> metric_results;
 
         std::thread sampling_thread;
-        std::atomic<bool> is_sampling;
+        std::atomic<bool> is_sampling{false};
 
         // For energy calculation from power samples
         std::unordered_map<int32_t, std::unordered_map<HwmonDomain, double>> last_power_reading;

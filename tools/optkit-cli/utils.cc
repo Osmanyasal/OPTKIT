@@ -137,6 +137,34 @@ CommandArgs parse_arguments(int argc, char **argv)
             {
                 args.is_screenshot = true;
             }
+            else if (token == "--all")
+            {
+                args.enable_disk = true;
+                args.enable_gpu_events = true;
+                args.enable_gpu_energy = true;
+                args.enable_cpu_energy = true;
+            }
+            else if (token == "--disk")
+            {
+                args.enable_disk = true;
+            }
+            else if (token == "--gpu-events")
+            {
+                args.enable_gpu_events = true;
+            }
+            else if (token == "--gpu-energy")
+            {
+                args.enable_gpu_energy = true;
+            }
+            else if (token == "--cpu-energy")
+            {
+                args.enable_cpu_energy = true;
+            }
+            else if (token == "--energy")
+            {
+                args.enable_cpu_energy = true;
+                args.enable_gpu_energy = true;
+            }
             else if (token == "-a")
             {
                 args.system_wide = true;
@@ -259,7 +287,15 @@ CommandArgs parse_arguments(int argc, char **argv)
             else if (token == "-o" || token == "--output")
             {
                 args.dump_to_file = true;
-                i++;
+                if (i + 1 < separator_pos && !tokens[i + 1].empty() && tokens[i + 1][0] != '-')
+                    ++i;
+            }
+            else
+            {
+                args.parse_error = true;
+                args.parse_error_message = "Unknown stat option: '" + token + "'";
+                args.command = Command::HELP;
+                break;
             }
         }
         break;

@@ -109,8 +109,20 @@ PROFILING (stat):
     optkit stat -e <event> -- <program>                                               Profile specific event
     optkit stat -m <metric> -- <program>                                              Profile specific metric
     optkit stat -e <event> -m <metric> -- <program>                                   Profile event + metric
+    optkit stat --all -- <program>                                                    Enable all auxiliary profilers
+    optkit stat --disk --gpu-events --cpu-energy -- <program>                         Enable only selected auxiliary profilers
     optkit stat -e <event> -m <metric> -T <sampling_period_in_ms> -- <program>        Profile event + metric
     optkit stat -e <event> -m <metric> -T <sampling_period_in_ms> -S 0 -- <program>   Profile event + metric + socket 0
+
+    Auxiliary profiler selectors:
+    --all                 Enable all auxiliary profilers
+    --disk                Enable disk I/O metrics
+    --gpu-events          Enable GPU performance events
+    --gpu-energy          Enable GPU energy metrics
+    --cpu-energy          Enable CPU energy metrics
+    --energy              Enable both CPU and GPU energy metrics
+
+    If none of the selectors above are provided, auxiliary profilers remain disabled.
 
 BENCHMARKING (--bench):
     Multiple execution analysis - runs program multiple times with different configurations
@@ -150,6 +162,9 @@ EXAMPLES:
     optkit stat -- ./my_program
     optkit stat -e cycles -e instructions -- ./app
     optkit stat -m ipc -m cache-miss-rate -- ./benchmark
+    optkit stat --all -- ./full_profiled_run
+    optkit stat --gpu-events --gpu-energy -- ./gpu_workload
+    optkit stat --disk --energy -- ./io_heavy_app
 
     # Benchmark analysis (executes multiple times)
     optkit stat --bench freq-scaling -- ./compute_heavy

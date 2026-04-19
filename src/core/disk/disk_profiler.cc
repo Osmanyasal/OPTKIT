@@ -87,9 +87,9 @@ namespace optkit::disk
 
         if (OPT_UNLIKELY(this->config.is_sampling))
         {
+            this->is_sampling = true;
             this->sampling_thread = std::thread([this]()
                                                 {
-                this->is_sampling = true;
                 while (this->is_sampling)
                 {
                     this->read_and_store();

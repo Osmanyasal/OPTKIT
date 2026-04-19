@@ -68,7 +68,7 @@ namespace optkit::energy::rapl
         std::unordered_map<uint32_t, std::vector<std::pair<std::string, double>>> metric_results; // metric - value
 
         std::thread sampling_thread;
-        std::atomic<bool> is_sampling;
+        std::atomic<bool> is_sampling{false};
     };
 
     // Overloading << for map with RaplDomain as keys

@@ -36,7 +36,7 @@ namespace optkit::energy::pdu
         optkit::metrics::MetricBuilder<double> metric_builder;
         std::unordered_map<uint32_t, std::vector<std::pair<std::string, double>>> metric_results;
         std::thread sampling_thread;
-        std::atomic<bool> is_sampling;
+        std::atomic<bool> is_sampling{false};
     };
 
     const optkit::metrics::MetricBuilder<double> &default_metrics();

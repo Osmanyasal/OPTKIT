@@ -46,6 +46,6 @@ namespace optkit::disk
         optkit::metrics::MetricBuilder<uint64_t> metric_builder;
 
         std::thread sampling_thread;
-        std::atomic<bool> is_sampling;
+        std::atomic<bool> is_sampling{false};
     };
 }

@@ -178,10 +178,22 @@ void create_child_process(const CommandArgs &args)
         //     {"stat", "disk_io", true, args.is_screenshot, optkit::Query::create_folder, !optkit::Query::create_folder, args.is_screenshot},
         //     optkit::metrics::disk::core_metrics::all_metrics()};
         
-        OPTKIT_DISK_EVENTS("disk_events");
-        OPTKIT_GPU_EVENTS_SAMPLING("gpu_events");
-        OPTKIT_GPU_ENERGY_SAMPLING("gpu_energy");
-        OPTKIT_CPU_ENERGY_SAMPLING("cpu_energy");
+        if (args.enable_disk)
+        {
+            OPTKIT_DISK_EVENTS("disk_events");
+        }
+        if (args.enable_gpu_events)
+        {
+            OPTKIT_GPU_EVENTS_SAMPLING("gpu_events");
+        }
+        if (args.enable_gpu_energy)
+        {
+            OPTKIT_GPU_ENERGY_SAMPLING("gpu_energy");
+        }
+        if (args.enable_cpu_energy)
+        {
+            OPTKIT_CPU_ENERGY_SAMPLING("cpu_energy");
+        }
         while (IS_RUNNING)
         {
             pid_t result = waitpid(CHILD_PID, &status, WNOHANG);

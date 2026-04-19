@@ -89,9 +89,9 @@ namespace optkit::energy::pdu
 
         if (OPT_UNLIKELY(this->config.is_sampling))
         {
+            this->is_sampling = true;
             this->sampling_thread = std::thread([this]()
                                                 {
-                this->is_sampling = true;
                 while (this->is_sampling)
                 {
                     sampling_function(*this);

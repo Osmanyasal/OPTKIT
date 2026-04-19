@@ -82,7 +82,7 @@ namespace optkit::pmu::cpu::perf
         const optkit::metrics::MetricBuilder<uint64_t> metric_builder;
         std::vector<std::pair<std::string, double>> metric_results;
         std::thread sampling_thread;
-        std::atomic<bool> is_sampling;
+        std::atomic<bool> is_sampling{false};
 
         struct read_format
         {

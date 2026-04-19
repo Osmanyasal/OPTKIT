@@ -15,6 +15,12 @@ namespace optkit::energy::rapl
     {
         auto &packages = optkit::Query::detect_cpu_packages();
         auto &avail_domains = Query::rapl_domain_info(); // Monitor for all available domains
+        if (avail_domains.empty())
+        {
+            this->is_enabled = false;
+            OPTKIT_CORE_WARN("RAPL PERF: no readable RAPL domains found. Disabling CPU energy profiler.");
+            return;
+        }
         auto s_type = optkit::utils::read_file("/sys/bus/event_source/devices/power/type");
         auto type = std::atoi(s_type.c_str());
 
@@ -48,18 +54,23 @@ namespace optkit::energy::rapl
         }
 
         if (OPT_UNLIKELY(this->config.is_sampling))
+        {
+            this->is_sampling = true;
             this->sampling_thread = std::thread([this]()
                                                 {
-            this->is_sampling = true;
             while (this->is_sampling)
             { 
                 sampling_function(*this);
                 std::this_thread::sleep_for(std::chrono::seconds(1));
             } });
+        }
     }
 
     Profiler::~Profiler()
     {
+        if (!this->is_enabled)
+            return;
+
         if (this->config.is_sampling && this->sampling_thread.joinable())
         {
             this->is_sampling = false;

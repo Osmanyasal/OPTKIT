@@ -43,9 +43,21 @@ PROFILING (stat):
     optkit stat -e <event> -- <program>                           Profile specific event
     optkit stat -m <metric> -- <program>                          Profile specific metric
     optkit stat -e <event> -m <metric> -- <program>               Profile event + metric
+    optkit stat --all -- <program>                                Enable all auxiliary profilers
+    optkit stat --disk --gpu-events --cpu-energy -- <program>     Enable only selected auxiliary profilers
     optkit stat -e <event> -m <metric> -S 0 -- <program>          Profile event + metric + socket 0
     optkit stat -a -e <event> -m <metric> -- <program>            Profile system-wide across all CPUs
     optkit stat -a -e <event> -m <metric> -ss -- <program>        Profile system-wide across all CPUs with screenshot tracing
+
+    Auxiliary profiler selectors:
+    --all                 Enable all auxiliary profilers
+    --disk                Enable disk I/O metrics
+    --gpu-events          Enable GPU performance events
+    --gpu-energy          Enable GPU energy metrics
+    --cpu-energy          Enable CPU energy metrics
+    --energy              Enable both CPU and GPU energy metrics
+
+    If none of the selectors above are provided, auxiliary profilers remain disabled.
 
 BENCHMARKING (--bench):
     Multiple execution analysis - runs program multiple times with different configurations
@@ -150,6 +162,10 @@ struct CommandArgs
     bool dump_to_file = false;
     bool system_wide = false;                      // System-wide monitoring (-a) for stat
     bool is_screenshot = false;                    // Whether to capture screenshot of events
+    bool enable_disk = false;                      // Enable disk I/O profiler for stat
+    bool enable_gpu_events = false;                // Enable GPU PMU profiler for stat
+    bool enable_gpu_energy = false;                // Enable GPU energy profiler for stat
+    bool enable_cpu_energy = false;                // Enable CPU energy profiler for stat
     uint32_t freq_limit = 0;                       // For --bench freq-scaling: cap available core/uncore frequency list sizes (0 = no limit)
     uint32_t freq_start = 0;                       // For --bench freq-scaling: starting index from top (highest frequency) (0 = start at top)
     std::string parse_error_message;
@@ -269,6 +285,10 @@ inline std::string to_string(const CommandArgs &args)
     oss << "  list_type: " << to_string(args.list_type) << "\n";
     oss << "  system_wide: " << (args.system_wide ? "true" : "false") << "\n";
     oss << "  is_screenshot: " << (args.is_screenshot ? "true" : "false") << "\n";
+    oss << "  enable_disk: " << (args.enable_disk ? "true" : "false") << "\n";
+    oss << "  enable_gpu_events: " << (args.enable_gpu_events ? "true" : "false") << "\n";
+    oss << "  enable_gpu_energy: " << (args.enable_gpu_energy ? "true" : "false") << "\n";
+    oss << "  enable_cpu_energy: " << (args.enable_cpu_energy ? "true" : "false") << "\n";
     oss << "  freq_limit: " << args.freq_limit << "\n";
     oss << "  freq_start: " << args.freq_start << "\n";
 

@@ -130,14 +130,16 @@ namespace optkit::pmu::cpu::perf
             }
         }
         if (OPT_UNLIKELY(this->profiler_config.is_sampling))
+        {
+            this->is_sampling = true;
             this->sampling_thread = std::thread([this]()
                                                 {
-            this->is_sampling = true;
             while (this->is_sampling)
             { 
                 sampling_function(*this);
                 std::this_thread::sleep_for(std::chrono::seconds(1));
             } });
+        }
 
         start = std::chrono::high_resolution_clock::now();
         PMUEventManager::enable_all_events();
