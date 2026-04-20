@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/optkit-wordmark.svg" alt="OPTKIT logo" width="720" />
+  <img src="assets/optkit-wordmark-white.svg" alt="OPTKIT logo" width="720" />
 </p>
 
 # OPTKIT Overview
