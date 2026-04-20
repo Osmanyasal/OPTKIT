@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/optkit-wordmark.svg" alt="OPTKIT logo" width="720" />
+</p>
+
 # OPTKIT Overview
 
 OPTKIT is a highly customizable C++11 library and toolset designed for measuring energy consumption, detecting performance bottlenecks, and tuning hardware parameters at runtime to improve overall energy efficiency. Its overhead remains low, primarily depending on the frequency of measurements and the number of monitored regions.
