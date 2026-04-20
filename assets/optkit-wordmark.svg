@@ -1,24 +1,24 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 220">
   <defs>
-    <linearGradient id="g" x1="160" y1="125" x2="470" y2="125" gradientUnits="userSpaceOnUse">
+    <linearGradient id="g" x1="320" y1="125" x2="630" y2="125" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#22D3EE" stop-opacity="0.25"/>
       <stop offset="0.55" stop-color="#60A5FA" stop-opacity="0.85"/>
       <stop offset="1" stop-color="#A78BFA" stop-opacity="0.35"/>
     </linearGradient>
   </defs>
 
-  <path d="M160 140 H255
-           L275 112 L300 162 L332 86 L365 140
-           H470"
+  <path d="M320 140 H415
+           L435 112 L460 162 L492 86 L525 140
+           H630"
         fill="none" stroke="url(#g)" stroke-width="12"
         stroke-linecap="round" stroke-linejoin="round" opacity="0.95"/>
 
-  <text x="120" y="138" font-family="Inter, ui-sans-serif, system-ui" font-size="112"
+  <text x="280" y="138" font-family="Inter, ui-sans-serif, system-ui" font-size="112"
         font-weight="750" letter-spacing="2">
     <tspan fill="#0B0F14">OPT</tspan><tspan fill="#4F86C6">KIT</tspan>
   </text>
 
-  <text x="122" y="190" font-family="Inter, ui-sans-serif, system-ui" font-size="24" fill="#6B7280">
+  <text x="282" y="190" font-family="Inter, ui-sans-serif, system-ui" font-size="24" fill="#6B7280">
     profiling &amp; energy optimization toolkit
   </text>
 </svg>
