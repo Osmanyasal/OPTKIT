@@ -1,4 +1,6 @@
 #pragma once
 
-#undef OPTKIT_GPU_EVENTS
-#define OPTKIT_GPU_EVENTS(block_name, ...)
+#undef OPTKIT_GPU_EVENTS_SAMPLING
+#undef OPTKIT_GPU_EVENTS_SAMPLING_WITH_METRICS
+#define OPTKIT_GPU_EVENTS_SAMPLING(block_name, ...)
+#define OPTKIT_GPU_EVENTS_SAMPLING_WITH_METRICS(block_name, metric_builder, ...)
