@@ -31,7 +31,7 @@ INCLUDES = -I$(OPTKIT_INCLUDE) \
            -I$(SPDLOG_INCLUDE) \
            -I$(LIBPFM4_INCLUDE)
 
-LDFLAGS += -L$(LIBPFM4_LIB_DIR)
+LDFLAGS += -L$(LIBPFM4_LIB_DIR) -lpfm
 		   
 # Add CUDA include and library if found
 ifneq ($(CUDA_INCLUDE),)

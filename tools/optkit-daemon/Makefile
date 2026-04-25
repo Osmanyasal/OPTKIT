@@ -62,7 +62,7 @@ INCLUDES = -I$(OPTKIT_INCLUDE) \
            -I$(SPDLOG_INCLUDE) \
            -I$(LIBPFM4_INCLUDE)
 
-LDFLAGS += -L$(LIBPFM4_LIB_DIR)
+LDFLAGS += -L$(LIBPFM4_LIB_DIR) -lpfm
 
 # Add ONNX Runtime include and library (only when enabled)
 ifeq ($(WITH_ONNX),1)
