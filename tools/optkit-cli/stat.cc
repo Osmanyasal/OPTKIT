@@ -1,6 +1,7 @@
 
 #include <csignal>
 #include <cstdint>
+#include <memory>
 #include "utils.hh"
 // For rewriting JSON files in-place
 #include <fstream>
@@ -174,25 +175,64 @@ void create_child_process(const CommandArgs &args)
         // open with sampling.
         optkit::callstack::Profiler callstack_profiler{{"stat", true, false, CHILD_PID, -1, "callstack"}};
 
-        // optkit::disk::IoDiskProfiler disk_profiler{
-        //     {"stat", "disk_io", true, args.is_screenshot, optkit::Query::create_folder, !optkit::Query::create_folder, args.is_screenshot},
-        //     optkit::metrics::disk::core_metrics::all_metrics()};
-        
+        std::unique_ptr<optkit::disk::IoDiskProfiler> disk_profiler;
+#if OPTKIT_ENV_LIB_NVML
+        std::unique_ptr<optkit::pmu::gpu::nvidia::BlockProfiler> gpu_events_profiler;
+#endif
+        std::unique_ptr<optkit::energy::gpu::nvidia::Profiler> nvidia_gpu_energy_profiler;
+        std::unique_ptr<optkit::energy::gpu::amd::Profiler> amd_gpu_energy_profiler;
+#if OPTKIT_CONF_CPU_ENERGY_USE_PDU && OPTKIT_CONF_PDU_MACROS_ENABLED && OPTKIT_ENV_LIB_NET_SNMP
+        std::unique_ptr<optkit::energy::pdu::Profiler> cpu_energy_profiler;
+#elif OPTKIT_ENV_CPU_AMD || OPTKIT_ENV_CPU_INTEL
+        std::unique_ptr<optkit::energy::rapl::Profiler> cpu_energy_profiler;
+#elif OPTKIT_ENV_CPU_ARM
+        std::unique_ptr<optkit::energy::hwmon::Profiler> cpu_energy_profiler;
+#endif
+
         if (args.enable_disk)
         {
-            OPTKIT_DISK_EVENTS("disk_events");
+            disk_profiler.reset(new optkit::disk::IoDiskProfiler(
+                {"disk_events", "disk_io", true, true, optkit::Query::create_folder, !optkit::Query::create_folder},
+                optkit::metrics::disk::core_metrics::all_metrics()));
         }
         if (args.enable_gpu_events)
         {
-            OPTKIT_GPU_EVENTS_SAMPLING("gpu_events");
+#if OPTKIT_ENV_LIB_NVML
+            gpu_events_profiler.reset(new optkit::pmu::gpu::nvidia::BlockProfiler(
+                optkit::ProfilerConfig(
+                    "gpu_events",
+                    "nvidia_gpu_pmu",
+                    true,
+                    true,
+                    optkit::Query::create_folder,
+                    !optkit::Query::create_folder),
+                optkit::metrics::performance::gpu_metrics::all_metrics()));
+#endif
         }
         if (args.enable_gpu_energy)
         {
-            OPTKIT_GPU_ENERGY_SAMPLING("gpu_energy");
+            nvidia_gpu_energy_profiler.reset(new optkit::energy::gpu::nvidia::Profiler(
+                {"gpu_energy", "nvidia_gpu_energy", true, true, optkit::Query::create_folder, !optkit::Query::create_folder},
+                optkit::metrics::energy::gpu_metrics::all_metrics()));
+            amd_gpu_energy_profiler.reset(new optkit::energy::gpu::amd::Profiler(
+                {"gpu_energy", "amd_gpu_energy", true, true, optkit::Query::create_folder, !optkit::Query::create_folder},
+                optkit::metrics::energy::gpu_metrics::all_metrics()));
         }
         if (args.enable_cpu_energy)
         {
-            OPTKIT_CPU_ENERGY_SAMPLING("cpu_energy");
+#if OPTKIT_CONF_CPU_ENERGY_USE_PDU && OPTKIT_CONF_PDU_MACROS_ENABLED && OPTKIT_ENV_LIB_NET_SNMP
+            cpu_energy_profiler.reset(new optkit::energy::pdu::Profiler(
+                {"cpu_energy", "cpu_energy", true, true, optkit::Query::create_folder, !optkit::Query::create_folder},
+                optkit::energy::pdu::default_metrics()));
+#elif OPTKIT_ENV_CPU_AMD || OPTKIT_ENV_CPU_INTEL
+            cpu_energy_profiler.reset(new optkit::energy::rapl::Profiler(
+                {"cpu_energy", "cpu_energy", true, true, optkit::Query::create_folder, !optkit::Query::create_folder},
+                optkit::metrics::energy::cpu_metrics::all_metrics()));
+#elif OPTKIT_ENV_CPU_ARM
+            cpu_energy_profiler.reset(new optkit::energy::hwmon::Profiler(
+                {"cpu_energy", "cpu_energy", true, true, optkit::Query::create_folder, !optkit::Query::create_folder},
+                optkit::metrics::energy::cpu_metrics::all_metrics()));
+#endif
         }
         while (IS_RUNNING)
         {
