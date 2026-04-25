@@ -92,7 +92,7 @@ namespace optkit::metrics::performance::gpu
             return empty;
         }
 
-        static const MetricBuilder<double>& graphics_util()
+        static const MetricBuilder<double> &graphics_util()
         {
             static const MetricBuilder<double> metric = []
             {
@@ -109,7 +109,7 @@ namespace optkit::metrics::performance::gpu
             return metric;
         }
 
-        static const MetricBuilder<double>& sm_util()
+        static const MetricBuilder<double> &sm_util()
         {
             static const MetricBuilder<double> metric = []
             {
@@ -126,7 +126,7 @@ namespace optkit::metrics::performance::gpu
             return metric;
         }
 
-        static const MetricBuilder<double>& sm_occupancy()
+        static const MetricBuilder<double> &sm_occupancy()
         {
             static const MetricBuilder<double> metric = []
             {
@@ -143,7 +143,7 @@ namespace optkit::metrics::performance::gpu
             return metric;
         }
 
-        static const MetricBuilder<double>& integer_util()
+        static const MetricBuilder<double> &integer_util()
         {
             static const MetricBuilder<double> metric = []
             {
@@ -160,7 +160,7 @@ namespace optkit::metrics::performance::gpu
             return metric;
         }
 
-        static const MetricBuilder<double>& tensor_util()
+        static const MetricBuilder<double> &tensor_util()
         {
             static const MetricBuilder<double> metric = []
             {
@@ -177,7 +177,7 @@ namespace optkit::metrics::performance::gpu
             return metric;
         }
 
-        static const MetricBuilder<double>& dfma_util()
+        static const MetricBuilder<double> &dfma_util()
         {
             static const MetricBuilder<double> metric = []
             {
@@ -194,7 +194,7 @@ namespace optkit::metrics::performance::gpu
             return metric;
         } // Double Fused Multiply-Add
 
-        static const MetricBuilder<double>& hmma_util()
+        static const MetricBuilder<double> &hmma_util()
         {
             static const MetricBuilder<double> metric = []
             {
@@ -211,7 +211,7 @@ namespace optkit::metrics::performance::gpu
             return metric;
         } // Half-precision Matrix Multiply-Accumulate
 
-        static const MetricBuilder<double>& imma_util()
+        static const MetricBuilder<double> &imma_util()
         {
             static const MetricBuilder<double> metric = []
             {
@@ -228,7 +228,7 @@ namespace optkit::metrics::performance::gpu
             return metric;
         } // Integer Matrix Multiply-Accumulate
 
-        static const MetricBuilder<double>& dram_bw_util()
+        static const MetricBuilder<double> &dram_bw_util()
         {
             static const MetricBuilder<double> metric = []
             {
@@ -244,7 +244,8 @@ namespace optkit::metrics::performance::gpu
             }();
             return metric;
         } // DRAM Bandwidth Utilization
-        static const MetricBuilder<double>& fp64_util()
+        
+        static const MetricBuilder<double> &fp64_util()
         {
             static const MetricBuilder<double> metric = []
             {
@@ -261,7 +262,7 @@ namespace optkit::metrics::performance::gpu
             return metric;
         } // Double-precision Floating Point Utilization
 
-        static const MetricBuilder<double>& fp32_util()
+        static const MetricBuilder<double> &fp32_util()
         {
             static const MetricBuilder<double> metric = []
             {
@@ -277,8 +278,8 @@ namespace optkit::metrics::performance::gpu
             }();
             return metric;
         } // Single-precision Floating Point Utilization
-        
-        static const MetricBuilder<double>& fp16_util()
+
+        static const MetricBuilder<double> &fp16_util()
         {
             static const MetricBuilder<double> metric = []
             {
@@ -294,7 +295,8 @@ namespace optkit::metrics::performance::gpu
             }();
             return metric;
         } // Half-precision Floating Point Utilization
-        static const MetricBuilder<double>& all_metrics()
+
+        static const MetricBuilder<double> &all_metrics()
         {
             static const MetricBuilder<double> mb = []
             {
