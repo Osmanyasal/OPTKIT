@@ -13,8 +13,8 @@ LIBPFM4_INCLUDE = $(OPTKIT_ROOT)/lib/libpfm4/include
 
 # Detect CUDA/NVML/CUPTI installation
 CUDA_INCLUDE := $(shell if [ -d /usr/local/cuda/include ]; then echo /usr/local/cuda/include; elif [ -d /usr/local/cuda-12.9/include ]; then echo /usr/local/cuda-12.9/include; elif [ -d /usr/local/cuda/targets/x86_64-linux/include ]; then echo /usr/local/cuda/targets/x86_64-linux/include; fi)
-CUDA_LIB_DIR := $(shell if [ -d /usr/local/cuda/lib64 ]; then echo /usr/local/cuda/lib64; elif [ -d /usr/local/cuda-12.9/lib64 ]; then echo /usr/local/cuda-12.9/lib64; elif [ -d /usr/lib/x86_64-linux-gnu ]; then echo /usr/lib/x86_64-linux-gnu; fi)
-CUPTI_LIB_DIR := $(shell if [ -d /usr/local/cuda/extras/CUPTI/lib64 ]; then echo /usr/local/cuda/extras/CUPTI/lib64; elif [ -d /usr/local/cuda-12.9/extras/CUPTI/lib64 ]; then echo /usr/local/cuda-12.9/extras/CUPTI/lib64; elif [ -d /usr/local/cuda/lib64 ]; then echo /usr/local/cuda/lib64; elif [ -d /usr/local/cuda-12.9/lib64 ]; then echo /usr/local/cuda-12.9/lib64; elif [ -d /usr/lib/x86_64-linux-gnu ]; then echo /usr/lib/x86_64-linux-gnu; fi)
+CUDA_LIB_DIR := $(shell if [ -d /usr/local/cuda/lib64 ]; then echo /usr/local/cuda/lib64; elif [ -d /usr/local/cuda-12.9/lib64 ]; then echo /usr/local/cuda-12.9/lib64; fi)
+CUPTI_LIB_DIR := $(shell if [ -d /usr/local/cuda/extras/CUPTI/lib64 ]; then echo /usr/local/cuda/extras/CUPTI/lib64; elif [ -d /usr/local/cuda-12.9/extras/CUPTI/lib64 ]; then echo /usr/local/cuda-12.9/extras/CUPTI/lib64; elif [ -d /usr/local/cuda/lib64 ]; then echo /usr/local/cuda/lib64; elif [ -d /usr/local/cuda-12.9/lib64 ]; then echo /usr/local/cuda-12.9/lib64; fi)
 
 # Detect ROCm/AMD SMI installation
 ROCM_INCLUDE := $(shell if [ -d /opt/rocm/include ]; then echo /opt/rocm/include; elif [ -d /opt/rocm-5.7.1/include ]; then echo /opt/rocm-5.7.1/include; fi)
