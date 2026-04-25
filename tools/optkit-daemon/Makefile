@@ -8,6 +8,7 @@ OPTKIT_LIB = $(OPTKIT_ROOT)/bin/Release/liboptkit_static.a
 OPTKIT_INCLUDE = $(OPTKIT_ROOT)/src
 SPDLOG_INCLUDE = $(OPTKIT_ROOT)/lib/spdlog/include
 LIBPFM4_INCLUDE = $(OPTKIT_ROOT)/lib/libpfm4/include
+LIBPFM4_LIB_DIR = $(OPTKIT_ROOT)/lib/libpfm4/lib
 
 # Detect ONNX Runtime installation
 #
@@ -60,6 +61,8 @@ NETSNMP_LIB := $(shell \
 INCLUDES = -I$(OPTKIT_INCLUDE) \
            -I$(SPDLOG_INCLUDE) \
            -I$(LIBPFM4_INCLUDE)
+
+LDFLAGS += -L$(LIBPFM4_LIB_DIR)
 
 # Add ONNX Runtime include and library (only when enabled)
 ifeq ($(WITH_ONNX),1)

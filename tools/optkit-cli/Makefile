@@ -10,6 +10,7 @@ OPTKIT_RPATH = -Wl,-rpath,'$$ORIGIN/../../bin/Release'
 OPTKIT_INCLUDE = $(OPTKIT_ROOT)/src
 SPDLOG_INCLUDE = $(OPTKIT_ROOT)/lib/spdlog/include
 LIBPFM4_INCLUDE = $(OPTKIT_ROOT)/lib/libpfm4/include
+LIBPFM4_LIB_DIR = $(OPTKIT_ROOT)/lib/libpfm4/lib
 
 # Detect CUDA/NVML/CUPTI installation
 CUDA_INCLUDE := $(shell if [ -d /usr/local/cuda/include ]; then echo /usr/local/cuda/include; elif [ -d /usr/local/cuda-12.9/include ]; then echo /usr/local/cuda-12.9/include; elif [ -d /usr/local/cuda/targets/x86_64-linux/include ]; then echo /usr/local/cuda/targets/x86_64-linux/include; fi)
@@ -33,6 +34,8 @@ NETSNMP_LIB := $(shell \
 INCLUDES = -I$(OPTKIT_INCLUDE) \
            -I$(SPDLOG_INCLUDE) \
            -I$(LIBPFM4_INCLUDE)
+
+LDFLAGS += -L$(LIBPFM4_LIB_DIR)
 		   
 # Add CUDA include and libraries if found
 ifneq ($(CUDA_INCLUDE),)
