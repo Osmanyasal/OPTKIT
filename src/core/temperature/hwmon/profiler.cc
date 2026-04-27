@@ -1,6 +1,21 @@
 #include "core/temperature/hwmon/profiler.hh"
 namespace optkit::temperature::hwmon
 {
+    namespace
+    {
+        constexpr double READ_BUFFER_FLUSH_PERIOD_MS = 5000.0;
+
+        static std::unordered_map<std::string, double> event_counts_from_sample(
+            const std::vector<std::string> &event_names,
+            const std::vector<double> &values)
+        {
+            std::unordered_map<std::string, double> counts;
+            for (size_t j = 0; j < values.size(); ++j)
+                counts[event_names[j % event_names.size()]] += values[j];
+            return counts;
+        }
+    }
+
     // Static member definition
     std::unordered_map<std::string, std::string> Profiler::sensor_paths;
 
@@ -80,24 +95,49 @@ namespace optkit::temperature::hwmon
         return current_temps;
     }
 
+    void Profiler::on_sample_stored(const std::pair<double, std::vector<double>> &sample)
+    {
+        this->buffered_duration_ms += sample.first;
+        if (this->buffered_duration_ms < READ_BUFFER_FLUSH_PERIOD_MS)
+            return;
+
+        flush_compacted_samples();
+    }
+
+    void Profiler::flush_compacted_samples()
+    {
+        if (this->read_buffer.empty())
+            return;
+
+        const std::vector<std::string> &event_names = this->metric_builder.event_names();
+        for (size_t index = 0; index < this->read_buffer.size(); ++index)
+        {
+            const std::unordered_map<std::string, double> sample_counts =
+                event_counts_from_sample(event_names, this->read_buffer[index].second);
+            for (std::unordered_map<std::string, double>::const_iterator it = sample_counts.begin(); it != sample_counts.end(); ++it)
+                this->compacted_event_counts[it->first] += it->second;
+        }
+
+        this->compacted_duration_ms += this->buffered_duration_ms;
+        this->buffered_duration_ms = 0.0;
+        this->read_buffer.clear();
+    }
+
     std::unordered_map<std::string, double> Profiler::aggregate()
     {
         if (OPT_UNLIKELY(!is_enabled))
             return {};
-        double total_duration = 0.0;
-        std::unordered_map<std::string, double> aggregated_events;
+        double total_duration = this->compacted_duration_ms;
+        std::unordered_map<std::string, double> aggregated_events = this->compacted_event_counts;
         const std::vector<std::string> &event_names = this->metric_builder.event_names();
 
-        for (const auto &entry : read_buffer)
+        for (size_t index = 0; index < read_buffer.size(); ++index)
         {
-            total_duration += entry.first;
-
-            const std::vector<double> &values = entry.second;
-
-            for (size_t j = 0; j < values.size(); ++j)
-            {
-                aggregated_events[event_names[j]] += values[j];
-            }
+            total_duration += read_buffer[index].first;
+            const std::unordered_map<std::string, double> sample_counts =
+                event_counts_from_sample(event_names, read_buffer[index].second);
+            for (std::unordered_map<std::string, double>::const_iterator it = sample_counts.begin(); it != sample_counts.end(); ++it)
+                aggregated_events[it->first] += it->second;
         }
         std::vector<std::pair<std::string, double>> event_value(
             aggregated_events.begin(), aggregated_events.end());

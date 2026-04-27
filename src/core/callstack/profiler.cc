@@ -7,6 +7,11 @@ namespace optkit::callstack
 {
     namespace
     {
+        constexpr double READ_BUFFER_FLUSH_PERIOD_MS = 5000.0;
+    }
+
+    namespace
+    {
         class CallstackSession
         {
         public:
@@ -61,6 +66,38 @@ namespace optkit::callstack
             uint32_t sample_freq_hz{100};
             Postman postman;
         };
+
+        static std::string symbolize_stack_trace(const std::string &address_chain)
+        {
+            std::string symbolized_stack;
+            symbolized_stack.reserve(address_chain.size());
+
+            size_t pos = 0;
+            bool first = true;
+            while (pos < address_chain.length())
+            {
+                size_t semicolon_pos = address_chain.find(';', pos);
+                if (semicolon_pos == std::string::npos)
+                    semicolon_pos = address_chain.length();
+
+                std::string addr_str = address_chain.substr(pos, semicolon_pos - pos);
+
+                if (!first)
+                    symbolized_stack.push_back(';');
+
+                char *end = nullptr;
+                const uint64_t addr = std::strtoull(addr_str.c_str(), &end, 0);
+                if (end == addr_str.c_str())
+                    symbolized_stack += "?";
+                else
+                    symbolized_stack += CallstackSession::instance().symbolize(addr);
+
+                first = false;
+                pos = semicolon_pos + 1;
+            }
+
+            return symbolized_stack;
+        }
 
     } // namespace
 
@@ -151,53 +188,46 @@ namespace optkit::callstack
         return CallstackSession::instance().consume_counts(this->config.is_reset_after_read);
     }
 
+    void Profiler::on_sample_stored(const std::pair<double, std::unordered_map<std::string, uint64_t>> &sample)
+    {
+        this->buffered_duration_ms += sample.first;
+        if (this->buffered_duration_ms < READ_BUFFER_FLUSH_PERIOD_MS)
+            return;
+
+        flush_compacted_samples();
+    }
+
+    void Profiler::flush_compacted_samples()
+    {
+        if (this->read_buffer.empty())
+            return;
+
+        for (size_t index = 0; index < this->read_buffer.size(); ++index)
+        {
+            const std::unordered_map<std::string, uint64_t> &sample_counts = this->read_buffer[index].second;
+            for (std::unordered_map<std::string, uint64_t>::const_iterator it = sample_counts.begin(); it != sample_counts.end(); ++it)
+                this->compacted_event_counts[symbolize_stack_trace(it->first)] += it->second;
+        }
+
+        this->compacted_duration_ms += this->buffered_duration_ms;
+        this->buffered_duration_ms = 0.0;
+        this->read_buffer.clear();
+    }
+
     std::unordered_map<std::string, uint64_t> Profiler::aggregate()
     {
         if (OPT_UNLIKELY(!is_enabled))
             return {};
 
-        double total_duration = 0.0;
-        std::unordered_map<std::string, uint64_t> aggregated;
+        double total_duration = this->compacted_duration_ms;
+        std::unordered_map<std::string, uint64_t> aggregated = this->compacted_event_counts;
 
         for (const auto &entry : read_buffer)
         {
             total_duration += entry.first;
             for (const auto &kv : entry.second)
             {
-                // kv.first contains raw hex addresses separated by ';'
-                // Symbolize them now during aggregation
-                const auto &address_chain = kv.first;
-                std::string symbolized_stack;
-
-                symbolized_stack.reserve(address_chain.size());
-
-                // Parse and symbolize the address chain
-                size_t pos = 0;
-                bool first = true;
-                while (pos < address_chain.length())
-                {
-                    size_t semicolon_pos = address_chain.find(';', pos);
-                    if (semicolon_pos == std::string::npos)
-                        semicolon_pos = address_chain.length();
-
-                    std::string addr_str = address_chain.substr(pos, semicolon_pos - pos);
-
-                    if (!first)
-                        symbolized_stack.push_back(';');
-
-                    // Convert string to uint64_t (handles 0x prefix). Avoid exceptions on bad input.
-                    char *end = nullptr;
-                    const uint64_t addr = std::strtoull(addr_str.c_str(), &end, 0);
-                    if (end == addr_str.c_str())
-                        symbolized_stack += "?";
-                    else
-                        symbolized_stack += CallstackSession::instance().symbolize(addr);
-
-                    first = false;
-                    pos = semicolon_pos + 1;
-                }
-
-                aggregated[symbolized_stack] += kv.second;
+                aggregated[symbolize_stack_trace(kv.first)] += kv.second;
             }
         }
 

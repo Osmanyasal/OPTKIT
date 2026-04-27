@@ -81,6 +81,24 @@ namespace
 
 namespace optkit::energy::pdu
 {
+    namespace
+    {
+        constexpr double READ_BUFFER_FLUSH_PERIOD_MS = 5000.0;
+
+        static void accumulate_energy_sample(
+            std::unordered_map<std::string, std::unordered_map<int32_t, std::unordered_map<PduDomain, double>>> &target,
+            const std::unordered_map<int32_t, std::unordered_map<PduDomain, double>> &power_values,
+            double duration_ms)
+        {
+            const double duration_s = duration_ms / 1000.0;
+            for (std::unordered_map<int32_t, std::unordered_map<PduDomain, double>>::const_iterator socket_it = power_values.begin(); socket_it != power_values.end(); ++socket_it)
+            {
+                for (std::unordered_map<PduDomain, double>::const_iterator domain_it = socket_it->second.begin(); domain_it != socket_it->second.end(); ++domain_it)
+                    target[std::to_string(socket_it->first)][socket_it->first][domain_it->first] += domain_it->second * duration_s;
+            }
+        }
+    }
+
     Profiler::Profiler(const ProfilerConfig &profiler_config, const optkit::metrics::MetricBuilder<double> &mb)
         : BaseProfiler{profiler_config}, target{Query::target_info()}, metric_builder{mb}
     {
@@ -181,23 +199,38 @@ namespace optkit::energy::pdu
         return result;
     }
 
+    void Profiler::on_sample_stored(const std::pair<double, std::unordered_map<int32_t, std::unordered_map<PduDomain, double>>> &sample)
+    {
+        this->buffered_duration_ms += sample.first;
+        if (this->buffered_duration_ms < READ_BUFFER_FLUSH_PERIOD_MS)
+            return;
+
+        flush_compacted_samples();
+    }
+
+    void Profiler::flush_compacted_samples()
+    {
+        if (this->read_buffer.empty())
+            return;
+
+        for (size_t index = 0; index < this->read_buffer.size(); ++index)
+            accumulate_energy_sample(this->compacted_event_counts, this->read_buffer[index].second, this->read_buffer[index].first);
+
+        this->compacted_duration_ms += this->buffered_duration_ms;
+        this->buffered_duration_ms = 0.0;
+        this->read_buffer.clear();
+    }
+
     std::unordered_map<std::string, std::unordered_map<int32_t, std::unordered_map<PduDomain, double>>> Profiler::aggregate()
     {
-        double total_duration = 0.0;
-        std::unordered_map<std::string, std::unordered_map<int32_t, std::unordered_map<PduDomain, double>>> aggregated_events;
+        double total_duration = this->compacted_duration_ms;
+        std::unordered_map<std::string, std::unordered_map<int32_t, std::unordered_map<PduDomain, double>>> aggregated_events = this->compacted_event_counts;
 
         for (size_t index = 0; index < read_buffer.size(); ++index)
         {
             const double duration_ms = read_buffer[index].first;
             total_duration += duration_ms;
-            const double duration_s = duration_ms / 1000.0;
-            const std::unordered_map<int32_t, std::unordered_map<PduDomain, double>> &power_values = read_buffer[index].second;
-
-            for (std::unordered_map<int32_t, std::unordered_map<PduDomain, double>>::const_iterator socket_it = power_values.begin(); socket_it != power_values.end(); ++socket_it)
-            {
-                for (std::unordered_map<PduDomain, double>::const_iterator domain_it = socket_it->second.begin(); domain_it != socket_it->second.end(); ++domain_it)
-                    aggregated_events[std::to_string(socket_it->first)][socket_it->first][domain_it->first] += domain_it->second * duration_s;
-            }
+            accumulate_energy_sample(aggregated_events, read_buffer[index].second, duration_ms);
         }
 
         std::vector<std::pair<std::string, std::unordered_map<int32_t, std::unordered_map<PduDomain, double>>>> event_value(aggregated_events.begin(), aggregated_events.end());

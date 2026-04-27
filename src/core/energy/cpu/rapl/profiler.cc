@@ -2,6 +2,22 @@
 
 namespace optkit::energy::rapl
 {
+    namespace
+    {
+        constexpr double READ_BUFFER_FLUSH_PERIOD_MS = 5000.0;
+
+        static void accumulate_energy_sample(
+            std::unordered_map<std::string, std::unordered_map<int32_t, std::unordered_map<RaplDomain, double>>> &target,
+            const std::unordered_map<int32_t, std::unordered_map<RaplDomain, double>> &values)
+        {
+            for (std::unordered_map<int32_t, std::unordered_map<RaplDomain, double>>::const_iterator pair = values.begin(); pair != values.end(); ++pair)
+            {
+                const int32_t socket_id = pair->first;
+                for (std::unordered_map<RaplDomain, double>::const_iterator innerpair = pair->second.begin(); innerpair != pair->second.end(); ++innerpair)
+                    target[std::to_string(socket_id)][socket_id][innerpair->first] += innerpair->second;
+            }
+        }
+    }
 
     // this is the sampling function that runs in a separate thread
     // it calls read_and_store every sampling_frequency_sec seconds
@@ -127,30 +143,37 @@ namespace optkit::energy::rapl
                 ::close(fd_package_domain[package][domain]);
     }
 
+    void Profiler::on_sample_stored(const std::pair<double, std::unordered_map<int32_t, std::unordered_map<RaplDomain, double>>> &sample)
+    {
+        this->buffered_duration_ms += sample.first;
+        if (this->buffered_duration_ms < READ_BUFFER_FLUSH_PERIOD_MS)
+            return;
+
+        flush_compacted_samples();
+    }
+
+    void Profiler::flush_compacted_samples()
+    {
+        if (this->read_buffer.empty())
+            return;
+
+        for (size_t index = 0; index < this->read_buffer.size(); ++index)
+            accumulate_energy_sample(this->compacted_event_counts, this->read_buffer[index].second);
+
+        this->compacted_duration_ms += this->buffered_duration_ms;
+        this->buffered_duration_ms = 0.0;
+        this->read_buffer.clear();
+    }
+
     // returns socket_id_str - <socket_id - <rapl_domain - read value>>
     std::unordered_map<std::string, std::unordered_map<int32_t, std::unordered_map<RaplDomain, double>>> Profiler::aggregate()
     {
-        double total_duration = 0.0;
-        std::unordered_map<std::string, std::unordered_map<int32_t, std::unordered_map<RaplDomain, double>>> aggregated_events;
+        double total_duration = this->compacted_duration_ms;
+        std::unordered_map<std::string, std::unordered_map<int32_t, std::unordered_map<RaplDomain, double>>> aggregated_events = this->compacted_event_counts;
         for (const auto &entry : read_buffer)
         {
             total_duration += entry.first;
-            const std::unordered_map<int32_t, std::unordered_map<RaplDomain, double>> &values = entry.second; // socket_id - rapl_domain - reading
-
-            for (const auto &pair : values)
-            {
-                int32_t socket_id = pair.first;
-
-                for (const auto &innerpair : pair.second)
-                {
-                    RaplDomain domain = innerpair.first;
-                    double reading = innerpair.second;
-
-                    // Aggregate the readings
-                    aggregated_events[std::to_string(socket_id)][socket_id][domain] += reading;
-                    // std::cout << "Aggregating Event: " << to_string(domain) << " Socket: " << socket_id << " Domain: " << domain << " Reading: " << reading << " total:" << aggregated_events[std::to_string(socket_id)][socket_id][domain] << "\n";
-                }
-            }
+            accumulate_energy_sample(aggregated_events, entry.second);
         }
         std::vector<std::pair<std::string, std::unordered_map<int32_t, std::unordered_map<RaplDomain, double>>>> event_value(
             aggregated_events.begin(), aggregated_events.end());

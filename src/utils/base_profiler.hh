@@ -86,11 +86,15 @@ namespace optkit
 
             // write to buffer
             read_buffer.push_back({duration_ms, val});
+            const auto stored_sample = read_buffer.back();
+
+            if (OPT_LIKELY(!this->config.is_screenshot))
+                on_sample_stored(stored_sample);
 
             // re-set start time to now
             this->start = end;
 
-            return read_buffer.back();
+            return stored_sample;
         }
 
         /**
@@ -138,6 +142,11 @@ namespace optkit
         }
 
     protected:
+        virtual void on_sample_stored(const std::pair<double, readT> &sample)
+        {
+            (void)sample;
+        }
+
         /**
          * @brief Converts the buffer to JSON format and writes it to a file.
          *

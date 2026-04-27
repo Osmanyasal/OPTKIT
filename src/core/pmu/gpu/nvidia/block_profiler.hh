@@ -63,10 +63,16 @@ namespace optkit::pmu::gpu::nvidia
 #if !OPTKIT_TESTING // if not testing (in prod) then make those private, in testin make those public
     private:
 #endif
+        virtual void on_sample_stored(const std::pair<double, std::vector<double>> &sample) override;
+        void flush_compacted_samples();
+
         const ProfilerConfig profiler_config;
         const optkit::metrics::MetricBuilder<double> metric_builder;
         std::vector<std::pair<std::string, double>> metric_results;
         std::vector<std::pair<std::string, std::string>> detail_event_results;
+        std::unordered_map<std::string, double> compacted_event_counts;
+        double compacted_duration_ms{0.0};
+        double buffered_duration_ms{0.0};
 
         // GPM sampling (self-contained in GpmSampler)
         std::unique_ptr<GpmSampler> gpm_sampler_;

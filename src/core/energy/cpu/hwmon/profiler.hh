@@ -70,6 +70,9 @@ namespace optkit::energy::hwmon
         virtual std::unordered_map<std::string, std::unordered_map<int32_t, std::unordered_map<HwmonDomain, double>>> aggregate() override;
 
     private:
+        virtual void on_sample_stored(const std::pair<double, std::unordered_map<int32_t, std::unordered_map<HwmonDomain, double>>> &sample) override;
+        void flush_compacted_samples();
+
         struct SensorInfo
         {
             std::string path;
@@ -83,6 +86,9 @@ namespace optkit::energy::hwmon
         
         optkit::metrics::MetricBuilder<double> metric_builder;
         std::unordered_map<uint32_t, std::vector<std::pair<std::string, double>>> metric_results;
+        std::unordered_map<std::string, std::unordered_map<int32_t, std::unordered_map<HwmonDomain, double>>> compacted_event_counts;
+        double compacted_duration_ms{0.0};
+        double buffered_duration_ms{0.0};
 
         std::thread sampling_thread;
         std::atomic<bool> is_sampling{false};

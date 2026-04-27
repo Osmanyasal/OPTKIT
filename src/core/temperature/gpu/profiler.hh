@@ -33,8 +33,14 @@ namespace optkit::temperature::gpu
         virtual std::unordered_map<std::string, std::pair<double, double>> aggregate() override;
 
     private:
+        virtual void on_sample_stored(const std::pair<double, std::vector<std::pair<double, double>>> &sample) override;
+        void flush_compacted_samples();
+
         optkit::metrics::MetricBuilder<std::pair<double, double>> metric_builder;
         std::unordered_map<uint32_t, std::pair<double, double>> last_snapshot; // device-index -> gpu-temp, mem-temp
         std::vector<std::pair<std::string, double>> metric_results;
+        std::unordered_map<std::string, std::pair<double, double>> compacted_event_counts;
+        double compacted_duration_ms{0.0};
+        double buffered_duration_ms{0.0};
     };
 } // namespace optkit::temperature::gpu

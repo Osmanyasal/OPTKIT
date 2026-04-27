@@ -74,6 +74,8 @@ namespace optkit::pmu::cpu::perf
 #if !OPTKIT_TESTING // if not testing (in prod) then make those private, in testin make those public
     private:
 #endif
+        virtual void on_sample_stored(const std::pair<double, std::vector<uint64_t>> &sample) override;
+        void flush_compacted_samples();
 
         bool is_configured;
         std::vector<int32_t> group_leaders;
@@ -81,6 +83,9 @@ namespace optkit::pmu::cpu::perf
         const PerfProfilerConfig profiler_config;
         const optkit::metrics::MetricBuilder<uint64_t> metric_builder;
         std::vector<std::pair<std::string, double>> metric_results;
+        std::unordered_map<std::string, uint64_t> compacted_event_counts;
+        double compacted_duration_ms{0.0};
+        double buffered_duration_ms{0.0};
         std::thread sampling_thread;
         std::atomic<bool> is_sampling{false};
 

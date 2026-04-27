@@ -10,6 +10,7 @@
 #if OPTKIT_ENV_LIB_PERF_EVENT
 namespace optkit::pmu::cpu::perf
 {
+    constexpr double READ_BUFFER_FLUSH_PERIOD_MS = 5000.0;
 
     OPT_FORCE_INLINE std::vector<std::string> unique_event_names_from(const std::vector<std::string> &event_names)
     {
@@ -38,34 +39,6 @@ namespace optkit::pmu::cpu::perf
         return event_values;
     }
 
-    OPT_FORCE_INLINE std::unordered_map<std::string, uint64_t> aggregate_counts_from_read_buffer(
-        const std::vector<std::string> &event_names,
-        const std::vector<std::pair<double, std::vector<uint64_t>>> &read_buffer,
-        double total_duration_ms)
-    {
-        std::unordered_map<std::string, uint64_t> aggregated_counts;
-        for (const auto &sample : read_buffer)
-        {
-            const std::vector<uint64_t> &values = sample.second;
-            for (size_t j = 0; j < values.size(); ++j)
-                aggregated_counts[event_names[j % event_names.size()]] += values[j];
-        }
-        aggregated_counts["duration_microsec"] = static_cast<uint64_t>(total_duration_ms * 1000.0);
-        return aggregated_counts;
-    }
-
-    OPT_FORCE_INLINE void append_reading_json(
-        nlohmann::json &out,
-        double duration_ms,
-        const char *measurement_type,
-        const std::vector<std::pair<std::string, uint64_t>> &event_values,
-        const std::vector<std::pair<std::string, double>> &metric_values)
-    {
-        nlohmann::json single = utils::to_json<uint64_t>(duration_ms, measurement_type, event_values, metric_values);
-        if (single.contains("readings") && single["readings"].is_array() && !single["readings"].empty())
-            out["readings"].push_back(single["readings"][0]);
-    }
-
     OPT_FORCE_INLINE std::unordered_map<std::string, uint64_t> event_counts_from_sample(
         const std::vector<std::string> &event_names,
         const std::vector<uint64_t> &values,
@@ -86,11 +59,77 @@ namespace optkit::pmu::cpu::perf
         return counts;
     }
 
+    OPT_FORCE_INLINE std::unordered_map<std::string, uint64_t> aggregate_counts_from_read_buffer(
+        const std::vector<std::string> &event_names,
+        const std::vector<std::pair<double, std::vector<uint64_t>>> &read_buffer,
+        double total_duration_ms)
+    {
+        std::unordered_map<std::string, uint64_t> aggregated_counts;
+        for (const auto &sample : read_buffer)
+        {
+            const std::unordered_map<std::string, uint64_t> sample_counts =
+                event_counts_from_sample(event_names, sample.second, sample.first);
+
+            for (std::unordered_map<std::string, uint64_t>::const_iterator it = sample_counts.begin(); it != sample_counts.end(); ++it)
+            {
+                if (it->first == "duration_microsec")
+                    continue;
+                aggregated_counts[it->first] += it->second;
+            }
+        }
+        aggregated_counts["duration_microsec"] = static_cast<uint64_t>(total_duration_ms * 1000.0);
+        return aggregated_counts;
+    }
+
+    OPT_FORCE_INLINE void append_reading_json(
+        nlohmann::json &out,
+        double duration_ms,
+        const char *measurement_type,
+        const std::vector<std::pair<std::string, uint64_t>> &event_values,
+        const std::vector<std::pair<std::string, double>> &metric_values)
+    {
+        nlohmann::json single = utils::to_json<uint64_t>(duration_ms, measurement_type, event_values, metric_values);
+        if (single.contains("readings") && single["readings"].is_array() && !single["readings"].empty())
+            out["readings"].push_back(single["readings"][0]);
+    }
+
     // this is the sampling function that runs in a separate thread
     // it calls read_and_store every sampling_frequency_sec seconds
     OPT_FORCE_INLINE void sampling_function(BlockProfiler &profiler)
     {
         profiler.read_and_store();
+    }
+
+    void BlockProfiler::on_sample_stored(const std::pair<double, std::vector<uint64_t>> &sample)
+    {
+        if (OPT_UNLIKELY(this->config.is_screenshot))
+            return;
+
+        this->buffered_duration_ms += sample.first;
+        if (this->buffered_duration_ms < READ_BUFFER_FLUSH_PERIOD_MS)
+            return;
+
+        flush_compacted_samples();
+    }
+
+    void BlockProfiler::flush_compacted_samples()
+    {
+        if (this->read_buffer.empty())
+            return;
+        const double flushed_duration_ms = this->buffered_duration_ms;
+        const std::unordered_map<std::string, uint64_t> aggregated_counts =
+            aggregate_counts_from_read_buffer(this->metric_builder.event_names(), this->read_buffer, flushed_duration_ms);
+
+        for (std::unordered_map<std::string, uint64_t>::const_iterator it = aggregated_counts.begin(); it != aggregated_counts.end(); ++it)
+        {
+            if (it->first == "duration_microsec")
+                continue;
+            this->compacted_event_counts[it->first] += it->second;
+        }
+        
+        this->compacted_duration_ms += flushed_duration_ms;
+        this->buffered_duration_ms = 0.0;
+        this->read_buffer.clear();
     }
 
     BlockProfiler::BlockProfiler(const PerfProfilerConfig &profiler_config, const optkit::metrics::MetricBuilder<uint64_t> &mb)
@@ -297,10 +336,10 @@ namespace optkit::pmu::cpu::perf
                 const auto aggregated_metric_values = this->metric_builder.calculate(aggregated_counts);
 
                 append_reading_json(out,
-                                   this->total_duration_ms,
-                                   this->config.measurement_type,
-                                   aggregated_event_values,
-                                   aggregated_metric_values);
+                                    this->total_duration_ms,
+                                    this->config.measurement_type,
+                                    aggregated_event_values,
+                                    aggregated_metric_values);
             }
 
             for (const auto &sample : this->read_buffer)
@@ -314,10 +353,10 @@ namespace optkit::pmu::cpu::perf
                     this->metric_builder.calculate(sample_counts);
 
                 append_reading_json(out,
-                                   duration_ms,
-                                   this->config.measurement_type,
-                                   event_values,
-                                   metric_values);
+                                    duration_ms,
+                                    this->config.measurement_type,
+                                    event_values,
+                                    metric_values);
             }
 
             std::stringstream ss;
@@ -361,31 +400,23 @@ namespace optkit::pmu::cpu::perf
     {
         if (OPT_UNLIKELY(!is_enabled))
             return {};
-        double total_duration = 0.0;
-        std::unordered_map<std::string, uint64_t> aggregated_events;
+        double total_duration = this->compacted_duration_ms;
+        std::unordered_map<std::string, uint64_t> aggregated_events = this->compacted_event_counts;
         const std::vector<std::string> &event_names = this->metric_builder.event_names();
 
-        if (event_names.empty())
-        {
-            for (const auto &entry : read_buffer)
-                total_duration += entry.first;
-
-            this->event_results.clear();
-            this->total_duration_ms = total_duration;
-            aggregated_events["duration_microsec"] = this->total_duration_ms * 1000.0;
-            return aggregated_events;
-        }
-
+        double buffered_duration = 0.0;
         for (const auto &entry : read_buffer)
+            buffered_duration += entry.first;
+
+        const std::unordered_map<std::string, uint64_t> buffered_counts =
+            aggregate_counts_from_read_buffer(event_names, this->read_buffer, buffered_duration);
+
+        total_duration += buffered_duration;
+        for (std::unordered_map<std::string, uint64_t>::const_iterator it = buffered_counts.begin(); it != buffered_counts.end(); ++it)
         {
-            total_duration += entry.first;
-
-            const std::vector<uint64_t> &values = entry.second;
-
-            for (size_t j = 0; j < values.size(); ++j)
-            {
-                aggregated_events[event_names[j % event_names.size()]] += values[j];
-            }
+            if (it->first == "duration_microsec")
+                continue;
+            aggregated_events[it->first] += it->second;
         }
         std::vector<std::pair<std::string, uint64_t>> event_value(
             aggregated_events.begin(), aggregated_events.end());

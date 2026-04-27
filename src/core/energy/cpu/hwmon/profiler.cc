@@ -2,6 +2,25 @@
 
 namespace optkit::energy::hwmon
 {
+    namespace
+    {
+        constexpr double READ_BUFFER_FLUSH_PERIOD_MS = 5000.0;
+
+        static void accumulate_energy_sample(
+            std::unordered_map<std::string, std::unordered_map<int32_t, std::unordered_map<HwmonDomain, double>>> &target,
+            const std::unordered_map<int32_t, std::unordered_map<HwmonDomain, double>> &power_values,
+            double duration_ms)
+        {
+            const double duration_s = duration_ms / 1000.0;
+            for (std::unordered_map<int32_t, std::unordered_map<HwmonDomain, double>>::const_iterator socket_pair = power_values.begin(); socket_pair != power_values.end(); ++socket_pair)
+            {
+                const int32_t socket_id = socket_pair->first;
+                for (std::unordered_map<HwmonDomain, double>::const_iterator domain_pair = socket_pair->second.begin(); domain_pair != socket_pair->second.end(); ++domain_pair)
+                    target[std::to_string(socket_id)][socket_id][domain_pair->first] += domain_pair->second * duration_s;
+            }
+        }
+    }
+
     // Sampling function that runs in a separate thread
     OPT_FORCE_INLINE void sampling_function(Profiler &profiler)
     {
@@ -174,36 +193,40 @@ namespace optkit::energy::hwmon
         return result;
     }
 
+    void Profiler::on_sample_stored(const std::pair<double, std::unordered_map<int32_t, std::unordered_map<HwmonDomain, double>>> &sample)
+    {
+        this->buffered_duration_ms += sample.first;
+        if (this->buffered_duration_ms < READ_BUFFER_FLUSH_PERIOD_MS)
+            return;
+
+        flush_compacted_samples();
+    }
+
+    void Profiler::flush_compacted_samples()
+    {
+        if (this->read_buffer.empty())
+            return;
+
+        for (size_t index = 0; index < this->read_buffer.size(); ++index)
+            accumulate_energy_sample(this->compacted_event_counts, this->read_buffer[index].second, this->read_buffer[index].first);
+
+        this->compacted_duration_ms += this->buffered_duration_ms;
+        this->buffered_duration_ms = 0.0;
+        this->read_buffer.clear();
+    }
+
     std::unordered_map<std::string, std::unordered_map<int32_t, std::unordered_map<HwmonDomain, double>>> Profiler::aggregate()
     {
-        double total_duration = 0.0;
-        std::unordered_map<std::string, std::unordered_map<int32_t, std::unordered_map<HwmonDomain, double>>> aggregated_events;
+        double total_duration = this->compacted_duration_ms;
+        std::unordered_map<std::string, std::unordered_map<int32_t, std::unordered_map<HwmonDomain, double>>> aggregated_events = this->compacted_event_counts;
 
         for (size_t i = 0; i < read_buffer.size(); ++i)
         {
             const auto &entry = read_buffer[i];
             double duration_ms = entry.first;
             total_duration += duration_ms;
-            
-            const std::unordered_map<int32_t, std::unordered_map<HwmonDomain, double>> &power_values = entry.second;
 
-            // Convert power (W) to energy (J) by multiplying by time (s)
-            double duration_s = duration_ms / 1000.0;
-
-            for (const auto &socket_pair : power_values)
-            {
-                int32_t socket_id = socket_pair.first;
-
-                for (const auto &domain_pair : socket_pair.second)
-                {
-                    HwmonDomain domain = domain_pair.first;
-                    double power_w = domain_pair.second;
-                    double energy_j = power_w * duration_s;
-
-                    // Aggregate the energy
-                    aggregated_events[std::to_string(socket_id)][socket_id][domain] += energy_j;
-                }
-            }
+            accumulate_energy_sample(aggregated_events, entry.second, duration_ms);
         }
 
         std::vector<std::pair<std::string, std::unordered_map<int32_t, std::unordered_map<HwmonDomain, double>>>> event_value(

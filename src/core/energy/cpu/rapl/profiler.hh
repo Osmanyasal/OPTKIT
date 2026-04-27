@@ -62,10 +62,16 @@ namespace optkit::energy::rapl
         virtual std::unordered_map<std::string, std::unordered_map<int32_t, std::unordered_map<RaplDomain, double>>> aggregate() override; // event_name - reading_val
 
     private:
+        virtual void on_sample_stored(const std::pair<double, std::unordered_map<int32_t, std::unordered_map<RaplDomain, double>>> &sample) override;
+        void flush_compacted_samples();
+
         std::vector<std::vector<int32_t>> fd_package_domain; // file descriptors [package(socket)][domain]
 
         optkit::metrics::MetricBuilder<double> metric_builder;                                    // metric_data
         std::unordered_map<uint32_t, std::vector<std::pair<std::string, double>>> metric_results; // metric - value
+        std::unordered_map<std::string, std::unordered_map<int32_t, std::unordered_map<RaplDomain, double>>> compacted_event_counts;
+        double compacted_duration_ms{0.0};
+        double buffered_duration_ms{0.0};
 
         std::thread sampling_thread;
         std::atomic<bool> is_sampling{false};

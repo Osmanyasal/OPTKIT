@@ -46,9 +46,15 @@ namespace optkit::energy::gpu::nvidia
         virtual std::unordered_map<std::string, std::unordered_map<uint32_t, double>> aggregate() override;
 
     private:
+        virtual void on_sample_stored(const std::pair<double, std::unordered_map<uint32_t, double>> &sample) override;
+        void flush_compacted_samples();
+
         optkit::metrics::MetricBuilder<double> metric_builder;
         std::unordered_map<uint32_t, double> snapshot; // device-index -> current power drawn in Watts
         std::vector<std::pair<std::string, double>> metric_results;
+        std::unordered_map<std::string, std::unordered_map<uint32_t, double>> compacted_event_counts;
+        double compacted_duration_ms{0.0};
+        double buffered_duration_ms{0.0};
 
         uint32_t sampling_frequency_sec;
         uint32_t sampling_counter;

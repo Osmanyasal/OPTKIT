@@ -2,6 +2,26 @@
 
 namespace optkit::energy::gpu::nvidia
 {
+    namespace
+    {
+        constexpr double READ_BUFFER_FLUSH_PERIOD_MS = 5000.0;
+
+        static void accumulate_energy_sample(
+            std::unordered_map<std::string, std::unordered_map<uint32_t, double>> &target,
+            const std::vector<std::string> &event_names,
+            const std::unordered_map<uint32_t, double> &values)
+        {
+            for (std::unordered_map<uint32_t, double>::const_iterator value_it = values.begin(); value_it != values.end(); ++value_it)
+            {
+                for (size_t event_index = 0; event_index < event_names.size(); ++event_index)
+                {
+                    const std::string key = event_names[event_index] + "_" + std::to_string(value_it->first);
+                    target[key][value_it->first] += value_it->second;
+                }
+            }
+        }
+    }
+
     // this is the sampling function that runs in a separate thread
     // it accumulates power readings every sampling_frequency_sec seconds
     // unordered-map stands for device-id <-> {power (Watts)}
@@ -148,29 +168,42 @@ namespace optkit::energy::gpu::nvidia
         return this->snapshot;
     }
 
+    void Profiler::on_sample_stored(const std::pair<double, std::unordered_map<uint32_t, double>> &sample)
+    {
+        this->buffered_duration_ms += sample.first;
+        if (this->buffered_duration_ms < READ_BUFFER_FLUSH_PERIOD_MS)
+            return;
+
+        flush_compacted_samples();
+    }
+
+    void Profiler::flush_compacted_samples()
+    {
+        if (this->read_buffer.empty())
+            return;
+
+        const std::vector<std::string> &event_names = this->metric_builder.event_names();
+        for (size_t index = 0; index < this->read_buffer.size(); ++index)
+            accumulate_energy_sample(this->compacted_event_counts, event_names, this->read_buffer[index].second);
+
+        this->compacted_duration_ms += this->buffered_duration_ms;
+        this->buffered_duration_ms = 0.0;
+        this->read_buffer.clear();
+    }
+
     std::unordered_map<std::string, std::unordered_map<uint32_t, double>> Profiler::aggregate()
     {
         if (!this->is_enabled)
             return {};
 
-        double total_duration = 0.0;
-        std::unordered_map<std::string, std::unordered_map<uint32_t, double>> aggregated_events;
+        double total_duration = this->compacted_duration_ms;
+        std::unordered_map<std::string, std::unordered_map<uint32_t, double>> aggregated_events = this->compacted_event_counts;
         const std::vector<std::string> &event_names = this->metric_builder.event_names();
 
         for (const auto &entry : read_buffer)
         {
             total_duration += entry.first;
-            const auto &values = entry.second;
-
-            for (auto &&i : values)
-            {
-                for (auto &&event_name : event_names)
-                {
-                    std::string key = event_name + "_" + std::to_string(i.first);
-                    aggregated_events[key][i.first] += i.second;
-                    // std::cout << std::fixed << key << " =" << aggregated_events[key][i.first] << " Joules\n"; // debug
-                }
-            }
+            accumulate_energy_sample(aggregated_events, event_names, entry.second);
         }
         std::vector<std::pair<std::string, std::unordered_map<uint32_t, double>>> event_value(
             aggregated_events.begin(), aggregated_events.end());

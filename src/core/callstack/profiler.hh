@@ -70,12 +70,18 @@ namespace optkit::callstack
 #if !OPTKIT_TESTING // if not testing (in prod) then make those private, in testin make those public
     private:
 #endif
+        virtual void on_sample_stored(const std::pair<double, std::unordered_map<std::string, uint64_t>> &sample) override;
+        void flush_compacted_samples();
+
         /**
          * @brief fd_list holds pmu events being monitor by this Profiler Object.
          * when created the same file description must be registered global fd_stack
          */
         const optkit::pmu::cpu::perf::PerfProfilerConfig profiler_config;
         uint32_t sample_freq_hz;
+        std::unordered_map<std::string, uint64_t> compacted_event_counts;
+        double compacted_duration_ms{0.0};
+        double buffered_duration_ms{0.0};
     };
 
 } // namespace optkit::callstack

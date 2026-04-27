@@ -62,6 +62,9 @@ namespace optkit::temperature::hwmon
         std::unordered_map<std::string, double> read_temperature_sensors();
 
     private:
+        virtual void on_sample_stored(const std::pair<double, std::vector<double>> &sample) override;
+        void flush_compacted_samples();
+
         /**
          * Read temperature from hwmon path
          */
@@ -71,5 +74,8 @@ namespace optkit::temperature::hwmon
         optkit::metrics::MetricBuilder<double> metric_builder;
         std::unordered_map<std::string, double> last_snapshot;
         std::vector<std::pair<std::string, double>> metric_results;
+        std::unordered_map<std::string, double> compacted_event_counts;
+        double compacted_duration_ms{0.0};
+        double buffered_duration_ms{0.0};
     };
 } // namespace optkit::temperature::hwmon
