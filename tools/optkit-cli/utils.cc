@@ -94,7 +94,7 @@ CommandArgs parse_arguments(int argc, char **argv)
             args.program_args.push_back(*it);
         }
     }
-    else if (separator_it == tokens.end())
+    else if (separator_it == tokens.end() && args.command == Command::STAT)
     {
         for (size_t i = 1; i < tokens.size(); i++)
             args.program_args.push_back(tokens[i]);

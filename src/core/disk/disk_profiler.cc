@@ -99,6 +99,7 @@ namespace optkit::disk
                 continue;
             this->compacted_event_counts[it->first] += it->second;
         }
+ 
         this->compacted_duration_ms += flushed_duration_ms;
         this->buffered_duration_ms = 0.0;
         this->read_buffer.clear();

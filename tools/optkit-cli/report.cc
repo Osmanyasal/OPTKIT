@@ -17,27 +17,14 @@
 #include <sys/stat.h>
 
 // Returns the best available PNG terminal supported by the local gnuplot.
-// Some builds print a warning but still exit successfully, so probe via the terminal list.
+// Avoid listing terminals because some gnuplot builds page that output and block on stdin.
 static const std::string &gnuplot_png_terminal()
 {
     static std::string term;
     if (!term.empty())
         return term;
 
-    FILE *pipe = popen("gnuplot -e \"set terminal\" 2>&1", "r");
-    if (!pipe)
-    {
-        term = "png";
-        return term;
-    }
-
-    std::string terminals;
-    char buffer[256];
-    while (fgets(buffer, sizeof(buffer), pipe) != NULL)
-        terminals += buffer;
-    pclose(pipe);
-
-    term = (terminals.find("pngcairo") != std::string::npos) ? "pngcairo" : "png";
+    term = (std::system("gnuplot -e \"set terminal pngcairo\" >/dev/null 2>&1") == 0) ? "pngcairo" : "png";
     return term;
 }
 
@@ -1569,7 +1556,7 @@ void execute_report_command(const CommandArgs &args)
         std::cerr << "Error: No report data folder(s) specified.\n";
         return;
     }
-    if (system("which gnuplot") != 0)
+    if (system("command -v gnuplot >/dev/null 2>&1") != 0)
     {
         std::cerr << "Error: gnuplot is not installed or not found in PATH.\n";
         return;
