@@ -64,6 +64,7 @@ namespace optkit::metrics::performance::cpu
             static const std::vector<std::string> names = {
                 // Common metrics
                 "cpu_max_capacity_based_utilization",
+                "false_sharing_ratio",
                 "l1_mpki",
                 "l2_mpki",
                 "l3_mpki",
@@ -136,6 +137,8 @@ namespace optkit::metrics::performance::cpu
         // Returns a const reference to a static MetricBuilder.
         static const MetricBuilder<uint64_t> &get_metric(const std::string &metric_name)
         {
+            if (metric_name == "false_sharing_ratio")
+                return false_sharing_ratio();
             if (metric_name == "cpu_max_capacity_based_utilization")
                 return cpu_max_capacity_based_utilization();
             if (metric_name == "l1_mpki")
@@ -274,6 +277,37 @@ namespace optkit::metrics::performance::cpu
             OPTKIT_CORE_WARN("Requested unknown AMD metric: {}", metric_name);
             static const MetricBuilder<uint64_t> empty{};
             return empty;
+        }
+
+        static const MetricBuilder<uint64_t> &false_sharing_ratio()
+        {
+#if OPTKIT_ENV_CPU_MICROARCH_ZEN4
+            static const MetricBuilder<uint64_t> metric = []
+            {
+                std::string mab_ls_allocations_name = to_string(amd::NativeEvents::MAB_ALLOCATION_BY_TYPE_LS);
+                std::string local_ccx_fill_name = to_string(amd::NativeEvents::DEMAND_DATA_CACHE_FILLS_FROM_SYSTEM_LOCAL_CCX);
+                std::string near_cache_fill_name = to_string(amd::NativeEvents::DEMAND_DATA_CACHE_FILLS_FROM_SYSTEM_NEAR_CACHE_NEAR_FAR);
+
+                return MetricBuilder<uint64_t>{}
+                    .add(mab_ls_allocations_name, amd::EventMapper::get(amd::NativeEvents::MAB_ALLOCATION_BY_TYPE_LS))
+                    .add(local_ccx_fill_name, amd::EventMapper::get(amd::NativeEvents::DEMAND_DATA_CACHE_FILLS_FROM_SYSTEM_LOCAL_CCX))
+                    .add(near_cache_fill_name, amd::EventMapper::get(amd::NativeEvents::DEMAND_DATA_CACHE_FILLS_FROM_SYSTEM_NEAR_CACHE_NEAR_FAR))
+                    .build("false_sharing_ratio__%",
+                           [mab_ls_allocations_name, local_ccx_fill_name, near_cache_fill_name](const std::unordered_map<std::string, uint64_t> &counts) -> double
+                           {
+                               uint64_t mab_ls_allocations = get_event_count(counts, mab_ls_allocations_name);
+                               uint64_t local_ccx_fills = get_event_count(counts, local_ccx_fill_name);
+                               uint64_t near_cache_fills = get_event_count(counts, near_cache_fill_name);
+                               if (mab_ls_allocations == 0)
+                                   return std::numeric_limits<double>::quiet_NaN();
+                               return 100.0 * static_cast<double>(local_ccx_fills + near_cache_fills) / static_cast<double>(mab_ls_allocations);
+                           });
+            }();
+            return metric;
+#else
+            static const MetricBuilder<uint64_t> empty{};
+            return empty;
+#endif
         }
 
         // Native Metric implementations (not included in CoreMetrics)
@@ -1355,6 +1389,7 @@ namespace optkit::metrics::performance::cpu
             static const MetricBuilder<uint64_t> mb = []
             {
                 MetricBuilder<uint64_t> mb{};
+                mb.add(false_sharing_ratio());
                 mb.add(l1_mpki());
                 mb.add(l2_mpki());
                 mb.add(l3_mpki());

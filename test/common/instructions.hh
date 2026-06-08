@@ -22,13 +22,11 @@ inline int instructions_million(void)
 	return 0;
 
 #elif OPTKIT_ENV_CPU_ARCH_POWERPC
-	asm("	nop			# to give us an even million\n"
-		"	lis	15,499997@ha	# load high 16-bits of counter\n"
-		"	addi	15,15,499997@l	# load low 16-bits of counter\n"
-		"55:\n"
+	asm("\tldr\tr2,=333332\t@ set count\n"
+		"1:\n"
 		"	addic.  15,15,-1              # decrement counter\n"
 		"	bne     0,55b                  # loop until zero\n"
-		:			 /* no output registers */
+		"\tbne\t1b\t@ repeat till zero\n"
 		:			 /* no inputs */
 		: "cc", "15" /* clobbered */
 	);
@@ -36,10 +34,10 @@ inline int instructions_million(void)
 
 #elif OPTKIT_ENV_CPU_ARCH_ARM32
 	asm("	ldr	r2,count	@ set count\n"
-		"	b       test_loop\n"
+		"1:\n"
 		"count:	.word 333332\n"
 		"test_loop:\n"
-		"	add	r2,r2,#-1\n"
+		"\tbne\t1b\t// repeat till zero\n"
 		"	cmp	r2,#0\n"
 		"	bne	test_loop	@ repeat till zero\n"
 		:			 /* no output registers */
@@ -62,9 +60,9 @@ inline int instructions_million(void)
 #elif OPTKIT_ENV_CPU_ARCH_RISCV32 || OPTKIT_ENV_CPU_ARCH_RISCV64
 	asm volatile(
 		"li t0, 500000\n" // set count
-		"test_loop:\n"
+		"1:\n"
 		"addi t0, t0, -1\n"	   // decrement counter
-		"bnez t0, test_loop\n" // branch if not zero
+		"bnez t0, 1b\n" // branch if not zero
 		:					   /* no output registers */
 		:					   /* no inputs */
 		: "t0"				   /* clobbered */
@@ -74,9 +72,9 @@ inline int instructions_million(void)
 #elif OPTKIT_ENV_CPU_ARCH_MIPS
 	asm volatile(
 		"li $t0, 500000\n" // set count
-		"test_loop:\n"
+		"1:\n"
 		"addi $t0, $t0, -1\n"	// decrement counter
-		"bnez $t0, test_loop\n" // branch if not zero
+		"bnez $t0, 1b\n" // branch if not zero
 		"nop\n"					// branch delay slot
 		:						/* no output registers */
 		:						/* no inputs */

@@ -76,7 +76,6 @@ namespace optkit::metrics::performance::cpu::amd
         };
 
         const std::unordered_map<metrics::performance::cpu::amd::NativeEvents, std::vector<uint64_t>> EventMapper::native_event_map = {
-            {performance::cpu::amd::NativeEvents::SNOOP_HIT_MODIFIED, {0x4d2}},
             {performance::cpu::amd::NativeEvents::RETIRED_OPS, {0x00c1}},
 
 #if OPTKIT_ENV_CPU_MICROARCH_ZEN4 || OPTKIT_ENV_CPU_MICROARCH_ZEN5
@@ -89,6 +88,12 @@ namespace optkit::metrics::performance::cpu::amd
             {performance::cpu::amd::NativeEvents::RESYNCS, {0x0096}},
             {performance::cpu::amd::NativeEvents::CYCLES_NO_RETIRE_NOT_COMPLETE, {0xa2d6}},
             {performance::cpu::amd::NativeEvents::CYCLES_NO_RETIRE_LOAD_NOT_COMPLETE, {0x02d6}},
+#endif
+
+#if OPTKIT_ENV_CPU_MICROARCH_ZEN4
+            {performance::cpu::amd::NativeEvents::MAB_ALLOCATION_BY_TYPE_LS, {0x3f41}},
+            {performance::cpu::amd::NativeEvents::DEMAND_DATA_CACHE_FILLS_FROM_SYSTEM_LOCAL_CCX, {0x0243}},
+            {performance::cpu::amd::NativeEvents::DEMAND_DATA_CACHE_FILLS_FROM_SYSTEM_NEAR_CACHE_NEAR_FAR, {0x0443}},
 #endif
 
 #if OPTKIT_ENV_CPU_MICROARCH_ZEN3 || OPTKIT_ENV_CPU_MICROARCH_ZEN4 || OPTKIT_ENV_CPU_MICROARCH_ZEN5
@@ -171,6 +176,12 @@ namespace optkit::metrics::performance::cpu::amd
                         return EventMapper::get(NativeEvents::CYCLES_NO_RETIRE_NOT_COMPLETE);
                 else if (event == "CYCLES_NO_RETIRE_LOAD_NOT_COMPLETE")
                         return EventMapper::get(NativeEvents::CYCLES_NO_RETIRE_LOAD_NOT_COMPLETE);
+                else if (event == "MAB_ALLOCATION_BY_TYPE_LS")
+                        return EventMapper::get(NativeEvents::MAB_ALLOCATION_BY_TYPE_LS);
+                else if (event == "DEMAND_DATA_CACHE_FILLS_FROM_SYSTEM_LOCAL_CCX")
+                        return EventMapper::get(NativeEvents::DEMAND_DATA_CACHE_FILLS_FROM_SYSTEM_LOCAL_CCX);
+                else if (event == "DEMAND_DATA_CACHE_FILLS_FROM_SYSTEM_NEAR_CACHE_NEAR_FAR")
+                        return EventMapper::get(NativeEvents::DEMAND_DATA_CACHE_FILLS_FROM_SYSTEM_NEAR_CACHE_NEAR_FAR);
                 else if (event == "L3_CACHE_ACCESSES")
                         return EventMapper::get(NativeEvents::L3_CACHE_ACCESSES);
                 else if (event == "L2_CACHE_ACCESSES")

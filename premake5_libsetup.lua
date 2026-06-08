@@ -189,7 +189,7 @@ function test_project_setup()
     }
     linkoptions { "-fopenmp" }
     linkoptions { "-rdynamic" }
-    linkoptions { "./bin/Test/liboptkit_static.a" }
+    linkoptions { "./bin/%{cfg.buildcfg}/liboptkit_static.a" }
 
     if dynamic_lib_exists("nvidia-ml") then
         local nvml_include = get_nvml_include()

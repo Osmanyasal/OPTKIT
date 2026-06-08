@@ -30,6 +30,12 @@ namespace optkit::metrics::performance::cpu::amd
             return "CYCLES_NO_RETIRE_NOT_COMPLETE";
         case NativeEvents::CYCLES_NO_RETIRE_LOAD_NOT_COMPLETE:
             return "CYCLES_NO_RETIRE_LOAD_NOT_COMPLETE";
+        case NativeEvents::MAB_ALLOCATION_BY_TYPE_LS:
+            return "MAB_ALLOCATION_BY_TYPE_LS";
+        case NativeEvents::DEMAND_DATA_CACHE_FILLS_FROM_SYSTEM_LOCAL_CCX:
+            return "DEMAND_DATA_CACHE_FILLS_FROM_SYSTEM_LOCAL_CCX";
+        case NativeEvents::DEMAND_DATA_CACHE_FILLS_FROM_SYSTEM_NEAR_CACHE_NEAR_FAR:
+            return "DEMAND_DATA_CACHE_FILLS_FROM_SYSTEM_NEAR_CACHE_NEAR_FAR";
         case NativeEvents::L3_CACHE_ACCESSES:
             return "L3_CACHE_ACCESSES";
         case NativeEvents::L2_CACHE_ACCESSES:

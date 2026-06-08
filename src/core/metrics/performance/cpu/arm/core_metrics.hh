@@ -61,6 +61,7 @@ namespace optkit::metrics::performance::cpu
             static const std::vector<std::string> names = {
                 // Common metrics
                 "cpu_max_capacity_based_utilization",
+                "false_sharing_ratio",
                 "l1_mpki",
                 "l2_mpki",
                 "l3_mpki",
