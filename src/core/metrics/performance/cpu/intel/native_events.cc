@@ -8,6 +8,8 @@ namespace optkit::metrics::performance::cpu::intel
     {
         switch (event)
         {
+        case NativeEvents::SNOOP_HIT_MODIFIED:
+            return "SNOOP_HIT_MODIFIED";
         case NativeEvents::BR_INST_RETIRED_NEAR_CALL:
             return "BR_INST_RETIRED_NEAR_CALL";
         case NativeEvents::L2_DEMAND_REFERENCES:

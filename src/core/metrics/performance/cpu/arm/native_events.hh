@@ -12,6 +12,7 @@ namespace optkit::metrics::performance::cpu::arm
         enum class NativeEvents
         {
                 BEGIN = 0,
+                L1D_CACHE_INVAL,
                 RETIRED_OPS,
                 L1D_CACHE_ACCESSES,
                 L2_CACHE_ACCESSES,
@@ -30,6 +31,7 @@ namespace optkit::metrics::performance::cpu::arm
         {
                 static std::vector<std::string> native_events{
                     "RETIRED_OPS",
+                    "L1D_CACHE_INVAL",
                     "L1D_CACHE_ACCESSES",
                     "L2_CACHE_ACCESSES",
                     "L3_CACHE_ACCESSES",

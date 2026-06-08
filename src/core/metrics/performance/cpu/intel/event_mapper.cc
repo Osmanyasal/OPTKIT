@@ -194,6 +194,10 @@ namespace optkit::metrics::performance::cpu::intel
 
         const std::unordered_map<performance::cpu::intel::NativeEvents, std::vector<uint64_t>> EventMapper::native_event_map = {
 
+#if OPTKIT_ENV_CPU_MICROARCH_BDW || OPTKIT_ENV_CPU_MICROARCH_HSW || OPTKIT_ENV_CPU_MICROARCH_ICL || OPTKIT_ENV_CPU_MICROARCH_SNB || OPTKIT_ENV_CPU_MICROARCH_IVB || OPTKIT_ENV_CPU_MICROARCH_SKL || OPTKIT_ENV_CPU_MICROARCH_ADL
+            {performance::cpu::intel::NativeEvents::SNOOP_HIT_MODIFIED, {0x4d2}}    
+#endif
+            
 #if OPTKIT_ENV_CPU_MICROARCH_KNL
             {performance::cpu::intel::NativeEvents::BR_INST_RETIRED_NEAR_CALL, {0xf9c4}},
 #else
@@ -304,6 +308,7 @@ namespace optkit::metrics::performance::cpu::intel
         {
                 if (event == "DISPATCH_SLOTS")
                         return EventMapper::get(CoreEvents::DISPATCH_SLOTS);
+           
                 else if (event == "UNHALTED_CORE_CYCLES")
                         return EventMapper::get(CoreEvents::UNHALTED_CORE_CYCLES);
                 else if (event == "RESOURCE_STALLS")
@@ -348,6 +353,8 @@ namespace optkit::metrics::performance::cpu::intel
                         return EventMapper::get(CoreEvents::RETIRED_VECTOR);
                 else if (event == "BR_INST_RETIRED_NEAR_CALL")
                         return EventMapper::get(performance::cpu::intel::NativeEvents::BR_INST_RETIRED_NEAR_CALL);
+                else if (event == "SNOOP_HIT_MODIFIED")
+                        return EventMapper::get(performance::cpu::intel::NativeEvents::SNOOP_HIT_MODIFIED);
                 else if (event == "L2_DEMAND_REFERENCES")
                         return EventMapper::get(performance::cpu::intel::NativeEvents::L2_DEMAND_REFERENCES);
                 else if (event == "RESOURCE_STALLS_SB")

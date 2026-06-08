@@ -13,6 +13,7 @@ namespace optkit::metrics::performance::cpu::amd
     enum class NativeEvents
     {
         BEGIN = 0,
+        SNOOP_HIT_MODIFIED,
         RETIRED_OPS,
         RETIRED_MICROCODE_OPS,
         DISPATCH_STALLS_1,

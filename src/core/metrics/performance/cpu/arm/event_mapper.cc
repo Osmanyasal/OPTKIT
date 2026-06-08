@@ -59,6 +59,7 @@ namespace optkit::metrics::performance::cpu::arm
     const std::unordered_map<performance::cpu::arm::NativeEvents, std::vector<uint64_t>> EventMapper::native_event_map = {
 
         {performance::cpu::arm::NativeEvents::RETIRED_OPS, {0x00c1}},
+        {performance::cpu::arm::NativeEvents::L1D_CACHE_INVAL, {0x44}},
 
         // fe-bound
         {performance::cpu::arm::NativeEvents::STALL_FRONTEND, {0x23}},

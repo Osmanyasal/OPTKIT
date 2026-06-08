@@ -76,7 +76,7 @@ namespace optkit::metrics::performance::cpu::amd
         };
 
         const std::unordered_map<metrics::performance::cpu::amd::NativeEvents, std::vector<uint64_t>> EventMapper::native_event_map = {
-
+            {performance::cpu::amd::NativeEvents::SNOOP_HIT_MODIFIED, {0x4d2}},
             {performance::cpu::amd::NativeEvents::RETIRED_OPS, {0x00c1}},
 
 #if OPTKIT_ENV_CPU_MICROARCH_ZEN4 || OPTKIT_ENV_CPU_MICROARCH_ZEN5

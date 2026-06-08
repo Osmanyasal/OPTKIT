@@ -8,6 +8,8 @@ namespace optkit::metrics::performance::cpu::amd
         switch (event)
         {
         // Pipeline and Stalls
+        case NativeEvents::SNOOP_HIT_MODIFIED:
+            return "SNOOP_HIT_MODIFIED";
         case NativeEvents::RETIRED_OPS:
             return "RETIRED_OPS";
         case NativeEvents::RETIRED_MICROCODE_OPS:

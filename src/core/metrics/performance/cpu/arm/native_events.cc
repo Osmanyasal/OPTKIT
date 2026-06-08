@@ -7,6 +7,8 @@ namespace optkit::metrics::performance::cpu::arm
     {
         switch (event)
         {
+        case NativeEvents::L1D_CACHE_INVAL:
+            return "L1D_CACHE_INVAL";
         case NativeEvents::RETIRED_OPS:
             return "RETIRED_OPS";
         case NativeEvents::STALL_FRONTEND:

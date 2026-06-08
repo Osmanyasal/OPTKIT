@@ -12,6 +12,7 @@ namespace optkit::metrics::performance::cpu::intel
     enum class NativeEvents
     {
         BEGIN = 0,
+        SNOOP_HIT_MODIFIED,
         BR_INST_RETIRED_NEAR_CALL,
         L2_DEMAND_REFERENCES,
         RESOURCE_STALLS_SB,
@@ -44,6 +45,7 @@ namespace optkit::metrics::performance::cpu::intel
     static const std::vector<std::string> &get_native_events()
     {
         static std::vector<std::string> native_events{
+            "SNOOP_HIT_MODIFIED",
             "BR_INST_RETIRED_NEAR_CALL",
             "L2_DEMAND_REFERENCES",
             "RESOURCE_STALLS_SB",
