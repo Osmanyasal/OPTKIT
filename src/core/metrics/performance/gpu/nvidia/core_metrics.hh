@@ -97,7 +97,7 @@ namespace optkit::metrics::performance::gpu
             static const MetricBuilder<double> metric = []
             {
                 std::string graphics_util_name = to_string(CoreEvents::GRAPHICS_UTIL);
-                return MetricBuilder<double>{}
+                return MetricBuilder<double>{false}
                     .add(graphics_util_name, nvidia::EventMapper::get(CoreEvents::GRAPHICS_UTIL))
                     .build("graphics_util__%",
                            [graphics_util_name](const std::unordered_map<std::string, double> &counts) -> double
@@ -114,7 +114,7 @@ namespace optkit::metrics::performance::gpu
             static const MetricBuilder<double> metric = []
             {
                 std::string sm_util_name = to_string(CoreEvents::SM_UTIL);
-                return MetricBuilder<double>{}
+                return MetricBuilder<double>{false}
                     .add(sm_util_name, nvidia::EventMapper::get(CoreEvents::SM_UTIL))
                     .build("sm_util__%",
                            [sm_util_name](const std::unordered_map<std::string, double> &counts) -> double
@@ -131,7 +131,7 @@ namespace optkit::metrics::performance::gpu
             static const MetricBuilder<double> metric = []
             {
                 std::string sm_occupancy_name = to_string(CoreEvents::SM_OCCUPANCY);
-                return MetricBuilder<double>{}
+                return MetricBuilder<double>{false}
                     .add(sm_occupancy_name, nvidia::EventMapper::get(CoreEvents::SM_OCCUPANCY))
                     .build("sm_occupancy__%",
                            [sm_occupancy_name](const std::unordered_map<std::string, double> &counts) -> double
@@ -148,7 +148,7 @@ namespace optkit::metrics::performance::gpu
             static const MetricBuilder<double> metric = []
             {
                 std::string integer_util_name = to_string(CoreEvents::INTEGER_UTIL);
-                return MetricBuilder<double>{}
+                return MetricBuilder<double>{false}
                     .add(integer_util_name, nvidia::EventMapper::get(CoreEvents::INTEGER_UTIL))
                     .build("integer_util__%",
                            [integer_util_name](const std::unordered_map<std::string, double> &counts) -> double
@@ -165,7 +165,7 @@ namespace optkit::metrics::performance::gpu
             static const MetricBuilder<double> metric = []
             {
                 std::string tensor_util_name = to_string(CoreEvents::ANY_TENSOR_UTIL);
-                return MetricBuilder<double>{}
+                return MetricBuilder<double>{false}
                     .add(tensor_util_name, nvidia::EventMapper::get(CoreEvents::ANY_TENSOR_UTIL))
                     .build("tensor_util__%",
                            [tensor_util_name](const std::unordered_map<std::string, double> &counts) -> double
@@ -182,7 +182,7 @@ namespace optkit::metrics::performance::gpu
             static const MetricBuilder<double> metric = []
             {
                 std::string dfma_util_name = to_string(CoreEvents::DFMA_TENSOR_UTIL);
-                return MetricBuilder<double>{}
+                return MetricBuilder<double>{false}
                     .add(dfma_util_name, nvidia::EventMapper::get(CoreEvents::DFMA_TENSOR_UTIL))
                     .build("dfma_util__%",
                            [dfma_util_name](const std::unordered_map<std::string, double> &counts) -> double
@@ -199,7 +199,7 @@ namespace optkit::metrics::performance::gpu
             static const MetricBuilder<double> metric = []
             {
                 std::string hmma_util_name = to_string(CoreEvents::HMMA_TENSOR_UTIL);
-                return MetricBuilder<double>{}
+                return MetricBuilder<double>{false}
                     .add(hmma_util_name, nvidia::EventMapper::get(CoreEvents::HMMA_TENSOR_UTIL))
                     .build("hmma_util__%",
                            [hmma_util_name](const std::unordered_map<std::string, double> &counts) -> double
@@ -216,7 +216,7 @@ namespace optkit::metrics::performance::gpu
             static const MetricBuilder<double> metric = []
             {
                 std::string imma_util_name = to_string(CoreEvents::IMMA_TENSOR_UTIL);
-                return MetricBuilder<double>{}
+                return MetricBuilder<double>{false}
                     .add(imma_util_name, nvidia::EventMapper::get(CoreEvents::IMMA_TENSOR_UTIL))
                     .build("imma_util__%",
                            [imma_util_name](const std::unordered_map<std::string, double> &counts) -> double
@@ -233,7 +233,7 @@ namespace optkit::metrics::performance::gpu
             static const MetricBuilder<double> metric = []
             {
                 std::string dram_bw_util_name = to_string(CoreEvents::DRAM_BW_UTIL);
-                return MetricBuilder<double>{}
+                return MetricBuilder<double>{false}
                     .add(dram_bw_util_name, nvidia::EventMapper::get(CoreEvents::DRAM_BW_UTIL))
                     .build("dram_bw_util__%",
                            [dram_bw_util_name](const std::unordered_map<std::string, double> &counts) -> double
@@ -250,7 +250,7 @@ namespace optkit::metrics::performance::gpu
             static const MetricBuilder<double> metric = []
             {
                 std::string fp64_util_name = to_string(CoreEvents::FP64_UTIL);
-                return MetricBuilder<double>{}
+                return MetricBuilder<double>{false}
                     .add(fp64_util_name, nvidia::EventMapper::get(CoreEvents::FP64_UTIL))
                     .build("fp64_util__%",
                            [fp64_util_name](const std::unordered_map<std::string, double> &counts) -> double
@@ -267,7 +267,7 @@ namespace optkit::metrics::performance::gpu
             static const MetricBuilder<double> metric = []
             {
                 std::string fp32_util_name = to_string(CoreEvents::FP32_UTIL);
-                return MetricBuilder<double>{}
+                return MetricBuilder<double>{false}
                     .add(fp32_util_name, nvidia::EventMapper::get(CoreEvents::FP32_UTIL))
                     .build("fp32_util__%",
                            [fp32_util_name](const std::unordered_map<std::string, double> &counts) -> double
@@ -284,7 +284,7 @@ namespace optkit::metrics::performance::gpu
             static const MetricBuilder<double> metric = []
             {
                 std::string fp16_util_name = to_string(CoreEvents::FP16_UTIL);
-                return MetricBuilder<double>{}
+                return MetricBuilder<double>{false}
                     .add(fp16_util_name, nvidia::EventMapper::get(CoreEvents::FP16_UTIL))
                     .build("fp16_util__%",
                            [fp16_util_name](const std::unordered_map<std::string, double> &counts) -> double
@@ -300,7 +300,7 @@ namespace optkit::metrics::performance::gpu
         {
             static const MetricBuilder<double> mb = []
             {
-                MetricBuilder<double> mb{};
+                MetricBuilder<double> mb{false};
                 mb.add(graphics_util());
                 mb.add(sm_util());
                 mb.add(sm_occupancy());
