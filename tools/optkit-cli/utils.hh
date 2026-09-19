@@ -5,6 +5,8 @@
 #include <iostream>
 #include <sstream>
 #include <chrono>
+#include <cerrno>
+#include <fcntl.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -366,6 +368,84 @@ inline bool run_system_checked(const std::string &cmd, const std::string &what)
         std::cerr << "Error: failed to run " << what << " (exit=" << ret << ")\n";
         if (report_debug_enabled())
             std::cerr << "Command: " << cmd << "\n";
+        return false;
+    }
+    return true;
+}
+
+inline bool run_process_checked(const std::vector<std::string> &args,
+                                const std::string &what,
+                                const std::string &stdout_path = std::string(),
+                                bool suppress_stderr = false)
+{
+    if (args.empty() || args[0].empty())
+    {
+        std::cerr << "Error: no executable specified for " << what << "\n";
+        return false;
+    }
+
+    std::vector<char *> argv;
+    argv.reserve(args.size() + 1);
+    for (size_t i = 0; i < args.size(); ++i)
+        argv.push_back(const_cast<char *>(args[i].c_str()));
+    argv.push_back(nullptr);
+
+    pid_t pid = ::fork();
+    if (pid < 0)
+    {
+        std::cerr << "Error: failed to start " << what << " (errno=" << errno << ")\n";
+        return false;
+    }
+
+    if (pid == 0)
+    {
+        if (!stdout_path.empty())
+        {
+            int output_fd = ::open(stdout_path.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0666);
+            if (output_fd < 0 || ::dup2(output_fd, STDOUT_FILENO) < 0)
+                _exit(126);
+            if (output_fd != STDOUT_FILENO)
+                ::close(output_fd);
+        }
+
+        if (suppress_stderr)
+        {
+            int null_fd = ::open("/dev/null", O_WRONLY);
+            if (null_fd < 0 || ::dup2(null_fd, STDERR_FILENO) < 0)
+                _exit(126);
+            if (null_fd != STDERR_FILENO)
+                ::close(null_fd);
+        }
+
+        ::execvp(argv[0], argv.data());
+        _exit(127);
+    }
+
+    int status = 0;
+    while (::waitpid(pid, &status, 0) < 0)
+    {
+        if (errno == EINTR)
+            continue;
+        std::cerr << "Error: failed waiting for " << what << " (errno=" << errno << ")\n";
+        return false;
+    }
+
+    if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
+    {
+        if (WIFEXITED(status))
+            std::cerr << "Error: failed to run " << what << " (exit=" << WEXITSTATUS(status) << ")\n";
+        else if (WIFSIGNALED(status))
+            std::cerr << "Error: failed to run " << what << " (signal=" << WTERMSIG(status) << ")\n";
+        else
+            std::cerr << "Error: failed to run " << what << "\n";
+
+        if (report_debug_enabled())
+        {
+            std::cerr << "Arguments:";
+            for (size_t i = 0; i < args.size(); ++i)
+                std::cerr << " [" << args[i] << "]";
+            std::cerr << "\n";
+        }
         return false;
     }
     return true;

@@ -28,6 +28,26 @@ static const std::string &gnuplot_png_terminal()
     return term;
 }
 
+static bool gnuplot_string_literal(const std::string &value, std::string &literal)
+{
+    literal.clear();
+    literal.push_back('"');
+    for (size_t i = 0; i < value.size(); ++i)
+    {
+        const unsigned char c = static_cast<unsigned char>(value[i]);
+        if (c < 0x20 || c == 0x7f)
+        {
+            std::cerr << "Error: Cannot generate a Gnuplot script from text containing control characters\n";
+            return false;
+        }
+        if (c == '\\' || c == '"')
+            literal.push_back('\\');
+        literal.push_back(static_cast<char>(c));
+    }
+    literal.push_back('"');
+    return true;
+}
+
 struct RunData
 {
     std::string label;                     // e.g., filename stem
@@ -457,6 +477,13 @@ static bool generate_cpu_pmu_timeseries_chart(const std::string &json_path)
 
     const int n = static_cast<int>(metric_names.size());
     const int h = std::max(420, 220 * n);
+    std::string gp_png_name;
+    std::string gp_title;
+    std::string gp_dat_name;
+    if (!gnuplot_string_literal(png_name, gp_png_name) ||
+        !gnuplot_string_literal(base + " metrics (time-series)", gp_title) ||
+        !gnuplot_string_literal(dat_name, gp_dat_name))
+        return false;
 
     std::ofstream gp(gp_name.c_str());
     if (!gp)
@@ -466,8 +493,8 @@ static bool generate_cpu_pmu_timeseries_chart(const std::string &json_path)
     }
 
     gp << "set terminal " << gnuplot_png_terminal() << " size 1400," << h << " noenhanced font 'Arial,10'\n";
-    gp << "set output '" << png_name << "'\n";
-    gp << "set multiplot layout " << n << ",1 title '" << base << " metrics (time-series)'\n";
+    gp << "set output " << gp_png_name << "\n";
+    gp << "set multiplot layout " << n << ",1 title " << gp_title << "\n";
     gp << "set grid\n";
     gp << "set tmargin 2\n";
     gp << "set bmargin 2\n";
@@ -477,20 +504,22 @@ static bool generate_cpu_pmu_timeseries_chart(const std::string &json_path)
     for (int i = 0; i < n; ++i)
     {
         const std::string &name = metric_names[static_cast<size_t>(i)];
+        std::string gp_name_literal;
+        if (!gnuplot_string_literal(name, gp_name_literal))
+            return false;
         const int col = 2 + i; // time_s is column 1
-        gp << "set ylabel '" << name << "'\n";
+        gp << "set ylabel " << gp_name_literal << "\n";
         if (i == n - 1)
             gp << "set xlabel 'time (s)'\n";
         else
             gp << "unset xlabel\n";
-        gp << "plot '" << dat_name << "' using 1:" << col << " with lines lw 2 notitle\n";
+        gp << "plot " << gp_dat_name << " using 1:" << col << " with lines lw 2 notitle\n";
     }
 
     gp << "unset multiplot\n";
     gp.close();
 
-    std::string cmd = std::string("gnuplot ") + gp_name;
-    if (!run_system_checked(cmd, "gnuplot cpu_pmu time-series"))
+    if (!run_process_checked({"gnuplot", gp_name}, "gnuplot cpu_pmu time-series"))
         return false;
 
     std::cout << "Generated CPU PMU time-series chart: " << png_name << "\n";
@@ -680,8 +709,7 @@ static void handle_callstack_json(const std::string &json_path)
 
     if (!fg_script.empty())
     {
-        std::string cmd = "perl " + fg_script + " " + folded_path + " > " + svg_path + " 2>/dev/null";
-        if (run_system_checked(cmd, "FlameGraph (perl)"))
+        if (run_process_checked({"perl", fg_script, folded_path}, "FlameGraph (perl)", svg_path, true))
         {
             std::cout << "Generated: " << svg_path << "\n";
         }
@@ -1024,12 +1052,23 @@ static void generate_heatmap(const std::vector<RunData> &runs, const std::string
         std::cerr << "Error: Cannot write " << gp_name << "\n";
         return;
     }
+    std::string gp_png_name;
+    std::string gp_title;
+    std::string gp_colorbar_label;
+    std::string gp_dat_name;
+    std::string gp_min_name;
+    if (!gnuplot_string_literal(png_name, gp_png_name) ||
+        !gnuplot_string_literal(metric_key + " vs Core/Uncore Frequency", gp_title) ||
+        !gnuplot_string_literal(base, gp_colorbar_label) ||
+        !gnuplot_string_literal(dat_name, gp_dat_name) ||
+        !gnuplot_string_literal(min_name, gp_min_name))
+        return;
     gp << "set terminal " << gnuplot_png_terminal() << " size 1400,420 noenhanced font 'Arial,11'\n";
-    gp << "set output '" << png_name << "'\n";
-    gp << "set title '" << metric_key << " vs Core/Uncore Frequency'\n";
+    gp << "set output " << gp_png_name << "\n";
+    gp << "set title " << gp_title << "\n";
     gp << "set xlabel 'Core Frequency (GHz)'\n";
     gp << "set ylabel 'Uncore Frequency (GHz)'\n";
-    gp << "set cblabel '" << base << "' offset 2,0\n";
+    gp << "set cblabel " << gp_colorbar_label << " offset 2,0\n";
     gp << "set key off\n";
     gp << "set grid xtics\n";
     gp << "set grid ytics\n";
@@ -1085,14 +1124,13 @@ static void generate_heatmap(const std::vector<RunData> &runs, const std::string
     gp << "h = " << std::fixed << std::setprecision(6) << box_half_height << "\n";
 
     // Draw colored rectangles using low/high coordinates, then overlay minimum marker
-    gp << "plot '" << dat_name << "' using 1:2:($1-w):($1+w):($2-h):($2+h):3 with boxxyerrorbars palette fs solid 1.0 border lc rgb 'black' notitle, \\\n";
-    gp << "     '" << min_name << "' using 1:2 with points pt 7 ps 2.5 lc rgb 'white' lw 3 notitle, \\\n";
-    gp << "     '" << min_name << "' using 1:2 with points pt 6 ps 2.0 lc rgb 'black' lw 2 notitle, \\\n";
-    gp << "     '" << min_name << "' using 1:2:(sprintf('MIN=%.3f', $3)) with labels offset 0,1.5 tc rgb 'white' font ',12' notitle\n";
+    gp << "plot " << gp_dat_name << " using 1:2:($1-w):($1+w):($2-h):($2+h):3 with boxxyerrorbars palette fs solid 1.0 border lc rgb 'black' notitle, \\\n";
+    gp << "     " << gp_min_name << " using 1:2 with points pt 7 ps 2.5 lc rgb 'white' lw 3 notitle, \\\n";
+    gp << "     " << gp_min_name << " using 1:2 with points pt 6 ps 2.0 lc rgb 'black' lw 2 notitle, \\\n";
+    gp << "     " << gp_min_name << " using 1:2:(sprintf('MIN=%.3f', $3)) with labels offset 0,1.5 tc rgb 'white' font ',12' notitle\n";
     gp.close();
     // Execute the generated gnuplot script to produce the PNG
-    std::string cmd = std::string("gnuplot ") + gp_name;
-    run_system_checked(cmd, "gnuplot heatmap");
+    run_process_checked({"gnuplot", gp_name}, "gnuplot heatmap");
 }
 
 static std::vector<RunData> parse_runs_from_paths(const std::vector<std::string> &paths)
@@ -1221,7 +1259,7 @@ static void generate_exec_time_chart(const std::vector<RunData> &runs)
     gp << "plot 'exec_time_per_core.dat' using 1:2 with linespoints lw 2 title 'Duration'\n";
     gp.close();
 
-    run_system_checked("gnuplot exec_time_per_core.gp", "gnuplot exec_time_per_core.gp");
+    run_process_checked({"gnuplot", "exec_time_per_core.gp"}, "gnuplot exec_time_per_core.gp");
 }
 
 static void generate_topdownl1_chart(const std::vector<RunData> &runs)
@@ -1288,7 +1326,7 @@ static void generate_topdownl1_chart(const std::vector<RunData> &runs)
           "'' using 0:($2+$3+$4+$5+$6/2):($6 > 3 ? sprintf('%.1f%%',$6) : '') with labels tc rgb 'black' font ',16' notitle\n";
     gp.close();
 
-    run_system_checked("gnuplot topdown_blocksl1.gp", "gnuplot topdown_blocksl1.gp");
+    run_process_checked({"gnuplot", "topdown_blocksl1.gp"}, "gnuplot topdown_blocksl1.gp");
 }
 
 static void generate_topdownl2_chart(const std::vector<RunData> &runs)
@@ -1361,7 +1399,7 @@ static void generate_topdownl2_chart(const std::vector<RunData> &runs)
           "'' using 0:($2+$3+$4+$5+$6+$7+$8+$9/2):($9 > 3 ? sprintf('%.1f%%',$9) : '') with labels tc rgb 'black' font ',12' notitle\n";
     gp.close();
 
-    run_system_checked("gnuplot topdownl2_blocks.gp", "gnuplot topdownl2_blocks.gp");
+    run_process_checked({"gnuplot", "topdownl2_blocks.gp"}, "gnuplot topdownl2_blocks.gp");
 }
 
 static void generate_carm_roofline_for_isa(const std::vector<RunData> &runs,
@@ -1385,12 +1423,17 @@ static void generate_carm_roofline_for_isa(const std::vector<RunData> &runs,
         std::cerr << "Error: Cannot write " << gp_name << "\n";
         return;
     }
+    std::string gp_output_name;
+    std::string gp_title;
+    if (!gnuplot_string_literal(output_name, gp_output_name) ||
+        !gnuplot_string_literal("CARM - " + isa_name + " ISA", gp_title))
+        return;
 
     gp << "# Cache-Aware Roofline Model (CARM) - " << isa_name << "\n";
     gp << "set terminal " << gnuplot_png_terminal() << " size 1000,640 enhanced font 'Arial,14'\n";
-    gp << "set output '" << output_name << "'\n\n";
+    gp << "set output " << gp_output_name << "\n\n";
 
-    gp << "set title \"CARM - " << isa_name << " ISA\"\n";
+    gp << "set title " << gp_title << "\n";
     gp << "set xlabel \"Arithmetic Intensity [FLOPs/Byte]\"\n";
     gp << "set ylabel \"Performance [GFLOPs/s]\"\n";
     gp << "set logscale xy\n";
@@ -1452,8 +1495,7 @@ static void generate_carm_roofline_for_isa(const std::vector<RunData> &runs,
     gp << "replot\n";
     gp.close();
 
-    std::string cmd = "gnuplot " + gp_name;
-    run_system_checked(cmd, "CARM roofline generation");
+    run_process_checked({"gnuplot", gp_name}, "CARM roofline generation");
 
     std::cout << "  " << isa_name << ": " << output_name << " (Peak: " << compute_peak
               << " GFlop/s, DRAM: " << mem_bw << " GB/s)\n";
