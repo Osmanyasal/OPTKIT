@@ -110,45 +110,53 @@ bool CPU::set_online_cores(const std::vector<int16_t> &cores)
 }
 bool CPU::set_all_cores_online()
 {
-    int16_t core = 1;
-    try
+    bool result = true;
+    for (int16_t core = 1; core < OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS; ++core)
     {
-        while (true)
+        const std::string path = "/sys/devices/system/cpu/cpu" + std::to_string(core) + "/online";
+        if (!optkit::utils::is_path_exists(path))
+            continue;
+
+        try
         {
-            std::string path = "/sys/devices/system/cpu/cpu" + std::to_string(core) + "/online";
-            if (optkit::utils::is_path_exists(path))
-            {
-                optkit::utils::write_file("/sys/devices/system/cpu/cpu" + std::to_string(core) + "/online", "1");
-                ++core;
-            }
-            else
-                break;
+            optkit::utils::write_file(path, "1");
+        }
+        catch (const std::exception &e)
+        {
+            result = false;
+            OPTKIT_WARN("Failed to online core {}: {}", core, e.what());
         }
     }
-    catch (const std::exception &e)
-    {
-    }
-    return true;
+
+    if (result)
+        this->offline_cores.clear();
+
+    return result;
 }
 bool CPU::set_all_cores_offline()
 {
     this->offline_cores.clear();
 
-    // Cannot offline CPU0
-    int16_t core = 1;
-    try
+    bool result = true;
+    for (int16_t core = 1; core < OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS; ++core)
     {
-        while (true)
+        const std::string path = "/sys/devices/system/cpu/cpu" + std::to_string(core) + "/online";
+        if (!optkit::utils::is_path_exists(path))
+            continue;
+
+        try
         {
-            optkit::utils::write_file("/sys/devices/system/cpu/cpu" + std::to_string(core) + "/online", "0");
+            optkit::utils::write_file(path, "0");
             this->offline_cores.push_back(core);
-            ++core;
+        }
+        catch (const std::exception &e)
+        {
+            result = false;
+            OPTKIT_WARN("Failed to offline core {}: {}", core, e.what());
         }
     }
-    catch (const std::exception &e)
-    {
-    }
-    return (this->offline_cores.size() == OPTKIT_ENV_CPU_TOTAL_LOGICAL_CPUS - 1);
+
+    return result;
 }
 bool CPU::set_core_freq(int64_t freq_khz)
 {
