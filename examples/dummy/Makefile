@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -std=c++11 -O2 -Wall -Wextra -fopenmp
+CXXFLAGS = -std=c++11 -O0 -Wall -Wextra -fopenmp
 LDFLAGS = -lpthread -ldl
 
 # Paths

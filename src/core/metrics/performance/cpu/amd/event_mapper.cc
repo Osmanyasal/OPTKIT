@@ -90,7 +90,7 @@ namespace optkit::metrics::performance::cpu::amd
             {performance::cpu::amd::NativeEvents::CYCLES_NO_RETIRE_LOAD_NOT_COMPLETE, {0x02d6}},
 #endif
 
-#if OPTKIT_ENV_CPU_MICROARCH_ZEN4
+#if OPTKIT_ENV_CPU_MICROARCH_ZEN3 || OPTKIT_ENV_CPU_MICROARCH_ZEN4 || OPTKIT_ENV_CPU_MICROARCH_ZEN5
             {performance::cpu::amd::NativeEvents::MAB_ALLOCATION_BY_TYPE_LS, {0x3f41}},
             {performance::cpu::amd::NativeEvents::DEMAND_DATA_CACHE_FILLS_FROM_SYSTEM_LOCAL_CCX, {0x0243}},
             {performance::cpu::amd::NativeEvents::DEMAND_DATA_CACHE_FILLS_FROM_SYSTEM_NEAR_CACHE_NEAR_FAR, {0x0443}},

@@ -60,7 +60,6 @@ namespace optkit::metrics::performance::cpu
             static const std::vector<std::string> names = {
                 // Common metrics
                 "cpu_max_capacity_based_utilization",
-                "false_sharing_ratio",
                 "l1_mpki",
                 "l2_mpki",
                 "l3_mpki",
@@ -134,8 +133,6 @@ namespace optkit::metrics::performance::cpu
         static const MetricBuilder<uint64_t> &get_metric(const std::string &metric_name)
         {
 
-            if(metric_name == "false_sharing_ratio")
-                return false_sharing_ratio();
             if (metric_name == "cpu_max_capacity_based_utilization")
                 return cpu_max_capacity_based_utilization();
             if (metric_name == "l1_hit_ratio")
@@ -274,29 +271,6 @@ namespace optkit::metrics::performance::cpu
             static const MetricBuilder<uint64_t> empty{};
             return empty;
         }
-        static const MetricBuilder<uint64_t> &false_sharing_ratio()
-        {
-            static const MetricBuilder<uint64_t> metric = []
-            {
-                std::string snoop_hit_modified_name = to_string(intel::NativeEvents::SNOOP_HIT_MODIFIED);
-                std::string l1_cache_miss = to_string(CoreEvents::L1_MISSES);
-                return MetricBuilder<uint64_t>{}
-                    .add(snoop_hit_modified_name, intel::EventMapper::get(intel::NativeEvents::SNOOP_HIT_MODIFIED))
-                    .add(l1_cache_miss, intel::EventMapper::get(CoreEvents::L1_MISSES))
-                    .build("false_sharing_ratio__%",
-                           [snoop_hit_modified_name, l1_cache_miss](const std::unordered_map<std::string, uint64_t> &counts) -> double
-                           {
-                               uint64_t snoop_hit_modified = get_event_count(counts, snoop_hit_modified_name);
-                               uint64_t l1_misses = get_event_count(counts, l1_cache_miss);
-                               // Avoid div by zero
-                               if (l1_misses == 0)
-                                   return std::numeric_limits<double>::quiet_NaN();
-                               return 100.0 * static_cast<double>(snoop_hit_modified) / static_cast<double>(l1_misses);
-                           });
-            }();
-            return metric;
-        } ///< 100 * (SNOOP_HIT_MODIFIED / L1_MISSES)
-
         // CPU Utilization
         static const MetricBuilder<uint64_t> &cpu_max_capacity_based_utilization()
         {
@@ -1830,7 +1804,6 @@ namespace optkit::metrics::performance::cpu
             static const MetricBuilder<uint64_t> mb = []
             {
                 MetricBuilder<uint64_t> mb{};
-                mb.add(false_sharing_ratio());
                 mb.add(l1_mpki());
                 mb.add(l2_mpki());
                 mb.add(l3_mpki());
