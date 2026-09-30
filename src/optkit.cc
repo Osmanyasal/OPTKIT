@@ -60,11 +60,11 @@ namespace optkit
             Query::create_folder = config.create_folder;
             if (OPT_LIKELY(Query::create_folder))
             {
-                if (this->config.execution_file.size() > 0)
-                    optkit::utils::EXECUTION_FOLDER_NAME = this->config.execution_file;
+                if (this->config.execution_folder_name.size() > 0)
+                    optkit::utils::EXECUTION_FOLDER_NAME = this->config.execution_folder_name;
 
                 optkit::utils::create_directory(optkit::utils::EXECUTION_FOLDER_NAME);
-                OPTKIT_CORE_DEBUG("Execution file created {}", optkit::utils::EXECUTION_FOLDER_NAME);
+                OPTKIT_CORE_DEBUG("Execution folder created {}", optkit::utils::EXECUTION_FOLDER_NAME);
             }
             else
             {

@@ -68,9 +68,9 @@ TEST(CPUPerfEventsTest, RetiredFlopAny1M)
         .build(to_string(performance::cpu_events::RETIRED_VECTOR), [](const auto &map) -> double
                { return get_event_count(map, to_string(performance::cpu_events::RETIRED_VECTOR)) / (double)REPEAT; });
 #else // OPTKIT_ENV_CPU_INTEL
-    mb.add(to_string(performance::native_events::FP_ARITH_INST_RETIRED_SCALAR), performance::cpu_mapper::get(performance::native_events::FP_ARITH_INST_RETIRED_SCALAR))
-        .build(to_string(performance::native_events::FP_ARITH_INST_RETIRED_SCALAR), [](const auto &map) -> double
-               { return get_event_count(map, to_string(performance::native_events::FP_ARITH_INST_RETIRED_SCALAR)) / (double)REPEAT; });
+    mb.add(to_string(performance::cpu_native_events::FP_ARITH_INST_RETIRED_SCALAR), performance::cpu_mapper::get(performance::cpu_native_events::FP_ARITH_INST_RETIRED_SCALAR))
+        .build(to_string(performance::cpu_native_events::FP_ARITH_INST_RETIRED_SCALAR), [](const auto &map) -> double
+               { return get_event_count(map, to_string(performance::cpu_native_events::FP_ARITH_INST_RETIRED_SCALAR)) / (double)REPEAT; });
 #endif
     size_t n = 1 << 20;            // ~1 million elements
     std::vector<float> A(n, 1.0f); // all 1s
@@ -91,7 +91,7 @@ TEST(CPUPerfEventsTest, RetiredFlopAny1M)
 #if OPTKIT_ENV_CPU_AMD
     auto result = aggregated_results.at(to_string(performance::cpu_events::RETIRED_VECTOR)) / (double)REPEAT;
 #else
-    auto result = aggregated_results.at(to_string(performance::native_events::FP_ARITH_INST_RETIRED_SCALAR)) / (double)REPEAT;
+    auto result = aggregated_results.at(to_string(performance::cpu_native_events::FP_ARITH_INST_RETIRED_SCALAR)) / (double)REPEAT;
 #endif
     EXPECT_NEAR(expected_result, result, expected_result * ERROR_RATE);
 }

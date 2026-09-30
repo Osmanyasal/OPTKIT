@@ -155,24 +155,20 @@ function get_cupti_include()
 end
 
 function dynamic_lib_exists(libname)
-    -- First, try ldconfig (system-registered libraries)
-    local pipe = io.popen("ldconfig -p 2>/dev/null | grep lib" .. libname .. ".so")
-    if pipe then
-        local result = pipe:read("*a")
-        pipe:close()
-        if result ~= nil and result ~= "" then
-            return true
-        end
-    end
-
-    -- If not found in ldconfig, check common ROCm/CUDA library paths
     local search_paths = {
-        "/opt/rocm/lib",
-        "/usr/local/cuda/lib64",
+        "/usr/lib",
+        "/usr/local/lib",
+        "/usr/lib64",
+        "/lib",
+        "/lib64",
         "/usr/lib/x86_64-linux-gnu",
+        "/usr/lib/aarch64-linux-gnu",
+        "/usr/lib/riscv64-linux-gnu",
+        "/usr/lib/arm-linux-gnueabihf",
+        "/usr/local/cuda/lib64",
+        "/opt/rocm/lib",
     }
 
-    -- Also check LD_LIBRARY_PATH if set
     local ld_library_path = os.getenv("LD_LIBRARY_PATH")
     if ld_library_path then
         for path in string.gmatch(ld_library_path, "[^:]+") do
@@ -180,23 +176,12 @@ function dynamic_lib_exists(libname)
         end
     end
 
-    -- Search for the library in these paths
     for _, path in ipairs(search_paths) do
-        local lib_patterns = {
-            path .. "/lib" .. libname .. ".so",
-            path .. "/lib" .. libname .. ".so.*",
-        }
-
-        for _, pattern in ipairs(lib_patterns) do
-            local check_cmd = "ls " .. pattern .. " 2>/dev/null"
-            local check_pipe = io.popen(check_cmd)
-            if check_pipe then
-                local check_result = check_pipe:read("*a")
-                check_pipe:close()
-                if check_result ~= nil and check_result ~= "" then
-                    return true
-                end
-            end
+        local full_path = path .. "/lib" .. libname .. ".so"
+        local file = io.open(full_path, "r")
+        if file then
+            file:close()
+            return true
         end
     end
 

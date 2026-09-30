@@ -195,7 +195,7 @@ namespace optkit::metrics::performance::cpu::intel
         const std::unordered_map<performance::cpu::intel::NativeEvents, std::vector<uint64_t>> EventMapper::native_event_map = {
 
 #if OPTKIT_ENV_CPU_MICROARCH_BDW || OPTKIT_ENV_CPU_MICROARCH_HSW || OPTKIT_ENV_CPU_MICROARCH_ICL || OPTKIT_ENV_CPU_MICROARCH_SNB || OPTKIT_ENV_CPU_MICROARCH_IVB || OPTKIT_ENV_CPU_MICROARCH_SKL || OPTKIT_ENV_CPU_MICROARCH_ADL
-            {performance::cpu::intel::NativeEvents::SNOOP_HIT_MODIFIED, {0x4d2}}    
+            {performance::cpu::intel::NativeEvents::SNOOP_HIT_MODIFIED, {0x4d2}},    
 #endif
             
 #if OPTKIT_ENV_CPU_MICROARCH_KNL
