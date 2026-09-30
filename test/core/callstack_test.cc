@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include "gtest/gtest.h"
 #include "optkit.hh"
-
+ 
 /**
  * @file callstack_test.cc
  * @brief Test callstack profiler with nested functions and threading.
