@@ -88,11 +88,11 @@ namespace optkit
             optkit::temperature::hwmon::Profiler::init();
 
 #if OPTKIT_ENV_CPU_INTEL
-            if (config.init_cpu_frequency)
+            if (config.restore_cpu_frequency)
                 for (size_t socket = 0; socket < OPTKIT_ENV_CPU_NUM_SOCKETS; socket++)
                 {
                     auto pair = optkit::frequency::cpu::Frequency::get_uncore_min_max(socket); // cache default uncore freq on init
-                    std::cout << "Socket " << socket << " Uncore Frequency Min: " << pair.first / 1000 << " MHz, Max: " << pair.second / 1000 << " MHz\n";
+                    OPTKIT_CORE_INFO("Socket {} Uncore Frequency Min: {} MHz, Max: {} MHz", socket, pair.first / 1000, pair.second / 1000);
                 }
 #endif
         }
@@ -113,11 +113,17 @@ namespace optkit
             if (optkit::gpu::Query::is_init(vendor))
                 optkit::gpu::Query::shutdown(vendor);
         }
-#if OPTKIT_ENV_CPU_INTEL
-        if (config.init_cpu_frequency)
+        if (config.restore_cpu_frequency)
+        {
             for (size_t socket = 0; socket < OPTKIT_ENV_CPU_NUM_SOCKETS; socket++)
+            {
+
+                optkit::frequency::cpu::Frequency::reset_core_frequency(socket);
+#if OPTKIT_ENV_CPU_INTEL
                 optkit::frequency::cpu::Frequency::reset_uncore_frequency(socket); // restore default uncore freq on exit.
 #endif
+            }
+        }
         optkit::pmu::cpu::Query::destroy();
         optkit::utils::logger::BaseLogger::shutdown(); // logger shutdown.
     }

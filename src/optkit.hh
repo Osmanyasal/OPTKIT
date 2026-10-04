@@ -13,11 +13,11 @@ namespace optkit
     public:
         OPTKIT_CONFIG(bool create_folder = true,
                       const std::string &execution_folder_name = "",
-                      const bool init_cpu_frequency = true) : create_folder{create_folder}, execution_folder_name{execution_folder_name}, init_cpu_frequency{init_cpu_frequency} {}
+                      const bool restore_cpu_frequency = true) : create_folder{create_folder}, execution_folder_name{execution_folder_name}, restore_cpu_frequency{restore_cpu_frequency} {}
 
         const bool create_folder;
         const std::string execution_folder_name;
-        const bool init_cpu_frequency; // set governor on init, reset frequencies and governor on exit
+        const bool restore_cpu_frequency; // set governor on init, reset frequencies and governor on exit
     };
     class OPTKIT
     {
