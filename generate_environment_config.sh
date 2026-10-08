@@ -430,7 +430,7 @@ write_cpu_microarch() {
             |19_74H|19_61H|19_18H\
             |19_11H|19_10H)           uarch="ZEN4" ;; # Zen 4 family variants
 
-            1A_00H|1A_20H)            uarch="ZEN5" ;; # Zen 5
+            1A_00H|1A_20H|1A_2H)      uarch="ZEN5" ;; # Zen 5
             *)                        uarch="UNKNOWN" ;;
         esac
 
