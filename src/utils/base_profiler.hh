@@ -156,7 +156,7 @@ namespace optkit
             std::string json_data = to_json();
             std::string block_name = this->config.block_name;
             std::replace(block_name.begin(), block_name.end(), ' ', '_');
-            utils::write_file(utils::EXECUTION_FOLDER_NAME + "/" + block_name + "__" + this->config.measurement_type + ".json", json_data, this->config.verbose);
+            utils::append_json_array_file(utils::EXECUTION_FOLDER_NAME + "/" + block_name + "__" + this->config.measurement_type + ".json", json_data, this->config.verbose);
         }
 
     public:

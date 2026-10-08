@@ -7,7 +7,10 @@
 #include <cstdint>
 #include <random>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 #include <dirent.h>
+#include <mutex>
 #include <fstream>
 #include <type_traits>
 #include <unordered_map>
@@ -374,6 +377,77 @@ namespace optkit::utils
         if (is_verbose)
         {
             OPTKIT_CORE_INFO("Data successfully written to file: {}", location);
+        }
+    }
+
+    // Appends the elements of the JSON array `json_array` to the JSON array stored in `location`,
+    // so repeated saves under the same name (e.g. a block executed in a loop) keep the file a single
+    // valid array: [{...},{...}]. Creates the file when it is missing or empty.
+    inline void append_json_array_file(const std::string &location, const std::string &json_array, bool is_verbose) noexcept
+    {
+        static std::mutex file_mutex;
+        std::lock_guard<std::mutex> lock(file_mutex);
+
+        const auto open_bracket = json_array.find('[');
+        const auto close_bracket = json_array.rfind(']');
+        if (open_bracket == std::string::npos || close_bracket == std::string::npos || close_bracket < open_bracket)
+        {
+            write_file(location, json_array, is_verbose);
+            return;
+        }
+
+        const char *whitespace = " \t\r\n";
+        std::string inner = json_array.substr(open_bracket + 1, close_bracket - open_bracket - 1);
+        const auto inner_begin = inner.find_first_not_of(whitespace);
+        if (inner_begin == std::string::npos)
+            return; // nothing to append
+        inner = inner.substr(inner_begin, inner.find_last_not_of(whitespace) - inner_begin + 1);
+
+        std::string existing_tail;
+        off_t existing_close = -1; // offset of the final ']' of the existing array
+        bool existing_is_empty_array = false;
+        {
+            std::ifstream in(location, std::ios_base::in | std::ios_base::binary | std::ios_base::ate);
+            if (in.is_open())
+            {
+                const std::streamoff size = in.tellg();
+                const std::streamoff window = std::min<std::streamoff>(size, 256);
+                existing_tail.resize(static_cast<size_t>(window));
+                in.seekg(size - window);
+                in.read(&existing_tail[0], window);
+
+                const auto last = existing_tail.find_last_not_of(whitespace);
+                if (last != std::string::npos && existing_tail[last] == ']')
+                {
+                    existing_close = static_cast<off_t>(size - window + static_cast<std::streamoff>(last));
+                    const auto prev = (last == 0) ? std::string::npos : existing_tail.find_last_not_of(whitespace, last - 1);
+                    existing_is_empty_array = (prev != std::string::npos && existing_tail[prev] == '[');
+                }
+            }
+        }
+
+        if (existing_close < 0)
+        {
+            write_file(location, "[\n" + inner + "\n]\n", is_verbose);
+            return;
+        }
+
+        if (::truncate(location.c_str(), existing_close) != 0)
+        {
+            if (is_verbose)
+            {
+                OPTKIT_CORE_ERROR("Failed to update the file: {}", location);
+            }
+            return;
+        }
+        std::ofstream out(location, std::ios_base::out | std::ios_base::app | std::ios_base::binary);
+        if (!out.is_open())
+            return;
+        out << (existing_is_empty_array ? "" : ",\n") << inner << "\n]\n";
+        out.close();
+        if (is_verbose)
+        {
+            OPTKIT_CORE_INFO("Data successfully appended to file: {}", location);
         }
     }
 
