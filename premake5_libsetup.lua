@@ -43,13 +43,14 @@ function base_project_setup()
     -- Always link static spdlog manually
     linkoptions { LIB_SPD_PATH .. "/build/libspdlog.a" }
 
-    if dynamic_lib_exists("nvidia-ml") then
+    local nvml_flag = nvml_link_flag()
+    if nvml_flag then
         local nvml_include = get_nvml_include()
         if nvml_include then
             includedirs { nvml_include }
         end
         libdirs { "/usr/lib/x86_64-linux-gnu" }
-        links { "nvidia-ml" }
+        linkoptions { nvml_flag }
     end
 
     if dynamic_lib_exists("amd_smi") then
@@ -191,13 +192,14 @@ function test_project_setup()
     linkoptions { "-rdynamic" }
     linkoptions { "./bin/Test/liboptkit_static.a" }
 
-    if dynamic_lib_exists("nvidia-ml") then
+    local nvml_flag = nvml_link_flag()
+    if nvml_flag then
         local nvml_include = get_nvml_include()
         if nvml_include then
             includedirs { nvml_include }
         end
         libdirs { "/usr/lib/x86_64-linux-gnu" }
-        links { "nvidia-ml" }
+        linkoptions { nvml_flag }
     end
 
     if dynamic_lib_exists("amd_smi") then

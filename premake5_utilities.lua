@@ -188,6 +188,37 @@ function dynamic_lib_exists(libname)
     return false
 end
 
+-- Driver-only installs ship libnvidia-ml.so.1 without the unversioned
+-- libnvidia-ml.so dev symlink, so a plain -lnvidia-ml cannot be used there.
+function nvml_link_flag()
+    if dynamic_lib_exists("nvidia-ml") then
+        return "-lnvidia-ml"
+    end
+    local search_paths = {
+        "/usr/lib64",
+        "/lib64",
+        "/usr/lib",
+        "/lib",
+        "/usr/lib/x86_64-linux-gnu",
+        "/usr/lib/aarch64-linux-gnu",
+        "/usr/local/cuda/lib64",
+    }
+    local ld_library_path = os.getenv("LD_LIBRARY_PATH")
+    if ld_library_path then
+        for path in string.gmatch(ld_library_path, "[^:]+") do
+            table.insert(search_paths, path)
+        end
+    end
+    for _, path in ipairs(search_paths) do
+        local file = io.open(path .. "/libnvidia-ml.so.1", "r")
+        if file then
+            file:close()
+            return "-l:libnvidia-ml.so.1"
+        end
+    end
+    return nil
+end
+
 function static_lib_exists(libname)
     local search_paths = {
         "/usr/lib",

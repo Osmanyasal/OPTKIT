@@ -1,0 +1,240 @@
+#pragma once
+#include <cstdint>
+#define INTEL_X86_EDGE_BIT	18
+#define INTEL_X86_ANY_BIT	21
+#define INTEL_X86_INV_BIT	23
+#define INTEL_X86_CMASK_BIT 24
+#define INTEL_X86_MOD_EDGE	(1 << INTEL_X86_EDGE_BIT)
+#define INTEL_X86_MOD_ANY	(1 << INTEL_X86_ANY_BIT)
+#define INTEL_X86_MOD_INV	(1 << INTEL_X86_INV_BIT)
+namespace optkit::intel::nhm_unc{
+	enum nhm_unc : uint64_t {
+		UNC_CLK_UNHALTED = 0xff, // Uncore clockticks.
+		UNC_DRAM_OPEN = 0x60, // DRAM open commands issued for read or write
+		UNC_DRAM_OPEN__MASK__NHM_UNC_UNC_DRAM_OPEN__CH0 = 0x100ull, // DRAM Channel 0 open commands issued for read or write
+		UNC_DRAM_OPEN__MASK__NHM_UNC_UNC_DRAM_OPEN__CH1 = 0x200ull, // DRAM Channel 1 open commands issued for read or write
+		UNC_DRAM_OPEN__MASK__NHM_UNC_UNC_DRAM_OPEN__CH2 = 0x400ull, // DRAM Channel 2 open commands issued for read or write
+		UNC_DRAM_PAGE_CLOSE = 0x61, // DRAM page close due to idle timer expiration
+		UNC_DRAM_PAGE_CLOSE__MASK__NHM_UNC_UNC_DRAM_PAGE_CLOSE__CH0 = 0x100ull, // DRAM Channel 0 page close
+		UNC_DRAM_PAGE_CLOSE__MASK__NHM_UNC_UNC_DRAM_PAGE_CLOSE__CH1 = 0x200ull, // DRAM Channel 1 page close
+		UNC_DRAM_PAGE_CLOSE__MASK__NHM_UNC_UNC_DRAM_PAGE_CLOSE__CH2 = 0x400ull, // DRAM Channel 2 page close
+		UNC_DRAM_PAGE_MISS = 0x62, // DRAM Channel 0 page miss
+		UNC_DRAM_PAGE_MISS__MASK__NHM_UNC_UNC_DRAM_PAGE_MISS__CH0 = 0x100ull, // DRAM Channel 0 page miss
+		UNC_DRAM_PAGE_MISS__MASK__NHM_UNC_UNC_DRAM_PAGE_MISS__CH1 = 0x200ull, // DRAM Channel 1 page miss
+		UNC_DRAM_PAGE_MISS__MASK__NHM_UNC_UNC_DRAM_PAGE_MISS__CH2 = 0x400ull, // DRAM Channel 2 page miss
+		UNC_DRAM_PRE_ALL = 0x66, // DRAM Channel 0 precharge all commands
+		UNC_DRAM_PRE_ALL__MASK__NHM_UNC_UNC_DRAM_PRE_ALL__CH0 = 0x100ull, // DRAM Channel 0 precharge all commands
+		UNC_DRAM_PRE_ALL__MASK__NHM_UNC_UNC_DRAM_PRE_ALL__CH1 = 0x200ull, // DRAM Channel 1 precharge all commands
+		UNC_DRAM_PRE_ALL__MASK__NHM_UNC_UNC_DRAM_PRE_ALL__CH2 = 0x400ull, // DRAM Channel 2 precharge all commands
+		UNC_DRAM_READ_CAS = 0x63, // DRAM Channel 0 read CAS commands
+		UNC_DRAM_READ_CAS__MASK__NHM_UNC_UNC_DRAM_READ_CAS__CH0 = 0x100ull, // DRAM Channel 0 read CAS commands
+		UNC_DRAM_READ_CAS__MASK__NHM_UNC_UNC_DRAM_READ_CAS__AUTOPRE_CH0 = 0x200ull, // DRAM Channel 0 read CAS auto page close commands
+		UNC_DRAM_READ_CAS__MASK__NHM_UNC_UNC_DRAM_READ_CAS__CH1 = 0x400ull, // DRAM Channel 1 read CAS commands
+		UNC_DRAM_READ_CAS__MASK__NHM_UNC_UNC_DRAM_READ_CAS__AUTOPRE_CH1 = 0x800ull, // DRAM Channel 1 read CAS auto page close commands
+		UNC_DRAM_READ_CAS__MASK__NHM_UNC_UNC_DRAM_READ_CAS__CH2 = 0x1000ull, // DRAM Channel 2 read CAS commands
+		UNC_DRAM_READ_CAS__MASK__NHM_UNC_UNC_DRAM_READ_CAS__AUTOPRE_CH2 = 0x2000ull, // DRAM Channel 2 read CAS auto page close commands
+		UNC_DRAM_REFRESH = 0x65, // DRAM Channel 0 refresh commands
+		UNC_DRAM_REFRESH__MASK__NHM_UNC_UNC_DRAM_REFRESH__CH0 = 0x100ull, // DRAM Channel 0 refresh commands
+		UNC_DRAM_REFRESH__MASK__NHM_UNC_UNC_DRAM_REFRESH__CH1 = 0x200ull, // DRAM Channel 1 refresh commands
+		UNC_DRAM_REFRESH__MASK__NHM_UNC_UNC_DRAM_REFRESH__CH2 = 0x400ull, // DRAM Channel 2 refresh commands
+		UNC_DRAM_WRITE_CAS = 0x64, // DRAM Channel 0 write CAS commands
+		UNC_DRAM_WRITE_CAS__MASK__NHM_UNC_UNC_DRAM_WRITE_CAS__CH0 = 0x100ull, // DRAM Channel 0 write CAS commands
+		UNC_DRAM_WRITE_CAS__MASK__NHM_UNC_UNC_DRAM_WRITE_CAS__AUTOPRE_CH0 = 0x200ull, // DRAM Channel 0 write CAS auto page close commands
+		UNC_DRAM_WRITE_CAS__MASK__NHM_UNC_UNC_DRAM_WRITE_CAS__CH1 = 0x400ull, // DRAM Channel 1 write CAS commands
+		UNC_DRAM_WRITE_CAS__MASK__NHM_UNC_UNC_DRAM_WRITE_CAS__AUTOPRE_CH1 = 0x800ull, // DRAM Channel 1 write CAS auto page close commands
+		UNC_DRAM_WRITE_CAS__MASK__NHM_UNC_UNC_DRAM_WRITE_CAS__CH2 = 0x1000ull, // DRAM Channel 2 write CAS commands
+		UNC_DRAM_WRITE_CAS__MASK__NHM_UNC_UNC_DRAM_WRITE_CAS__AUTOPRE_CH2 = 0x2000ull, // DRAM Channel 2 write CAS auto page close commands
+		UNC_GQ_ALLOC = 0x3, // GQ read tracker requests
+		UNC_GQ_ALLOC__MASK__NHM_UNC_UNC_GQ_ALLOC__READ_TRACKER = 0x100ull, // GQ read tracker requests
+		UNC_GQ_ALLOC__MASK__NHM_UNC_UNC_GQ_ALLOC__RT_LLC_MISS = 0x200ull, // GQ read tracker LLC misses
+		UNC_GQ_ALLOC__MASK__NHM_UNC_UNC_GQ_ALLOC__RT_TO_LLC_RESP = 0x400ull, // GQ read tracker LLC requests
+		UNC_GQ_ALLOC__MASK__NHM_UNC_UNC_GQ_ALLOC__RT_TO_RTID_ACQUIRED = 0x800ull, // GQ read tracker LLC miss to RTID acquired
+		UNC_GQ_ALLOC__MASK__NHM_UNC_UNC_GQ_ALLOC__WT_TO_RTID_ACQUIRED = 0x1000ull, // GQ write tracker LLC miss to RTID acquired
+		UNC_GQ_ALLOC__MASK__NHM_UNC_UNC_GQ_ALLOC__WRITE_TRACKER = 0x2000ull, // GQ write tracker LLC misses
+		UNC_GQ_ALLOC__MASK__NHM_UNC_UNC_GQ_ALLOC__PEER_PROBE_TRACKER = 0x4000ull, // GQ peer probe tracker requests
+		UNC_GQ_CYCLES_FULL = 0x0, // Cycles GQ read tracker is full.
+		UNC_GQ_CYCLES_FULL__MASK__NHM_UNC_UNC_GQ_CYCLES_FULL__READ_TRACKER = 0x100ull, // Cycles GQ read tracker is full.
+		UNC_GQ_CYCLES_FULL__MASK__NHM_UNC_UNC_GQ_CYCLES_FULL__WRITE_TRACKER = 0x200ull, // Cycles GQ write tracker is full.
+		UNC_GQ_CYCLES_FULL__MASK__NHM_UNC_UNC_GQ_CYCLES_FULL__PEER_PROBE_TRACKER = 0x400ull, // Cycles GQ peer probe tracker is full.
+		UNC_GQ_CYCLES_NOT_EMPTY = 0x1, // Cycles GQ read tracker is busy
+		UNC_GQ_CYCLES_NOT_EMPTY__MASK__NHM_UNC_UNC_GQ_CYCLES_NOT_EMPTY__READ_TRACKER = 0x100ull, // Cycles GQ read tracker is busy
+		UNC_GQ_CYCLES_NOT_EMPTY__MASK__NHM_UNC_UNC_GQ_CYCLES_NOT_EMPTY__WRITE_TRACKER = 0x200ull, // Cycles GQ write tracker is busy
+		UNC_GQ_CYCLES_NOT_EMPTY__MASK__NHM_UNC_UNC_GQ_CYCLES_NOT_EMPTY__PEER_PROBE_TRACKER = 0x400ull, // Cycles GQ peer probe tracker is busy
+		UNC_GQ_DATA_FROM = 0x4, // Cycles GQ data is imported
+		UNC_GQ_DATA_FROM__MASK__NHM_UNC_UNC_GQ_DATA_FROM__QPI = 0x100ull, // Cycles GQ data is imported from Quickpath interface
+		UNC_GQ_DATA_FROM__MASK__NHM_UNC_UNC_GQ_DATA_FROM__QMC = 0x200ull, // Cycles GQ data is imported from Quickpath memory interface
+		UNC_GQ_DATA_FROM__MASK__NHM_UNC_UNC_GQ_DATA_FROM__LLC = 0x400ull, // Cycles GQ data is imported from LLC
+		UNC_GQ_DATA_FROM__MASK__NHM_UNC_UNC_GQ_DATA_FROM__CORES_02 = 0x800ull, // Cycles GQ data is imported from Cores 0 and 2
+		UNC_GQ_DATA_FROM__MASK__NHM_UNC_UNC_GQ_DATA_FROM__CORES_13 = 0x1000ull, // Cycles GQ data is imported from Cores 1 and 3
+		UNC_GQ_DATA_TO = 0x5, // Cycles GQ data is exported
+		UNC_GQ_DATA_TO__MASK__NHM_UNC_UNC_GQ_DATA_TO__QPI_QMC = 0x100ull, // Cycles GQ data sent to the QPI or QMC
+		UNC_GQ_DATA_TO__MASK__NHM_UNC_UNC_GQ_DATA_TO__LLC = 0x200ull, // Cycles GQ data sent to LLC
+		UNC_GQ_DATA_TO__MASK__NHM_UNC_UNC_GQ_DATA_TO__CORES = 0x400ull, // Cycles GQ data sent to cores
+		UNC_LLC_HITS = 0x8, // Number of LLC read hits
+		UNC_LLC_HITS__MASK__NHM_UNC_UNC_LLC_HITS__READ = 0x100ull, // Number of LLC read hits
+		UNC_LLC_HITS__MASK__NHM_UNC_UNC_LLC_HITS__WRITE = 0x200ull, // Number of LLC write hits
+		UNC_LLC_HITS__MASK__NHM_UNC_UNC_LLC_HITS__PROBE = 0x400ull, // Number of LLC peer probe hits
+		UNC_LLC_HITS__MASK__NHM_UNC_UNC_LLC_HITS__ANY = 0x300ull, // Number of LLC hits
+		UNC_LLC_LINES_IN = 0xa, // LLC lines allocated in M state
+		UNC_LLC_LINES_IN__MASK__NHM_UNC_UNC_LLC_LINES_IN__M_STATE = 0x100ull, // LLC lines allocated in M state
+		UNC_LLC_LINES_IN__MASK__NHM_UNC_UNC_LLC_LINES_IN__E_STATE = 0x200ull, // LLC lines allocated in E state
+		UNC_LLC_LINES_IN__MASK__NHM_UNC_UNC_LLC_LINES_IN__S_STATE = 0x400ull, // LLC lines allocated in S state
+		UNC_LLC_LINES_IN__MASK__NHM_UNC_UNC_LLC_LINES_IN__F_STATE = 0x800ull, // LLC lines allocated in F state
+		UNC_LLC_LINES_IN__MASK__NHM_UNC_UNC_LLC_LINES_IN__ANY = 0xf00ull, // LLC lines allocated
+		UNC_LLC_LINES_OUT = 0xb, // LLC lines victimized in M state
+		UNC_LLC_LINES_OUT__MASK__NHM_UNC_UNC_LLC_LINES_OUT__M_STATE = 0x100ull, // LLC lines victimized in M state
+		UNC_LLC_LINES_OUT__MASK__NHM_UNC_UNC_LLC_LINES_OUT__E_STATE = 0x200ull, // LLC lines victimized in E state
+		UNC_LLC_LINES_OUT__MASK__NHM_UNC_UNC_LLC_LINES_OUT__S_STATE = 0x400ull, // LLC lines victimized in S state
+		UNC_LLC_LINES_OUT__MASK__NHM_UNC_UNC_LLC_LINES_OUT__I_STATE = 0x800ull, // LLC lines victimized in I state
+		UNC_LLC_LINES_OUT__MASK__NHM_UNC_UNC_LLC_LINES_OUT__F_STATE = 0x1000ull, // LLC lines victimized in F state
+		UNC_LLC_LINES_OUT__MASK__NHM_UNC_UNC_LLC_LINES_OUT__ANY = 0x1f00ull, // LLC lines victimized
+		UNC_LLC_MISS = 0x9, // Number of LLC read misses
+		UNC_LLC_MISS__MASK__NHM_UNC_UNC_LLC_MISS__READ = 0x100ull, // Number of LLC read misses
+		UNC_LLC_MISS__MASK__NHM_UNC_UNC_LLC_MISS__WRITE = 0x200ull, // Number of LLC write misses
+		UNC_LLC_MISS__MASK__NHM_UNC_UNC_LLC_MISS__PROBE = 0x400ull, // Number of LLC peer probe misses
+		UNC_LLC_MISS__MASK__NHM_UNC_UNC_LLC_MISS__ANY = 0x300ull, // Number of LLC misses
+		UNC_QHL_ADDRESS_CONFLICTS = 0x24, // QHL 2 way address conflicts
+		UNC_QHL_ADDRESS_CONFLICTS__MASK__NHM_UNC_UNC_QHL_ADDRESS_CONFLICTS__2WAY = 0x200ull, // QHL 2 way address conflicts
+		UNC_QHL_ADDRESS_CONFLICTS__MASK__NHM_UNC_UNC_QHL_ADDRESS_CONFLICTS__3WAY = 0x400ull, // QHL 3 way address conflicts
+		UNC_QHL_CONFLICT_CYCLES = 0x25, // QHL IOH Tracker conflict cycles
+		UNC_QHL_CONFLICT_CYCLES__MASK__NHM_UNC_UNC_QHL_CONFLICT_CYCLES__IOH = 0x100ull, // QHL IOH Tracker conflict cycles
+		UNC_QHL_CONFLICT_CYCLES__MASK__NHM_UNC_UNC_QHL_CONFLICT_CYCLES__REMOTE = 0x200ull, // QHL Remote Tracker conflict cycles
+		UNC_QHL_CONFLICT_CYCLES__MASK__NHM_UNC_UNC_QHL_CONFLICT_CYCLES__LOCAL = 0x400ull, // QHL Local Tracker conflict cycles
+		UNC_QHL_CYCLES_FULL = 0x21, // Cycles QHL  Remote Tracker is full
+		UNC_QHL_CYCLES_FULL__MASK__NHM_UNC_UNC_QHL_CYCLES_FULL__REMOTE = 0x200ull, // Cycles QHL  Remote Tracker is full
+		UNC_QHL_CYCLES_FULL__MASK__NHM_UNC_UNC_QHL_CYCLES_FULL__LOCAL = 0x400ull, // Cycles QHL Local Tracker is full
+		UNC_QHL_CYCLES_FULL__MASK__NHM_UNC_UNC_QHL_CYCLES_FULL__IOH = 0x100ull, // Cycles QHL IOH Tracker is full
+		UNC_QHL_CYCLES_NOT_EMPTY = 0x22, // Cycles QHL Tracker is not empty
+		UNC_QHL_CYCLES_NOT_EMPTY__MASK__NHM_UNC_UNC_QHL_CYCLES_NOT_EMPTY__IOH = 0x100ull, // Cycles QHL IOH is busy
+		UNC_QHL_CYCLES_NOT_EMPTY__MASK__NHM_UNC_UNC_QHL_CYCLES_NOT_EMPTY__REMOTE = 0x200ull, // Cycles QHL Remote Tracker is busy
+		UNC_QHL_CYCLES_NOT_EMPTY__MASK__NHM_UNC_UNC_QHL_CYCLES_NOT_EMPTY__LOCAL = 0x400ull, // Cycles QHL Local Tracker is busy
+		UNC_QHL_FRC_ACK_CNFLTS = 0x33, // QHL FrcAckCnflts sent to local home
+		UNC_QHL_FRC_ACK_CNFLTS__MASK__NHM_UNC_UNC_QHL_FRC_ACK_CNFLTS__LOCAL = 0x400ull, // QHL FrcAckCnflts sent to local home
+		UNC_QHL_OCCUPANCY = 0x23, // Cycles QHL Tracker Allocate to Deallocate Read Occupancy
+		UNC_QHL_OCCUPANCY__MASK__NHM_UNC_UNC_QHL_OCCUPANCY__IOH = 0x100ull, // Cycles QHL IOH Tracker Allocate to Deallocate Read Occupancy
+		UNC_QHL_OCCUPANCY__MASK__NHM_UNC_UNC_QHL_OCCUPANCY__REMOTE = 0x200ull, // Cycles QHL Remote Tracker Allocate to Deallocate Read Occupancy
+		UNC_QHL_OCCUPANCY__MASK__NHM_UNC_UNC_QHL_OCCUPANCY__LOCAL = 0x400ull, // Cycles QHL Local Tracker Allocate to Deallocate Read Occupancy
+		UNC_QHL_REQUESTS = 0x20, // Quickpath Home Logic local read requests
+		UNC_QHL_REQUESTS__MASK__NHM_UNC_UNC_QHL_REQUESTS__LOCAL_READS = 0x1000ull, // Quickpath Home Logic local read requests
+		UNC_QHL_REQUESTS__MASK__NHM_UNC_UNC_QHL_REQUESTS__LOCAL_WRITES = 0x2000ull, // Quickpath Home Logic local write requests
+		UNC_QHL_REQUESTS__MASK__NHM_UNC_UNC_QHL_REQUESTS__REMOTE_READS = 0x400ull, // Quickpath Home Logic remote read requests
+		UNC_QHL_REQUESTS__MASK__NHM_UNC_UNC_QHL_REQUESTS__IOH_READS = 0x100ull, // Quickpath Home Logic IOH read requests
+		UNC_QHL_REQUESTS__MASK__NHM_UNC_UNC_QHL_REQUESTS__IOH_WRITES = 0x200ull, // Quickpath Home Logic IOH write requests
+		UNC_QHL_REQUESTS__MASK__NHM_UNC_UNC_QHL_REQUESTS__REMOTE_WRITES = 0x800ull, // Quickpath Home Logic remote write requests
+		UNC_QHL_TO_QMC_BYPASS = 0x26, // Number of requests to QMC that bypass QHL
+		UNC_QMC_BUSY = 0x29, // Cycles QMC busy with a read request
+		UNC_QMC_BUSY__MASK__NHM_UNC_UNC_QMC_BUSY__READ_CH0 = 0x100ull, // Cycles QMC channel 0 busy with a read request
+		UNC_QMC_BUSY__MASK__NHM_UNC_UNC_QMC_BUSY__READ_CH1 = 0x200ull, // Cycles QMC channel 1 busy with a read request
+		UNC_QMC_BUSY__MASK__NHM_UNC_UNC_QMC_BUSY__READ_CH2 = 0x400ull, // Cycles QMC channel 2 busy with a read request
+		UNC_QMC_BUSY__MASK__NHM_UNC_UNC_QMC_BUSY__WRITE_CH0 = 0x800ull, // Cycles QMC channel 0 busy with a write request
+		UNC_QMC_BUSY__MASK__NHM_UNC_UNC_QMC_BUSY__WRITE_CH1 = 0x1000ull, // Cycles QMC channel 1 busy with a write request
+		UNC_QMC_BUSY__MASK__NHM_UNC_UNC_QMC_BUSY__WRITE_CH2 = 0x2000ull, // Cycles QMC channel 2 busy with a write request
+		UNC_QMC_CANCEL = 0x30, // QMC cancels
+		UNC_QMC_CANCEL__MASK__NHM_UNC_UNC_QMC_CANCEL__CH0 = 0x100ull, // QMC channel 0 cancels
+		UNC_QMC_CANCEL__MASK__NHM_UNC_UNC_QMC_CANCEL__CH1 = 0x200ull, // QMC channel 1 cancels
+		UNC_QMC_CANCEL__MASK__NHM_UNC_UNC_QMC_CANCEL__CH2 = 0x400ull, // QMC channel 2 cancels
+		UNC_QMC_CANCEL__MASK__NHM_UNC_UNC_QMC_CANCEL__ANY = 0x700ull, // QMC cancels
+		UNC_QMC_CRITICAL_PRIORITY_READS = 0x2e, // QMC critical priority read requests
+		UNC_QMC_CRITICAL_PRIORITY_READS__MASK__NHM_UNC_UNC_QMC_CRITICAL_PRIORITY_READS__CH0 = 0x100ull, // QMC channel 0 critical priority read requests
+		UNC_QMC_CRITICAL_PRIORITY_READS__MASK__NHM_UNC_UNC_QMC_CRITICAL_PRIORITY_READS__CH1 = 0x200ull, // QMC channel 1 critical priority read requests
+		UNC_QMC_CRITICAL_PRIORITY_READS__MASK__NHM_UNC_UNC_QMC_CRITICAL_PRIORITY_READS__CH2 = 0x400ull, // QMC channel 2 critical priority read requests
+		UNC_QMC_CRITICAL_PRIORITY_READS__MASK__NHM_UNC_UNC_QMC_CRITICAL_PRIORITY_READS__ANY = 0x700ull, // QMC critical priority read requests
+		UNC_QMC_HIGH_PRIORITY_READS = 0x2d, // QMC high priority read requests
+		UNC_QMC_HIGH_PRIORITY_READS__MASK__NHM_UNC_UNC_QMC_HIGH_PRIORITY_READS__CH0 = 0x100ull, // QMC channel 0 high priority read requests
+		UNC_QMC_HIGH_PRIORITY_READS__MASK__NHM_UNC_UNC_QMC_HIGH_PRIORITY_READS__CH1 = 0x200ull, // QMC channel 1 high priority read requests
+		UNC_QMC_HIGH_PRIORITY_READS__MASK__NHM_UNC_UNC_QMC_HIGH_PRIORITY_READS__CH2 = 0x400ull, // QMC channel 2 high priority read requests
+		UNC_QMC_HIGH_PRIORITY_READS__MASK__NHM_UNC_UNC_QMC_HIGH_PRIORITY_READS__ANY = 0x700ull, // QMC high priority read requests
+		UNC_QMC_ISOC_FULL = 0x28, // Cycles DRAM full with isochronous (ISOC) read requests
+		UNC_QMC_ISOC_FULL__MASK__NHM_UNC_UNC_QMC_ISOC_FULL__READ_CH0 = 0x100ull, // Cycles DRAM channel 0 full with isochronous read requests
+		UNC_QMC_ISOC_FULL__MASK__NHM_UNC_UNC_QMC_ISOC_FULL__READ_CH1 = 0x200ull, // Cycles DRAM channel 1 full with isochronous read requests
+		UNC_QMC_ISOC_FULL__MASK__NHM_UNC_UNC_QMC_ISOC_FULL__READ_CH2 = 0x400ull, // Cycles DRAM channel 2 full with isochronous read requests
+		UNC_QMC_ISOC_FULL__MASK__NHM_UNC_UNC_QMC_ISOC_FULL__WRITE_CH0 = 0x800ull, // Cycles DRAM channel 0 full with isochronous write requests
+		UNC_QMC_ISOC_FULL__MASK__NHM_UNC_UNC_QMC_ISOC_FULL__WRITE_CH1 = 0x1000ull, // Cycles DRAM channel 1 full with isochronous write requests
+		UNC_QMC_ISOC_FULL__MASK__NHM_UNC_UNC_QMC_ISOC_FULL__WRITE_CH2 = 0x2000ull, // Cycles DRAM channel 2 full with isochronous write requests
+		UNC_IMC_ISOC_OCCUPANCY = 0x2b, // IMC isochronous (ISOC) Read Occupancy
+		UNC_IMC_ISOC_OCCUPANCY__MASK__NHM_UNC_UNC_IMC_ISOC_OCCUPANCY__CH0 = 0x100ull, // IMC channel 0 isochronous read request occupancy
+		UNC_IMC_ISOC_OCCUPANCY__MASK__NHM_UNC_UNC_IMC_ISOC_OCCUPANCY__CH1 = 0x200ull, // IMC channel 1 isochronous read request occupancy
+		UNC_IMC_ISOC_OCCUPANCY__MASK__NHM_UNC_UNC_IMC_ISOC_OCCUPANCY__CH2 = 0x400ull, // IMC channel 2 isochronous read request occupancy
+		UNC_IMC_ISOC_OCCUPANCY__MASK__NHM_UNC_UNC_IMC_ISOC_OCCUPANCY__ANY = 0x700ull, // IMC isochronous read request occupancy
+		UNC_QMC_NORMAL_FULL = 0x27, // Cycles DRAM full with normal read requests
+		UNC_QMC_NORMAL_FULL__MASK__NHM_UNC_UNC_QMC_NORMAL_FULL__READ_CH0 = 0x100ull, // Cycles DRAM channel 0 full with normal read requests
+		UNC_QMC_NORMAL_FULL__MASK__NHM_UNC_UNC_QMC_NORMAL_FULL__READ_CH1 = 0x200ull, // Cycles DRAM channel 1 full with normal read requests
+		UNC_QMC_NORMAL_FULL__MASK__NHM_UNC_UNC_QMC_NORMAL_FULL__READ_CH2 = 0x400ull, // Cycles DRAM channel 2 full with normal read requests
+		UNC_QMC_NORMAL_FULL__MASK__NHM_UNC_UNC_QMC_NORMAL_FULL__WRITE_CH0 = 0x800ull, // Cycles DRAM channel 0 full with normal write requests
+		UNC_QMC_NORMAL_FULL__MASK__NHM_UNC_UNC_QMC_NORMAL_FULL__WRITE_CH1 = 0x1000ull, // Cycles DRAM channel 1 full with normal write requests
+		UNC_QMC_NORMAL_FULL__MASK__NHM_UNC_UNC_QMC_NORMAL_FULL__WRITE_CH2 = 0x2000ull, // Cycles DRAM channel 2 full with normal write requests
+		UNC_QMC_NORMAL_READS = 0x2c, // QMC normal read requests
+		UNC_QMC_NORMAL_READS__MASK__NHM_UNC_UNC_QMC_NORMAL_READS__CH0 = 0x100ull, // QMC channel 0 normal read requests
+		UNC_QMC_NORMAL_READS__MASK__NHM_UNC_UNC_QMC_NORMAL_READS__CH1 = 0x200ull, // QMC channel 1 normal read requests
+		UNC_QMC_NORMAL_READS__MASK__NHM_UNC_UNC_QMC_NORMAL_READS__CH2 = 0x400ull, // QMC channel 2 normal read requests
+		UNC_QMC_NORMAL_READS__MASK__NHM_UNC_UNC_QMC_NORMAL_READS__ANY = 0x700ull, // QMC normal read requests
+		UNC_QMC_OCCUPANCY = 0x2a, // QMC Occupancy
+		UNC_QMC_OCCUPANCY__MASK__NHM_UNC_UNC_QMC_OCCUPANCY__CH0 = 0x100ull, // IMC channel 0 normal read request occupancy
+		UNC_QMC_OCCUPANCY__MASK__NHM_UNC_UNC_QMC_OCCUPANCY__CH1 = 0x200ull, // IMC channel 1 normal read request occupancy
+		UNC_QMC_OCCUPANCY__MASK__NHM_UNC_UNC_QMC_OCCUPANCY__CH2 = 0x400ull, // IMC channel 2 normal read request occupancy
+		UNC_QMC_PRIORITY_UPDATES = 0x31, // QMC priority updates
+		UNC_QMC_PRIORITY_UPDATES__MASK__NHM_UNC_UNC_QMC_PRIORITY_UPDATES__CH0 = 0x100ull, // QMC channel 0 priority updates
+		UNC_QMC_PRIORITY_UPDATES__MASK__NHM_UNC_UNC_QMC_PRIORITY_UPDATES__CH1 = 0x200ull, // QMC channel 1 priority updates
+		UNC_QMC_PRIORITY_UPDATES__MASK__NHM_UNC_UNC_QMC_PRIORITY_UPDATES__CH2 = 0x400ull, // QMC channel 2 priority updates
+		UNC_QMC_PRIORITY_UPDATES__MASK__NHM_UNC_UNC_QMC_PRIORITY_UPDATES__ANY = 0x700ull, // QMC priority updates
+		UNC_QMC_WRITES = 0x2f, // QMC cache line writes
+		UNC_QMC_WRITES__MASK__NHM_UNC_UNC_QMC_WRITES__FULL_CH0 = 0x100ull, // QMC channel 0 full cache line writes
+		UNC_QMC_WRITES__MASK__NHM_UNC_UNC_QMC_WRITES__FULL_CH1 = 0x200ull, // QMC channel 1 full cache line writes
+		UNC_QMC_WRITES__MASK__NHM_UNC_UNC_QMC_WRITES__FULL_CH2 = 0x400ull, // QMC channel 2 full cache line writes
+		UNC_QMC_WRITES__MASK__NHM_UNC_UNC_QMC_WRITES__FULL_ANY = 0x700ull, // QMC full cache line writes
+		UNC_QMC_WRITES__MASK__NHM_UNC_UNC_QMC_WRITES__PARTIAL_CH0 = 0x800ull, // QMC channel 0 partial cache line writes
+		UNC_QMC_WRITES__MASK__NHM_UNC_UNC_QMC_WRITES__PARTIAL_CH1 = 0x1000ull, // QMC channel 1 partial cache line writes
+		UNC_QMC_WRITES__MASK__NHM_UNC_UNC_QMC_WRITES__PARTIAL_CH2 = 0x2000ull, // QMC channel 2 partial cache line writes
+		UNC_QMC_WRITES__MASK__NHM_UNC_UNC_QMC_WRITES__PARTIAL_ANY = 0x3800ull, // QMC partial cache line writes
+		UNC_QPI_RX_NO_PPT_CREDIT = 0x43, // Link 0 snoop stalls due to no PPT entry
+		UNC_QPI_RX_NO_PPT_CREDIT__MASK__NHM_UNC_UNC_QPI_RX_NO_PPT_CREDIT__STALLS_LINK_0 = 0x100ull, // Link 0 snoop stalls due to no PPT entry
+		UNC_QPI_RX_NO_PPT_CREDIT__MASK__NHM_UNC_UNC_QPI_RX_NO_PPT_CREDIT__STALLS_LINK_1 = 0x200ull, // Link 1 snoop stalls due to no PPT entry
+		UNC_QPI_TX_HEADER = 0x42, // Cycles link 0 outbound header busy
+		UNC_QPI_TX_HEADER__MASK__NHM_UNC_UNC_QPI_TX_HEADER__BUSY_LINK_0 = 0x200ull, // Cycles link 0 outbound header busy
+		UNC_QPI_TX_HEADER__MASK__NHM_UNC_UNC_QPI_TX_HEADER__BUSY_LINK_1 = 0x800ull, // Cycles link 1 outbound header busy
+		UNC_QPI_TX_STALLED_MULTI_FLIT = 0x41, // Cycles QPI outbound stalls
+		UNC_QPI_TX_STALLED_MULTI_FLIT__MASK__NHM_UNC_UNC_QPI_TX_STALLED_MULTI_FLIT__DRS_LINK_0 = 0x100ull, // Cycles QPI outbound link 0 DRS stalled
+		UNC_QPI_TX_STALLED_MULTI_FLIT__MASK__NHM_UNC_UNC_QPI_TX_STALLED_MULTI_FLIT__NCB_LINK_0 = 0x200ull, // Cycles QPI outbound link 0 NCB stalled
+		UNC_QPI_TX_STALLED_MULTI_FLIT__MASK__NHM_UNC_UNC_QPI_TX_STALLED_MULTI_FLIT__NCS_LINK_0 = 0x400ull, // Cycles QPI outbound link 0 NCS stalled
+		UNC_QPI_TX_STALLED_MULTI_FLIT__MASK__NHM_UNC_UNC_QPI_TX_STALLED_MULTI_FLIT__DRS_LINK_1 = 0x800ull, // Cycles QPI outbound link 1 DRS stalled
+		UNC_QPI_TX_STALLED_MULTI_FLIT__MASK__NHM_UNC_UNC_QPI_TX_STALLED_MULTI_FLIT__NCB_LINK_1 = 0x1000ull, // Cycles QPI outbound link 1 NCB stalled
+		UNC_QPI_TX_STALLED_MULTI_FLIT__MASK__NHM_UNC_UNC_QPI_TX_STALLED_MULTI_FLIT__NCS_LINK_1 = 0x2000ull, // Cycles QPI outbound link 1 NCS stalled
+		UNC_QPI_TX_STALLED_MULTI_FLIT__MASK__NHM_UNC_UNC_QPI_TX_STALLED_MULTI_FLIT__LINK_0 = 0x700ull, // Cycles QPI outbound link 0 multi flit stalled
+		UNC_QPI_TX_STALLED_MULTI_FLIT__MASK__NHM_UNC_UNC_QPI_TX_STALLED_MULTI_FLIT__LINK_1 = 0x3800ull, // Cycles QPI outbound link 1 multi flit stalled
+		UNC_QPI_TX_STALLED_SINGLE_FLIT = 0x40, // Cycles QPI outbound link stalls
+		UNC_QPI_TX_STALLED_SINGLE_FLIT__MASK__NHM_UNC_UNC_QPI_TX_STALLED_SINGLE_FLIT__HOME_LINK_0 = 0x100ull, // Cycles QPI outbound link 0 HOME stalled
+		UNC_QPI_TX_STALLED_SINGLE_FLIT__MASK__NHM_UNC_UNC_QPI_TX_STALLED_SINGLE_FLIT__SNOOP_LINK_0 = 0x200ull, // Cycles QPI outbound link 0 SNOOP stalled
+		UNC_QPI_TX_STALLED_SINGLE_FLIT__MASK__NHM_UNC_UNC_QPI_TX_STALLED_SINGLE_FLIT__NDR_LINK_0 = 0x400ull, // Cycles QPI outbound link 0 NDR stalled
+		UNC_QPI_TX_STALLED_SINGLE_FLIT__MASK__NHM_UNC_UNC_QPI_TX_STALLED_SINGLE_FLIT__HOME_LINK_1 = 0x800ull, // Cycles QPI outbound link 1 HOME stalled
+		UNC_QPI_TX_STALLED_SINGLE_FLIT__MASK__NHM_UNC_UNC_QPI_TX_STALLED_SINGLE_FLIT__SNOOP_LINK_1 = 0x1000ull, // Cycles QPI outbound link 1 SNOOP stalled
+		UNC_QPI_TX_STALLED_SINGLE_FLIT__MASK__NHM_UNC_UNC_QPI_TX_STALLED_SINGLE_FLIT__NDR_LINK_1 = 0x2000ull, // Cycles QPI outbound link 1 NDR stalled
+		UNC_QPI_TX_STALLED_SINGLE_FLIT__MASK__NHM_UNC_UNC_QPI_TX_STALLED_SINGLE_FLIT__LINK_0 = 0x700ull, // Cycles QPI outbound link 0 single flit stalled
+		UNC_QPI_TX_STALLED_SINGLE_FLIT__MASK__NHM_UNC_UNC_QPI_TX_STALLED_SINGLE_FLIT__LINK_1 = 0x3800ull, // Cycles QPI outbound link 1 single flit stalled
+		UNC_SNP_RESP_TO_LOCAL_HOME = 0x6, // Local home snoop response
+		UNC_SNP_RESP_TO_LOCAL_HOME__MASK__NHM_UNC_UNC_SNP_RESP_TO_LOCAL_HOME__I_STATE = 0x100ull, // Local home snoop response - LLC does not have cache line
+		UNC_SNP_RESP_TO_LOCAL_HOME__MASK__NHM_UNC_UNC_SNP_RESP_TO_LOCAL_HOME__S_STATE = 0x200ull, // Local home snoop response - LLC has  cache line in S state
+		UNC_SNP_RESP_TO_LOCAL_HOME__MASK__NHM_UNC_UNC_SNP_RESP_TO_LOCAL_HOME__FWD_S_STATE = 0x400ull, // Local home snoop response - LLC forwarding cache line in S state.
+		UNC_SNP_RESP_TO_LOCAL_HOME__MASK__NHM_UNC_UNC_SNP_RESP_TO_LOCAL_HOME__FWD_I_STATE = 0x800ull, // Local home snoop response - LLC has forwarded a modified cache line
+		UNC_SNP_RESP_TO_LOCAL_HOME__MASK__NHM_UNC_UNC_SNP_RESP_TO_LOCAL_HOME__CONFLICT = 0x1000ull, // Local home conflict snoop response
+		UNC_SNP_RESP_TO_LOCAL_HOME__MASK__NHM_UNC_UNC_SNP_RESP_TO_LOCAL_HOME__WB = 0x2000ull, // Local home snoop response - LLC has cache line in the M state
+		UNC_SNP_RESP_TO_REMOTE_HOME = 0x7, // Remote home snoop response
+		UNC_SNP_RESP_TO_REMOTE_HOME__MASK__NHM_UNC_UNC_SNP_RESP_TO_REMOTE_HOME__I_STATE = 0x100ull, // Remote home snoop response - LLC does not have cache line
+		UNC_SNP_RESP_TO_REMOTE_HOME__MASK__NHM_UNC_UNC_SNP_RESP_TO_REMOTE_HOME__S_STATE = 0x200ull, // Remote home snoop response - LLC has  cache line in S state
+		UNC_SNP_RESP_TO_REMOTE_HOME__MASK__NHM_UNC_UNC_SNP_RESP_TO_REMOTE_HOME__FWD_S_STATE = 0x400ull, // Remote home snoop response - LLC forwarding cache line in S state.
+		UNC_SNP_RESP_TO_REMOTE_HOME__MASK__NHM_UNC_UNC_SNP_RESP_TO_REMOTE_HOME__FWD_I_STATE = 0x800ull, // Remote home snoop response - LLC has forwarded a modified cache line
+		UNC_SNP_RESP_TO_REMOTE_HOME__MASK__NHM_UNC_UNC_SNP_RESP_TO_REMOTE_HOME__CONFLICT = 0x1000ull, // Remote home conflict snoop response
+		UNC_SNP_RESP_TO_REMOTE_HOME__MASK__NHM_UNC_UNC_SNP_RESP_TO_REMOTE_HOME__WB = 0x2000ull, // Remote home snoop response - LLC has cache line in the M state
+		UNC_SNP_RESP_TO_REMOTE_HOME__MASK__NHM_UNC_UNC_SNP_RESP_TO_REMOTE_HOME__HITM = 0x2400ull, // Remote home snoop response - LLC HITM
+		
+	};
+};
+
+namespace nhm_unc = optkit::intel::nhm_unc;
+
+#undef INTEL_X86_EDGE_BIT
+#undef INTEL_X86_ANY_BIT
+#undef INTEL_X86_INV_BIT
+#undef INTEL_X86_CMASK_BIT
+#undef INTEL_X86_MOD_EDGE
+#undef INTEL_X86_MOD_ANY
+#undef INTEL_X86_MOD_INV
